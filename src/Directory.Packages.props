@@ -16,7 +16,10 @@
     <PackageVersion Include="Serilog.Sinks.PeriodicBatching" Version="5.0.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="Grpc.Core.Api" Version="2.80.0" />
-    <PackageVersion Include="GrpcRichError" Version="0.1.8" />
+    <PackageVersion Include="Grpc.StatusProto" Version="2.80.0" />
+    <!-- Build only: the protoc it bundles (35.1) sets the floor of the Google.Protobuf runtime below. -->
+    <PackageVersion Include="Grpc.Tools" Version="2.83.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.36.1" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.18.0" />
     <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />

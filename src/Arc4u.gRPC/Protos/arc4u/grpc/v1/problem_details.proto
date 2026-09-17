@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package arc4u.grpc.v1;
+
+option csharp_namespace = "Arc4u.gRPC.Protos";
+
+// The RFC 7807 document of a failed call - the very one an Arc4u REST endpoint returns for the same failure.
+//
+// It is not the response of any rpc. A failed call sends it following the gRPC richer error model: packed in
+// the details of the google.rpc.Status carried by the grpc-status-details-bin trailer. Read it with the helper
+// of your language - StatusProto.fromThrowable (Java), status.FromError(err).Details() (Go),
+// rpc_status.from_call (Python), RpcException.GetRpcStatus() (.NET) - and unpack the detail of this type.
+//
+// The full name of this message is part of the type URL of that detail
+// (type.googleapis.com/arc4u.grpc.v1.ProblemDetails): renaming it, or moving it to another package, breaks
+// every client. Evolve it by adding fields only.
+message ProblemDetails {
+  // URI reference identifying the problem type.
+  string type = 1;
+
+  // Short, human-readable summary of the problem type.
+  string title = 2;
+
+  // HTTP status code an Arc4u REST endpoint reports for this failure.
+  int32 status = 3;
+
+  // Explanation specific to this occurrence of the problem.
+  string detail = 4;
+
+  // URI reference identifying this occurrence of the problem.
+  string instance = 5;
+
+  // Messages of a validation failure, most severe first. Empty for any other failure.
+  repeated ValidationMessage errors = 6;
+
+  // Number of validation messages left out at the end of errors. gRPC clients cap the metadata of a
+  // response (8 KiB by default in Java and in the C core behind Python), so the least severe messages
+  // are dropped rather than lose the whole document.
+  int32 omitted_errors = 7;
+}
+
+// One message of a validation failure.
+message ValidationMessage {
+  Severity severity = 1;
+  string message = 2;
+}
+
+// Severity of a validation message.
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_ERROR = 1;
+  SEVERITY_WARNING = 2;
+  SEVERITY_INFO = 3;
+}

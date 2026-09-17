@@ -22,6 +22,18 @@ public static class ProblemDetailsExtensions
         return problemDetails;
     }
 
+    public static ProblemDetails WithInstance(this ProblemDetails problemDetails, string? instance)
+    {
+        ArgumentNullException.ThrowIfNull(problemDetails);
+
+        if (!string.IsNullOrWhiteSpace(instance))
+        {
+            problemDetails.Instance = instance;
+        }
+
+        return problemDetails;
+    }
+
     public static ProblemDetails WithDetail(this ProblemDetails problemDetails, string detail)
     {
         problemDetails.Detail = detail;

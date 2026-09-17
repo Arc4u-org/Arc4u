@@ -5,8 +5,10 @@
     <NoWarn>$(NoWarn);IDE0130</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Core.Api" />
-    <PackageReference Include="GrpcRichError" />
+    <PackageReference Include="Grpc.StatusProto" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="System.Text.Json" />
   </ItemGroup>
@@ -14,5 +16,27 @@
     <ProjectReference Include="..\Arc4u.Configuration\Arc4u.Configuration.csproj" />
     <ProjectReference Include="..\Arc4u.Dependency\Arc4u.Dependency.csproj" />
     <ProjectReference Include="..\Arc4u.OAuth2\Arc4u.OAuth2.csproj" />
+    <ProjectReference Include="..\Arc4u.Results\Arc4u.Results.csproj" />
+  </ItemGroup>
+
+  <!--
+    The protos Arc4u owns. They are compiled here, and only here: Arc4u.AspNetCore.gRpc and every application
+    use the generated types from this assembly. Compiling them a second time would define the same message
+    twice - two CLR types and two registrations for one protobuf full name.
+  -->
+  <ItemGroup>
+    <Protobuf Include="Protos\**\*.proto" ProtoRoot="Protos" GrpcServices="None" />
+  </ItemGroup>
+
+  <!--
+    The protos are shipped in the package too, for two audiences. Clients in another language (Java, Go,
+    Python...) generate their own code from content/protos. A .NET application that needs one of the messages
+    inside its own protos - a ProblemDetails per item of a stream, say - just imports it: the buildTransitive
+    targets put content/protos on the Grpc.Tools import path, and the generated code refers to the types
+    compiled in this assembly instead of generating them again.
+  -->
+  <ItemGroup>
+    <None Include="Protos\**\*.proto" Pack="true" PackagePath="content\protos" Visible="false" />
+    <None Include="buildTransitive\Arc4u.gRPC.targets" Pack="true" PackagePath="buildTransitive" />
   </ItemGroup>
 </Project>

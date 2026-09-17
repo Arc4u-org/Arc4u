@@ -49,6 +49,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all"/>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Arc4u.AspNetCore.gRpc\Arc4u.AspNetCore.gRpc.csproj" />
     <ProjectReference Include="..\Arc4u.AspNetCore.Results\Arc4u.AspNetCore.Results.csproj" />
     <ProjectReference Include="..\Arc4u.Authorization\Arc4u.Authorization.csproj" />
     <ProjectReference Include="..\Arc4u.Caching.Memory\Arc4u.Caching.Memory.csproj" />

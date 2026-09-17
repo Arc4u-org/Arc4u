@@ -52,7 +52,8 @@ public static class FromResultToProblemDetailExtension
                         .WithDetail(problemDetailError.Message)
                         .WithStatusCode(problemDetailError.StatusCode ?? StatusCodes.Status500InternalServerError)
                         .WithSeverity(problemDetailError.Severity ?? Severity.Error.ToString())
-                        .WithType(problemDetailError.Type ?? new Uri("about:blank"));
+                        .WithType(problemDetailError.Type ?? new Uri("about:blank"))
+                        .WithInstance(problemDetailError.Instance);
 
             foreach (var metadata in problemDetailError.Metadata)
             {

@@ -1,0 +1,16 @@
+<Project>
+  <!--
+    Puts the protos Arc4u.gRPC ships on the Grpc.Tools import path, so an application proto can write
+    import "arc4u/grpc/v1/problem_details.proto". Only the import path is extended: the messages are already
+    compiled in Arc4u.gRPC.dll, and the code generated for the application's protos refers to those types.
+  -->
+  <PropertyGroup>
+    <Arc4uGrpc_ProtosPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../content/protos'))</Arc4uGrpc_ProtosPath>
+  </PropertyGroup>
+
+  <Target Name="Arc4uGrpc_BeforeCompile" BeforeTargets="Protobuf_BeforeCompile">
+    <PropertyGroup>
+      <Protobuf_StandardImportsPath>$(Protobuf_StandardImportsPath);$(Arc4uGrpc_ProtosPath)</Protobuf_StandardImportsPath>
+    </PropertyGroup>
+  </Target>
+</Project>

@@ -5,13 +5,18 @@
     <NoWarn>$(NoWarn);IDE0130</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.AspNetCore.Server" />
+    <PackageReference Include="Grpc.StatusProto" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="System.Text.Json" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Arc4u.AspNetCore.Results\Arc4u.AspNetCore.Results.csproj" />
     <ProjectReference Include="..\Arc4u.Dependency\Arc4u.Dependency.csproj" />
     <ProjectReference Include="..\Arc4u.Diagnostics\Arc4u.Diagnostics.csproj" />
+    <!-- Owner of the protos: the ProblemDetails sent in the status details is the type compiled there. -->
+    <ProjectReference Include="..\Arc4u.gRPC\Arc4u.gRPC.csproj" />
     <ProjectReference Include="..\Arc4u\Arc4u.csproj" />
   </ItemGroup>
 </Project>
