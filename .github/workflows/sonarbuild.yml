@@ -21,7 +21,8 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
            dotnet-version: |
-             9.0.100
+             11.0.100-rc.1.26425.128
+           include-prerelease: true
       - name: Cache SonarCloud packages
         uses: actions/cache@v1
         with:
@@ -48,10 +49,10 @@ jobs:
  
        
       - name: nuget restore
-        run: dotnet restore .\src\arc4u.sln
- 
+        run: dotnet restore .\src\arc4u.slnx
+
       - name: build
-        run: dotnet build .\src\arc4u.sln --configuration ${{env.buildConfiguration}}
+        run: dotnet build .\src\arc4u.slnx --configuration ${{env.buildConfiguration}}
 
       - name: Build and analyze
         env:
@@ -60,5 +61,5 @@ jobs:
         shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"GFlisch_Arc4u" /o:"gflisch" /d:sonar.token="${{ secrets.Sonar_Token }}" /d:sonar.scanner.scanAll=false /d:sonar.host.url="https://sonarcloud.io"
-          dotnet build .\src\arc4u.sln --configuration ${{env.buildConfiguration}}
+          dotnet build .\src\arc4u.slnx --configuration ${{env.buildConfiguration}}
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"

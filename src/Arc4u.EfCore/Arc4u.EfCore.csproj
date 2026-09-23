@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <PackageId>Arc4u.EfCore</PackageId>
   </PropertyGroup>
   <ItemGroup>
@@ -14,5 +14,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Arc4u.Data\Arc4u.Data.csproj" />
     <ProjectReference Include="..\Arc4u\Arc4u.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageVersion Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
   </ItemGroup>
 </Project>

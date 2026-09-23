@@ -5,49 +5,49 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Common packages -->
-    <PackageVersion Include="Grpc.AspNetCore.Server" Version="2.80.0" />
+    <PackageVersion Include="Grpc.AspNetCore.Server" Version="2.84.0" />
     <PackageVersion Include="FluentResults" Version="4.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.2" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="6.0.0" />
     <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
-    <PackageVersion Include="Serilog" Version="4.3.1" />
+    <PackageVersion Include="Serilog" Version="4.4.0" />
     <PackageVersion Include="AutoMapper" Version="15.0.1" />
     <PackageVersion Include="Realm" Version="20.1.0" />
     <PackageVersion Include="Serilog.Sinks.PeriodicBatching" Version="5.0.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
-    <PackageVersion Include="Grpc.Core.Api" Version="2.80.0" />
-    <PackageVersion Include="Grpc.StatusProto" Version="2.80.0" />
+    <PackageVersion Include="Grpc.Core.Api" Version="2.84.0" />
+    <PackageVersion Include="Grpc.StatusProto" Version="2.84.0" />
     <!-- Build only: the protoc it bundles (35.1) sets the floor of the Google.Protobuf runtime below. -->
-    <PackageVersion Include="Grpc.Tools" Version="2.83.0" />
-    <PackageVersion Include="Google.Protobuf" Version="3.36.1" />
-    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.18.0" />
+    <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.23.0" />
     <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Expressions" Version="5.0.0" />
-    <PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.2" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
     <PackageVersion Include="Serilog.Exceptions" Version="8.4.0" />
-    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="AutoFixture" Version="4.18.1" />
     <PackageVersion Include="AutoFixture.AutoMoq" Version="4.18.1" />
     <PackageVersion Include="AutoFixture.SeedExtensions" Version="4.18.1" />
     <PackageVersion Include="AutoFixture.Xunit2" Version="4.18.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageVersion Include="Azure.Identity" Version="1.17.0" />
     <PackageVersion Include="System.Security.Cryptography.Cng" Version="5.0.0" />
     <PackageVersion Include="Blazored.LocalStorage" Version="4.5.0" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageVersion Include="Dapr.Client" Version="1.17.9" />
-    <PackageVersion Include="MongoDB.Driver" Version="3.8.1" />
-    <PackageVersion Include="Microsoft.AspNetCore.OData" Version="9.4.1" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0" />
+    <PackageVersion Include="Dapr.Client" Version="1.18.8" />
+    <PackageVersion Include="MongoDB.Driver" Version="3.12.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OData" Version="9.5.0" />
     <PackageVersion Include="Castle.Core" Version="5.2.1" />
-    <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
+    <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Serilog.Sinks.XUnit" Version="3.0.19" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
@@ -56,46 +56,8 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.1" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" PrivateAssets="all" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.3.0" PrivateAssets="all" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageVersion Include="System.Text.Json" Version="8.0.5" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.SqlServer" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="8.0.0" />
-    <PackageVersion Include="System.Formats.Asn1" Version="8.0.1" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-    <PackageVersion Include="System.Text.Json" Version="9.0.5" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.SqlServer" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.0" />
-    <PackageVersion Include="System.Formats.Asn1" Version="9.0.0" />
+    <PackageVersion Include="Asp.Versioning.Http" Version="10.2.3" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.0" />
@@ -117,6 +79,27 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
     <PackageVersion Include="System.Formats.Asn1" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net11.0' ">
+    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.SqlServer" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="System.Formats.Asn1" Version="11.0.0-rc.1.26425.128" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />

@@ -6,6 +6,7 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/Arc4u.AspNetCore.Versioning/" />
   <Folder Name="/Buids/">
     <File Path="Builds/SetNuGetPackageIdPrefix.ps1" />
     <File Path="Builds/SetVersion.ps1" />
@@ -15,6 +16,7 @@
   </Folder>
   <Project Path="Arc4u.AspNetCore.gRpc/Arc4u.AspNetCore.gRpc.csproj" />
   <Project Path="Arc4u.AspNetCore.Results/Arc4u.AspNetCore.Results.csproj" />
+  <Project Path="Arc4u.AspNetCore.Versioning/Arc4u.AspNetCore.Versioning.csproj" />
   <Project Path="Arc4u.Authorization/Arc4u.Authorization.csproj" />
   <Project Path="Arc4u.Caching.Dapr/Arc4u.Caching.Dapr.csproj" />
   <Project Path="Arc4u.Caching.Memory/Arc4u.Caching.Memory.csproj" />
@@ -41,7 +43,7 @@
   <Project Path="Arc4u.OAuth2.AspNetCore.Blazor/Arc4u.OAuth2.AspNetCore.Blazor.csproj" />
   <Project Path="Arc4u.OAuth2.AspNetCore/Arc4u.OAuth2.AspNetCore.csproj" />
   <Project Path="Arc4u.OAuth2.Blazor/Arc4u.OAuth2.Blazor.csproj" />
-  <Project Path="Arc4u.OAuth2.Client.Authentication\Arc4u.OAuth2.Client.Authentication.csproj" Type="Classic C#">
+  <Project Path="Arc4u.OAuth2.Client.Authentication\Arc4u.OAuth2.Client.Authentication.csproj" Type="C#">
     <Configuration Solution="Debug|ARM" Project="Debug|Any CPU" />
     <Configuration Solution="Debug|ARM64" Project="Debug|Any CPU" />
     <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />

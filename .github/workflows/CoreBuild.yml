@@ -55,7 +55,8 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
            dotnet-version: |
-             10.0.100-rc.2.25502.107
+             11.0.100-rc.1.26425.128
+           include-prerelease: true
 
       - name: Set the NuGet PackageId in the project files
         run: .\src\Builds\SetNuGetPackageIdPrefix.ps1 ".." "${{ github.event.inputs.nugetPackageIdPrefix }}"
