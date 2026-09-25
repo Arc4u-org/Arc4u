@@ -24,7 +24,7 @@ public static class ApiVersioningExtensions
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to register the api versioning to.</param>
     /// <returns>The <see cref="IServiceCollection"/>.</returns>
-    public static IServiceCollection AddInterfaceApiVersioning(this IServiceCollection services)
+    public static IServiceCollection AddServiceApiVersioning(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
 

@@ -2,7 +2,7 @@
 
 namespace Arc4u.AspNetCore.Versioning;
 
-public class ApiVersionDefault
+public static class ApiVersionDefault
 {
     /// <summary>
     /// The first version of the interface api.
