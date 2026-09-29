@@ -7,7 +7,8 @@ All notable changes to the Arc4u packages are documented in this file. The forma
 [Versioning](https://arc4u-org.github.io/Arc4u/concepts/versioning.html)).
 
 Up to 8.3.2 the packages were named `Arc4u.Standard.*`; from 9.0.0 they are named `Arc4u.*`.
-Dates are the dates the version was published on NuGet.
+Dates are the dates the version was published on NuGet. Published versions without an entry had
+no release notes.
 
 ## [Unreleased]
 
@@ -72,10 +73,19 @@ packages. It contains breaking changes: follow the
   ([#150](https://github.com/Arc4u-org/Arc4u/pull/150)). See
   [Fluent logging API](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#fluent-logging-api).
 - `JwtHttpHandler` is generic (`JwtHttpHandler<T>`).
-- `OnFailed` callbacks receive an `IReadOnlyCollection<IError>`; passing an asynchronous lambda to a
-  synchronous `OnSuccess`, `OnFailed`, `OnSuccessNull` or `OnSuccessNotNull` is a compile error.
-- `ValidateWithResult` moved to `Arc4u.FluentValidation` (namespace `Arc4u.Validation`).
+- `OnFailed` and `OnFailedAsync` callbacks receive an `IReadOnlyCollection<IError>`; passing an
+  asynchronous lambda to a synchronous `OnSuccess`, `OnFailed`, `OnSuccessNull` or `OnSuccessNotNull`
+  is a compile error; the `…Async` methods on a plain `Result` or `Result<T>` return a `Task` instead of
+  blocking with `.Wait()`.
+- `ValidateWithResult` moved to `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), and
+  `ToFluentResultErrors` is renamed `ToResultErrors`.
 - `UseForceOfOpenId(options)` is replaced by `AddForceOpenId(options)` and `UseForceOpenId()`.
+- A custom ticket store or cookie post-configuration is registered in the service collection
+  (`ITicketStore`, `IPostConfigureOptions<CookieAuthenticationOptions>`) instead of being named in
+  configuration (`TicketStore`, `CookiesConfigureOptionsType`).
+- `OidcAuthenticationOptions.AuthenticationTicketTTL` is renamed `AuthenticationTicketTtl`, and
+  `Certificate` is renamed `DataProtectionCertificate`.
+- The default `Authentication:TokenCache:MaxTime` is 50 minutes instead of 20.
 - Uses System.Text.Json only. See
   [Newtonsoft.Json replaced by System.Text.Json](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#newtonsoftjson-replaced-by-systemtextjson).
 - The authentication cookie expires after the shorter of `AuthenticationTicketTtl` and
@@ -90,7 +100,8 @@ packages. It contains breaking changes: follow the
 
 ### Removed
 
-- .NET Standard 2.0, .NET 8 and .NET 9 targets.
+- .NET 8 and .NET 9 targets, and the .NET Standard 2.0 target of every package except
+  `Arc4u.Dependency` and `Arc4u.Dependency.Tool`.
 - ADAL (`Arc4u.Standard.OAuth2.AspNetCore.Adal`), Protobuf serializers
   (`Arc4u.Standard.Serializer.Protobuf`, `Arc4u.Standard.Serializer.ProtobufV2`) and
   `Arc4u.Standard.Diagnostics.TraceListeners`.
@@ -98,7 +109,8 @@ packages. It contains breaking changes: follow the
   [MSAL status](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#msal-status).
 - `IContainer`, `IContainerRegistry`, `IContainerResolve`, `ComponentModelContainer`,
   `DependencyContext` and the `Arc4u.Standard.Dependency.ComponentModel` package.
-- `Message`, `Messages`, `MessageType`, `LocalizedMessage` and `AppException`.
+- `Message`, `Messages`, `MessageType`, `LocalizedMessage` and `AppException`, and the
+  FluentValidation helpers `ToMessages` and `ToMessageType`.
 - `Arc4u.Standard.OAuth2.AspNetCore.Api` (`ServiceAspectAttribute` for controllers).
 - `Authentication:ClientSecrets` (`AddSecretAuthentication`, `CredentialSecretTokenProvider`), replaced
   by `Authentication:ClientTokens`.
@@ -178,7 +190,7 @@ packages. It contains breaking changes: follow the
 - `net6.0` target.
 - `Arc4u.Standard.OAuth2.AspNetCore.Adal`, `Arc4u.Standard.Serializer.Protobuf`,
   `Arc4u.Standard.Serializer.ProtobufV2` and `Arc4u.Standard.Diagnostics.TraceListeners` are no
-  longer published; their last version is 8.2.1.
+  longer published as stable versions; their last stable version is 8.2.1 (8.3.0 previews exist).
 
 ## [8.2.1] - 2024-11-10
 
@@ -210,6 +222,10 @@ packages. It contains breaking changes: follow the
 
 - The methods that inject `IScopedServiceProviderAccessor`: use `IServiceProvider`
   ([#108](https://github.com/Arc4u-org/Arc4u/pull/108)).
+
+### Removed
+
+- `net7.0` target.
 
 ### Security
 
@@ -259,7 +275,7 @@ Entra ID, Azure AD B2C, ADFS, Keycloak and ForgeRock). The settings are simplifi
 
 ### Removed
 
-- `Arc4u.Standard.OAuth.AspNetCore.Msal`, replaced by `Arc4u.Standard.OAuth2.AspNetCore.Authentication`.
+- `Arc4u.Standard.OAuth2.AspNetCore.Msal`, replaced by `Arc4u.Standard.OAuth2.AspNetCore.Authentication`.
 - `Arc4u.Standard.KubeMQ` and `Arc4u.Standard.KubeMQ.AspNetCore`: use a message broker through
   [Dapr](https://dapr.io).
 

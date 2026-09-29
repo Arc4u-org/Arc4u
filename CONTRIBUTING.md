@@ -130,6 +130,21 @@ reported as warnings.
 > published automatically yet. Only warnings from files under `docs/` concern documentation
 > changes.
 
+## Release a version
+
+This section is for maintainers. [`CHANGELOG.md`](CHANGELOG.md) is the single source of release
+notes: the documentation site shows it on its
+[Changelog page](https://arc4u-org.github.io/Arc4u/releases/), and a GitHub Release only links to it.
+
+1. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [<version>] - <YYYY-MM-DD>`, add a new empty
+   `## [Unreleased]` section above it, and add the link definition of the version at the end of the
+   file.
+2. Merge that change, publish the NuGet packages, and tag the commit `v<version>`.
+3. Create the GitHub Release from that tag. Its notes are a short summary and a link to the
+   version's entry, on GitHub (`CHANGELOG.md`) and on the site
+   (`https://arc4u-org.github.io/Arc4u/releases/`). Do not write the release notes a second time.
+4. For a major version, also link the migration guide in the release notes.
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the

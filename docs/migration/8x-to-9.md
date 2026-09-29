@@ -23,11 +23,24 @@ changes per version, see the [changelog](../releases/index.md).
 - [ ] Plan to clear distributed caches (Redis, SQL Server, Dapr state) when you deploy if you
   used the Protobuf serializer (see [ADAL and Protobuf removed](#adal-and-protobuf-removed)).
 
-> [!NOTE]
+> [!WARNING]
 > Arc4u 9 is in preview: install the packages with `--prerelease`. The last preview on NuGet,
-> `9.0.0-preview37`, was built before some of the changes described here: it targets `net8.0`,
-> `net9.0` and `net10.0`, and it does not contain the
-> [authentication settings refactoring](#authentication-settings-refactoring) yet.
+> `9.0.0-preview37`, was built before part of the changes described here, and it targets `net8.0`,
+> `net9.0` and `net10.0`. If you migrate to that preview, check this list:
+>
+> - **Already in preview37:** `AddHybridAuthentication`; `AddOidcAuthentication` registering OpenID
+>   Connect and cookies only, without JWT bearer; `AddClientTokens` and `ClientTokensSectionPath`;
+>   the `AuthenticationMethod`, `NameClaimType` and `RoleClaimType` settings;
+>   `DataProtectionCertificate`; `JwtHttpHandler<T>`; the removal of the `*EventsType` keys; the
+>   `IReadOnlyCollection<IError>` parameter of `OnFailed`.
+> - **Not yet in preview37:** the settings are still named `OpenId` and `OAuth2`, the bearer
+>   `AuthenticationType` is still `OAuth2Bearer`, the `AuthenticationType` and `SettingsKeys` keys are
+>   still read, `IClaimsFiller.GetAsync` still has the 8.x signature, and the `…Async` result
+>   extension methods on a plain `Result` still return synchronously.
+>
+> Because `AddOidcAuthentication` no longer registers JWT bearer, an 8.x application that keeps
+> calling it stops accepting bearer tokens without any error at startup: switch to
+> `AddHybridAuthentication` (see [Registration methods](#registration-methods)).
 
 ## Package renames
 
@@ -213,9 +226,9 @@ Arc4u 9 removes the packages built on deprecated libraries
 ([#130](https://github.com/Arc4u-org/Arc4u/issues/130)):
 
 - `Arc4u.Standard.OAuth2.AspNetCore.Adal` used ADAL (`Microsoft.IdentityModel.Clients.ActiveDirectory`),
-  which Microsoft no longer supports. It targeted `net6.0` only and its last version is 8.2.1.
+  which Microsoft no longer supports. It targeted `net6.0` only and its last stable version is 8.2.1.
 - `Arc4u.Standard.Serializer.Protobuf` and `Arc4u.Standard.Serializer.ProtobufV2` provided
-  `IObjectSerialization` implementations based on protobuf-net. Their last version is 8.2.1 and
+  `IObjectSerialization` implementations based on protobuf-net. Their last stable version is 8.2.1 and
   `ProtoBufSerialization` is marked `[Obsolete("Use Arc4u.Serializer.JSon instead.")]`.
 
 **Before (8.x)**
@@ -254,7 +267,7 @@ Steps:
    [server authentication guide](../guides/authentication-server/index.md): `AddHybridAuthentication`
    for a web application that signs users in and calls APIs, `AddJwtAuthentication` for an API.
    It works with Microsoft Entra ID, ADFS and other OpenID Connect providers.
-2. Register `JsonSerialization` wherever you registered `ProtoBufSerialization`. To keep a named
+2. Register <xref:Arc4u.Serializer.JsonSerialization> wherever you registered `ProtoBufSerialization`. To keep a named
    serializer that a cache selects with `SerializerName`, register it as a keyed service
    (`AddKeyedSingleton<IObjectSerialization>("<name>", ...)`).
 3. Clear the distributed caches that stored Protobuf data, or give the caches new names, before the
@@ -264,7 +277,7 @@ Steps:
 
 `Arc4u.Standard.Diagnostics.TraceListeners` wrote Arc4u logs to `System.Diagnostics` trace
 listeners ([#133](https://github.com/Arc4u-org/Arc4u/issues/133)). It targeted `netstandard2.0`,
-its last version is 8.2.1 and `TraceLoggerProvider` is marked `[Obsolete("Use Serilog")]`.
+its last stable version is 8.2.1 and `TraceLoggerProvider` is marked `[Obsolete("Use Serilog")]`.
 Arc4u 9 logs through `Microsoft.Extensions.Logging`: send the logs to Serilog (with
 `Arc4u.Diagnostics.Serilog`) or OpenTelemetry.
 
@@ -530,9 +543,10 @@ Steps:
    notes for the version you choose.
 
 > [!IMPORTANT]
-> `Prism.DryIoc` 9 requires a Prism license: the package asks you to accept the Prism Community
-> License or the Prism Commercial License, depending on the size of your organization. Read the
-> terms on [prismlibrary.com](https://prismlibrary.com/) before you upgrade.
+> `Prism.DryIoc` 9 requires a Prism license: the package asks you to accept either the Prism
+> Community License (for organizations with an annual gross revenue under USD 1 million, or that
+> never received more than USD 3 million of outside capital) or the Prism Commercial License. Read the terms on
+> [prismlibrary.com](https://prismlibrary.com/) before you upgrade.
 
 ## Message and Messages replaced by ProblemDetails
 
@@ -617,7 +631,7 @@ validation problem details response through `ToActionOkResult`.
 
 | 8.x | Arc4u 9 |
 |---|---|
-| `Messages`, `Message` with `MessageType.Error` | `Result.Fail(...)` with a `ValidationError` (expected, 422) or a `ProblemDetailError` (with your status code) |
+| `Messages`, `Message` with `MessageType.Error` | `Result.Fail(...)` with a <xref:Arc4u.Results.Validation.ValidationError> (expected, 422) or a <xref:Arc4u.Results.ProblemDetailError> (with your status code) |
 | `throw new AppException(...)` | Return a failed `Result`; throw only for unexpected errors |
 | `Messages.LogAndThrowIfNecessary(logger)` | `result.LogIfFailed()` and return the result |
 | `PersistEntity.TryValidate()` returning `Messages` | `PersistEntity.TryValidate()` returning `Result` |
@@ -782,8 +796,10 @@ await app.RunAsync();
 
 Use `AddOidcAuthentication` only when the application never receives bearer tokens. When you
 configure the options in code instead of in `appsettings.json`, the OAuth2 settings moved to
-`HybridAuthenticationOptions.OAuth2SettingsOptions`, and `Certificate` is renamed
-`DataProtectionCertificate`.
+<xref:Arc4u.OAuth2.Options.HybridAuthenticationOptions>`.OAuth2SettingsOptions`, `Certificate` is
+renamed `DataProtectionCertificate`, and `AuthenticationTicketTTL` is renamed `AuthenticationTicketTtl`
+(in `appsettings.json` the key `AuthenticationTicketTTL` still works, because configuration keys are
+not case-sensitive).
 
 ### Configuration keys
 
@@ -794,7 +810,8 @@ they have no effect any more. Remove them to avoid confusion.
 |---|---|---|
 | `Authentication` | `OpenIdSettingsKey`, `OAuth2SettingsKey` | No longer used: the settings names are fixed (see [Settings names](#settings-names)). |
 | `Authentication` | `JwtBearerEventsType`, `CookieAuthenticationEventsType`, `OpenIdConnectEventsType` | Removed: register your events class in the service collection (see [Custom events](#custom-events)). |
-| `Authentication` | `CookiesConfigureOptionsType` | Removed. |
+| `Authentication` | `CookiesConfigureOptionsType` | Removed: register your own `IPostConfigureOptions<CookieAuthenticationOptions>` before the `Add…Authentication` call; Arc4u registers its own only if none is registered. |
+| `Authentication:AuthenticationCacheTicketStore` | `TicketStore` | Removed: Arc4u registers `CacheTicketStore` as `ITicketStore` only if none is registered, so register your own `ITicketStore` in the service collection. |
 | `Authentication` | `NameClaimType` | Added. Default `name`. |
 | `Authentication` | `RoleClaimType` | Added. Default `role`. |
 | `Authentication` | `AuthenticationMethod` | Added. `RedirectGet` (default) or `FormPost`. |
@@ -852,13 +869,14 @@ they have no effect any more. Remove them to avoid confusion.
 }
 ```
 
-The other keys of the `Authentication` section (`DefaultAuthority`, `CookieName`, `DataProtection`,
-`TokenCache` and so on) are unchanged; the [server authentication guide](../guides/authentication-server/index.md)
-documents all of them.
+The other keys of the `Authentication` section (`DefaultAuthority`, `CookieName`, `DataProtection`
+and so on) keep their names. One default changed: `Authentication:TokenCache:MaxTime` is 50 minutes
+instead of 20. The [server authentication guide](../guides/authentication-server/index.md) documents
+all the keys.
 
 ### Settings names
 
-Arc4u registers the OpenID Connect and OAuth2 settings as named `SimpleKeyValueSettings`. The names
+Arc4u registers the OpenID Connect and OAuth2 settings as named <xref:Arc4u.Configuration.SimpleKeyValueSettings>. The names
 changed, and so did the `AuthenticationType` of the identities that JWT bearer authentication creates:
 
 | Settings | 8.x name | Arc4u 9 name |
@@ -867,7 +885,7 @@ changed, and so did the `AuthenticationType` of the identities that JWT bearer a
 | OAuth2 (`OAuth2.Settings`) | `OAuth2` | `OAuth2` (`Constants.BearerAuthenticationType`) |
 | `AuthenticationType` of a bearer identity | `OAuth2Bearer` | `OAuth2` |
 
-`JwtHttpHandler` also became generic: the type parameter is the category of its logger.
+`JwtHttpHandler` also became generic (<xref:Arc4u.OAuth2.Token.JwtHttpHandler`1>): the type parameter is the category of its logger.
 
 **Before (8.x)**
 
@@ -901,7 +919,7 @@ Search your code for `"OpenId"`, `Constants.OpenIdOptionsName`, `Constants.OAuth
 
 ### Custom claims filler
 
-`IClaimsFiller.GetAsync` no longer receives the settings and the parameter object.
+<xref:Arc4u.Security.Principal.IClaimsFiller>`.GetAsync` no longer receives the settings and the parameter object.
 
 **Before (8.x)**
 
@@ -986,7 +1004,7 @@ Steps:
 
 `AddJwtAuthentication` registered the credentials a service uses to call other services from the
 `Authentication:ClientSecrets` section. Arc4u 9 reads the `Authentication:ClientTokens` section
-instead. Each entry names a `Scenario`, and the credentials move to a `Settings` dictionary. The
+instead (<xref:Arc4u.OAuth2.Options.ClientTokenSettingsOptions>). Each entry names a `Scenario`, and the credentials move to a `Settings` dictionary. The
 entry name (`Backend` below) is still the name of the settings to pass to a `JwtHttpHandler`.
 
 **Before (8.x)**
@@ -1039,7 +1057,7 @@ entry name (`Backend` below) is still the name of the settings to pass to a `Jwt
 
 The Arc4u logging extensions were rewritten for performance
 ([#150](https://github.com/Arc4u-org/Arc4u/pull/150)). `Technical()`, `Business()` and
-`Monitoring()` still exist on `ILogger<T>`, but they return an `ILoggerWrapper<T>`, which is an
+`Monitoring()` still exist on `ILogger<T>`, but they return an <xref:Arc4u.Diagnostics.ILoggerWrapper`1>, which is an
 `ILogger<T>`: you add properties first and then log with the standard `Log…` methods. There is no
 `Log()` call at the end any more.
 
@@ -1092,9 +1110,13 @@ Steps:
 
 ## Result extension methods
 
-The FluentResults extension methods of `Arc4u.Results` changed in two ways:
+The FluentResults extension methods of `Arc4u.Results` changed in three ways:
 
-- `OnFailed` callbacks receive an `IReadOnlyCollection<IError>` instead of a `List<IError>`.
+- `OnFailed` and `OnFailedAsync` callbacks receive an `IReadOnlyCollection<IError>` instead of a
+  `List<IError>`.
+- The `…Async` methods called on a plain `Result` or `Result<T>` (`OnSuccessAsync`, `OnFailedAsync`,
+  `OnSuccessNullAsync`, `OnSuccessNotNullAsync`) returned a `Result` in 8.x and blocked on the callback
+  with `.Wait()`. In Arc4u 9 they return a `Task<Result>` or `Task<Result<T>>`: await them.
 - Passing an asynchronous lambda to a synchronous method (`OnSuccess`, `OnFailed`, `OnSuccessNull`,
   `OnSuccessNotNull`) is now a compile error (`CS0619`). In 8.x the lambda ran as `async void`: nothing
   awaited it and its exceptions were lost. Use the `…Async` methods and await them.
@@ -1143,10 +1165,57 @@ public static class OrderNotifications
 }
 ```
 
+The `…Async` methods on a plain result:
+
+**Before (8.x)**
+
+```csharp
+using Arc4u.Results;
+using FluentResults;
+
+public sealed record Invoice(int Id);
+
+public interface IInvoiceStore
+{
+    Task SaveAsync(Invoice invoice);
+    Task ReportAsync(int errorCount);
+}
+
+public static class InvoiceSaving
+{
+    // Returns synchronously: each callback is blocked on with .Wait().
+    public static Result<Invoice> Save(Result<Invoice> result, IInvoiceStore store)
+        => result.OnSuccessAsync(invoice => store.SaveAsync(invoice))
+                 .OnFailedAsync((List<IError> errors) => store.ReportAsync(errors.Count));
+}
+```
+
+**After (9)**
+
+```csharp
+using Arc4u.Results;
+using FluentResults;
+
+public sealed record Invoice(int Id);
+
+public interface IInvoiceStore
+{
+    Task SaveAsync(Invoice invoice);
+    Task ReportAsync(int errorCount);
+}
+
+public static class InvoiceSaving
+{
+    public static Task<Result<Invoice>> SaveAsync(Result<Invoice> result, IInvoiceStore store)
+        => result.OnSuccessAsync(invoice => store.SaveAsync(invoice))
+                 .OnFailedAsync((IReadOnlyCollection<IError> errors) => store.ReportAsync(errors.Count));
+}
+```
+
 The FluentValidation helpers moved as well: `ValidateWithResult` and `ValidateWithResultAsync` are
 now in `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), next to the rules `IsInsert`,
-`IsUpdate`, `IsDelete`, `IsNone`, `IsDateOnly` and `IsUtcDateTime`, and `ToFluentResultErrors` is
-renamed `ToResultErrors`.
+`IsUpdate`, `IsDelete`, `IsNone`, `IsDateOnly` and `IsUtcDateTime`. `ToFluentResultErrors` is
+renamed `ToResultErrors`, and `ToMessages` and `ToMessageType` (which produced `Messages`) are removed.
 
 ## Other API changes
 
@@ -1199,9 +1268,9 @@ public static class Security
 | 8.x | Arc4u 9 |
 |---|---|
 | `app.UseForceOfOpenId(options)` | `services.AddForceOpenId(options)` (or `AddForceOpenId(configuration)`, section `Authentication:ClaimsMiddleWare:ForceOpenId`) and `app.UseForceOpenId()` |
-| `AddScopedOperationsPolicy(scopes, operations, authorizationOptions)` | `AddScopedOperationsPolicy(scopes, operations)` returns a `PoliciesBuilder`; call `ConfigureAuthorization(...)` on it |
+| `AddScopedOperationsPolicy(scopes, operations, authorizationOptions)` | `AddScopedOperationsPolicy(scopes, operations)` returns a <xref:Arc4u.Authorization.PoliciesBuilder>; call `ConfigureAuthorization(...)` on it |
 | `ScopedOperationsRequirement`, `ScopedOperationsHandler` | `AllScopedOperationsRequirement`, `AllScopedOperationsHandler` (and `AnyScopedOperation…` for "any of") |
-| `AuthorityOptions.SetData(url, tokenEndpoint, metadataAddress)` | `SetData(url, tokenEndpoint, issuer, metadataAddress)` |
+| `AuthorityOptions.SetData(url, tokenEndpoint, metadataAddress)` and the `AuthorityOptions(url, tokenEndpoint, metadataAddress)` constructor | `SetData(url, tokenEndpoint, issuer, metadataAddress)` and `AuthorityOptions(url, tokenEndpoint, issuer, metadataAddress)` |
 | `Arc4u.Caching.SecureCache` | `Arc4u.Blazor.Caching.SecureCache` |
 | `Arc4u.FluentValidation.DefaultValidatorExtensions` | `Arc4u.Validation.DefaultValidatorExtensions` |
 | `Arc4u.OAuth2.Configuration.ClaimsIdentifierOption` | `Arc4u.OAuth2.Options.ClaimsIdentifierOption` |
