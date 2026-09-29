@@ -5,10 +5,17 @@ name: Docs
 #   (bad crefs, broken xrefs, broken internal links, ...) fails the build.
 # - Push to develop/9.0.0 or manual run: build, then deploy to GitHub Pages.
 #
-# One-time repository setting: Settings -> Pages -> Source: GitHub Actions.
+# One-time repository settings (manual):
+#  - Settings -> Pages -> Source: GitHub Actions.
+#  - Settings -> Environments -> github-pages -> Deployment branches must allow
+#    develop/9.0.0 (the default protection rule only allows the default branch).
+# Do not make the PR build a required check: path filters would leave PRs that
+# touch neither docs/** nor src/** waiting forever on a check that never runs.
 
 on:
   pull_request:
+    branches:
+      - 'develop/9.0.0'
     paths:
       - 'docs/**'
       - 'src/**'
@@ -28,12 +35,12 @@ jobs:
       group: docs-build-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The API reference is generated from src/, so the SDK pinned in
       # src/global.json (rollForward disabled) is required.
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: src/global.json
 
@@ -66,12 +73,12 @@ jobs:
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/_site
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/develop/9.0.0'
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -86,4 +93,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
