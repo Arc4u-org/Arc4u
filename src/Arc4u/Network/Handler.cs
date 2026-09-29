@@ -1,5 +1,8 @@
 namespace Arc4u.Network;
 
+/// <summary>
+/// Holds the hook (<see cref="OnCalling"/>) invoked by the Arc4u clients before a request is sent over the network.
+/// </summary>
 public class Handler
 {
     /// <summary>

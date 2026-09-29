@@ -3,6 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.Dependency;
 
+/// <summary>
+/// Extension methods on <see cref="IServiceCollection"/> to inspect the registered services.
+/// </summary>
 public static class ServiceCollectionExtension
 {
     /// <summary>

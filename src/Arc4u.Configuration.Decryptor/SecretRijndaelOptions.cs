@@ -1,6 +1,9 @@
 using Arc4u.Security;
 
 namespace Arc4u.Configuration.Decryptor;
+/// <summary>
+/// Options of the Rijndael based configuration decryption (see <see cref="SecretDecryptorConfiguratorExtensions.AddRijndaelDecryptorConfiguration(Microsoft.Extensions.Configuration.IConfigurationBuilder)"/>).
+/// </summary>
 public class SecretRijndaelOptions
 {
     /// <summary>

@@ -3,6 +3,21 @@ using System.Reflection;
 
 namespace System.Linq;
 
+/// <summary>
+/// A lazily evaluated "switch" over a sequence: each element of the source is tested against the registered cases, in registration order,
+/// and the first matching case produces the result for that element. Elements that match no case are skipped.
+/// </summary>
+/// <typeparam name="TSource">The type of the elements of the source sequence.</typeparam>
+/// <typeparam name="TResult">The type of the produced elements.</typeparam>
+/// <param name="source">The sequence to project.</param>
+/// <example>
+/// <code language="csharp">
+/// var labels = new object[] { 1, "text", 2.5 }
+///     .Case&lt;object, string&gt;(x =&gt; x is int, x =&gt; "an int")
+///     .Case(typeof(string), x =&gt; "a string")
+///     .ToList(); // ["an int", "a string"]: 2.5 matches no case and is skipped.
+/// </code>
+/// </example>
 public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable<TResult>
 {
     #region nested classes
@@ -23,6 +38,13 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
     #endregion
     private readonly IList<CaseSelector<TSource, TResult>> casePredicates = [];
 
+    /// <summary>
+    /// Adds a case selected by a predicate.
+    /// </summary>
+    /// <param name="predicate">Returns <see langword="true"/> when the element belongs to this case.</param>
+    /// <param name="selector">Produces the result for an element that belongs to this case.</param>
+    /// <returns>The same <see cref="Switch{TSource, TResult}"/>, to chain calls.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
     public Switch<TSource, TResult> Case(Func<TSource, bool> predicate, Func<TSource, TResult> selector)
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
@@ -33,6 +55,13 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
         return this;
     }
 
+    /// <summary>
+    /// Adds a case selected by type: the case applies to the elements whose runtime type is assignable to <paramref name="type"/>.
+    /// </summary>
+    /// <param name="type">The type of the elements that belong to this case.</param>
+    /// <param name="selector">Produces the result for an element that belongs to this case.</param>
+    /// <returns>The same <see cref="Switch{TSource, TResult}"/>, to chain calls.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="type"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
     public Switch<TSource, TResult> Case(Type type, Func<TSource, TResult> selector)
     {
         ArgumentNullException.ThrowIfNull(type, nameof(type));
@@ -45,6 +74,13 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
         return this;
     }
 
+    /// <summary>
+    /// Adds a case selected by type: the case applies to the elements that are a <typeparamref name="TCase"/>, and the selector receives them already converted to that type.
+    /// </summary>
+    /// <typeparam name="TCase">The type of the elements that belong to this case.</typeparam>
+    /// <param name="selector">Produces the result for an element that belongs to this case.</param>
+    /// <returns>The same <see cref="Switch{TSource, TResult}"/>, to chain calls.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
     public Switch<TSource, TResult> Case<TCase>(Func<TCase, TResult> selector)
     {
         ArgumentNullException.ThrowIfNull(selector, nameof(selector));
@@ -55,6 +91,10 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
     }
 
     #region IEnumerable<TResult> Members
+    /// <summary>
+    /// Enumerates the source and returns, for each element matching a case, the result of the first matching case.
+    /// </summary>
+    /// <returns>An enumerator over the results.</returns>
     public IEnumerator<TResult> GetEnumerator()
     {
         foreach (var item in source)
@@ -77,8 +117,21 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
     #endregion
 }
 
+/// <summary>
+/// Extension methods to start a <see cref="Switch{TSource, TResult}"/> on any sequence.
+/// </summary>
 public static class SwitchExtensions
 {
+    /// <summary>
+    /// Starts a <see cref="Switch{TSource, TResult}"/> on a sequence with a first case selected by a predicate.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements of the source sequence.</typeparam>
+    /// <typeparam name="TResult">The type of the produced elements.</typeparam>
+    /// <param name="source">The sequence to project.</param>
+    /// <param name="predicate">Returns <see langword="true"/> when the element belongs to the case.</param>
+    /// <param name="selector">Produces the result for an element that belongs to the case.</param>
+    /// <returns>A <see cref="Switch{TSource, TResult}"/> to which other cases can be added.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="source"/>, <paramref name="predicate"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
     public static Switch<TSource, TResult> Case<TSource, TResult>(this IEnumerable<TSource> source,
         Func<TSource, bool> predicate,
         Func<TSource, TResult> selector)
@@ -90,6 +143,16 @@ public static class SwitchExtensions
         return new Switch<TSource, TResult>(source).Case(predicate, selector);
     }
 
+    /// <summary>
+    /// Starts a <see cref="Switch{TSource, TResult}"/> on a sequence with a first case selected by type.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements of the source sequence.</typeparam>
+    /// <typeparam name="TResult">The type of the produced elements.</typeparam>
+    /// <param name="source">The sequence to project.</param>
+    /// <param name="type">The type of the elements that belong to the case.</param>
+    /// <param name="selector">Produces the result for an element that belongs to the case.</param>
+    /// <returns>A <see cref="Switch{TSource, TResult}"/> to which other cases can be added.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="source"/>, <paramref name="type"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
     public static Switch<TSource, TResult> Case<TSource, TResult>(this IEnumerable<TSource> source,
         Type type,
         Func<TSource, TResult> selector)
@@ -101,6 +164,14 @@ public static class SwitchExtensions
         return new Switch<TSource, TResult>(source).Case(type, selector);
     }
 
+    /// <summary>
+    /// Starts a <see cref="Switch{TSource, TResult}"/> on a sequence, without any case.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements of the source sequence.</typeparam>
+    /// <typeparam name="TResult">The type of the produced elements.</typeparam>
+    /// <param name="source">The sequence to project.</param>
+    /// <returns>A <see cref="Switch{TSource, TResult}"/> to which cases can be added.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
     public static Switch<TSource, TResult> AsSwitch<TSource, TResult>(this IEnumerable<TSource> source)
     {
         ArgumentNullException.ThrowIfNull(source);

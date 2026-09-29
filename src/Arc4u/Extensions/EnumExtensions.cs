@@ -4,8 +4,18 @@ using System.Reflection;
 
 namespace Arc4u.Extensions;
 
+/// <summary>
+/// Extension methods to display enumeration values, based on the <see cref="System.ComponentModel.DataAnnotations.DisplayAttribute"/>.
+/// </summary>
 public static class EnumExtentions
 {
+    /// <summary>
+    /// Gets the name defined by the <see cref="System.ComponentModel.DataAnnotations.DisplayAttribute"/> of an enumeration value.
+    /// </summary>
+    /// <param name="value">The enumeration value.</param>
+    /// <returns>The display name of the value.</returns>
+    /// <exception cref="ArgumentException">The value has no <see cref="System.ComponentModel.DataAnnotations.DisplayAttribute"/>.</exception>
+    /// <exception cref="InvalidOperationException">The value is not a member of its enumeration.</exception>
     public static string GetDisplayName(this Enum value)
     {
         var type = value.GetType();
@@ -38,11 +48,22 @@ public static class EnumExtentions
         return attribute.GetName() ?? string.Empty;
     }
 
+    /// <summary>
+    /// Gets the name of an enumeration value (the result of <see cref="Enum.ToString()"/>).
+    /// </summary>
+    /// <param name="value">The enumeration value.</param>
+    /// <returns>The name of the value.</returns>
     public static string GetValue(this Enum value)
     {
         return value.ToString();
     }
 
+    /// <summary>
+    /// Lists the members of an enumeration together with their display name.
+    /// </summary>
+    /// <param name="enumType">The enumeration type.</param>
+    /// <returns>A list of pairs (member name, display name).</returns>
+    /// <exception cref="ArgumentException"><paramref name="enumType"/> is not an enumeration, or one of its members has no <see cref="System.ComponentModel.DataAnnotations.DisplayAttribute"/>.</exception>
     public static List<KeyValuePair<string, string>> ToTranslationList(this Type enumType)
     {
         var ti = enumType.GetTypeInfo();
@@ -60,6 +81,12 @@ public static class EnumExtentions
         return [.. t.Select(v => new KeyValuePair<string, string>(v.Key, v.Value))];
     }
 
+    /// <summary>
+    /// Maps the members of an enumeration to their display name.
+    /// </summary>
+    /// <param name="enumType">The enumeration type.</param>
+    /// <returns>A dictionary whose keys are the members and whose values are the display names.</returns>
+    /// <exception cref="ArgumentException"><paramref name="enumType"/> is not an enumeration, or one of its members has no <see cref="System.ComponentModel.DataAnnotations.DisplayAttribute"/>.</exception>
     public static Dictionary<Enum, string> ToTranslationDictionary(this Type enumType)
     {
         var ti = enumType.GetTypeInfo();

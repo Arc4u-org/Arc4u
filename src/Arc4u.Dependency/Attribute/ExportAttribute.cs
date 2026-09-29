@@ -15,6 +15,18 @@ namespace Arc4u.Dependency.Attribute;
 ///     </list>
 ///     If neither <see cref="SharedAttribute"/> nor <see cref="ScopedAttribute"/> is used, the export will have a transient lifetime.
 /// </summary>
+/// <example>
+/// <code language="csharp">
+/// public interface IClock { DateTime UtcNow { get; } }
+///
+/// // Registered as a singleton for the contract IClock.
+/// [Export(typeof(IClock)), Shared]
+/// public class SystemClock : IClock
+/// {
+///     public DateTime UtcNow =&gt; DateTime.UtcNow;
+/// }
+/// </code>
+/// </example>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 public class ExportAttribute : System.Attribute
 {

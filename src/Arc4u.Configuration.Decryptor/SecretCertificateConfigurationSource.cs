@@ -9,7 +9,13 @@ namespace Arc4u.Configuration.Decryptor;
 /// </summary>
 public class SecretCertificateConfigurationSource : IConfigurationSource
 {
+    /// <summary>
+    /// The default prefix (<c>Decrypt:</c>) that marks a configuration value as encrypted.
+    /// </summary>
     public const string PrefixDefault = "Decrypt:";
+    /// <summary>
+    /// The default name (<c>EncryptionCertificate</c>) of the configuration section that describes the certificate used to decrypt the values.
+    /// </summary>
     public const string SecretSectionNameDefault = "EncryptionCertificate";
 
     /// <summary>

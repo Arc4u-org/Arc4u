@@ -15,6 +15,11 @@ public static class SecurityIdentifierExt
         return S19(Guid.NewGuid());
     }
 
+    /// <summary>
+    /// Generates a S-1-9 security identifier, as a string, from this <see cref="Guid"/>. The same <see cref="Guid"/> always gives the same identifier.
+    /// </summary>
+    /// <param name="guid">The <see cref="Guid"/> from which the identifier is generated.</param>
+    /// <returns>A S-1-9 security identifier in a string format.</returns>
     public static string ToS19(this Guid guid)
     {
         return S19(guid);

@@ -101,6 +101,23 @@ public class AppPrincipal : ClaimsPrincipal, IAuthorization
         return _authorization.IsAuthorized(operations);
     }
 
+    /// <summary>
+    /// Determines whether all the specified operations, expressed with an enumeration, are authorized in the empty scope.
+    /// The numeric value of each enumeration member is the operation identifier.
+    /// </summary>
+    /// <typeparam name="TAccess">The enumeration type whose members identify the operations.</typeparam>
+    /// <param name="operations">The operations.</param>
+    /// <returns><see langword="true"/> if all the operations are authorized; otherwise <see langword="false"/>.</returns>
+    /// <example>
+    /// <code language="csharp">
+    /// public enum Access { Read = 1, Write = 2 }
+    ///
+    /// if (principal.IsAuthorized(Access.Read, Access.Write))
+    /// {
+    ///     // The user can read and write.
+    /// }
+    /// </code>
+    /// </example>
     public bool IsAuthorized<TAccess>(params TAccess[] operations)
        where TAccess : struct, Enum
     {
@@ -155,5 +172,8 @@ public class AppPrincipal : ClaimsPrincipal, IAuthorization
         }
     }
 
+    /// <summary>
+    /// Gets the security identifier of the principal. It is updated with the <see cref="UserProfile.Sid"/> when the <see cref="Profile"/> is set.
+    /// </summary>
     public string Sid { get => _sid; }
 }

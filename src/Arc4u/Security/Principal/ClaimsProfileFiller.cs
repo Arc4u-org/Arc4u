@@ -7,9 +7,17 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.Security.Principal;
 
+/// <summary>
+/// An <see cref="IClaimProfileFiller"/> that builds the <see cref="UserProfile"/> from the claims of a <see cref="System.Security.Claims.ClaimsIdentity"/>
+/// (name, given name, surname, e-mail, user principal name, company, phones, culture and security identifier).
+/// </summary>
 [Export(typeof(IClaimProfileFiller)), Shared]
 public class ClaimsProfileFiller : IClaimProfileFiller
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClaimsProfileFiller"/> class.
+    /// </summary>
+    /// <param name="domainMapping">The options, named <c>DomainMapping</c>, mapping the domain part of a user principal name (or a <c>domain\user</c> name) to a short domain name.</param>
     public ClaimsProfileFiller(IOptionsMonitor<SimpleKeyValueSettings> domainMapping)
     {
         _domainMapping = domainMapping.Get("DomainMapping").Values;
@@ -17,6 +25,16 @@ public class ClaimsProfileFiller : IClaimProfileFiller
 
     private readonly IReadOnlyDictionary<string, string> _domainMapping;
 
+    /// <summary>
+    /// Builds the profile of the identity from its claims.
+    /// </summary>
+    /// <param name="identity">The identity, which must be a <see cref="System.Security.Claims.ClaimsIdentity"/>.</param>
+    /// <returns>
+    /// The profile. The account name and the domain are extracted from the user principal name; the culture is the invariant culture when the culture claim is missing, falls back to <c>en-GB</c>
+    /// when the claim is not a valid culture name, and the security identifier to <c>S-1-0-0</c> when the sid claim is missing.
+    /// </returns>
+    /// <exception cref="ArgumentNullException"><paramref name="identity"/> is <see langword="null"/>.</exception>
+    /// <exception cref="NotSupportedException"><paramref name="identity"/> is not a <see cref="System.Security.Claims.ClaimsIdentity"/>.</exception>
     public UserProfile GetProfile(IIdentity identity)
     {
         ArgumentNullException.ThrowIfNull(identity);

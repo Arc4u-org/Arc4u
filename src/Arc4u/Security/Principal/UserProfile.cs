@@ -27,6 +27,9 @@ public sealed class UserProfile : IXmlSerializable
     }
 
     // XmlSerializable
+    /// <summary>
+    /// Initializes a new, empty instance of the <see cref="UserProfile"/> class. It is used by the serializers.
+    /// </summary>
     public UserProfile()
     {
         DisplayName = string.Empty;
@@ -135,6 +138,10 @@ public sealed class UserProfile : IXmlSerializable
 
     #region IProfile Members
 
+    /// <summary>
+    /// Gets the display name.
+    /// </summary>
+    /// <value>The display name.</value>
     [DataMember]
     [JsonInclude]
     public string DisplayName { get; private set; }
@@ -281,6 +288,10 @@ public sealed class UserProfile : IXmlSerializable
     [JsonPropertyName("Culture")]
     private string _culture;
 
+    /// <summary>
+    /// Gets the culture of the user.
+    /// </summary>
+    /// <value>The culture.</value>
     [IgnoreDataMember]
     [XmlIgnore]
     [JsonIgnore]
@@ -298,6 +309,10 @@ public sealed class UserProfile : IXmlSerializable
     [JsonInclude]
     private string _currentCulture;
 
+    /// <summary>
+    /// Gets or sets the culture currently used by the user (initially the same as <see cref="Culture"/>).
+    /// </summary>
+    /// <value>The current culture.</value>
     [IgnoreDataMember]
     [XmlIgnore]
     [JsonIgnore]

@@ -5,5 +5,8 @@ namespace Arc4u;
 /// </summary>
 public interface IKeyValueSettings
 {
+    /// <summary>
+    /// Gets the settings as a read-only dictionary of keys and values.
+    /// </summary>
     IReadOnlyDictionary<string, string> Values { get; }
 }
