@@ -21,7 +21,7 @@
     <Copyright>Gilles Flisch 2021</Copyright>
     <PackageIcon>Arc4u.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageProjectUrl>https://github.com/Arc4u-org/Arc4u/wiki</PackageProjectUrl>
+    <PackageProjectUrl>https://arc4u-org.github.io/Arc4u/</PackageProjectUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/Arc4u-org/Arc4u</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

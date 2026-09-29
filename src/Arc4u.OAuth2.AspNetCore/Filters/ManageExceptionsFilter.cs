@@ -12,7 +12,7 @@ namespace Arc4u.OAuth2.AspNetCore.Filters;
 /// <summary>
 /// Global filter to manage exceptions.
 /// Will log the exception and return a BadRequestObjectResult with the ActivityId to use to retrieve the information in the log.
-/// Only business messages are returned to the client assoicated with the <see cref="AppException"/>."/>
+/// Only business messages are returned to the client assoicated with the <c>AppException</c>.
 /// </summary>
 public class ManageExceptionsFilter(ILogger<ManageExceptionsFilter> logger, IApplicationContext application) : IAsyncExceptionFilter
 {

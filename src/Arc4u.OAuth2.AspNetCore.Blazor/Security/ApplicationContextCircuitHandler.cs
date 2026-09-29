@@ -10,7 +10,7 @@ namespace Arc4u.Blazor;
 /// Populates the circuit-scoped <see cref="IApplicationContext"/> for Interactive Server components.
 ///
 /// An Interactive Server component runs in a SignalR circuit that owns its own DI scope, distinct from
-/// the HTTP request scope where <see cref="AppPrincipalTransform"/> (and, during prerendering,
+/// the HTTP request scope where <c>AppPrincipalTransform</c> (and, during prerendering,
 /// <see cref="AppPrincipalServerAuthenticationStateProvider"/>) populate the request-scoped
 /// <see cref="IApplicationContext"/>. That request scope is disposed once the response is sent, so the
 /// circuit starts with an empty <see cref="IApplicationContext"/> and component event handlers (e.g. a

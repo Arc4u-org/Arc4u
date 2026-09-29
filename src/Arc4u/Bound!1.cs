@@ -501,13 +501,6 @@ namespace Arc4u
         /// <param name="right">The right <see cref="Bound&lt;T&gt;"/>.</param>
         /// <returns>The result of the operator.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="left"/> or <paramref name="right"/> is <c>null</c>.</exception>
-        /// <summary>
-        /// Implements the operator &gt;.
-        /// </summary>
-        /// <param name="left">The left <see cref="Bound&lt;T&gt;"/>.</param>
-        /// <param name="right">The right <see cref="Bound&lt;T&gt;"/>.</param>
-        /// <returns>The result of the operator.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="left"/> or <paramref name="right"/> is <c>null</c>.</exception>
         public static bool operator >(Bound<T> left, Bound<T> right)
         {
             CheckBoundsNotNull(left, right);

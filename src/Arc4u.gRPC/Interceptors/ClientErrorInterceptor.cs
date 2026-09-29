@@ -49,7 +49,6 @@ public class ClientErrorInterceptor : Interceptor
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
-    /// <exception cref="AppException"></exception>
     /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
@@ -78,7 +77,6 @@ public class ClientErrorInterceptor : Interceptor
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
-    /// <exception cref="AppException"></exception>
     /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(
                                     TRequest request,
@@ -113,7 +111,6 @@ public class ClientErrorInterceptor : Interceptor
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
-    /// <exception cref="AppException"></exception>
     /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
                                     ClientInterceptorContext<TRequest, TResponse> context,

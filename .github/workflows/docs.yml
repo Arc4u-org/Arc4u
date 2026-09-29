@@ -1,0 +1,89 @@
+name: Docs
+
+# Builds the DocFX site (docs/docfx.json) and publishes it to GitHub Pages.
+# - Pull requests touching docs/** or src/**: build only, any DocFX warning
+#   (bad crefs, broken xrefs, broken internal links, ...) fails the build.
+# - Push to develop/9.0.0 or manual run: build, then deploy to GitHub Pages.
+#
+# One-time repository setting: Settings -> Pages -> Source: GitHub Actions.
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - '.github/workflows/docs.yml'
+  push:
+    branches:
+      - 'develop/9.0.0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: docs-build-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      # The API reference is generated from src/, so the SDK pinned in
+      # src/global.json (rollForward disabled) is required.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: src/global.json
+
+      - name: Restore DocFX
+        working-directory: docs
+        run: dotnet tool restore
+
+      - name: Build site (warnings are errors)
+        working-directory: docs
+        run: dotnet docfx docfx.json --warningsAsErrors
+
+      # External links only: DocFX already validates internal links and xrefs.
+      # Non-blocking on purpose, remote sites can be flaky or rate-limit us.
+      # The generated API pages are excluded (thousands of links to Microsoft docs).
+      - name: Check external links
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --scheme https
+            --accept 200..=299,403,429
+            --max-retries 2
+            --timeout 20
+            --exclude-path docs/_site/api
+            --exclude '^https://arc4u-org\.github\.io/'
+            'docs/_site/**/*.html'
+          fail: false
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write      # deploy to GitHub Pages
+      id-token: write   # verify the deployment originates from this workflow
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
