@@ -1,3 +1,6 @@
-# Owned by #181. Add sub-pages of this guide below Overview.
 - name: Overview
   href: index.md
+- name: Decrypting secrets
+  href: decrypting-secrets.md
+- name: Configuration store
+  href: configuration-store.md
