@@ -3,8 +3,12 @@ using Serilog.Events;
 
 namespace Arc4u.Diagnostics.Sinks;
 
+/// <summary>A sink that forwards to another sink only the events whose Arc4u <see cref="MessageCategory"/> is one of the configured categories.</summary>
 public class CategoryFilterSink : ILogEventSink, IDisposable
 {
+    /// <summary>Initializes a new instance of the <see cref="CategoryFilterSink"/> class.</summary>
+    /// <param name="categories">The categories (flags) that are forwarded.</param>
+    /// <param name="sink">The sink that receives the matching events.</param>
     public CategoryFilterSink(MessageCategory categories, ILogEventSink sink)
     {
         Categories = categories;
@@ -12,8 +16,10 @@ public class CategoryFilterSink : ILogEventSink, IDisposable
     }
 
     private MessageCategory Categories { get; set; }
+    /// <summary>Gets or sets the sink that receives the matching events.</summary>
     public ILogEventSink Sink { get; set; }
 
+    /// <summary>Disposes the wrapped sink when it is disposable.</summary>
     public void Dispose()
     {
         if (Sink is IDisposable disposable)

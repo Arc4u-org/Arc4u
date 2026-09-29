@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.Dependency;
 
+/// <summary>Extension methods to register the Arc4u logging on an <see cref="IServiceCollection"/>.</summary>
 public static class ServicesRegistrationExtension
 {
     /// <summary>

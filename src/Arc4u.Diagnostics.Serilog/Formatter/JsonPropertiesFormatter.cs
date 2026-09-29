@@ -8,6 +8,7 @@ namespace Arc4u.Diagnostics.Formatter;
 /// </summary>
 public class JsonPropertiesFormatter
 {
+    /// <summary>Initializes a new instance of the <see cref="JsonPropertiesFormatter"/> class.</summary>
     public JsonPropertiesFormatter()
     {
         Formatter = new JsonValueFormatter();
@@ -15,6 +16,9 @@ public class JsonPropertiesFormatter
 
     private JsonValueFormatter Formatter { get; set; }
 
+    /// <summary>Writes the properties as a single JSON object (<c>{"Name":value,...}</c>). Nothing is written when the list is empty.</summary>
+    /// <param name="properties">The properties to write.</param>
+    /// <param name="output">The writer that receives the JSON.</param>
     public void Format(List<LogEventProperty> properties, TextWriter output)
     {
         if (properties.Count > 0)

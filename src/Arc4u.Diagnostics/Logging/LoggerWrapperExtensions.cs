@@ -2,6 +2,8 @@ using Arc4u.Diagnostics;
 
 namespace Arc4u.Diagnostics;
 
+/// <summary>Fluent extension methods that add properties to the next log entry of an <see cref="ILoggerWrapper{T}"/>.</summary>
+/// <remarks>The keys defined in <see cref="LoggingConstants"/> are reserved: using one of them throws a <see cref="ReservedLoggingKeyException"/>.</remarks>
 public static class LoggerWrapperExtensions
 {
     /// <summary>

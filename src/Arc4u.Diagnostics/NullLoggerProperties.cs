@@ -6,6 +6,7 @@ namespace Arc4u.Diagnostics;
 /// </summary>
 public class NullLoggerProperties : IAddPropertiesToLog
 {
+    /// <inheritdoc/>
     public IDictionary<string, object> GetProperties()
     {
         return new Dictionary<string, object>();
