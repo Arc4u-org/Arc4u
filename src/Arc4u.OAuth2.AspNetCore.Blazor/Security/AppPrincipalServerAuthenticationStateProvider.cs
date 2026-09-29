@@ -15,7 +15,7 @@ namespace Arc4u.Blazor;
 /// authentication state through the <c>DeserializationCallback</c> and pushed into the
 /// circuit-scoped <see cref="IApplicationContext"/>.
 ///
-/// On the server, <see cref="AppPrincipalTransform"/> (an <c>IClaimsTransformation</c>) runs
+/// On the server, <c>AppPrincipalTransform</c> (an <c>IClaimsTransformation</c>) runs
 /// in the HTTP request scope during <c>UseAuthentication()</c>, so the <see cref="IApplicationContext"/>
 /// it populates belongs to that request scope and is discarded before the interactive circuit runs.
 /// The circuit uses its own DI scope, whose <see cref="IApplicationContext"/> is therefore empty.
