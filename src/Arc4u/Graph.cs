@@ -178,6 +178,13 @@ public class Graph<T> where T : class
 
     }
 
+    /// <summary>
+    /// Converts an expression (member access, method call such as <c>Select</c>, or lambda) into the dotted path of the members it references.
+    /// </summary>
+    /// <param name="path">The expression to evaluate.</param>
+    /// <returns>The path, for example <c>.Orders.Lines</c>, or an empty string when the expression is not supported.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="path"/> is <see langword="null"/>.</exception>
+    /// <exception cref="MemberAccessException">The path targets a <see cref="string"/>, or a value type, which cannot be included.</exception>
     public static string EvaluateExpression(Expression path)
     {
         ArgumentNullException.ThrowIfNull(path);

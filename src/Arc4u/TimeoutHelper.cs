@@ -2,6 +2,9 @@ using System.Runtime.InteropServices;
 
 namespace Arc4u;
 
+/// <summary>
+/// Measures a timeout from the moment it is created and provides helpers to compute with time spans where <see cref="TimeSpan.MaxValue"/> means "infinite".
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct TimeoutHelper
 {

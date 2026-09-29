@@ -5,6 +5,11 @@ using System.Text;
 
 namespace Arc4u.Security.Cryptography;
 
+/// <summary>
+/// Extension methods to encrypt and decrypt strings with an <see cref="X509Certificate2"/>.
+/// Short texts are encrypted directly with RSA (OAEP, SHA-256); longer texts are encrypted with a random AES key that is itself encrypted with the certificate.
+/// The result is a base64 string, or three base64 parts separated by dots (<c>key.iv.data</c>) in the AES case.
+/// </summary>
 public static class Certificate
 {
     /// <summary>

@@ -12,9 +12,21 @@ internal partial class AuthorizationJsonContext : JsonSerializerContext
 {
 }
 
+/// <summary>
+/// An <see cref="IClaimAuthorizationFiller"/> that reads the <see cref="Arc4u.IdentityModel.Claims.ClaimTypes.Authorization"/> claim of a
+/// <see cref="System.Security.Claims.ClaimsIdentity"/> and deserializes it into an <see cref="Authorization"/>.
+/// </summary>
+/// <param name="logger">The logger used to trace a claim that cannot be deserialized.</param>
 [Export(typeof(IClaimAuthorizationFiller)), Shared]
 public class ClaimsAuthorizationFiller(ILogger<ClaimsAuthorizationFiller> logger) : IClaimAuthorizationFiller
 {
+    /// <summary>
+    /// Gets the authorization data of the identity.
+    /// </summary>
+    /// <param name="identity">The identity, which must be a <see cref="System.Security.Claims.ClaimsIdentity"/>.</param>
+    /// <returns>The authorization contained in the authorization claim, or an empty <see cref="Authorization"/> when the claim is missing or cannot be deserialized.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="identity"/> is <see langword="null"/>.</exception>
+    /// <exception cref="NotSupportedException"><paramref name="identity"/> is not a <see cref="System.Security.Claims.ClaimsIdentity"/>.</exception>
     public Authorization GetAuthorization(System.Security.Principal.IIdentity identity)
     {
         ArgumentNullException.ThrowIfNull(identity);

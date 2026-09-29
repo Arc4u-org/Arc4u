@@ -6,9 +6,16 @@ using Arc4u.Diagnostics;
 
 namespace Arc4u.Security.Cryptography;
 
+/// <summary>
+/// The default <see cref="IX509CertificateLoader"/>: it searches the certificate stores of the machine or loads PEM files.
+/// </summary>
 [Export(typeof(IX509CertificateLoader))]
 public class X509CertificateLoader : IX509CertificateLoader
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="X509CertificateLoader"/> class.
+    /// </summary>
+    /// <param name="logger">An optional logger used to trace missing files.</param>
     public X509CertificateLoader(ILogger<X509CertificateLoader>? logger)
     {
         _logger = logger;
@@ -79,6 +86,9 @@ public class X509CertificateLoader : IX509CertificateLoader
         return this.FindCertificate(certificate);
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException"><paramref name="certificateFilePathInfo"/> is <see langword="null"/>.</exception>
+    /// <exception cref="FileNotFoundException">The public certificate file or the private key file does not exist.</exception>
     public X509Certificate2 FindCertificate(CertificateFilePathInfo? certificateFilePathInfo)
     {
         ArgumentNullException.ThrowIfNull(certificateFilePathInfo);

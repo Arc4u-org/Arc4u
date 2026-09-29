@@ -6,13 +6,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.Security.Principal;
 
+/// <summary>
+/// Extension methods to register the <see cref="IApplicationContext"/>.
+/// </summary>
 public static class ApplicationContextServiceCollectionExtension
 {
     /// <summary>
     /// Add the default logger and properties contexted with the scoped instance application context.
     /// </summary>
-    /// <param name="services"></param>
-    /// <returns></returns>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection, to chain calls.</returns>
+    /// <example>
+    /// <code language="csharp">
+    /// services.AddApplicationContext();
+    /// </code>
+    /// </example>
     public static IServiceCollection AddApplicationContext(this IServiceCollection services)
     {
         services.TryAddScoped<IAddPropertiesToLog, DefaultLoggingProperties>();

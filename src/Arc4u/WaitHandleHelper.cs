@@ -1,5 +1,8 @@
 namespace Arc4u;
 
+/// <summary>
+/// Helpers for <see cref="WaitHandle"/>.
+/// </summary>
 public class WaitHandleHelper
 {
     /// <summary>

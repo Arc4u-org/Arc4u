@@ -26,6 +26,10 @@ public class Operation
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int ID { get; set; }
 
+    /// <summary>
+    /// Returns the identifier and the name of the operation.
+    /// </summary>
+    /// <returns>A string of the form <c>ID, Name.</c></returns>
     public override string ToString()
     {
         return string.Format(CultureInfo.InvariantCulture, "{0}, {1}.", ID, Name);
