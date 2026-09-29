@@ -31,6 +31,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     concurrency:
       group: samples-${{ github.ref }}
       cancel-in-progress: true
@@ -59,14 +60,13 @@ jobs:
         working-directory: samples/GettingStarted
         run: |
           dotnet run --configuration Release --no-build --urls http://localhost:5080 > app.log 2>&1 &
-          for i in $(seq 1 60); do
-            curl --silent --output /dev/null http://localhost:5080/hello/CI && break
+          trap 'kill %1 2>/dev/null || true; echo "--- app.log"; cat app.log' EXIT
+          for _ in $(seq 1 60); do
+            curl --silent --max-time 5 --output /dev/null http://localhost:5080/hello/CI && break
             sleep 1
           done
-          anonymous=$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5080/hello/CI)
-          protected=$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5080/me)
-          kill %1 || true
-          cat app.log
+          anonymous=$(curl --silent --max-time 5 --output /dev/null --write-out '%{http_code}' http://localhost:5080/hello/CI || true)
+          protected=$(curl --silent --max-time 5 --output /dev/null --write-out '%{http_code}' http://localhost:5080/me || true)
           echo "GET /hello/CI -> $anonymous (expected 200)"
           echo "GET /me       -> $protected (expected 401)"
           test "$anonymous" = "200"

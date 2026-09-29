@@ -4,6 +4,7 @@ using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.OAuth2.Extensions;
 using GettingStarted.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Serilog;
 // </usings>
 
@@ -31,6 +32,10 @@ builder.Services.RegisterGettingStartedTypes();
 // <authentication>
 // Validates JWT bearer tokens issued by the authority in the Authentication section.
 builder.Services.AddJwtAuthentication(builder.Configuration);
+// Known issue: AddJwtAuthentication turns issuer validation off. Turn it back on so that a token
+// signed by the authority's keys but issued by another issuer (another tenant or realm) is rejected.
+builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
+    options => options.TokenValidationParameters.ValidateIssuer = true);
 builder.Services.AddAuthorization();
 // </authentication>
 
