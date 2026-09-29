@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 
 namespace Arc4u.Authorization;
+/// <summary>Checks, from code, that the current user satisfies an authorization policy.</summary>
 public interface IApplicationAuthorizationPolicy
 {
     /// <summary>

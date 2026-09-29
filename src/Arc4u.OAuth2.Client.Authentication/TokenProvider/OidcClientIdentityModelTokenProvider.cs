@@ -9,6 +9,14 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Client.Authentication.TokenProvider;
 
+/// <summary>
+/// An <see cref="ITokenProvider"/> for a client application using <c>Duende.IdentityModel.OidcClient</c>. The tokens are kept in the secure cache; an expired access token is renewed with the refresh token,
+/// and the user is logged in through the browser when there is no valid refresh token. The refresh token is assumed valid for 90 days.
+/// </summary>
+/// <param name="options">The <c>OidcClient</c> options.</param>
+/// <param name="tokensInfo">The access and refresh tokens of the user.</param>
+/// <param name="secureCache">The secure cache in which the tokens are persisted.</param>
+/// <param name="apiExtraContextOption">The extra parameters added to the authorization and token requests.</param>
 [Export(TokenProviderName, typeof(ITokenProvider))]
 public class OidcClientIdentityModelTokenProvider(
                                                     OidcClientOptions options,
@@ -16,9 +24,16 @@ public class OidcClientIdentityModelTokenProvider(
                                                     ISecureCache secureCache,
                                                     IOptionsMonitor<ApiExtraContextAuthenticationOption> apiExtraContextOption) : ITokenProvider
 {
+    /// <summary>The key (<c>OidcClientIdentityModel</c>) under which the provider is registered.</summary>
     public const string TokenProviderName = "OidcClientIdentityModel";
     private const string TokenKey = "TokensInfo";
     private const string TokenType = "Bearer";
+    /// <summary>Gets the access token of the user, refreshing it or logging the user in when necessary.</summary>
+    /// <param name="settings">The provider settings. They are not used.</param>
+    /// <param name="platformParameters">Not used.</param>
+    /// <returns>The access token.</returns>
+    /// <exception cref="Exception">The refresh of the token failed.</exception>
+    /// <exception cref="AccessViolationException">The login failed.</exception>
     public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         // Check if the token exists?
@@ -86,6 +101,10 @@ public class OidcClientIdentityModelTokenProvider(
         return tokensInfo.AccessToken;
     }
 
+    /// <summary>Removes the tokens from the secure cache and logs the user out of the authority.</summary>
+    /// <param name="settings">The provider settings, which are not used.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the user is logged out.</returns>
     public async ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
         await secureCache.RemoveAsync(TokenKey, cancellationToken).ConfigureAwait(false);

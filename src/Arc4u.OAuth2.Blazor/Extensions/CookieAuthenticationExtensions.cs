@@ -12,6 +12,23 @@ namespace Arc4u.Blazor.Options;
 /// </summary>
 public static class CookieAuthenticationExtensions
 {
+    /// <summary>
+    /// Registers the cookie authentication of a Blazor WebAssembly application from code.
+    /// The settings are registered as the key/value settings <paramref name="sectionKey"/> and an <see cref="HttpClient"/> named <see cref="AuthenticationCookieSettingsOption.HttpClientName"/> is added, whose requests include the browser cookies (see <see cref="AttachCookiesHandler"/>).
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="option">The action that configures the <see cref="AuthenticationCookieSettingsOption"/>.</param>
+    /// <param name="sectionKey">The name of the key/value settings. The default is <c>OAuth2</c>.</param>
+    /// <exception cref="MissingFieldException">A mandatory value of the options is empty.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// builder.Services.AddAuthenticationCookie(options =>
+    /// {
+    ///     options.BaseUri = new Uri(builder.HostEnvironment.BaseAddress);
+    ///     options.TokenRequestUrl = "/authentication/token";
+    /// });
+    /// </code>
+    /// </example>
     public static void AddAuthenticationCookie(this IServiceCollection services,
                                                     Action<AuthenticationCookieSettingsOption> option,
                                                     string sectionKey = "OAuth2")
@@ -24,6 +41,18 @@ public static class CookieAuthenticationExtensions
         ConfigureAuthenticationCookieSettings(services, sectionKey, authenticationCookieSettingsOption);
     }
 
+    /// <summary>Registers the cookie authentication of a Blazor WebAssembly application from a configuration section. See the other overload for the registered services.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section holding the <see cref="AuthenticationCookieSettingsOption"/>. The default is <c>Authentication:OAuth2.Settings</c>.</param>
+    /// <param name="sectionKey">The name of the key/value settings. The default is <c>OAuth2</c>.</param>
+    /// <exception cref="ArgumentException">The section does not exist.</exception>
+    /// <exception cref="MissingFieldException">A mandatory value of the options is empty.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// builder.Services.AddAuthenticationCookie(builder.Configuration);
+    /// </code>
+    /// </example>
     public static void AddAuthenticationCookie(this IServiceCollection services,
         IConfiguration configuration,
         string sectionName = "Authentication:OAuth2.Settings", string sectionKey = "OAuth2")
@@ -53,6 +82,11 @@ public static class CookieAuthenticationExtensions
                 .AddHttpMessageHandler<AttachCookiesHandler>();
     }
 
+    /// <summary>Builds and validates the <see cref="AuthenticationCookieSettingsOption"/> from code.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="option">The action that configures the options.</param>
+    /// <returns>The validated options.</returns>
+    /// <exception cref="MissingFieldException">The client name, provider id, token request url or base uri is empty.</exception>
     public static AuthenticationCookieSettingsOption ReadAuthenticationCookieSettingsOption(this IServiceCollection services, Action<AuthenticationCookieSettingsOption> option)
     {
         var validate = new AuthenticationCookieSettingsOption();
@@ -81,6 +115,14 @@ public static class CookieAuthenticationExtensions
         return validate;
     }
 
+    /// <summary>Builds and validates the <see cref="AuthenticationCookieSettingsOption"/> from a configuration section.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section holding the options. The default of this method is <c>Authentication:OAuth.Settings</c>, which differs from the <c>Authentication:OAuth2.Settings</c> default of <c>AddAuthenticationCookie</c>.</param>
+    /// <returns>The validated options.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="sectionName"/> is empty or <paramref name="configuration"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">The section does not exist.</exception>
+    /// <exception cref="MissingFieldException">The client name, provider id, token request url or base uri is empty.</exception>
     public static AuthenticationCookieSettingsOption ReadAuthenticationCookieSettingsOption(this IServiceCollection services,
                                                                                                  IConfiguration configuration,
                                                                                                  string sectionName = "Authentication:OAuth.Settings")

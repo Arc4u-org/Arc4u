@@ -10,6 +10,7 @@ namespace Arc4u.Blazor.Handlers;
 [Export]
 public class AttachCookiesHandler : DelegatingHandler
 {
+    /// <inheritdoc/>
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var optionsKey = new HttpRequestOptionsKey<bool>(nameof(WebAssemblyHttpRequestMessageExtensions.SetBrowserRequestCredentials));

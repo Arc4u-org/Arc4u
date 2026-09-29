@@ -9,6 +9,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2.Client.Authentication.Token;
 
+/// <summary>
+/// A <see cref="DelegatingHandler"/> that adds the token of the client user to the requests of an <see cref="HttpClient"/>. The token provider is selected by the <c>ProviderId</c> of the settings.
+/// Nothing is added when the request already has an <c>Authorization</c> header or when no valid token is obtained. The activity id and the culture of the user are added in the <c>activityid</c> and <c>culture</c> headers.
+/// </summary>
+/// <typeparam name="T">The type used as category of the logger.</typeparam>
 public class JwtHttpHandler<T> : DelegatingHandler
 {
     // on the Frontend, we have to retrieve the user context based the singleton instance of the application context
@@ -21,6 +26,7 @@ public class JwtHttpHandler<T> : DelegatingHandler
     /// <param name="container">The scoped container</param>
     /// <param name="logger">The logger</param>
     /// <param name="resolvingName">The name used to resolve the settings</param>
+    /// <exception cref="ConfigurationException">No settings exist with that name, or no <see cref="IApplicationContext"/> is registered in the container.</exception>
     public JwtHttpHandler(IServiceProvider container, ILogger<T> logger, string resolvingName)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -44,12 +50,14 @@ public class JwtHttpHandler<T> : DelegatingHandler
     }
 
     /// <summary>
-    ///
+    /// Initializes a new instance of the <see cref="JwtHttpHandler{T}"/> class from settings given directly.
+    /// No inner handler is defined because this will be done via the AddHttpClient method in a service!
     /// </summary>
     /// <param name="container">The scoped container</param>
     /// <param name="logger">The logger</param>
     /// <param name="settings">A key value collection.</param>
-    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
+    /// <exception cref="ConfigurationException">No <see cref="IApplicationContext"/> is registered in the container.</exception>
     public JwtHttpHandler(IServiceProvider container, ILogger<T> logger, IKeyValueSettings settings)
     {
         _container = container ?? throw new ArgumentNullException(nameof(container));
@@ -73,6 +81,7 @@ public class JwtHttpHandler<T> : DelegatingHandler
 
     private IServiceProvider GetResolver() => _container;
 
+    /// <inheritdoc/>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         _logger.Technical().LogHttpHandlerIsCalled(GetType().Name);

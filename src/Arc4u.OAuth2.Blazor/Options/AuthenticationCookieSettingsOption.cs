@@ -1,5 +1,9 @@
 ﻿namespace Arc4u.Blazor.Options;
 
+/// <summary>
+/// The settings of the cookie based authentication of a Blazor WebAssembly application: the application calls its Blazor server (SSR) backend, with the browser cookies, to get a token.
+/// The options are read from the <c>Authentication:OAuth2.Settings</c> section by default and registered as the key/value settings named <c>OAuth2</c> (see <see cref="CookieAuthenticationExtensions"/>).
+/// </summary>
 public class AuthenticationCookieSettingsOption
 {
     /// <summary>

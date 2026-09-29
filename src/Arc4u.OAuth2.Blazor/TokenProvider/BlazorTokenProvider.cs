@@ -15,6 +15,7 @@ namespace Arc4u.OAuth2.TokenProvider;
 [Export(ProviderName, typeof(ITokenProvider))]
 public class BlazorTokenProvider : ITokenProvider
 {
+    /// <summary>The key (<c>blazor</c>) under which the provider is registered.</summary>
     public const string ProviderName = "blazor";
 
     /// <summary>

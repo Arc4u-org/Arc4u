@@ -6,8 +6,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.Blazor.Handlers;
 
+/// <summary>
+/// A <see cref="DelegatingHandler"/> that adds the token of the current user to the requests of an <see cref="HttpClient"/> of a Blazor application.
+/// The token is requested from the <see cref="ITokenProvider"/> designated by the <c>ProviderId</c> key of the settings and sent in the <c>Authorization</c> header. Errors are logged and the request is sent without token.
+/// </summary>
+/// <param name="container">The service provider used to resolve the keyed token provider.</param>
+/// <param name="logger">The logger.</param>
+/// <param name="settings">The settings designating the token provider.</param>
 public class JwtHttpHandler(IServiceProvider container, ILogger<JwtHttpHandler> logger, SimpleKeyValueSettings settings) : DelegatingHandler
 {
+    /// <inheritdoc/>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
         CancellationToken cancellationToken)
     {

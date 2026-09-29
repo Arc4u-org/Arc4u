@@ -12,9 +12,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2.Token;
 
+/// <summary>
+/// An <see cref="ITokenProvider"/> for a client application whose user signs in with a user name and password. The credentials are kept in the secure cache; when they are missing,
+/// they are requested from the registered <see cref="IUserNamePasswordProvider"/>. A token is requested from the <c>CredentialDirect</c> <see cref="ICredentialTokenProvider"/> and cached until it expires in less than one minute.
+/// The <c>Authority</c> and <c>ServiceApplicationId</c> settings are required; <see cref="TokenKeys.PasswordStoreKey"/> selects the cache entries of the credentials (<c>secret</c> by default).
+/// </summary>
+/// <param name="secureCache">The secure cache holding the credentials and the token.</param>
+/// <param name="networkStatus">The network status; a token cannot be requested without network.</param>
+/// <param name="logger">The logger.</param>
+/// <param name="container">The service provider used to resolve the credential providers.</param>
 [Export(UsernamePasswordTokenProvider.ProviderName, typeof(ITokenProvider))]
 public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInformation networkStatus, ILogger<UsernamePasswordTokenProvider> logger, IServiceProvider container) : ITokenProvider
 {
+    /// <summary>The key (<c>usernamePassword</c>) under which the provider is registered.</summary>
     public const string ProviderName = "usernamePassword";
 
     private readonly ICache _secureCache = secureCache;
@@ -25,6 +35,13 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
     private string passwordStoreKey = default!;
     private IKeyValueSettings Settings = default!;
 
+    /// <summary>Gets the token of the user, asking for the credentials when they are not yet known.</summary>
+    /// <param name="settings">The provider settings (see <see cref="TokenKeys"/>).</param>
+    /// <param name="platformParameters">Not used.</param>
+    /// <returns>The token, or a failed result when there is no credential provider or the user gives no credential.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">The <c>Authority</c> or <c>ServiceApplicationId</c> setting is missing.</exception>
+    /// <exception cref="InvalidOperationException">The settings are empty or no token is received.</exception>
     public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -101,6 +118,11 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
 
     }
 
+    /// <summary>Requests a token for the credentials from the <c>CredentialDirect</c> <see cref="ICredentialTokenProvider"/>.</summary>
+    /// <param name="settings">The provider settings.</param>
+    /// <param name="credential">The credentials of the user.</param>
+    /// <returns>The token.</returns>
+    /// <exception cref="InvalidOperationException">The credential token provider is not registered or no token is received.</exception>
     protected async Task<TokenInfo> CreateBasicTokenInfoAsync(IKeyValueSettings settings, CredentialsResult credential)
     {
         var basicTokenProvider = container.GetKeyedService<ICredentialTokenProvider>(CredentialTokenProvider.ProviderName);
@@ -123,6 +145,10 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
 
     // This method is called by the page receiving the user name and password. To be sure we have a valid one!
     // No two factor authentication is allowed in this scenario!
+    /// <summary>Checks credentials by requesting a token for them; on success the token is stored in the cache. It is the callback given to <see cref="IUserNamePasswordProvider"/>.</summary>
+    /// <param name="upn">The user principal name.</param>
+    /// <param name="password">The password.</param>
+    /// <returns><see langword="true"/> when a token has been obtained.</returns>
     public async Task<bool> CheckCredentialsAsync(string upn, string password)
     {
         try
@@ -186,6 +212,10 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
 
     }
 
+    /// <summary>Removes the password and the token of the user from the secure cache.</summary>
+    /// <param name="settings">The provider settings.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A completed task.</returns>
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
         GetSettings(settings, out var serviceId, out _, out var passwordStoreKey);
