@@ -119,6 +119,12 @@ dotnet docfx docfx.json --warningsAsErrors
 Broken links, unknown `xref` UIDs, missing code snippets and invalid XML comments are all
 reported as warnings.
 
+> [!NOTE]
+> The documentation workflow and the XML comment fixes in `src/` are still being merged. Until
+> then, the build also reports about 20 known warnings from `src/` files, and the site is not
+> published automatically yet. Only warnings from files under `docs/` concern documentation
+> changes.
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the

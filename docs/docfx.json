@@ -66,6 +66,7 @@
       }
     ],
     "output": "_site",
+    "xref": [ "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json" ],
     "globalMetadata": {
       "_appTitle": "Arc4u",
       "_appName": "Arc4u",

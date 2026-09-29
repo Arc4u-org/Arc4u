@@ -9,7 +9,7 @@ common enterprise concerns, such as authentication, logging or caching, without
 reinventing them. The framework has been in use for many years and is open source.
 
 This site documents Arc4u 9, the `develop/9.0.0` line. It targets `net10.0` and
-`net11.0` and ships as a set of NuGet packages named `Arc4u.*`, one per feature area.
+`net11.0` and ships as a set of NuGet packages named `Arc4u.*`, grouped by feature area.
 
 ## Where to start
 

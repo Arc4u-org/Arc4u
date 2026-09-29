@@ -42,6 +42,8 @@ Rules:
 - The `name` of a `toc.yml` entry is the page H1, or a shorter form of it.
 - Package `README.md` files under `src/` are written from
   [`package-readme.md`](../_templates/package-readme.md), not from the site templates.
+- Content from the legacy `Doc/` folder, the wiki or old package READMEs is rewritten into the
+  page that owns its topic. Do not copy legacy files into `docs/` as they are.
 
 ## Page types
 
@@ -64,7 +66,9 @@ your stub, replace every `<...>` placeholder and delete the comment.
 - One `##` heading per term, in alphabetical order. The heading is the term, as written in
   the docs (`## Facade`, `## Service agent`).
 - One to three sentences of definition, then a link to the page that covers the term.
-- Other pages link to a term with `../concepts/glossary.md#<term-anchor>`.
+- The headings that already exist are [frozen anchors](#frozen-anchors). New terms can be added.
+- Other pages link to a term with a path relative to their own folder: from a guide,
+  `../../concepts/glossary.md#facade`; from another concept page, `glossary.md#facade`.
 
 ### Package support matrix outline
 
@@ -79,10 +83,12 @@ your stub, replace every `<...>` placeholder and delete the comment.
 
 - Intro: who the page is for, and the versions it goes from and to.
 - `## Before you start`: a short checklist (SDK, target framework, back up, read the changelog).
-- One `##` per breaking change, ordered from the change that affects the most applications
-  to the least. Inside each: what changed and why (one or two sentences, link the issue),
-  then a **Before (8.x)** code block, an **After (9)** code block and the steps to follow.
-- Renamed packages go in one table (`Old package | New package`), not one section each.
+- One `##` per breaking change. Inside each: what changed and why (one or two sentences,
+  link the issue), then a **Before (8.x)** code block, an **After (9)** code block and the
+  steps to follow. The existing headings are [frozen anchors](#frozen-anchors); add a new
+  `##` for a breaking change that is not listed yet.
+- Renamed packages go in one table (`Old package | New package`) under `## Package renames`,
+  not one section each.
 
 ### Changelog outline
 
@@ -182,14 +188,17 @@ builder.Services.AddCacheContext(builder.Configuration);
 // </register-cache>
 ```
 
-and reference the tag with a path relative to the Markdown file (`#region <name>` blocks
-work the same way):
+and reference the tag with a path relative to the Markdown file:
 
 ```markdown
 [!code-csharp[](../../../samples/GettingStarted/Program.cs#register-cache)]
 ```
 
-A wrong path or tag is a build warning (`codesnippet-not-found`).
+Use `// <tag>` markers rather than `#region` blocks: a `#region` snippet also copies any
+nested `#region`/`#endregion` lines into the page.
+
+A wrong path is a build warning (`codesnippet-not-found`), but a wrong **tag** is not: the
+page silently shows an empty code block. Check every snippet in the local preview.
 
 ### Compile-check inline samples
 
@@ -198,7 +207,7 @@ repository that references the projects in `src/`. You need the SDK pinned in
 `src/global.json` (see [CONTRIBUTING.md](../../CONTRIBUTING.md#prerequisites)).
 
 ```bash
-mkdir -p /tmp/arc4u-doc-samples && cd /tmp/arc4u-doc-samples
+cd "$(mktemp -d)"          # a fresh folder of your own, outside the repository
 cp <repo>/src/global.json .
 cat > DocSamples.csproj <<'EOF'
 <Project Sdk="Microsoft.NET.Sdk.Web">
@@ -210,8 +219,26 @@ cat > DocSamples.csproj <<'EOF'
 </Project>
 EOF
 dotnet add reference <repo>/src/Arc4u.Caching/Arc4u.Caching.csproj   # one line per package the samples use
-# paste the samples into Program.cs (or one .cs file per sample), then:
+# paste one sample into Program.cs, then:
 dotnet build
+```
+
+Only one file of a project can contain top-level statements, and most samples declare their
+own `builder`. Check the samples one at a time in `Program.cs`, or keep one sample in
+`Program.cs` and wrap each other sample in a method in its own file:
+
+```csharp
+// Sample2.cs
+using Arc4u.Caching;
+
+internal static class Sample2
+{
+    public static void Run(WebApplicationBuilder builder)
+    {
+        // paste the sample here, without its WebApplication.CreateBuilder line
+        builder.Services.AddCacheContext(builder.Configuration);
+    }
+}
 ```
 
 Use `Microsoft.NET.Sdk` instead of `Microsoft.NET.Sdk.Web` for samples that are not web
@@ -266,12 +293,29 @@ projects are not your concern. In the pull request, list which samples you compi
 - Never link to a `.html` file, to an absolute URL of this site, or to the `master` branch
   from a page under `docs/`. DocFX rewrites `.md` links and checks them.
 - An `xref` UID is the fully qualified name of the type or member (generic types use a
-  backtick: ``<xref:Arc4u.Interval`1>``). After a build, `docs/_site/xrefmap.yml` lists every UID.
+  backtick: ``<xref:Arc4u.Interval`1>``). After a build, `docs/_site/xrefmap.yml` lists every
+  Arc4u UID. .NET UIDs are resolved through the Microsoft xref map configured in `docfx.json`.
 - Use descriptive link text, never "here" or "this link".
 - Prefer links to learn.microsoft.com without a locale (`https://learn.microsoft.com/aspnet/core/...`).
 - Link issues only for context. The page must be understandable without reading them.
 - The build reports broken page links (`InvalidFileLink`), broken anchors (`InvalidBookmark`)
-  and unknown UIDs (`UidNotFound`) as warnings, and CI treats warnings as errors.
+  and unknown UIDs (`UidNotFound`) as warnings, and the documentation workflow treats
+  warnings as errors.
+
+### Frozen anchors
+
+To link to a section of a page someone else is writing, use only the anchors below. Their
+headings are frozen: page owners fill the sections and may reorder them, but never rename
+them. Link to any other page owned by someone else without an anchor until that page is
+merged.
+
+| Page | Anchors |
+|---|---|
+| `migration/8x-to-9.md` | `#before-you-start`, `#package-renames`, `#target-frameworks`, `#newtonsoftjson-replaced-by-systemtextjson`, `#adal-and-protobuf-removed`, `#tracelisteners-removed`, `#msal-status`, `#nservicebus-replaced-by-dapr-pubsub`, `#prismdiwpf-replaced-by-prismdryioc`, `#message-and-messages-replaced-by-problemdetails`, `#icontainer-replaced-by-keyed-services`, `#authentication-settings-refactoring` |
+| `concepts/glossary.md` | `#application-context`, `#appprincipal`, `#business-layer`, `#cache-context`, `#claims-filler`, `#data-access-layer`, `#domain-model`, `#facade`, `#interface-layer`, `#named-cache`, `#problemdetails`, `#result-pattern`, `#service-agent`, `#token-provider` |
+
+For example, from `docs/guides/diagnostics/index.md`:
+`[TraceListeners were removed](../../migration/8x-to-9.md#tracelisteners-removed)`.
 
 ## Admonitions
 
