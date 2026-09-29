@@ -1,5 +1,6 @@
 namespace Arc4u.OAuth2.Token;
 
+/// <summary>The keys of the key/value settings that configure the token providers.</summary>
 public class TokenKeys
 {
     /// <summary>
@@ -7,24 +8,24 @@ public class TokenKeys
     /// </summary>
     public const string ProviderIdKey = "ProviderId";
 
-    ///// <summary>
-    ///// The application unique Id used to identify in the STS the application.
-    ///// </summary>
+    /// <summary>
+    /// The application unique Id used to identify in the STS the application.
+    /// </summary>
     public const string ServiceApplicationIdKey = "ServiceApplicationId";
 
-    ///// <summary>
-    ///// The STS authority
-    ///// </summary>
+    /// <summary>
+    /// The STS authority
+    /// </summary>
     public const string AuthorityKey = "Authority";
 
-    ///// <summary>
-    ///// The ClientId used to identify the client definition in the sts.
-    ///// </summary>
+    /// <summary>
+    /// The ClientId used to identify the client definition in the sts.
+    /// </summary>
     public const string ClientIdKey = "ClientId";
 
-    ///// <summary>
-    ///// The token will be used to identify the caller from a sevice => this is the root of the uri.
-    ///// </summary>
+    /// <summary>
+    /// The token will be used to identify the caller from a sevice => this is the root of the uri.
+    /// </summary>
     public const string RootServiceUrlKey = "RootServiceUrl";
 
     /// <summary>

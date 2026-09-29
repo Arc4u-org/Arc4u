@@ -6,8 +6,13 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Extensions;
 
+/// <summary>Registers the <see cref="ApiExtraContextAuthenticationOption"/>.</summary>
 public static class ApiAuthenticationContextExtension
 {
+    /// <summary>Registers the <see cref="ApiExtraContextAuthenticationOption"/> from code. Nothing is done when a configuration for this options type is already registered.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="option">The action that configures the options.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> or <paramref name="option"/> is <see langword="null"/>.</exception>
     public static void AddAuthenticationApiContext(this IServiceCollection services, Action<ApiExtraContextAuthenticationOption> option )
     {
         ArgumentNullException.ThrowIfNull(option);
@@ -26,6 +31,11 @@ public static class ApiAuthenticationContextExtension
 
     }
 
+    /// <summary>Registers the <see cref="ApiExtraContextAuthenticationOption"/> from configuration sections.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="section">The paths of the sections holding the extra parameters. When <see langword="null"/>, the defaults of <see cref="ApiExtraContextAuthenticationSectionOption"/> are used.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> or <paramref name="configuration"/> is <see langword="null"/>.</exception>
     public static void AddAuthenticationApiContext(this IServiceCollection services, IConfiguration configuration, ApiExtraContextAuthenticationSectionOption? section = null )
     {
         section ??= new ApiExtraContextAuthenticationSectionOption();

@@ -27,6 +27,7 @@ public class ApplicationCache(ICacheHelper cacheHelper, ILogger logger, IOptions
         logger.Technical<ApplicationCache>().LogDeletedInTokenCache(key);
     }
 
+    /// <inheritdoc/>
     public void Put<T>(string key, T data)
     {
         if (null == data)
@@ -40,6 +41,7 @@ public class ApplicationCache(ICacheHelper cacheHelper, ILogger logger, IOptions
         logger.Technical<ApplicationCache>().LogAddedInTokenCache(key);
     }
 
+    /// <inheritdoc/>
     public T? Get<T>(string key)
     {
         logger.Technical<ApplicationCache>().LogGetDataTokenCache(key);
@@ -53,6 +55,9 @@ public class ApplicationCache(ICacheHelper cacheHelper, ILogger logger, IOptions
         return data;
     }
 
+    /// <summary>Not supported.</summary>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotImplementedException">Always thrown.</exception>
     public IEnumerable<byte[]> GetAll()
     {
         logger.Technical<ApplicationCache>().LogTokenCacheNotImplemented();

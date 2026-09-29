@@ -4,9 +4,14 @@ using System.Text.Json.Serialization;
 
 namespace Arc4u.OAuth2.Token;
 
+/// <summary>A token with its type and expiration date.</summary>
 [DataContract]
 public class TokenInfo
 {
+    /// <summary>Initializes a new instance of the <see cref="TokenInfo"/> class with an explicit expiration date.</summary>
+    /// <param name="tokenType">The token type, for example <c>Bearer</c>.</param>
+    /// <param name="token">The token value.</param>
+    /// <param name="expiresOnUtc">The expiration date. It is converted to UTC.</param>
     [JsonConstructor]
     public TokenInfo(string tokenType, string token, DateTime expiresOnUtc)
     {
@@ -15,6 +20,9 @@ public class TokenInfo
         ExpiresOnUtc = expiresOnUtc.ToUniversalTime();
     }
 
+    /// <summary>Initializes a new instance of the <see cref="TokenInfo"/> class from a JWT; the expiration date is the <c>ValidTo</c> of the token.</summary>
+    /// <param name="tokenType">The token type, for example <c>Bearer</c>.</param>
+    /// <param name="token">The JWT.</param>
     public TokenInfo(string tokenType, string token)
     {
         TokenType = tokenType;

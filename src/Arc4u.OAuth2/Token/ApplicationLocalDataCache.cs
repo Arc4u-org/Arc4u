@@ -16,12 +16,17 @@ public class ApplicationLocalDataCache : ITokenCache
     private readonly ICache Cache;
     private readonly ILogger Logger;
 
+    /// <summary>Initializes a new instance of the <see cref="ApplicationLocalDataCache"/> class.</summary>
+    /// <param name="cache">The secure cache in which the token is persisted.</param>
+    /// <param name="logger">The logger.</param>
     public ApplicationLocalDataCache(ISecureCache cache, ILogger logger)
     {
         Cache = cache;
         Logger = logger;
     }
 
+    /// <summary>Removes the token from the secure cache and from the in-memory copy. Errors are ignored.</summary>
+    /// <param name="key">The key of the token.</param>
     public void Clear(string key)
     {
         try
@@ -32,11 +37,13 @@ public class ApplicationLocalDataCache : ITokenCache
         catch { }
     }
 
+    /// <inheritdoc/>
     public void DeleteItem(string key)
     {
         Clear(key);
     }
 
+    /// <inheritdoc/>
     public void Put<T>(string key, T data)
     {
         try
@@ -51,6 +58,7 @@ public class ApplicationLocalDataCache : ITokenCache
 
     }
 
+    /// <inheritdoc/>
     public T? Get<T>(string key)
     {
         if (_token is T token)

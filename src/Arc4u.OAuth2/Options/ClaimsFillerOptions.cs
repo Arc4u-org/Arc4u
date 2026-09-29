@@ -6,6 +6,7 @@ namespace Arc4u.OAuth2.Options;
 public class ClaimsFillerOptions
 {
     // By default, a specific claims filler is needed to manage the right.
+    /// <summary>Gets or sets a value indicating whether extra claims are loaded from the registered claims filler providers. The default is <see langword="true"/>.</summary>
     public bool LoadClaimsFromClaimsFillerProvider { get; set; } = true;
 
     // /// <summary>
