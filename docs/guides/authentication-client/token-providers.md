@@ -215,8 +215,9 @@ registered only once.
 
 <xref:Arc4u.OAuth2.TokenProvider.ClientCredentialsTokenProvider> sends the client ID and secret
 in an `Authorization: Basic` header (`client_secret_basic`), and the scope and any extra
-parameter in the form body. It caches the token in the registered `ITokenCache` and requests a
-new one when the cached token expires in less than one minute.
+parameter in the form body. It caches the token in the registered `ITokenCache` (see the
+[shortest setup](index.md#code) for its registration) and requests a new one when the cached token
+expires in less than one minute.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -226,7 +227,7 @@ new one when the cached token expires in less than one minute.
 | `Authentication:ClientTokens:<name>:Authority` | object | the `Default` authority | An authority for this entry only (`Url`, `TokenEndpoint`, `Issuer`, `MetaDataAddress`), registered under the entry name. |
 | `Authentication:ClientTokens:<name>:Settings:ClientId` | `string` | none (required) | Client ID of your application. |
 | `Authentication:ClientTokens:<name>:Settings:ClientSecret` | `string` | none (required) | Client secret of your application. |
-| `Authentication:ClientTokens:<name>:Settings:<other>` | `string` | none | Any other key is sent to the token endpoint as an extra form parameter, for example `resource`. |
+| `Authentication:ClientTokens:<name>:Settings:<other>` | `string` | none | Any other key is sent to the token endpoint as an extra form parameter, for example `resource`. See [Cache keys](#cache-keys). |
 
 The `Default` authority comes from `Authentication:DefaultAuthority`, read by
 `AddDefaultAuthority`. When `TokenEndpoint` is not set, the token endpoint is read from the
@@ -273,10 +274,16 @@ provider for a new one when it expires in less than one minute. `ClientSecret` i
 Unlike the client credentials scenario, other `Settings` keys are not sent to the token endpoint.
 
 ```csharp
+builder.Services.AddDefaultAuthority(builder.Configuration);
 builder.Services.AddClientTokens(builder.Configuration);
 builder.Services.AddKeyedTransient<ITokenProvider, CredentialTokenCacheTokenProvider>(CredentialTokenCacheTokenProvider.ProviderName);
 builder.Services.AddKeyedSingleton<ICredentialTokenProvider, CredentialTokenProvider>(CredentialTokenProvider.ProviderName);
 ```
+
+`CredentialTokenCacheTokenProvider` also needs the `ITokenCache` of the
+[shortest setup](index.md#code). Without the `Default` authority (registered by
+`AddDefaultAuthority` or by the server authentication), every call throws
+`NotSupportedException: The 'about' scheme is not supported.`
 
 > [!CAUTION]
 > Keep passwords and client secrets out of `appsettings.json` in source control: use user
@@ -317,6 +324,20 @@ another section). The configuration based `AddJwtAuthentication` already calls i
 | `Authentication:RemoteSecrets:<name>:HeaderKey` | `string` | `SecretKey` | The header that carries the value. `Basic` sends `Authorization: Basic <value>`. |
 | `Authentication:RemoteSecrets:<name>:AuthenticationType` | `string` | `Inject` | Keep `Inject`: the header name is taken from the token type only in that mode. |
 | `Authentication:RemoteSecrets:<name>:ProviderId` | `string` | `RemoteSecret` | Key of the token provider. |
+
+## Cache keys
+
+The providers cache the tokens they obtain, and some cache keys are not built as expected (known
+issues):
+
+- The `Obo` and `Credential` providers include `string.GetHashCode()` of the user's token or of the
+  password in the key. This value changes from one process to the next, so with a distributed
+  cache (Redis, SQL Server) the entries are never shared between instances or after a restart: each
+  process requests its own tokens.
+- The `ClientCredentials` provider builds the key from the client ID, the client secret, the scope
+  and the path of the authority, but not from the extra parameters. Two `ClientTokens` entries that
+  differ only by an extra parameter such as `resource` share the same cached token: give them
+  different scopes or client IDs.
 
 ## Write your own token provider
 

@@ -28,7 +28,7 @@ the Arc4u source generator registers the exported ones (see
 | <xref:Arc4u.OAuth2.IScopedServiceProviderAccessor> | <xref:Arc4u.OAuth2.AspNetCore.ScopedServiceProviderAccessor> (singleton), with `AddHttpContextAccessor()` | Gives the handler the services of the current request, so it reads the user of that request. |
 | `IApplicationContext` | `ApplicationInstanceContext` (scoped in a service) | Holds the current user. |
 | The token providers | See [Token providers](token-providers.md) | Keyed by their `ProviderId`. |
-| <xref:Arc4u.OAuth2.Token.ITokenCache> | <xref:Arc4u.OAuth2.Token.ApplicationCache> with <xref:Arc4u.OAuth2.Token.CacheHelper> | The client credentials and user name and password providers keep their tokens in it. `ApplicationCache` stores them in the Arc4u cache named by `AddTokenCache` (section `Authentication:TokenCache`); see [Caching](../caching/index.md). |
+| <xref:Arc4u.OAuth2.Token.ITokenCache> | <xref:Arc4u.OAuth2.Token.ApplicationCache> with <xref:Arc4u.OAuth2.Token.CacheHelper> | The client credentials and user name and password providers keep their tokens in it; they fail to resolve without it. `ApplicationCache` stores them in the Arc4u cache named by `AddTokenCache` (section `Authentication:TokenCache`). The [shortest setup](index.md#code) shows the complete registration with a memory cache. |
 
 ## Add the handler to an HttpClient
 
@@ -94,14 +94,15 @@ For each request, <xref:Arc4u.OAuth2.Token.JwtHttpHandler`1>:
 1. Gets the services of the current request through `IScopedServiceProviderAccessor`: the scope
    set for the current async flow, otherwise the `HttpContext.RequestServices` of the current
    request, otherwise the service provider given to the constructor.
-2. Sends the request unchanged when the settings have no `AuthenticationType` (for example when
-   the settings name does not exist).
+2. Sends the request unchanged when no `IApplicationContext` is registered, or when the settings
+   have no `AuthenticationType` (for example when the settings name does not exist).
 3. When `AuthenticationType` is not `Inject` and the current user has an identity, sends the
    request unchanged unless the settings value contains the identity's authentication type
    (case-insensitive).
 4. Sends the request unchanged when it already has an `Authorization` header.
 5. Resolves the keyed `ITokenProvider` named by `ProviderId`, and sends the request unchanged when
-   there is none, when the provider returns a failed result or when the token is expired.
+   there is none, when the provider returns a failed result or when the token is expired. Settings
+   with an `AuthenticationType` but no `ProviderId` throw `KeyNotFoundException`.
 6. Sets the header: with `Inject`, the scheme is the token type (`Bearer` and `Basic` go in
    `Authorization`, any other type is the name of a custom header); otherwise the scheme is
    `Bearer`.
@@ -196,9 +197,11 @@ The settings use the on-behalf-of provider with `AuthenticationType` `Inject`. S
 
 ### NullReferenceException in the handler
 
-- `ProviderId` is `null` (<xref:Arc4u.OAuth2.Token.NullTokenProvider>): it returns a success
-  without a token, which the handlers do not support (known issue). Do not add a handler to a
-  client that must not send a token.
+- The `ProviderId` is the string `"null"` (<xref:Arc4u.OAuth2.Token.NullTokenProvider>): the
+  provider returns a success without a token (known issue). The service `JwtHttpHandler<T>` and the
+  desktop `JwtHttpHandler<T>` then throw `NullReferenceException`. `OAuth2Interceptor<T>` logs the
+  exception and sends the call with the `culture` entry only, and the Blazor `JwtHttpHandler` logs
+  it and sends no header. Do not add a handler to a client that must not send a token.
 - gRPC call outside a request: see [Call an API outside a request](#call-an-api-outside-a-request).
 
 ## See also

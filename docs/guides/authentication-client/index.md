@@ -55,10 +55,13 @@ For a service (ASP.NET Core) that calls other APIs:
 
 ```bash
 dotnet add package Arc4u.OAuth2.AspNetCore.Authentication --prerelease
+dotnet add package Arc4u.Caching.Memory --prerelease
+dotnet add package Arc4u.Serializer.JSon --prerelease
 dotnet add package Arc4u.gRPC --prerelease
 ```
 
-Add `Arc4u.gRPC` only for gRPC clients. For a Blazor app, install `Arc4u.OAuth2.Blazor` in the
+The cache packages keep the application tokens (see [Caching](../caching/index.md)); use another
+cache kind if you prefer. Add `Arc4u.gRPC` only for gRPC clients. For a Blazor app, install `Arc4u.OAuth2.Blazor` in the
 WebAssembly project and `Arc4u.OAuth2.AspNetCore.Blazor` in the server project. For a desktop or
 mobile app, install `Arc4u.OAuth2.Client.Authentication`.
 
@@ -80,19 +83,41 @@ register one set of settings per entry, named after the entry:
 | `Authentication:OAuth2.Settings` (WebAssembly app) | `AddAuthenticationCookie` | `OAuth2` |
 | `Authentication:OidcClient.Settings` | `AddOidcClientAuthentication` | `OidcClient` |
 
-Each method takes a `sectionName` parameter to read another section. The keys of each section are
-described in [Token providers](token-providers.md), [Blazor](blazor.md) and
+`AddClientTokens`, `AddOnBehalfOf`, `AddRemoteSecretsAuthentication` and `AddAuthenticationCookie`
+take a `sectionName` parameter to read another section. The server methods and
+`AddOidcClientAuthentication` take an `authenticationSectionName` instead, and read the paths of
+their sub-sections from keys of that section (for example `OAuth2SettingsSectionPath` or
+`OidcClientIdSettingsSectionPath`). The keys of each section are described in
+[Token providers](token-providers.md), [Blazor](blazor.md) and
 [Desktop and mobile clients](desktop.md).
 
 ### appsettings.json
 
-The shortest setup calls an API with the identity of your service (client credentials):
+The shortest setup calls an API with the identity of your service (client credentials). The token
+provider keeps the token in an Arc4u cache, declared in the `Caching` section (see
+[Caching](../caching/index.md)):
 
 ```json
 {
+  "Caching": {
+    "Default": "Volatile",
+    "Caches": [
+      {
+        "Name": "Volatile",
+        "Kind": "Memory",
+        "IsAutoStart": true,
+        "Settings": {
+          "SizeLimitInMB": 100
+        }
+      }
+    ]
+  },
   "Authentication": {
     "DefaultAuthority": {
       "Url": "https://login.microsoftonline.com/<tenant-id>/v2.0"
+    },
+    "TokenCache": {
+      "CacheName": "Volatile"
     },
     "ClientTokens": {
       "Inventory": {
@@ -111,6 +136,8 @@ The shortest setup calls an API with the identity of your service (client creden
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `Authentication:DefaultAuthority:Url` | `Uri` | none (required) | The identity provider. Its token endpoint is read from its OpenID Connect metadata, unless `TokenEndpoint` is set. |
+| `Authentication:TokenCache:CacheName` | `string` | none (required by `AddTokenCache`) | The Arc4u cache that keeps the tokens. |
+| `Authentication:TokenCache:MaxTime` | `TimeSpan` | `00:50:00` | How long a token stays in the cache at most. |
 | `Authentication:ClientTokens:<name>:Scenario` | `string` | none (required) | `ClientCredentials` requests a token for the application. |
 | `Authentication:ClientTokens:<name>:Scopes` | `string[]` | `openid` | Scopes of the downstream API. |
 | `Authentication:ClientTokens:<name>:Settings:ClientId` | `string` | none (required) | Client ID of your service. |
@@ -120,6 +147,8 @@ The shortest setup calls an API with the identity of your service (client creden
 
 ```csharp
 // Program.cs
+using Arc4u.Caching;
+using Arc4u.Caching.Memory;
 using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.OAuth2;
@@ -128,6 +157,7 @@ using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Token;
 using Arc4u.OAuth2.TokenProvider;
 using Arc4u.Security.Principal;
+using Arc4u.Serializer;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -137,7 +167,14 @@ builder.Services.AddILogger();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IScopedServiceProviderAccessor, ScopedServiceProviderAccessor>();
 builder.Services.AddScoped<IApplicationContext, ApplicationInstanceContext>();
-// ... an ITokenCache, used by the provider: see HttpClient and gRPC clients.
+
+// The token cache: an Arc4u memory cache (see the Caching guide).
+builder.Services.AddCacheContext(builder.Configuration);
+builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
+builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
+builder.Services.AddTokenCache(builder.Configuration);
+builder.Services.AddSingleton<ICacheHelper, CacheHelper>();
+builder.Services.AddSingleton<ITokenCache, ApplicationCache>();
 
 // The token: settings named "Inventory" and the provider they name.
 builder.Services.AddDefaultAuthority(builder.Configuration);
@@ -162,9 +199,9 @@ public sealed class InventoryClient(HttpClient httpClient)
 ```
 
 Every request of `InventoryClient` now carries `Authorization: Bearer <token>`. The token is
-requested once and reused until one minute before it expires. When you use the configuration
-based `AddJwtAuthentication` of [Server authentication](../authentication-server/index.md), it
-already calls `AddClientTokens`.
+requested once and reused until one minute before it expires. When you use the configuration based
+`AddJwtAuthentication` of [Server authentication](../authentication-server/index.md), it already
+calls `AddClientTokens` and `AddTokenCache`.
 
 ## Common scenarios
 
@@ -241,7 +278,12 @@ wrote the same settings name. Common causes:
   [Call an API on behalf of the user](token-providers.md#call-an-api-on-behalf-of-the-user).
 - A gRPC call made outside an HTTP request throws `NullReferenceException` unless a scope is set,
   see [Call an API outside a request](httpclient-grpc.md#call-an-api-outside-a-request).
-- `NullTokenProvider` (key `null`) makes the handlers throw `NullReferenceException`.
+- `NullTokenProvider` (`ProviderId` `"null"`) makes the service and desktop `JwtHttpHandler<T>`
+  throw `NullReferenceException`, see
+  [HttpClient and gRPC clients](httpclient-grpc.md#nullreferenceexception-in-the-handler).
+- The token caches of the `Obo` and `Credential` providers, and the client credentials cache with
+  extra parameters, are not keyed as expected, see
+  [Token providers](token-providers.md#cache-keys).
 - In Blazor, `BlazorTokenProvider` and `BlazorMsalTokenProvider` share the key `blazor`, and the
   pop-up flow of `BlazorController` ends on a 404, see [Blazor](blazor.md#other-webassembly-token-providers).
 - In desktop apps, several options of `AddOidcClientAuthentication` are not used, see

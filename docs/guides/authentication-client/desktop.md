@@ -36,8 +36,10 @@ The package references `Arc4u.OAuth2` and `Duende.IdentityModel.OidcClient`. You
 ## Configuration
 
 The configuration overload of `AddOidcClientAuthentication` reads the `Authentication` section
-(pass `authenticationSectionName` to use another one) and the `Authentication:OidcClient.Settings`
-section, and registers the settings named `OidcClient` (pass `settingsKey` to change it).
+(pass `authenticationSectionName` to use another one) and registers the settings named
+`OidcClient` (pass `settingsKey` to change it). The client ID and scopes are read from the section
+whose full path is in the `OidcClientIdSettingsSectionPath` key of that section, by default
+`Authentication:OidcClient.Settings`: this path does not follow `authenticationSectionName`.
 
 ```json
 {
@@ -134,15 +136,20 @@ the `ISecureCache`.
 
 > [!CAUTION]
 > <xref:Arc4u.OAuth2.Client.Authentication.Cache.CacheTokens> writes the tokens, refresh token
-> included, as plain JSON files in the `OAuth2` folder of the user's local application data.
-> Register your own `ISecureCache` that encrypts them (for example with the Windows Data
-> Protection API, or `SecureStorage` in MAUI) when this is not acceptable.
+> included, as plain JSON files in the `OAuth2` folder of the user's local application data
+> (`%LOCALAPPDATA%` on Windows, `~/.local/share` on Linux, `~/Library/Application Support` on
+> macOS). The files get the default permissions of the process: on Linux and macOS they are
+> typically readable by the other local users (`-rw-r--r--`) unless the home folder blocks access;
+> on Windows the folder is protected by the user's access control list. Register your own
+> `ISecureCache` that encrypts them (for example with the Windows Data Protection API, or
+> `SecureStorage` in MAUI) when this is not acceptable.
 
 The handler (<xref:Arc4u.OAuth2.Client.Authentication.Token.JwtHttpHandler`1>) needs the
 `IApplicationContext` when it is created, and throws `ConfigurationException` without it. It uses
 the token type as the scheme and, when there is a principal, adds a `culture` header and an
-`activityid` header (when the context has an activity ID). Its constructor that takes a settings name resolves a keyed `IKeyValueSettings`, which
-`AddOidcClientAuthentication` does not register: pass the settings as above.
+`activityid` header (when the context has an activity ID). Its constructor that takes a settings
+name resolves a keyed `IKeyValueSettings`, which `AddOidcClientAuthentication` does not register:
+pass the settings as above.
 
 ## Build the principal
 
@@ -160,6 +167,26 @@ user from the claims of the access token and of the claims filler, caches the cl
 keeps them in the `ISecureCache`, and gets a token with the password grant through the
 `CredentialDirect` provider. Prefer the browser sign-in above: the password grant does not support
 multi-factor authentication.
+
+> [!CAUTION]
+> The user name **and the password** are stored in the same `ISecureCache` as the token. With
+> `CacheTokens`, the password is written to disk in clear text. Use an `ISecureCache` that
+> encrypts its values with this provider.
+
+## Troubleshooting
+
+### The call fails with an exception from the token provider
+
+`OidcClientIdentityModelTokenProvider` throws when the refresh of the access token fails
+(`Exception` with the error of the authority) and when the sign-in fails or is cancelled
+(`AccessViolationException`). The desktop `JwtHttpHandler<T>` does not catch them: the call to the
+API fails with the same exception. Catch it where you call the API, and sign the user in again.
+
+### ConfigurationException: No settings found for OidcClient
+
+You used the constructor of `JwtHttpHandler<T>` that takes a settings name. Pass the settings
+themselves, as in [Register the services](#register-the-services). For the same reason,
+`AppPrincipalFactory.CreatePrincipalAsync("OidcClient")` returns a failed result: pass the settings.
 
 ## See also
 
