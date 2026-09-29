@@ -21,8 +21,15 @@ to the source generators and keyed services. The full list of 8.x to 9 changes i
 | `IContainerResolve.Resolve<T>(name)` | .NET keyed services: `[FromKeyedServices(name)]`, `GetKeyedService<T>(name)`. |
 | `DependencyContext.Current` (static access to the container) | Constructor injection, or an injected `IServiceProvider`. |
 
-The attributes did not change: `[Export]`, `[Shared]` and `[Scoped]` are still in the
-`Arc4u.Dependency.Attribute` namespace and give the same lifetimes.
+`[Export]`, `[Shared]` and `[Scoped]` are still in the `Arc4u.Dependency.Attribute` namespace, and
+a class with one `[Export]` gets the same lifetime as in 8.x. Two behaviors changed, and neither
+produces a warning:
+
+- **Several `[Export]` on one class.** 8.x registered every `[Export]` of a class. Arc4u 9 registers
+  only the first one. Register the other contracts yourself with `IServiceCollection`.
+- **The `[ExportAttribute(...)]` spelling.** 8.x found the attribute by reflection, whatever its
+  spelling. Arc4u 9 only recognizes `[Export(...)]`; `[ExportAttribute(...)]` and
+  `[Arc4u.Dependency.Attribute.Export(...)]` are skipped. Rename them to `[Export(...)]`.
 
 ## Steps
 
@@ -61,6 +68,13 @@ The attributes did not change: `[Export]`, `[Shared]` and `[Scoped]` are still i
      `Configs/appsettings.json` of the host project, declare that file as `AdditionalFiles`, and
      write each entry as a string without comments in the file (see
      [appsettings.json](index.md#appsettingsjson)).
+   - Rename the assembly part of each entry to its 9 name: 8.x entries name 8.x assemblies, for
+     example `"Arc4u.AppSettings, Arc4u.Standard.Configuration"` becomes
+     `"Arc4u.AppSettings, Arc4u.Configuration"` (see
+     [Package renames](../../migration/8x-to-9.md#package-renames)). An entry that still names an
+     8.x assembly is skipped without a warning.
+   - Replace any `[ExportAttribute(...)]` spelling with `[Export(...)]`, and register yourself the
+     contracts of classes that have several `[Export]` attributes (see [What changed](#what-changed)).
 4. Replace `IContainerResolve` with `IServiceProvider`, or better, inject the services themselves
    (see the table below).
 5. Replace `IContainerRegistry` calls with the `IServiceCollection` methods of .NET (see the table
@@ -138,6 +152,11 @@ The type no longer exists. Inject the service itself, or `IServiceProvider`, as 
 - Its project does not reference `Arc4u.Dependency.Tool`, or `Program.cs` does not call the
   project's `Register<Name>Types` method.
 - It came from the `Assemblies` list of `Application.Dependency`, which is no longer read.
+- Its `RegisterTypes` entry still names the 8.x assembly (`Arc4u.Standard.*`). Use the 9 assembly
+  name (see [Package renames](../../migration/8x-to-9.md#package-renames)).
+- It is the second (or later) `[Export]` of its class: only the first one is registered now.
+- Its class uses the `[ExportAttribute(...)]` or namespace-qualified spelling, which the generator
+  skips.
 - It was listed in `RegisterTypes` in the object form or with a `Version=`; see
   [Troubleshooting](index.md#troubleshooting) in the dependency injection guide.
 

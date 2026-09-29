@@ -49,10 +49,12 @@ flowchart LR
 | `Arc4u.Dependency` | The `[Export]`, `[Shared]` and `[Scoped]` attributes, and `TryGetService` helpers on `IServiceProvider`. |
 | `Arc4u.Dependency.Tool` | The two source generators. A development dependency: it runs inside the compiler, and your code never calls it. |
 
-Reference both packages in every project that contains `[Export]` classes. `Arc4u.Dependency`
-targets `netstandard2.0`, `net10.0` and `net11.0`; its `netstandard2.0` build contains only the
-attributes. On `net10.0` and `net11.0` it references `Microsoft.Extensions.Hosting`, which brings
-the `Microsoft.Extensions.DependencyInjection` API that the generated code calls.
+Reference both packages in every project that contains `[Export]` classes. On `develop/9.0.0`,
+`Arc4u.Dependency` targets `netstandard2.0`, `net10.0` and `net11.0` (the published
+`9.0.0-preview37` targets `netstandard2.0`, `net8.0`, `net9.0` and `net10.0`). Its
+`netstandard2.0` build contains only the attributes. On the other target frameworks it references
+`Microsoft.Extensions.Hosting`, which brings the `Microsoft.Extensions.DependencyInjection` API that
+the generated code calls.
 
 `Arc4u.Dependency.ComponentModel`, which held the `IContainer` implementation, is not built or
 shipped in Arc4u 9. See [Package support](../package-support.md).
@@ -291,7 +293,8 @@ services.AddSingleton<Arc4u.IAppSettings, Arc4u.AppSettings>();
 ```
 
 The lifetime and key come from the attributes compiled into the referenced assembly, exactly as for
-your own classes. Any public class with `[Export]` in a referenced assembly can be listed.
+your own classes. Any public, non-nested class with `[Export]` in a referenced assembly can be
+listed.
 
 ### Register the services of several projects
 
@@ -403,7 +406,9 @@ builder.Services.AddSingleton<IClock, FixedClock>(); // replaces SystemClock for
 
 To find out what is registered, <xref:Arc4u.Dependency.ServiceCollectionExtension.GetImplementationType*>
 returns the implementation type of the first registration whose service type is `T` (or whose
-implementation derives from the class `T`), or `null`.
+implementation derives from the class `T`), or `null`. It also returns `null` when that
+registration is keyed, or uses a factory or an instance, because such registrations have no
+implementation type.
 
 ## Troubleshooting
 
@@ -426,8 +431,9 @@ segment of the assembly name.
 
 The file cannot be read as the expected JSON. The message says why:
 
-- `JsonReaderException ... '/' is invalid after a value`: the file contains comments or trailing
-  commas. Remove them.
+- `JsonReaderException ... '/' is invalid after a value`: the file contains comments. Remove them.
+- `JsonReaderException ... The JSON array contains a trailing comma at the end which is not
+  supported in this mode`: the file contains a trailing comma. Remove it.
 - `JsonException: The JSON value could not be converted to System.String. Path: $.RegisterTypes[0]`:
   the entries use the old object form (`{ "Type": "..." }`). Write each entry as a string.
 
@@ -436,9 +442,13 @@ The file cannot be read as the expected JSON. The message says why:
 The generator skips an entry without warning when:
 
 - the assembly name after the comma does not match a referenced assembly file (`<Name>.dll`);
-- the entry contains a `Version=` part: the generator then requires that version string in the
-  path of the referenced assembly, which does not match NuGet folders such as `9.0.0-preview37`;
-- the type name is misspelled, or the type has no `[Export]` attribute.
+- the entry contains a `Version=` part that does not appear in the path of the referenced assembly.
+  A four-part version such as `Version=9.0.0.0` never matches a NuGet folder such as
+  `9.0.0-preview37`. Leave `Version=` out;
+- the assembly name is an 8.x name such as `Arc4u.Standard.Configuration` (see
+  [Package renames](../../migration/8x-to-9.md#package-renames));
+- the type name is misspelled, the type is nested in another type, or it has no `[Export]`
+  attribute.
 
 Inspect the generated `GeneratedTypes.g.cs` file (see
 [Inspect the generated code](#inspect-the-generated-code)).
@@ -451,6 +461,7 @@ Inspect the generated `GeneratedTypes.g.cs` file (see
 > - The attribute is recognized by its exact spelling `[Export(...)]`. A class marked
 >   `[ExportAttribute(...)]` or `[Arc4u.Dependency.Attribute.Export(...)]` is silently skipped.
 > - `[Export]` accepts several instances on a class, but only the first one is registered.
+> - `[Export]` on a `record` is ignored.
 > - A class with both `[Shared]` and `[Scoped]` is registered as scoped, but the same class listed
 >   in `RegisterTypes` is registered as a singleton.
 
