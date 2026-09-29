@@ -1,3 +1,17 @@
 # Owned by #183. Add sub-pages of this guide below Overview.
 - name: Overview
   href: index.md
+- name: JWT bearer
+  href: jwt-bearer.md
+- name: OpenID Connect and cookie
+  href: oidc-cookie.md
+- name: Hybrid
+  href: hybrid.md
+- name: Claims and authorization
+  href: claims-and-authorization.md
+- name: Identity providers
+  href: identity-providers.md
+- name: Custom root CA
+  href: custom-root-ca.md
+- name: Troubleshooting
+  href: troubleshooting.md
