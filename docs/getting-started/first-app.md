@@ -17,10 +17,6 @@ It takes about 15 minutes. You do not need an identity provider: without a token
 [Call the protected endpoint with a real token](#call-the-protected-endpoint-with-a-real-token)
 shows how to connect one.
 
-The finished application is also in the repository, in
-[`samples/GettingStarted`](https://github.com/Arc4u-org/Arc4u/tree/develop/9.0.0/samples/GettingStarted);
-see [Run the finished sample](#run-the-finished-sample).
-
 ## Prerequisites
 
 - The .NET 10 SDK or later (`dotnet --version`).
@@ -103,7 +99,7 @@ Replace the content of `appsettings.json` with:
 |---|---|---|
 | `Urls` | ASP.NET Core | The address the application listens on. It takes precedence over the random port in `Properties/launchSettings.json`. |
 | `Serilog:MinimumLevel` | Serilog | Minimum log levels: `Information`, and `Warning` for ASP.NET Core's own entries. |
-| `Application.Configuration` | `AddApplicationConfig` | The application name and environment. The four values are required: startup fails with a `ConfigurationException` that lists the missing ones. `Environment:LoggingName` is written in every log entry as `Application`. |
+| `Application.Configuration` | `AddApplicationConfig` | The application name and environment. The section and its four values are required: when a value is missing, startup fails with a `ConfigurationException` that lists the missing ones. `Environment:LoggingName` is written in every log entry as `Application`. |
 | `Authentication:DefaultAuthority:Url` | `AddJwtAuthentication` | The identity provider that issues the tokens. The placeholder is enough to start: the application contacts the identity provider only to validate a token. |
 | `Authentication:OAuth2.Settings:Audiences` | `AddJwtAuthentication` | The values accepted in the `aud` claim of a token. |
 | `Authentication:TokenCache:CacheName` | `AddJwtAuthentication` | The name of the Arc4u cache that stores tokens. It must be set, even though this application never uses it. |
@@ -157,6 +153,7 @@ using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.OAuth2.Extensions;
 using GettingStarted.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -176,6 +173,10 @@ builder.Services.RegisterGettingStartedTypes();
 
 // Validates JWT bearer tokens issued by the authority in the Authentication section.
 builder.Services.AddJwtAuthentication(builder.Configuration);
+// Known issue: AddJwtAuthentication turns issuer validation off. Turn it back on so that a token
+// signed by the authority's keys but issued by another issuer (another tenant or realm) is rejected.
+builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
+    options => options.TokenValidationParameters.ValidateIssuer = true);
 builder.Services.AddAuthorization();
 
 // Errors without a body (404, unhandled exceptions, ...) become ProblemDetails responses.
@@ -223,8 +224,12 @@ services.AddScoped<GettingStarted.Services.IGreetingService, global::GettingStar
 **Authentication.** `AddJwtAuthentication` reads the `Authentication` section and registers the
 ASP.NET Core JWT bearer handler as the default scheme, with Arc4u's `StandardBearerEvents`. When a
 request to a protected endpoint has no valid token, `StandardBearerEvents` answers `401` with a
-JSON body, and it logs why a token was rejected. `AddAuthorization` and `RequireAuthorization()` are the standard ASP.NET Core calls
-that protect `/me`.
+JSON body, and it logs why a token was rejected. `AddJwtAuthentication` turns off the validation of
+the token issuer (a known issue), so the `PostConfigure<JwtBearerOptions>` line that follows turns
+it back on; see the caution in
+[Call the protected endpoint with a real token](#call-the-protected-endpoint-with-a-real-token).
+`AddAuthorization` and `RequireAuthorization()` are the standard ASP.NET Core calls that protect
+`/me`.
 
 **Errors.** `AddProblemDetails`, `UseExceptionHandler` and `UseStatusCodePages` turn other errors,
 such as an unknown route, into [ProblemDetails](../concepts/glossary.md#problemdetails) responses.
@@ -345,29 +350,25 @@ the reason:
 | Expired | `401` with an `x-token-expired` response header, and `detail` "The token expired on ..." |
 | Wrong audience | `401` with `detail` "The audience '...' is invalid" |
 
-> [!NOTE]
-> `AddJwtAuthentication` validates the signature (with the keys of the authority), the lifetime
-> and the audience of the token. It does not validate the `iss` claim. Some providers, such as
-> Keycloak with its default settings, issue access tokens without an audience for your API: add
-> one on the provider side rather than turning audience validation off. The
-> [Server authentication](../guides/authentication-server/index.md) guide covers the other
-> settings.
+> [!CAUTION]
+> Known issue: `AddJwtAuthentication` validates the signature, the lifetime and the audience of
+> a token, but it turns off the validation of its issuer (`iss` claim). Any token signed by one of
+> the authority's keys is then accepted, whatever its issuer. With providers whose tenants or realms
+> share signing keys (Microsoft Entra ID, for example), a token issued by another tenant for the same
+> audience would be accepted. Keep the line of `Program.cs` that turns issuer validation back on,
+> right after `AddJwtAuthentication`:
+>
+> ```csharp
+> builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
+>     options => options.TokenValidationParameters.ValidateIssuer = true);
+> ```
+>
+> The issuer is then checked against the `issuer` of the provider's metadata, and a token from
+> another issuer gets `401` with `detail` "The issuer '...' is invalid".
 
-## Run the finished sample
-
-The repository contains this application in
-[`samples/GettingStarted`](https://github.com/Arc4u-org/Arc4u/tree/develop/9.0.0/samples/GettingStarted).
-It references the Arc4u source projects instead of the NuGet packages, so it needs the exact SDK
-pinned in [`src/global.json`](https://github.com/Arc4u-org/Arc4u/blob/develop/9.0.0/src/global.json)
-(the Arc4u projects also target .NET 11) and the ASP.NET Core 10 runtime.
-
-```bash
-git clone --branch develop/9.0.0 https://github.com/Arc4u-org/Arc4u.git
-cd Arc4u/samples/GettingStarted
-dotnet run
-```
-
-Then call the endpoints as in [Run and verify](#run-and-verify).
+Some providers, such as Keycloak with its default settings, issue access tokens without an audience
+for your API: add one on the provider side rather than turning audience validation off. The
+[Server authentication](../guides/authentication-server/index.md) guide covers the other settings.
 
 ## Troubleshooting
 
@@ -380,6 +381,7 @@ Then call the endpoints as in [Run and verify](#run-and-verify).
 | `MissingFieldException: DefaultAuthority must be filled!` | `Authentication:DefaultAuthority` is missing. |
 | `InvalidOperationException: No section exists with name Authentication ...` | The `Authentication` section is missing. |
 | `ConfigurationException: Application environment time zone is not defined ...` (or name, logging name) | A value of `Application.Configuration` is missing. |
+| `NullReferenceException: section exists with name Application.Configuration but it is not an ApplicationConfig object.` | The `Application.Configuration` section is missing. |
 
 ## Next steps
 

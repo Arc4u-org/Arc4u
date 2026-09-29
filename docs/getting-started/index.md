@@ -21,8 +21,7 @@ about five minutes.
   `dotnet new web`.
 
 > [!NOTE]
-> To build Arc4u itself, or to run the samples in the repository (they reference the source
-> projects), you need the exact SDK pinned in
+> To build Arc4u itself from source, you need the exact SDK pinned in
 > [`src/global.json`](https://github.com/Arc4u-org/Arc4u/blob/develop/9.0.0/src/global.json).
 > [CONTRIBUTING.md](https://github.com/Arc4u-org/Arc4u/blob/develop/9.0.0/CONTRIBUTING.md) explains
 > how to install it.
