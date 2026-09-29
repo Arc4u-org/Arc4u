@@ -17,6 +17,8 @@ builder.Services.AddILogger();
 logger.Business().Add("OrderId", 42).LogInformation("Order shipped");
 ```
 
+`AddILogger` is in the `Arc4u.Dependency` namespace; `Business()` is in `Arc4u.Diagnostics`.
+
 ## Documentation
 
 - Guide: [Diagnostics and logging](https://arc4u-org.github.io/Arc4u/guides/diagnostics/)

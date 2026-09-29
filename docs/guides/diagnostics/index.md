@@ -193,7 +193,7 @@ public static class Helpers
 
 ### Log an exception
 
-`LogException` is an extension of `ILogger` (namespace `Arc4u.Diagnostics`). It writes an Error entry with the message `Exception: {Message}` and event id 9000. Use the standard `LogError(exception, ...)` when you need your own message.
+`LogException` is an extension of `ILogger` (namespace `Arc4u.Diagnostics`). It writes an Error entry with the message `Exception: {Message}` (see [Event ids are not forwarded](#event-ids-are-not-forwarded)). Use the standard `LogError(exception, ...)` when you need your own message.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -218,7 +218,7 @@ When the exception is an `AggregateException`, the wrapper also writes one entry
 
 ### Log with high-performance messages
 
-The [`LoggerMessage`](https://learn.microsoft.com/dotnet/core/extensions/logger-message-generator) source generator works on top of the fluent API: define the message as an extension method of `ILogger` and call it at the end of the chain. Arc4u uses this pattern for its own messages (for example `LogMonitoring`, event id 9001). Arc4u uses event ids in the 9000 range, so choose ids outside it.
+The [`LoggerMessage`](https://learn.microsoft.com/dotnet/core/extensions/logger-message-generator) source generator works on top of the fluent API: define the message as an extension method of `ILogger` and call it at the end of the chain. Arc4u uses this pattern for its own messages (for example `LogMonitoring`). The `EventId` you declare is not forwarded to the logging providers, see [Event ids are not forwarded](#event-ids-are-not-forwarded).
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -244,17 +244,17 @@ The wrapper asks an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> for extra prope
 | `ILogger<T>` (transient wrapper) | `"Transient"` |
 | `IScopedLogger<T>` (scoped wrapper) | `"Scoped"` |
 
-`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` and no `ActivityId` until you register a provider**. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user name and `ActivityID` from the `IApplicationContext`. It is exported with the key `"Scoped"`; `AddApplicationContext()` registers it without a key, which the wrappers do not use. Register it with the key yourself (or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes` when you use the [Arc4u source generators](../dependency-injection/index.md)), and inject `IScopedLogger<T>`:
+`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` and no `ActivityId` until you register a provider**. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user name and `ActivityID` from the scoped `IApplicationContext`. It is exported with the key `"Scoped"`; `AddApplicationContext()` registers it without a key, which the wrappers do not use. Register it with the key yourself (or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes` when you use the [Arc4u source generators](../dependency-injection/index.md)), and inject `IScopedLogger<T>`. Call `AddApplicationContext()` (namespace `Arc4u.Security.Principal`, package `Arc4u`), which registers `IApplicationContext` and calls `AddILogger()` for you; with `AddILogger()` alone the provider cannot be created and the first resolve of the logger throws an `InvalidOperationException`.
 
 ```csharp
-using Arc4u.Dependency;
 using Arc4u.Diagnostics;
+using Arc4u.Security.Principal;
 
 public static class LoggingRegistration
 {
     public static void Register(WebApplicationBuilder builder)
     {
-        builder.Services.AddILogger();
+        builder.Services.AddApplicationContext();
         builder.Services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped");
     }
 }
@@ -264,6 +264,11 @@ public class Handler(IScopedLogger<Handler> logger)
     public void Handle() => logger.Technical().LogInformation("Handled");
 }
 ```
+
+`DefaultLoggingProperties` only returns properties when the application context has data:
+
+- `Identity` is the user name of the `IApplicationContext.Principal` (its profile name, or the identity name when there is no profile). The principal is set by Arc4u authentication (see the [server authentication guide](../authentication-server/index.md)); without one, the provider returns nothing.
+- `ActivityId` is the `IApplicationContext.ActivityID`, an empty string unless something sets it. In the Arc4u packages only the `AuthorizationInterceptor` of `Arc4u.gRPC` does; set it yourself if you want it in the logs.
 
 To add your own properties, implement `IAddPropertiesToLog`. Values that are `null` are ignored, and the keys of `LoggingConstants` such as `Identity` and `ActivityId` are the ones the Arc4u formatters read.
 
@@ -297,11 +302,11 @@ With that provider, an entry written by an `IScopedLogger<T>` looks like this:
 ```
 
 > [!NOTE]
-> A transient `ILogger<T>` uses the `"Transient"` key, so it does not get the properties of a `"Scoped"` provider. Register a keyed transient provider as well if you want them on `ILogger<T>` entries.
+> A transient `ILogger<T>` uses the `"Transient"` key, so it does not get the properties of a `"Scoped"` provider. You can register a keyed transient provider for it, but only one without scoped dependencies (such as `TenantProperties`). `DefaultLoggingProperties` depends on the scoped `IApplicationContext`: registered as `"Transient"`, the host fails to start in the Development environment (`Cannot consume scoped service 'Arc4u.Security.Principal.IApplicationContext' from singleton ...`, also for the `SystemResources` hosted service).
 
 ### Log CPU and memory usage
 
-`AddSystemMonitoring()` (namespace `Microsoft.Extensions.DependencyInjection`) registers the hosted service <xref:Arc4u.Diagnostics.Monitoring.SystemResources>. Ten seconds after the host starts, and then every ten seconds, it writes one Monitoring entry with the message `Cpu & Memory` and event id 9001. These values are fixed: `AddSystemMonitoring` has no parameter to change them.
+`AddSystemMonitoring()` (namespace `Microsoft.Extensions.DependencyInjection`) registers the hosted service <xref:Arc4u.Diagnostics.Monitoring.SystemResources>. Ten seconds after the host starts, and then every ten seconds, it writes one Monitoring entry with the message `Cpu & Memory`. These values are fixed for `AddSystemMonitoring`, which has no parameter to change them. To change them, register the service yourself: `SystemResources` has a constructor parameter `internalPeriodInSeconds` and a `StartMonitoringDelayInSeconds` property, for example `services.AddHostedService(sp => new SystemResources(sp.GetRequiredService<ILogger<SystemResources>>(), 60) { StartMonitoringDelayInSeconds = 30 })`.
 
 ```csharp
 using Arc4u.Dependency;
@@ -392,11 +397,11 @@ The key you passed to `Add` is one of `Application`, `Pid`, `Tid`, `Method`, `So
 
 ### Entries have no Identity or ActivityId
 
-No `IAddPropertiesToLog` provider is registered under the key of the logger you use. See [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry).
+Check, in this order: an `IAddPropertiesToLog` provider is registered under the key of the logger you use (`"Scoped"` for `IScopedLogger<T>`, `"Transient"` for `ILogger<T>`); `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal); something sets `IApplicationContext.ActivityID` (`ActivityId` is empty otherwise). See [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry).
 
 ### Properties added with Add stay on later entries
 
-Known issue. The properties you add (`Add`, `AddIf`, ...), the values of message template arguments and the `AddStackTrace()` setting are stored in the logger instance and are not cleared once the entry is written. Every later entry written by the same logger instance carries them, even when it uses another category. The lifetime of the instance follows its consumer: a transient `ILogger<T>` injected in a singleton service lives as long as the application, and an `IScopedLogger<T>` lives as long as its scope.
+Known issue. The properties you add (`Add`, `AddIf`, ...), the values of message template arguments (including the `Message` property that `LogException` writes with the exception message, which often contains data) and the `AddStackTrace()` setting are stored in the logger instance and are not cleared once the entry is written. Every later entry written by the same logger instance carries them, even when it uses another category. The lifetime of the instance follows its consumer: a transient `ILogger<T>` injected in a singleton service lives as long as the application, and an `IScopedLogger<T>` lives as long as its scope.
 
 This output comes from one `ILogger<Program>` that logs three entries, only the first with `Add("Ssn", ...)` (the fixed columns are shortened):
 
@@ -425,6 +430,10 @@ public class Cleaner(ILogger<Cleaner> logger)
     }
 }
 ```
+
+### Event ids are not forwarded
+
+Known issue. The Arc4u logger writes every entry with event id 0: it ignores the `EventId` it receives, so the `EventId` of a `[LoggerMessage]` method, of `LogException` or of the Arc4u monitoring messages never reaches Serilog, OpenTelemetry or any other provider. Entries written by the framework itself keep their event id. Do not filter, count or alert on the event ids of entries written through the Arc4u logger; use the message template or a property instead.
 
 ### The category is always Technical
 

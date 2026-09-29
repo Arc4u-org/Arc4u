@@ -14,7 +14,7 @@ A server application sends its logs to a log server or to the console. A client 
 dotnet add package Arc4u.Diagnostics.Serilog.Sinks.RealmDb --prerelease
 ```
 
-The package references `Arc4u.Diagnostics.Serilog` and the `Realm` package. You also need a Serilog host integration such as `Serilog.AspNetCore` or `Serilog.Extensions.Hosting`.
+The package references `Arc4u.Diagnostics.Serilog`, `Arc4u`, `Realm` and `Serilog.Sinks.PeriodicBatching`. You also need a Serilog host integration such as `Serilog.AspNetCore` or `Serilog.Extensions.Hosting`.
 
 ## Configuration
 
@@ -64,7 +64,7 @@ Logging `Technical().Add("OrderId", 42).LogInformation("Order Shipped")` and rea
 The columns are `Timestamp`, `MessageType`, `MessageCategory`, `Message` and `Properties`.
 
 > [!WARNING]
-> The list has no size limit and no eviction. It grows for the life of the process until you call `ILogStore.RemoveAll()`, and it is a plain `List<T>`: keep the number of readers small and call `RemoveAll` from a single place.
+> The list has no size limit and no eviction. It grows for the life of the process until you call `ILogStore.RemoveAll()`. It is also a plain `List<T>`: the batching sink adds entries on a background thread, so a `GetLogs` call that enumerates the list at the same time can throw `Collection was modified`. Catch the exception and retry, or read the store at moments when little is logged.
 
 ### Store the entries in a Realm database
 
@@ -132,6 +132,12 @@ Known issue. `MemoryLogDB` and `RealmDB` read the category with the same helper 
 ### GetLogs with a criteria returns nothing on the memory store
 
 Known issue. `MemoryLogStore` lower-cases the criteria and then searches the message with a case-sensitive comparison, so a message that contains a capital letter in the searched text never matches: with the message `Order Shipped`, the criteria `order`, `shipped` and `Shipped` all return no entry. Leave the criteria empty and filter the result yourself. The Realm store compares in lower case on both sides.
+
+### Realm accessed from incorrect thread
+
+Known issue. `RealmLoggingDbCtx` opens its `Realm` in the constructor and is registered as a singleton, and a Realm instance can only be used on the thread that opened it. `GetLogs` and `RemoveAll` called from another thread throw `RealmException: Realm accessed from incorrect thread`. This is what happens in ASP.NET Core, where requests run on thread-pool threads, so the Realm store is not usable from a web endpoint as in the memory example.
+
+The supported pattern is a client application whose reads happen on one thread: resolve `ILogStore` on that thread (for example the UI thread of a desktop application) and call it from there only. The Realm sink that writes the entries opens its own instance on its writer thread and is not affected. In a web application, use the memory store or a server-side sink instead.
 
 ### A Realm page holds fewer entries than requested
 

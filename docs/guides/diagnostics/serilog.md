@@ -27,14 +27,14 @@ var app = builder.Build();
 app.Run();
 ```
 
-`Arc4u.Diagnostics.Serilog` does not need to be referenced for this to work; it is only needed for `SimpleTextFormatter` and the other types described below.
+Without `SimpleTextFormatter`, `Arc4u.Diagnostics.Serilog` is not needed for the connection to work; the package provides the formatter and the other types described below.
 
 ## What a sink receives
 
-The Arc4u wrapper passes the properties as the log state, so Serilog turns each of them into a property of the `LogEvent`. Here is a Monitoring entry written to a sink that prints Serilog's `JsonFormatter`:
+The Arc4u wrapper passes the properties as the log state, so Serilog turns each of them into a property of the `LogEvent`. Here is a Monitoring entry, written by a fresh logger to a sink that prints Serilog's `JsonFormatter`:
 
 ```json
-{"Timestamp":"2026-09-29T14:50:24.5922110+02:00","Level":"Information","MessageTemplate":"Cpu sample","Properties":{"OrderId":42,"Id":7,"Cpu":12.5,"Method":"<Main>$","SourceContext":"Program","Category":"Monitoring","Application":"App","Tid":1,"Pid":19856}}
+{"Timestamp":"2026-09-29T15:19:02.4535660+02:00","Level":"Information","MessageTemplate":"Cpu sample","Properties":{"Cpu":12.5,"Method":"<Main>$","SourceContext":"Program","Category":"Monitoring","Application":"Chk","Tid":1,"Pid":85565}}
 ```
 
 `Category` is a string (`Technical`, `Business` or `Monitoring`). See [Properties written on every entry](index.md#properties-written-on-every-entry) for the other names.
@@ -146,6 +146,22 @@ With that configuration, the console shows the Technical and Business entries an
 29/09/2026 14:52:23,050  Information   Technical   25688  1   Program - <Main>$ - business entry - {"OrderId":42}
 ```
 
+## Enrichers
+
+A Serilog enricher adds a property to every event, whatever wrote it. Add them in the `Enrich` array of the `Serilog` section (in the section above, next to `"MinimumLevel"`); the enricher packages are listed in `"Using"` like the sinks:
+
+```json
+{
+  "Serilog": {
+    "Using": [ "Serilog.Enrichers.Environment" ],
+    "Enrich": [ "WithMachineName" ],
+    "Properties": { "Environment": "Production" }
+  }
+}
+```
+
+`WithMachineName` (package `Serilog.Enrichers.Environment`) adds `MachineName`, and `Properties` adds a fixed property. Serilog enrichers run for entries written through the Arc4u logger and for entries written by libraries that use plain `ILogger`. The Arc4u standard properties (`Application`, `Pid`, `Tid`, `SourceContext`, `Method`, `Category`) are only added by the Arc4u logger, so use an enricher for a property that must be on every entry. An enricher does not replace a property with the same name that the event already has.
+
 ## Text output format
 
 `SimpleTextFormatter` writes one line per entry. The fixed columns are padded, so that the lines of a console or a file line up:
@@ -172,7 +188,6 @@ To route Monitoring entries to their own sink, or to keep them out of one, filte
 ```csharp
 using Arc4u.Diagnostics.Formatter;
 using Serilog;
-using Serilog.Expressions;
 
 public static class CategoryRouting
 {
