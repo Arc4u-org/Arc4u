@@ -11,6 +11,7 @@ dotnet add package Arc4u.Caching.SqlServer --prerelease
 ## Usage
 
 ```csharp
+builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
 builder.Services.AddKeyedTransient<ICache, SqlCache>(CacheContext.Sql);
@@ -21,6 +22,6 @@ The `Caching` section declares the cache with `"Kind": "Sql"` and the settings `
 
 ## Documentation
 
-- Guide: [Caching](https://arc4u-org.github.io/Arc4u/guides/caching/sql-server.html)
+- Guide: [SQL Server cache](https://arc4u-org.github.io/Arc4u/guides/caching/sql-server.html)
 - API reference: [Arc4u.Caching.Sql](https://arc4u-org.github.io/Arc4u/api/Arc4u.Caching.Sql.html)
 - Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)

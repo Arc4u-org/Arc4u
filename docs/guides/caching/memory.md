@@ -18,8 +18,8 @@ changing the object after `Put` does not change what `Get` returns, and the size
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Caching.Memory` | The `MemoryCache` class and `AddMemoryCache` for its options. |
-| `Arc4u.Caching` | `ICacheContext` and `AddCacheContext`. |
+| `Arc4u.Caching.Memory` | The `MemoryCache` class. |
+| `Arc4u.Caching` | `ICacheContext`, `AddCacheContext`, and `AddMemoryCache` with `MemoryCacheOption` (namespace `Arc4u.Configuration.Memory`). |
 | `Arc4u.Serializer.JSon` | The serializer (any `IObjectSerialization` works). |
 
 ## Install
@@ -117,7 +117,8 @@ Each name has its own store and limit. Give a small, short-lived cache its own n
 ### Expire and evict
 
 `Put` with a `TimeSpan` expires the value (absolute, or sliding with `isSlided: true`). When the size limit is reached,
-the cache removes `CompactionPercentage` of its entries. Values are never shared with another process: after a restart, or
+the cache removes `CompactionPercentage` of its entries, and the entry being written when the limit is hit can be dropped too
+(`Get` then returns `null`). Values are never shared with another process: after a restart, or
 in a second instance of the service, the cache is empty.
 
 ## Extensibility points

@@ -11,6 +11,7 @@ dotnet add package Arc4u.Caching.Redis --prerelease
 ## Usage
 
 ```csharp
+builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
 builder.Services.AddKeyedTransient<ICache, RedisCache>(CacheContext.Redis);
@@ -22,6 +23,6 @@ The `Caching` section declares the cache with `"Kind": "Redis"` (settings `Conne
 
 ## Documentation
 
-- Guide: [Caching](https://arc4u-org.github.io/Arc4u/guides/caching/redis.html)
+- Guide: [Redis cache](https://arc4u-org.github.io/Arc4u/guides/caching/redis.html)
 - API reference: [Arc4u.Caching.Redis](https://arc4u-org.github.io/Arc4u/api/Arc4u.Caching.Redis.html)
 - Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)

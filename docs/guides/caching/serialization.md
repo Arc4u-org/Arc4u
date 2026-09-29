@@ -67,7 +67,9 @@ Each class has three constructors:
 | `(JsonSerializerOptions options)` | Your own options (naming policy, converters). Reflection based. |
 | `(JsonSerializerContext context)` | A source-generated context. No reflection: use it when you trim or publish with Native AOT. |
 
-The first two are marked `RequiresUnreferencedCode` and show trimming warnings in a trimmed or AOT project.
+The first two are marked `RequiresUnreferencedCode` and show trimming warnings in a trimmed or AOT project. The exception
+is `JsonZipSerialization`, whose context constructor is also marked `RequiresUnreferencedCode`: for trimming or Native AOT,
+use `JsonSerialization`, `JsonGZipSerialization`, `JsonDeflateSerialization` or `JsonBrotliSerialization` with a context.
 
 ### Code
 

@@ -33,7 +33,7 @@ flowchart LR
 > [!NOTE]
 > `HybridCache` (the .NET hybrid cache) is not implemented. The
 > [Arc4u 9.0 roadmap](https://github.com/Arc4u-org/Arc4u/issues/129) (an open issue) lists "Upgrade Caching to use
-> HybridCache", and a maintainer proposed to handle it in a later 9.x version. The 9.0 code does not reference
+> HybridCache". The 9.0 code does not reference
 > `HybridCache`: caches are `ICache` instances as described on this page.
 
 ## Packages involved
@@ -90,7 +90,7 @@ to create the caches, whatever the `sectionName` argument. Keep the default name
       {
         "Name": "Shared",
         "Kind": "Redis",
-        "IsAutoStart": false,
+        "IsAutoStart": true,
         "Settings": {
           "ConnectionString": "localhost:6379",
           "InstanceName": "MyApp-"
@@ -270,7 +270,11 @@ the expiration and the tracing on top of an `IDistributedCache`.
 
 ### `InvalidOperationException: Bad Arc4u usage.` when the cache context is created
 
-The caches log with the Arc4u logger. Call `builder.Services.AddILogger()` before `AddCacheContext`.
+The caches log with the Arc4u logger. Call `builder.Services.AddILogger()` (the order relative to `AddCacheContext` does not matter).
+
+### `InvalidOperationException: Section 'Caching' not found in configuration.`
+
+`AddCacheContext` requires the section. Add the `Caching` section to the configuration.
 
 ### `InvalidOperationException: There is no cache configured with the name ...`
 

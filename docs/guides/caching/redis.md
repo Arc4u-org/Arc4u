@@ -153,12 +153,17 @@ from <xref:Arc4u.Caching.BaseDistributeCache`1>).
 ### `ArgumentNullException` or `ArgumentException` at startup
 
 A required setting is missing: `ConnectionString` for `Redis`; `InstanceName`, `SentinelEndpoints` for `RedisSentinel`. Check the
-index of the cache in `Caching:Caches`. A cache with no `Settings` section behaves as if every setting was missing.
+index of the cache in `Caching:Caches`.
+
+A cache with no `Settings` section is not validated at startup, because nothing is registered for it. A `Redis` cache then
+fails on its first operation with `DataCacheException: Value cannot be null. (Parameter 'configuration')`; a `RedisSentinel`
+cache throws `InvalidOperationException: At least one Sentinel endpoint must be configured.` when the `ICacheContext` is resolved.
 
 ### Operations fail or time out
 
 The initialization does not contact Redis, so a wrong host appears on the first operation. `Get` wraps the error in
-`DataCacheException`; `TryGetValue` and `Remove` return `false` instead of throwing.
+`DataCacheException`; `TryGetValue` and `Remove` return `false` instead of throwing. `Put` and `PutAsync` do not wrap the
+error: the StackExchange.Redis exception (for example `RedisConnectionException`) reaches you.
 
 ## See also
 

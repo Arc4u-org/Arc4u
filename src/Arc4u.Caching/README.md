@@ -13,6 +13,7 @@ dotnet add package Arc4u.Caching --prerelease
 
 ```csharp
 // Reads the "Caching" section of the configuration.
+builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 
 // Later, with an injected ICacheContext:
