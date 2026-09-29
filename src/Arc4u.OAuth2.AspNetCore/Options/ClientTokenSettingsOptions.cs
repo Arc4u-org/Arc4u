@@ -5,7 +5,7 @@ namespace Arc4u.OAuth2.Options;
 /// <para>
 /// Carries only the fields common to every client token acquisition scenario. The
 /// <see cref="Scenario"/> property is the discriminator that selects the
-/// <see cref="Arc4u.OAuth2.TokenProvider.IClientTokenScenario"/> responsible for validating this
+/// <see cref="Arc4u.OAuth2.TokenProvider.Scenarios.IClientTokenScenario"/> responsible for validating this
 /// entry and projecting it into a <see cref="Arc4u.Configuration.SimpleKeyValueSettings"/>.
 /// </para>
 /// <para>
@@ -17,7 +17,7 @@ namespace Arc4u.OAuth2.Options;
 public class ClientTokenSettingsOptions
 {
     /// <summary>
-    /// Discriminator. The key resolving an <see cref="Arc4u.OAuth2.TokenProvider.IClientTokenScenario"/>
+    /// Discriminator. The key resolving an <see cref="Arc4u.OAuth2.TokenProvider.Scenarios.IClientTokenScenario"/>
     /// (e.g. "UserPassword", "ClientCredentials").
     /// </summary>
     public string Scenario { get; set; } = default!;
@@ -39,7 +39,7 @@ public class ClientTokenSettingsOptions
 
     /// <summary>
     /// Open bag of scenario-specific values. The selected scenario consumes the keys it knows
-    /// (see <see cref="Arc4u.OAuth2.TokenProvider.IClientTokenScenario.KnownKeys"/>); any other key is
+    /// (see <see cref="Arc4u.OAuth2.TokenProvider.Scenarios.IClientTokenScenario.KnownKeys"/>); any other key is
     /// forwarded to the token endpoint as an extra request parameter.
     /// </summary>
     public Dictionary<string, string> Settings { get; set; } = new(StringComparer.OrdinalIgnoreCase);

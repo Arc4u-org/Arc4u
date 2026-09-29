@@ -11,8 +11,8 @@ namespace Arc4u.OAuth2.AspNetCore.Filters;
 
 /// <summary>
 /// Global filter to manage exceptions.
-/// Will log the exception and return a BadRequestObjectResult with the ActivityId to use to retrieve the information in the log.
-/// Only business messages are returned to the client assoicated with the <see cref="AppException"/>."/>
+/// Logs the exception (with the ActivityId to use to retrieve it in the log) and sets an <c>ObjectResult</c> carrying problem details.
+/// The result is a 403 for an <see cref="UnauthorizedAccessException"/> and a generic 500 (mentioning the ActivityId) for any other exception.
 /// </summary>
 public class ManageExceptionsFilter(ILogger<ManageExceptionsFilter> logger, IApplicationContext application) : IAsyncExceptionFilter
 {

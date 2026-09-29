@@ -86,7 +86,7 @@ public class Interval<T>
     /// Gets a value indicating whether this instance represents an empty <see cref="Interval&lt;T&gt;"/>.
     /// </summary>
     /// <value><c>true</c> if this instance contains no element; otherwise, <c>false</c>.</value>
-    /// <seealso cref="Empty"/>
+    /// <seealso cref="Interval.Empty{T}"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Empty_set">Empty Set (set theory)</seealso>
     public bool IsEmpty
     {
@@ -104,7 +104,7 @@ public class Interval<T>
     /// 	<c>true</c> if this instance contains no element; otherwise, <c>false</c>.
     /// </returns>
     /// <seealso cref="IsEmpty"/>
-    /// <seealso cref="Empty"/>
+    /// <seealso cref="Interval.Empty{T}"/>
     /// <seealso cref="Interval.EmptyOf"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Empty_set">Empty Set (set theory)</seealso>
     protected internal bool IsEmptyOf(T value)
@@ -203,10 +203,10 @@ public class Interval<T>
     #region Overriden Members
 
     /// <summary>
-    /// Returns a <see cref="System.string"/> that represents this instance.
+    /// Returns a <see cref="string"/> that represents this instance.
     /// </summary>
     /// <returns>
-    /// A <see cref="System.string"/> that represents this instance.
+    /// A <see cref="string"/> that represents this instance.
     /// </returns>
     public override string ToString()
     {
@@ -451,7 +451,7 @@ public class Interval<T>
     /// <param name="other">Another <see cref="Interval&lt;T&gt;"/>.</param>
     /// <param name="intersection">When this method returns, contains the <see cref="Interval&lt;T&gt;"/>
     /// that contains all elements of this instance that also belong to the <paramref name="other"/> one;
-    /// otherwise, an <see cref="Empty"/> interval.</param>
+    /// otherwise, an <see cref="Interval.Empty{T}"/> interval.</param>
     /// <returns><b>true</b> if the intersection is not empty; otherwise, <b>false</b>.</returns>
     public bool TryIntersectionWith(Interval<T> other, out Interval<T> intersection)
     {
@@ -461,9 +461,6 @@ public class Interval<T>
     /// <summary>
     /// Determines the intersection of this instance with the <paramref name="other"/> one.
     /// </summary>
-    /// <example>
-    /// <img src="../Images/Interval/Venn_Intersection.png" alt="Intersection"/>
-    /// </example>
     /// <param name="other">Another <see cref="Interval&lt;T&gt;"/>.</param>
     /// <returns>An <see cref="Interval&lt;T&gt;"/> that contains all elements of this instance
     /// that also belong to the <paramref name="other"/> one (or equivalently, all elements of the <paramref name="other"/> one
@@ -477,9 +474,6 @@ public class Interval<T>
     /// <summary>
     /// Determines the union of this instance with the <paramref name="other"/> one.
     /// </summary>
-    /// <example>
-    /// <img src="../Images/Interval/Venn_Union.png" alt="Union" />
-    /// </example>
     /// <param name="other">Another <see cref="Interval&lt;T&gt;"/>.</param>
     /// <returns>An <see cref="IntervalCollection&lt;T&gt;"/> that contains all distinct elements of this instance and the <paramref name="other"/> one.</returns>
     /// <seealso href="http://en.wikipedia.org/wiki/Union_(set_theory)">Union (set theory)</seealso>
@@ -550,9 +544,6 @@ public class Interval<T>
     /// <summary>
     /// Determines the difference this instance with the <paramref name="other"/> one.
     /// </summary>
-    /// <example>
-    /// <img src="../Images/Interval/Venn_Difference.png" alt="Difference"/>
-    /// </example>
     /// <param name="other">Another <see cref="Interval&lt;T&gt;"/>.</param>
     /// <returns>An <see cref="IntervalCollection&lt;T&gt;"/> that contains elements in this instance but not in <paramref name="other"/> one.</returns>
     /// <seealso href="http://en.wikipedia.org/wiki/Complement_(set_theory)">Relative complement (set theory)</seealso>

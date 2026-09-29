@@ -6,9 +6,6 @@ namespace Arc4u;
 /// <summary>
 /// Represents a period. This class cannot be inherited.
 /// </summary>
-/// <example>
-/// <img src="../Images/PeriodDiagram.png" alt="Period" />    
-/// </example>
 [DataContract]
 public sealed class Period
     : Interval<DateTimeOffset?>
