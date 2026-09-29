@@ -73,11 +73,13 @@ your stub, replace every `<...>` placeholder and delete the comment.
 ### Package support matrix outline
 
 - One table per feature area, in the order of the guides, with the columns
-  `Package | Status | Target frameworks | Guide`.
-- `Status` is one of **Supported**, **Deprecated** or **Removed**. Target frameworks come from
-  the package's `.csproj` on `develop/9.0.0`.
-- A final section lists deprecated and removed packages with their replacement and a link to
-  the migration guide.
+  `Package | Status | Target frameworks | Guide`. Packages that have no guide of their own
+  (the foundation packages) go in their own table and link to Concepts.
+- `Status` is one of **Supported**, **Deprecated**, **Not shipped in 9.x** (the source exists
+  but is not in `src/Arc4u.slnx`, so no 9.x package is built) or **Removed**. Target frameworks
+  come from the package's `.csproj` on `develop/9.0.0`.
+- A final section lists deprecated, not shipped and removed packages with their last listed
+  NuGet version, their replacement and a link to the migration guide.
 
 ### Migration guide outline
 
