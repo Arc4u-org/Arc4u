@@ -4,8 +4,18 @@ using MongoDB.Driver;
 
 namespace Arc4u.MongoDB;
 
+/// <summary>
+/// Default <see cref="IMongoClientFactory{TContext}"/>: creates the client lazily, once, from the named <see cref="MongoClientSettings"/> of the database.
+/// </summary>
+/// <typeparam name="TContext">The type of the database context.</typeparam>
 public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext> where TContext : DbContext
 {
+    /// <summary>
+    /// Creates the factory.
+    /// </summary>
+    /// <param name="clientSettings">The named client settings; the name is the database name in lower case.</param>
+    /// <param name="serviceProvider">Used to resolve the registered <typeparamref name="TContext"/>.</param>
+    /// <exception cref="InvalidOperationException"><typeparamref name="TContext"/> is not registered.</exception>
     public DefaultMongoClientFactory(IOptionsMonitor<MongoClientSettings> clientSettings, IServiceProvider serviceProvider)
     {
         _clientSettings = clientSettings;
@@ -18,6 +28,8 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
     readonly IOptionsMonitor<MongoClientSettings> _clientSettings;
     readonly TContext _mongoContext;
 
+    /// <inheritdoc/>
+    /// <exception cref="MongoClientException">No settings are defined for the database name.</exception>
     public IMongoClient CreateClient()
     {
         if (null != _client)
@@ -67,6 +79,7 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
         }
     }
 
+    /// <inheritdoc/>
     public IMongoCollection<TEntity> GetCollection<TEntity>(string collectionName)
     {
         var db = GetDatabase();
@@ -74,6 +87,9 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
         return db.GetCollection<TEntity>(collectionName);
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="TypeNotMappedToCollectionException"><typeparamref name="TEntity"/> is not mapped to a collection.</exception>
+    /// <exception cref="TypeMappedToMoreThanOneCollectionException{TEntity}"><typeparamref name="TEntity"/> is mapped to several collections.</exception>
     public IMongoCollection<TEntity> GetCollection<TEntity>()
     {
         var type = typeof(TEntity);

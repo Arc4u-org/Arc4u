@@ -51,6 +51,7 @@ public class OAuth2Interceptor<T> : Interceptor
 
         return serviceProvider;
     }
+    /// <inheritdoc/>
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
         AddBearerTokenCallerMetadata(ref context);
@@ -58,6 +59,7 @@ public class OAuth2Interceptor<T> : Interceptor
         return continuation(request, context);
     }
 
+    /// <inheritdoc/>
     public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
     {
         AddBearerTokenCallerMetadata(ref context);
@@ -65,6 +67,7 @@ public class OAuth2Interceptor<T> : Interceptor
         return continuation(request, context);
     }
 
+    /// <inheritdoc/>
     public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
     {
         AddBearerTokenCallerMetadata(ref context);
@@ -72,6 +75,7 @@ public class OAuth2Interceptor<T> : Interceptor
         return continuation(context);
     }
 
+    /// <inheritdoc/>
     public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
     {
         AddBearerTokenCallerMetadata(ref context);
@@ -79,6 +83,7 @@ public class OAuth2Interceptor<T> : Interceptor
         return continuation(request, context);
     }
 
+    /// <inheritdoc/>
     public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
     {
         AddBearerTokenCallerMetadata(ref context);

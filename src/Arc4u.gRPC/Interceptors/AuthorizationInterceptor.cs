@@ -8,12 +8,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.gRPC.Interceptors;
 
+/// <summary>
+/// Server interceptor that prepares the Arc4u context of a call and hides unexpected server errors.
+/// </summary>
+/// <remarks>
+/// For each call it applies the <c>culture</c> request header (when present and a principal exists) to the current thread and to the principal profile,
+/// and sets <see cref="IApplicationContext.ActivityID"/> to the current activity id (or a new GUID). Duplex calls on <c>/grpc.reflection</c> are left untouched.
+/// An <see cref="RpcException"/> thrown by the service is logged and rethrown; any other exception is logged and replaced by an <c>Internal</c> status with a generic message.
+/// </remarks>
 public class AuthorizationInterceptor(
     ILogger<AuthorizationInterceptor> logger,
     IApplicationContext applicationContext) : Interceptor
 {
     //const string appSettings = "AppSettings";
 
+    /// <inheritdoc/>
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(TRequest request,
         ServerCallContext context, UnaryServerMethod<TRequest, TResponse> continuation)
     {
@@ -63,6 +72,7 @@ public class AuthorizationInterceptor(
         applicationContext.ActivityID = Activity.Current?.Id ?? Guid.NewGuid().ToString();
     }
 
+    /// <inheritdoc/>
     public override async Task ServerStreamingServerHandler<TRequest, TResponse>(TRequest request,
         IServerStreamWriter<TResponse> responseStream, ServerCallContext context,
         ServerStreamingServerMethod<TRequest, TResponse> continuation)
@@ -88,6 +98,7 @@ public class AuthorizationInterceptor(
         }
     }
 
+    /// <inheritdoc/>
     public override async Task DuplexStreamingServerHandler<TRequest, TResponse>(
         IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream,
         ServerCallContext context, DuplexStreamingServerMethod<TRequest, TResponse> continuation)

@@ -41,15 +41,15 @@ public class ClientErrorInterceptor : Interceptor
     #region UnaryCall
 
     /// <summary>
-    /// 
+    /// Intercepts an asynchronous unary call and converts the <see cref="RpcException"/> raised while starting it:
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged.
     /// </summary>
-    /// <typeparam name="TRequest"></typeparam>
-    /// <typeparam name="TResponse"></typeparam>
-    /// <param name="request"></param>
+    /// <typeparam name="TRequest">The request message type.</typeparam>
+    /// <typeparam name="TResponse">The response message type.</typeparam>
+    /// <param name="request">The request message.</param>
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
-    /// <exception cref="AppException"></exception>
     /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
@@ -70,15 +70,15 @@ public class ClientErrorInterceptor : Interceptor
 
     #region ClientStreaming
     /// <summary>
-    /// 
+    /// Intercepts an asynchronous server streaming call and converts the <see cref="RpcException"/> raised while starting it:
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged.
     /// </summary>
-    /// <typeparam name="TRequest"></typeparam>
-    /// <typeparam name="TResponse"></typeparam>
-    /// <param name="request"></param>
+    /// <typeparam name="TRequest">The request message type.</typeparam>
+    /// <typeparam name="TResponse">The response message type.</typeparam>
+    /// <param name="request">The request message.</param>
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
-    /// <exception cref="AppException"></exception>
     /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(
                                     TRequest request,
@@ -106,14 +106,14 @@ public class ClientErrorInterceptor : Interceptor
     #region Duplex
 
     /// <summary>
-    /// 
+    /// Intercepts an asynchronous duplex streaming call and converts the <see cref="RpcException"/> raised while starting it:
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged.
     /// </summary>
-    /// <typeparam name="TRequest"></typeparam>
-    /// <typeparam name="TResponse"></typeparam>
+    /// <typeparam name="TRequest">The request message type.</typeparam>
+    /// <typeparam name="TResponse">The response message type.</typeparam>
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
-    /// <exception cref="AppException"></exception>
     /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
                                     ClientInterceptorContext<TRequest, TResponse> context,

@@ -2,6 +2,9 @@
 
 namespace Arc4u.AspNetCore.Versioning;
 
+/// <summary>
+/// Well-known <see cref="ApiVersion"/> values of the Arc4u interface endpoints.
+/// </summary>
 public static class ApiVersionDefault
 {
     /// <summary>

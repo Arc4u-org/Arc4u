@@ -7,9 +7,18 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.gRPC.ChannelCertificate;
 
+/// <summary>
+/// Provides, and caches by host name, the PEM encoded certificate of gRPC servers, typically to trust a private root certificate on a channel.
+/// </summary>
+/// <remarks>Registered as a shared (singleton) service through the <c>Export</c> attribute. The certificate is fetched with an <see cref="IRootCertificateExtractor"/>.</remarks>
 [Export, Shared]
 public class RootPemCertificates
 {
+    /// <summary>
+    /// Creates the collection.
+    /// </summary>
+    /// <param name="certificateExtractor">The service used to fetch server certificates.</param>
+    /// <param name="logger">The logger for technical messages.</param>
     public RootPemCertificates(IRootCertificateExtractor certificateExtractor, ILogger<RootPemCertificates> logger)
     {
         _certificateExtractor = certificateExtractor;
@@ -21,10 +30,20 @@ public class RootPemCertificates
     readonly ILogger<RootPemCertificates> _logger;
     static readonly object _lock = new();
 
+    /// <summary>
+    /// Gets the PEM certificates already retrieved, keyed by host name.
+    /// </summary>
     public IReadOnlyDictionary<string, string> Pems => _pemsCollections;
 
     private readonly Dictionary<string, string> _pemsCollections;
 
+    /// <summary>
+    /// Gets the PEM encoded certificate of the server behind <paramref name="rootUri"/>, fetching and caching it by host on first use.
+    /// </summary>
+    /// <param name="rootUri">The https URL of the server.</param>
+    /// <returns>The certificate in PEM format.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="rootUri"/> is <see langword="null"/>.</exception>
+    /// <exception cref="KeyNotFoundException">No usable certificate could be obtained for the URI (the cause is logged).</exception>
     public string GetPemFor(Uri rootUri)
     {
         ArgumentNullException.ThrowIfNull(rootUri);
