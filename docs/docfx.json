@@ -1,0 +1,77 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../src",
+          "files": [
+            "Arc4u/Arc4u.csproj",
+            "Arc4u.AspNetCore.gRpc/Arc4u.AspNetCore.gRpc.csproj",
+            "Arc4u.AspNetCore.Results/Arc4u.AspNetCore.Results.csproj",
+            "Arc4u.AspNetCore.Versioning/Arc4u.AspNetCore.Versioning.csproj",
+            "Arc4u.Authorization/Arc4u.Authorization.csproj",
+            "Arc4u.Caching/Arc4u.Caching.csproj",
+            "Arc4u.Caching.Dapr/Arc4u.Caching.Dapr.csproj",
+            "Arc4u.Caching.Memory/Arc4u.Caching.Memory.csproj",
+            "Arc4u.Caching.Redis/Arc4u.Caching.Redis.csproj",
+            "Arc4u.Caching.Sql/Arc4u.Caching.Sql.csproj",
+            "Arc4u.Configuration/Arc4u.Configuration.csproj",
+            "Arc4u.Configuration.Decryptor/Arc4u.Configuration.Decryptor.csproj",
+            "Arc4u.Configuration.Store/Arc4u.Configuration.Store.csproj",
+            "Arc4u.Configuration.Store.EFCore/Arc4u.Configuration.Store.EFCore.csproj",
+            "Arc4u.Core/Arc4u.Core.csproj",
+            "Arc4u.Data/Arc4u.Data.csproj",
+            "Arc4u.Dependency/Arc4u.Dependency.csproj",
+            "Arc4u.Diagnostics/Arc4u.Diagnostics.csproj",
+            "Arc4u.Diagnostics.Serilog/Arc4u.Diagnostics.Serilog.csproj",
+            "Arc4u.Diagnostics.Serilog.Sinks.RealmDb/Arc4u.Diagnostics.Serilog.Sinks.RealmDb.csproj",
+            "Arc4u.Dispatcher/Arc4u.Dispatcher.csproj",
+            "Arc4u.EfCore/Arc4u.EfCore.csproj",
+            "Arc4u.FluentValidation/Arc4u.FluentValidation.csproj",
+            "Arc4u.gRPC/Arc4u.gRPC.csproj",
+            "Arc4u.MongoDB/Arc4u.MongoDB.csproj",
+            "Arc4u.OAuth2/Arc4u.OAuth2.csproj",
+            "Arc4u.OAuth2.AspNetCore/Arc4u.OAuth2.AspNetCore.csproj",
+            "Arc4u.OAuth2.AspNetCore.Authentication/Arc4u.OAuth2.AspNetCore.Authentication.csproj",
+            "Arc4u.OAuth2.AspNetCore.Blazor/Arc4u.OAuth2.AspNetCore.Blazor.csproj",
+            "Arc4u.OAuth2.Blazor/Arc4u.OAuth2.Blazor.csproj",
+            "Arc4u.OAuth2.Client/Arc4u.OAuth2.Client.csproj",
+            "Arc4u.OAuth2.Client.Authentication/Arc4u.OAuth2.Client.Authentication.csproj",
+            "Arc4u.OData/Arc4u.OData.csproj",
+            "Arc4u.Results/Arc4u.Results.csproj",
+            "Arc4u.Serializer/Arc4u.Serializer.csproj",
+            "Arc4u.Serializer.JSon/Arc4u.Serializer.JSon.csproj",
+            "Arc4u.Threading/Arc4u.Threading.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "properties": {
+        "TargetFramework": "net10.0",
+        "NoWarn": "CS1591;NU1506;NU1507;NU1510;CS8613;CS8765;CS8767"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [ "**/*.{md,yml}" ],
+        "exclude": [ "_site/**", "obj/**", "README.md", ".config/**" ]
+      }
+    ],
+    "output": "_site",
+    "globalMetadata": {
+      "_appTitle": "Arc4u",
+      "_appName": "Arc4u",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/Arc4u-org/Arc4u",
+        "branch": "develop/9.0.0"
+      }
+    },
+    "sitemap": {
+      "baseUrl": "https://arc4u-org.github.io/Arc4u/"
+    },
+    "template": [ "default", "modern" ]
+  }
+}
