@@ -157,7 +157,7 @@ is the case for `builder.Configuration` in `WebApplication` and the generic host
 | Before `UseSectionStoreConfiguration` | The initial data (from `appsettings.json` or the value passed in code). The database is not read yet. |
 | At `UseSectionStoreConfiguration` | Sections that have no row are inserted with the initial data. Existing rows are never overwritten by the initial data. The configuration is **not** refreshed yet. |
 | First and every later poll | Values stored in the database appear at the first poll, not at `UseSectionStoreConfiguration`: an `IOptions<T>` resolved before `app.Run` keeps the `appsettings.json` value. The hosted service reads all rows. If the resulting values differ from the current ones, the provider reloads and the configuration change token fires. If nothing changed, nothing fires. |
-| After `ISectionStore.ResetAsync` | All rows are deleted. At the next poll the initial data is inserted again, but that poll publishes an empty set: the section values vanish for one interval, and `OnChange` fires twice. At the following poll the startup values are back. See the known issue below. |
+| After `ISectionStore.ResetAsync` | All rows are deleted. At the next poll the initial data is inserted again, but that poll publishes an empty set: the sections declared in code with `Add(key, value)` vanish for one interval, and `OnChange` fires twice. Sections seeded from `appsettings.json` show the `appsettings.json` value instead, because the earlier providers show through. At the following poll the startup values are back. See the known issue below. |
 
 So a change in the database is visible after at most one polling interval, in every instance of the
 application. `IOptionsMonitor<T>.OnChange` fires at that poll, and `CurrentValue` returns the new values.
@@ -172,7 +172,9 @@ Which options interface sees the change:
 
 > [!WARNING]
 > Known issue: after `ResetAsync`, the first poll finds no rows, re-inserts the initial data but publishes
-> an empty set. Consumers of `IOptionsMonitor<T>` see default values for one polling interval.
+> an empty set. For one polling interval, sections declared in code with `Add(key, value)` disappear from
+> the configuration (consumers of `IOptionsMonitor<T>` see default values), and sections declared with
+> `Add<T>(key)` show their `appsettings.json` value.
 > Avoid `ResetAsync` on a live application, or restart the instances afterwards.
 
 A poll that throws (for example when the database is unreachable) is logged and the next poll runs

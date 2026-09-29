@@ -49,7 +49,7 @@ openssl req -x509 -newkey rsa:2048 -nodes \
 ```
 
 The certificate must have an RSA key: the encryption uses the RSA public key, so an ECDSA
-certificate cannot be used. To check that a certificate and a key belong together, both commands
+certificate cannot be used (see [Troubleshooting](#ecdsa-certificate-fails-or-gives-empty-values)). To check that a certificate and a key belong together, both commands
 print the same public key:
 
 ```bash
@@ -185,9 +185,9 @@ process may read. The `File` variant loads the certificate and key with
 certificate store, which suits containers.
 
 > [!NOTE]
-> Arc4u 6.0.11 to 6.0.13 accepted a flat `EncryptionCertificate:Name`. Arc4u 6.0.14 moved it under
-> `CertificateStore` (next to `File`), and the child was renamed `Store` in the 8.x line, which
-> Arc4u 9 keeps. Only `Store` and `File` are read now. See
+> Arc4u 6.0.11.2 up to 6.0.14 accepted a flat `EncryptionCertificate:Name`. Arc4u 6.0.14.1 moved it
+> under `CertificateStore` (next to `File`). The child was renamed `Store` in May 2023, in the later
+> 6.x line (6.1.18.1), and Arc4u 8 and 9 keep that name. Only `Store` and `File` are read now. See
 > [Troubleshooting](#no-certificate-information-found-in-the-configuration).
 
 ### Options in code
@@ -402,10 +402,10 @@ configuration built from the earlier providers and `SecretSectionName`. Returnin
   `IConfiguration`. Do not log the configuration.
 - **One key per environment.** Use a different certificate per environment so that a leak in a
   test environment does not expose production secrets. A secret is only as private as the private key that decrypts it.
-- **Start-up fails on purpose, mostly.** The decryptor does not catch exceptions: a missing certificate
-  or a value that cannot be decrypted with an RSA key stops the application at startup, so the error is
-  visible. The exception is an ECDSA certificate, which does not fail (see
-  [Troubleshooting](#values-are-empty-with-an-ecdsa-certificate)).
+- **Start-up fails on purpose, with one exception.** The decryptor does not catch exceptions: a missing
+  certificate or a value that cannot be decrypted stops the application at startup, so the error is
+  visible. The exception is a short value decrypted with an ECDSA key pair, which silently becomes empty
+  (see [Troubleshooting](#ecdsa-certificate-fails-or-gives-empty-values)).
 - **Not a secret manager.** The encrypted values are public data. Rotating or revoking a secret means
   re-encrypting and redeploying. For secrets that change often, use a dedicated secret store and a
   configuration provider for it.
@@ -425,8 +425,8 @@ Check, in this order:
 ### No certificate information found in the configuration
 
 The application stops with an `InvalidOperationException`. The section exists but has neither a
-`Store` nor a `File` child. This happens with the flat layout of Arc4u 6.0.11 to 6.0.13
-(`EncryptionCertificate:Name`) and with the `CertificateStore` child of 6.0.14
+`Store` nor a `File` child. This happens with the flat layout of Arc4u 6.0.11.2 up to 6.0.14
+(`EncryptionCertificate:Name`) and with the `CertificateStore` child of 6.0.14.1 and later 6.0.x
 (`EncryptionCertificate:CertificateStore:Name`). Rename it to `Store`, or move the settings under
 `Store` or `File`.
 
@@ -450,13 +450,19 @@ The value was encrypted with another certificate, or the certificate has no priv
 (`The certificate ... has no private key!`). The exact type and message depend on the operating
 system. Encrypt the value again with the public certificate that matches `key.pem`.
 
-### Values are empty with an ECDSA certificate
+### ECDSA certificate fails or gives empty values
 
-Encryption and decryption use the RSA key of the certificate. With an ECDSA certificate nothing
-throws: `Encrypt` returns an empty string for short values (or `..<data>` with empty key and IV parts
-for long ones), and decrypting with an ECDSA pair gives an empty value. If a decrypted value is
-empty, check that the certificate has an RSA key (`openssl x509 -in cert.pem -noout -text` shows
-`Public Key Algorithm: rsaEncryption`).
+Encryption and decryption use the RSA key of the certificate. With an ECDSA certificate:
+
+- Values encrypted with an ECDSA certificate are not valid: the application stops at startup with an
+  `ArgumentNullException` (parameter `base64Cypherstring`).
+- A short value encrypted with an RSA certificate and decrypted with an ECDSA pair silently becomes an
+  empty string, with no exception.
+- A long value in the same situation throws an `ArgumentException` (parameter `rgbKey`).
+
+If a decrypted value is empty or one of these exceptions appears, check that the certificate has an RSA
+key (`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption`) and encrypt
+the values again.
 
 ### The decryptor reads my earlier sources a second time
 
