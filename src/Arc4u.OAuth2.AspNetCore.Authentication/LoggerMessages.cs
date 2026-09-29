@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 namespace Arc4u.OAuth2
 {
     /// <summary>
-/// Source-generated high-performance log messages of the <c>Arc4u.OAuth2.AspNetCore.Authentication</c> package, exposed as <see cref="ILogger"/> extension methods.
-/// </summary>
-public static partial class LoggerMessages
+    /// Source-generated high-performance log messages of the <c>Arc4u.OAuth2.AspNetCore.Authentication</c> package, exposed as <see cref="ILogger"/> extension methods.
+    /// </summary>
+    public static partial class LoggerMessages
     {
         /// <summary>
         /// Logs an Error message (event id 9120): <c>No settings or application context is defined with {ResolvingName}.</c>
