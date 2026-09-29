@@ -18,7 +18,6 @@ using Microsoft.OData.ModelBuilder;
 var builder = WebApplication.CreateBuilder(args);
 var baseAddress = new Uri("https://gateway.example.com/shop/odata/");   // ends with the route prefix and a slash
 var model = new ODataConventionModelBuilder().GetEdmModel();
-
 builder.Services.AddControllers()
     .AddOData(o => o.AddRouteComponents("odata", model, s => s.AddODataSerializerBaseAddress(baseAddress)))
     .AddMvcOptions(o => o.SetODataFormattersBaseAddress(baseAddress));

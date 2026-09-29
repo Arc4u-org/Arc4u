@@ -200,6 +200,7 @@ public static class GraphSamples
 
 - **`PersistChange` is not reset after a save.** After `SaveChangesAsync` the entities still say `Insert`, `Update` or `Delete`. Set them back to `None` (or discard the objects) before reusing them; an entity still on `Insert` also refuses to become `Delete`.
 - **Entities already tracked by the context are not visited.** `TrackGraph` skips them, so their state is not changed by `ChangeGraphTracker`. Load with `AsNoTracking`, or use a fresh context, for graphs you track this way.
+- **`TrackGraph` does not go through an entity that is already tracked.** A new child (`PersistChange.Insert`) added under a root the context already tracks is never passed to the callback. `DetectChanges` then sees an entity with a non-default `Guid` key (`IdEntity` generates it in the constructor) and marks it `Modified`, so `SaveChanges` throws `DbUpdateConcurrencyException`. Track detached graphs with a fresh context.
 - **Nothing sets `Update` for you.** Changing a property does not change `PersistChange`. The caller that edits the entity sets it.
 - **The graph helpers use reflection** (`GraphExtension` builds `Include` and `ThenInclude` calls at run time), so they are not trim-safe or native AOT-safe.
 

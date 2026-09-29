@@ -21,7 +21,7 @@ It does not wrap the driver: you get `IMongoClient` and `IMongoCollection<T>` ba
 dotnet add package Arc4u.MongoDB --prerelease
 ```
 
-The package references `MongoDB.Driver`. It needs a reachable MongoDB server only when the first call reaches the database; registering, resolving the factory and getting a collection object do not connect.
+The package references `MongoDB.Driver`. It needs a reachable MongoDB server only when the first call reaches the database; registering, resolving the factory and getting a collection object do not fail without a server (the first call creates the `MongoClient`, which connects in the background).
 
 ## Configuration
 
@@ -139,7 +139,7 @@ public static class MongoSamples
 The first argument is the database name; `DbContext.DatabaseName` keeps its casing, while the options are registered under its lower-case form.
 
 > [!NOTE]
-> The connection-string overload copies a fixed list of properties from the parsed `MongoClientSettings` (servers, credentials, TLS, timeouts, pool sizes, read and write concerns, `ReplicaSetName`, `RetryReads`, `RetryWrites` and a few more). Options of the connection string that map to other properties, such as `directConnection`, `compressors`, `loadBalanced` or the server API version, are parsed by the driver but not applied to the client. Set them through the delegate overload.
+> The connection-string overload copies a fixed list of properties from the parsed `MongoClientSettings` (servers, credentials, TLS, timeouts, pool sizes, read and write concerns, `ReplicaSetName`, `RetryReads`, `RetryWrites` and a few more). Options of the connection string that map to other properties, such as `directConnection`, `compressors`, `loadBalanced` or `maxConnecting`, are parsed by the driver but not applied to the client. Set them through the delegate overload.
 
 ### Store several entity types in one collection
 
@@ -202,7 +202,7 @@ Write one context per database and register each one. Each gets its own factory 
 
 ### `TypeNotMappedToCollectionException`
 
-`GetCollection<T>()` was called for a type that no `MapCollection(...).With<T>()` declares. The exception has no message. Add the mapping, or call `GetCollection<T>("name")`.
+`GetCollection<T>()` was called for a type that no `MapCollection(...).With<T>()` declares. The exception carries no specific message. Add the mapping, or call `GetCollection<T>("name")`.
 
 ### `TypeMappedToMoreThanOneCollectionException`: "2 registration exist for MyApp.Event."
 

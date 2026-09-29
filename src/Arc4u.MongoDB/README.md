@@ -16,7 +16,6 @@ using Arc4u.MongoDB.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMongoDatabase<ShopContext>(builder.Configuration, "Shop");   // ConnectionStrings:Shop, with a database name
-
 public class Product { public Guid Id { get; set; } }
 public class ShopContext : DbContext
 {

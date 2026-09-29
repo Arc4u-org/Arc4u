@@ -28,7 +28,7 @@ The package targets ASP.NET Core (it references the shared framework) and brings
 
 ## Configure the base address
 
-Call both methods where you set up OData. The base address is a `Uri` that you read from your own configuration (there is no Arc4u key for it). It must end with the OData route prefix followed by `/`.
+Call both methods where you set up OData (`AddODataSerializerBaseAddress` alone already rewrites `@odata.context` and `@odata.nextLink` in the checked scenarios; the formatter setting complements it). The base address is a `Uri` that you read from your own configuration (there is no Arc4u key for it). It must end with the OData route prefix followed by `/`.
 
 ```json
 {
@@ -48,7 +48,7 @@ using Microsoft.OData.ModelBuilder;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var odataBaseAddress = new Uri(builder.Configuration["OData:BaseAddress"]!);
+var odataBaseAddress = builder.Configuration["OData:BaseAddress"] is { } address ? new Uri(address) : null;
 
 var modelBuilder = new ODataConventionModelBuilder();
 modelBuilder.EntitySet<Item>("Items");
@@ -57,12 +57,17 @@ builder.Services.AddControllers()
     .AddOData(options => options
         .EnableQueryFeatures()
         .AddRouteComponents("odata", modelBuilder.GetEdmModel(),
-            services => services.AddODataSerializerBaseAddress(odataBaseAddress)))
-    .AddMvcOptions(options => options.SetODataFormattersBaseAddress(odataBaseAddress));
+            services => services.AddODataSerializerBaseAddress(odataBaseAddress!)))
+    .AddMvcOptions(options => options.SetODataFormattersBaseAddress(odataBaseAddress!));
 
 var app = builder.Build();
 app.MapControllers();
 app.Run();
+
+public class Item
+{
+    public int Id { get; set; }
+}
 ```
 
 Here `"odata"` is the route prefix, and the local part of the base address (`/shop/odata/`) ends with it. The part before the prefix (`/shop`) is the path under which the proxy publishes the service.
@@ -92,7 +97,7 @@ The routing itself (the YARP route that forwards the public path to the service)
 
 ### Run the same service without a gateway
 
-Leave `OData:BaseAddress` unset and skip the calls, or wrap them: `if (odataBaseAddress is not null) { ... }`. The service then generates its own addresses.
+Leave `OData:BaseAddress` unset. The sample above then passes `null`, which both methods ignore, and the service generates its own addresses.
 
 ## Extensibility points
 
