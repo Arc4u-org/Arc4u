@@ -4,7 +4,7 @@ namespace Arc4u.OAuth2.Token;
 public class TokenKeys
 {
     /// <summary>
-    /// Name for an Adal token provider.
+    /// The key of the <see cref="ITokenProvider"/> (registered as a keyed service) that handles the settings, for example <c>Oidc</c>, <c>Obo</c> or <c>Credential</c>.
     /// </summary>
     public const string ProviderIdKey = "ProviderId";
 
@@ -34,37 +34,37 @@ public class TokenKeys
     public const string RedirectUrl = "RedirectUrl";
 
     /// <summary>
-    /// Application key used to certify the caller (User or Application).
+    /// Application key used to certify the caller (User or Application). Not read by the token providers of this repository.
     /// </summary>
     public const string ApplicationKey = "ApplicationKey";
 
     /// <summary>
-    /// The certificate name or friendly name.
+    /// The certificate name or friendly name. Not read by the token providers of this repository.
     /// </summary>
     public const string CertificateName = "CertificateName";
 
     /// <summary>
-    /// The Sts provider
+    /// The Sts provider. Not read by the token providers of this repository.
     /// </summary>
     public const string InstanceKey = "Instance";
 
     /// <summary>
-    /// The identity provider id.
+    /// The identity provider id. Not read by the token providers of this repository.
     /// </summary>
     public const string TenantIdKey = "TenantId";
 
     /// <summary>
-    /// The certificate type.
+    /// The certificate type. Not read by the token providers of this repository.
     /// </summary>
     public const string FindType = "FindType";
 
     /// <summary>
-    /// The certificate store location (Current user or Machine).
+    /// The certificate store location (Current user or Machine). Not read by the token providers of this repository.
     /// </summary>
     public const string StoreLocation = "StoreLocation";
 
     /// <summary>
-    /// The certificate folder where the certificate is stored.
+    /// The certificate folder where the certificate is stored. Not read by the token providers of this repository.
     /// </summary>
     public const string StoreName = "StoreName";
 
@@ -79,7 +79,7 @@ public class TokenKeys
     public const string PasswordStoreKey = "PasswordStoreKey";
 
     /// <summary>
-    /// Determine the type of the authentication (OAuth2Bearer or Cookies or ...)
+    /// The authentication type of the identities the settings apply to: <c>OAuth2</c> (bearer), <c>Cookies</c> or <c>Inject</c> (see <c>Constants</c>).
     /// </summary>
     public const string AuthenticationTypeKey = "AuthenticationType";
 
@@ -89,22 +89,22 @@ public class TokenKeys
     public const string ClientSecretHeader = "HeaderKey";
 
     /// <summary>
-    /// Scopes defined to identify the rigth(s) to a sts to access the requested resource.
+    /// Scopes defined to identify the right(s) to a sts to access the requested resource. Read by the MSAL token provider; the providers of the OAuth2 packages use <see cref="Scope"/>.
     /// </summary>
     public const string Scopes = "Scopes";
 
     /// <summary>
-    /// Define the Scope when used as a client calling the sts.
+    /// The scopes requested to the sts, separated by a space.
     /// </summary>
     public const string Scope = "Scope";
 
     /// <summary>
-    /// A string containing the audiences separated by a comma.
+    /// A string containing the accepted audiences separated by a space.
     /// </summary>
     public const string Audiences = "Audiences";
 
     /// <summary>
-    /// A string containing the audience when used as a client calling the sts.
+    /// A string containing the audience when used as a client calling the sts. Not read by the token providers of this repository.
     /// </summary>
     public const string Audience = "Audience";
 

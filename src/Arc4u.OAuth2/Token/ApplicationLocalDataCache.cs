@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Arc4u.OAuth2.Token;
 
 /// <summary>
-/// This cache is used for a local client application
+/// An <see cref="ITokenCache"/> for a local client application: the token is persisted in the <see cref="ISecureCache"/> and kept in memory for the next reads.
 /// </summary>
 [Export(typeof(ITokenCache)), Shared]
 public class ApplicationLocalDataCache : ITokenCache

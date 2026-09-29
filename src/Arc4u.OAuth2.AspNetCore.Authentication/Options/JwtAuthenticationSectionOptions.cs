@@ -37,8 +37,8 @@ namespace Arc4u.OAuth2.Options
         public string DomainMappingsSectionPath { get; set; } = "Authentication:DomainsMapping";
 
         /// <summary>
-        /// By default the audience is validated. It is always better to do
-        /// On Keycloak audience doesn't exist by default, so it is needed to disable it.
+        /// Gets or sets a value indicating whether the audience must be validated. The default is <see langword="true"/>.
+        /// It is not read by the JWT bearer configuration: the audience validation is controlled by <see cref="OAuth2SettingsOption.ValidateAudience"/> of the OAuth2 settings section.
         /// </summary>
         public bool ValidateAudience { get; set; } = true;
 

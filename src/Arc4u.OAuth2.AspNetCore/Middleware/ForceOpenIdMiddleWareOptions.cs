@@ -10,7 +10,8 @@ public class ForceOpenIdMiddleWareOptions
     public List<string> ForceAuthenticationForPaths { get; set; } = [];
 
     /// <summary>
-    /// The url to redirect to the authority. If not set, the current url is used.
+    /// Gets or sets the absolute base url (scheme, host and port) of the application as seen by the users, for example when it runs behind a reverse proxy.
+    /// After the login the user is redirected to the requested path and query string on this base url. If not set (or not an absolute url), the url of the request is used.
     /// </summary>
     public string RedirectUrlForAuthority { get; set; } = string.Empty;
 }

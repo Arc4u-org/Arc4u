@@ -46,13 +46,14 @@ namespace Arc4u.OAuth2.Extensions
 
 
         /// <summary>
-        /// This extension is used on a API only scenario.
-        /// Until the yarp is there and support the Oidc scenario. We don't use this on the Yarp project.
+        /// Registers the JWT bearer authentication from code. It is meant for an API only scenario.
+        /// Tokens are validated against the default authority (the issuer is not validated) with the audiences of the <see cref="OAuth2SettingsOption"/>, and the raw token is kept in the <c>BootstrapContext</c> of the identity.
         /// </summary>
-        /// <param name="services">The collection ued to define the dependencies</param>
-        /// <param name="configuration"></param>
-        /// <param name="authenticationOptions">Custom options</param>
-        /// <returns></returns>
+        /// <param name="services">The service collection.</param>
+        /// <param name="configuration">The configuration. It is not used by this overload.</param>
+        /// <param name="authenticationOptions">The action that configures the <see cref="JwtAuthenticationOptions"/>. <see cref="JwtAuthenticationOptions.OAuth2SettingsOptions"/> is required.</param>
+        /// <returns>The <see cref="AuthenticationBuilder"/>, to chain calls.</returns>
+        /// <exception cref="ArgumentNullException">An argument or <see cref="JwtAuthenticationOptions.OAuth2SettingsOptions"/> is <see langword="null"/>.</exception>
         public static AuthenticationBuilder AddJwtAuthentication(this IServiceCollection services,
             IConfiguration configuration, Action<JwtAuthenticationOptions> authenticationOptions)
         {

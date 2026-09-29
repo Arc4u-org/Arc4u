@@ -44,11 +44,11 @@ namespace Arc4u.OAuth2.TokenProviders
         }
 
         /// <summary>
-        /// There is no way to signout in this scenario.
+        /// Not supported: there is no way to sign out in this scenario.
         /// </summary>
-        /// <param name="settings"></param>
-        /// <param name="cancellationToken"></param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <param name="settings">The provider settings.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
         public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();

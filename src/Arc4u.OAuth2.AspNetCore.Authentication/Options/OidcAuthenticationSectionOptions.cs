@@ -62,30 +62,30 @@ namespace Arc4u.OAuth2.Options;
         public string? CertSecurityKeyPath { get; set; } = default!;
 
         /// <summary>
-        /// For the other OIDC => ResponseType = OpenIdConnectResponseType.CodeIdTokenToken;
-        /// For AzureAD, AzureB2C and Adfs => ResponseType = OpenIdConnectResponseType.Code;
+        /// Gets or sets the OpenID Connect response type. The default is <see cref="OpenIdConnectResponseType.Code"/>.
+        /// For AzureAD, AzureB2C and Adfs use <see cref="OpenIdConnectResponseType.Code"/>; for other identity providers <see cref="OpenIdConnectResponseType.CodeIdTokenToken"/> may be needed.
         /// </summary>
         public string ResponseType { get; set; } = OpenIdConnectResponseType.Code;
 
         /// <summary>
-        /// Time to live of the authentication ticket.
-        /// Default is 7 days.
+        /// Gets or sets the time to live of the authentication ticket. The cookie expires after the shorter of this value and <see cref="RefreshTokenLifetime"/>.
+        /// The default is 7 days.
         /// </summary>
         public TimeSpan AuthenticationTicketTtl { get; set; } = TimeSpan.FromDays(7);
 
         /// <summary>
-        /// By default the audience is validated. It is always better to do
-        /// On Keycloak audience doesn't exist by default, so it is needed to disable it or add it.
+        /// Gets or sets a value indicating whether the audience of the access token must be validated. The default is <see langword="true"/>.
+        /// This value is not copied to <see cref="OidcAuthenticationOptions"/> by the configuration based registration: use <see cref="OpenIdSettingsOption.ValidateAudience"/> of the OpenID settings section.
         /// </summary>
         public bool ValidateAudience { get; set; } = true;
 
         /// <summary>
-        /// Define the claim type used to identify the name of the user.
+        /// Gets or sets the claim type holding the name of the user. The default is <c>name</c>.
         /// </summary>
         public string NameClaimType { get; set; } = "name";
 
         /// <summary>
-        /// Define the claim type used to identify the role of the user.
+        /// Gets or sets the claim type holding the roles of the user. The default is <c>role</c>.
         /// </summary>
         public string RoleClaimType { get; set; } = "role";
 

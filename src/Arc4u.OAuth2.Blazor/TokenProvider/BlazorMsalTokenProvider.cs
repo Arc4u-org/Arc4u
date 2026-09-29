@@ -36,7 +36,7 @@ public class BlazorMsalTokenProvider : ITokenProvider
     /// </summary>
     /// <param name="settings">The settings to be used for getting the token.</param>
     /// <param name="platformParameters">The platform-specific parameters, if any (not used in this implementation).</param>
-    /// <returns>A task representing the asynchronous operation, containing the requested <see cref="TokenInfo"/> if successful.</returns>
+    /// <returns>A task representing the asynchronous operation. The token is the one stored in the identity of the current principal when it is still valid, otherwise the one requested to the MSAL access token provider; a failed result is returned when no token is found.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the settings parameter is null.</exception>
     public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
@@ -74,11 +74,11 @@ public class BlazorMsalTokenProvider : ITokenProvider
     }
 
     /// <summary>
-    /// Signs out the user by clearing the token.
+    /// Does nothing: the tokens are managed by the MSAL authentication of the Blazor application.
     /// </summary>
-    /// <param name="settings">The settings to be used for signing out (not used in this implementation).</param>
-    /// <param name="cancellationToken">The Cancellation token <see cref="CancellationToken"/></param>
-    /// <returns><see cref="ValueTask"/></returns>
+    /// <param name="settings">The settings, which are not used.</param>
+    /// <param name="cancellationToken">The cancellation token, which is not used.</param>
+    /// <returns>A completed <see cref="ValueTask"/>.</returns>
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
         return ValueTask.CompletedTask;

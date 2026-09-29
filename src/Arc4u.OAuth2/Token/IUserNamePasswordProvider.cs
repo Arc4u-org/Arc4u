@@ -15,7 +15,7 @@ public interface IUserNamePasswordProvider
     /// Used to provide the user name and password.
     /// </summary>
     /// <param name="upn">The current know upn of the user. Can be null if unknown.</param>
-    /// <param name="checkCredentials"></param>
+    /// <param name="checkCredentials">A callback that validates the credentials entered by the user, so the provider can reject wrong ones before returning.</param>
     /// <returns>The <see cref="CredentialsResult"/> containing the upn and password of the user.</returns>
     Task<CredentialsResult> GetCredentials(string? upn, CheckCredentialsAsync checkCredentials);
 }

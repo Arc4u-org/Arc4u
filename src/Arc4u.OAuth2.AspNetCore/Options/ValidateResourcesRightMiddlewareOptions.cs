@@ -7,7 +7,7 @@ public class ValidateResourcesRightMiddlewareOptions
     public string DefaultContent { get; set; } = "{\"swagger\": \"2.0\",  \"info\": { \"title\": \"You are not authorized!\", \"version\": \"1.0.0\" }, \"consumes\": [ \"application/json\"  ],  \"produces\": [ \"application/json\" ]}";
 
     /// <summary>
-    /// The key is not used but I use this for the configuration, this is more clear, the key can be used as a description.
+    /// Gets or sets the protected resources. The key is only a description of the entry: it is not used, but it must not be empty.
     /// </summary>
     public Dictionary<string, ValidateResourceRightMiddlewareOptions> ResourcesPolicies { get; set; } = default!;
 }

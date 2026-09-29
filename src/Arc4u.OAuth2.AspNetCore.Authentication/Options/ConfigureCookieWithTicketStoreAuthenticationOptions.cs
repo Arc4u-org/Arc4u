@@ -4,8 +4,9 @@ using Microsoft.Extensions.Options;
 namespace Arc4u.OAuth2.Options
 {
     /// <summary>
-    /// This class is registered by default in the AuthenticationExtensions static class.
-    /// This is possible to registe anothe one via the OidcAuthenticationBuilderOptions.
+    /// Configures the authentication cookie so the session is kept in an <see cref="ITicketStore"/>. It is registered (with <c>TryAddSingleton</c>) by
+    /// <c>AddOidcAuthentication</c> and <c>AddHybridAuthentication</c> when <see cref="OidcAuthenticationOptions.AuthenticationCacheTicketStoreOption"/> is set;
+    /// another <see cref="IPostConfigureOptions{TOptions}"/> of the cookie options registered before replaces it.
     /// </summary>
     public class ConfigureCookieWithTicketStoreAuthenticationOptions : IPostConfigureOptions<CookieAuthenticationOptions>
     {

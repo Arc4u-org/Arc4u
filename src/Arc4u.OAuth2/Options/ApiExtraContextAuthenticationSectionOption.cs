@@ -6,7 +6,7 @@
 public class ApiExtraContextAuthenticationSectionOption
 {
     /// <summary>
-    /// Define the path
+    /// Gets or sets the configuration section holding the extra parameters sent to the authorization endpoint.
     /// </summary>
     public string AuthorizationEndpointSectionPath { get; set; } = "Authentication:OpenId.Settings:AuthorizationEndpoint";
 

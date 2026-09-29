@@ -16,12 +16,13 @@ public class ClaimsFillerOptions
     // public List<string> SettingsKeys { get; set; } = [];
 
     /// <summary>
-    /// Claim keys that will not be part of the principal.
+    /// Claim types that are not added to the principal. Empty by default; the configuration based registration uses
+    /// <c>AddClaimsFillerExtension.DefaultClaimsToExclude</c> when the section has no <c>ClaimsToExclude</c>.
     /// </summary>
     public List<string> ClaimsToExclude { get; set; } = [];
 
     /// <summary>
-    /// Define the expire claim key from the authority.
+    /// Gets or sets the claim type holding the expiration date of the access token. The default is <c>exp</c>. It cannot be excluded with <see cref="ClaimsToExclude"/>.
     /// </summary>
     public string ExpireClaim { get; set; } = "exp";
 }

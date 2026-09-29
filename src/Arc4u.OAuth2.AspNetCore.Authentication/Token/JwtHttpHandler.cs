@@ -23,13 +23,13 @@ namespace Arc4u.OAuth2.Token
         // case can be a singleton because we do an impersonation!
 
         /// <summary>
-        /// This is a ctor to use only in a backend scenario => where IPlatformParameters is not used!
+        /// Initializes a new instance of the <see cref="JwtHttpHandler{T}"/> class. To use in a backend scenario, where no platform parameters are used.
         /// No inner handler is defined because this will be done via the AddHttpClient method in a service!
         /// </summary>
-        /// <param name="serviceProvider"></param>
-        /// <param name="logger"></param>
-        /// <param name="keyValuesSettings"></param>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="serviceProvider">The service provider, used when no scoped service provider is available (for example outside of a request).</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="keyValuesSettings">The settings selecting the token provider (<c>ProviderId</c>) and the authentication type.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="keyValuesSettings"/> is <see langword="null"/>.</exception>
         public JwtHttpHandler(IServiceProvider serviceProvider, ILogger<T> logger, [DisallowNull] IKeyValueSettings keyValuesSettings)
         {
             _serviceProvider = serviceProvider;

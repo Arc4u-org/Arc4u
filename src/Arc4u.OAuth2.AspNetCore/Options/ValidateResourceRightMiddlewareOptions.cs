@@ -9,7 +9,7 @@ public class ValidateResourceRightMiddlewareOptions
     public string Path { get; set; } = default!;
 
     /// <summary>
-    /// Overide the default content if specified.
+    /// Gets or sets the content written when access is denied. When empty, <see cref="ValidateResourcesRightMiddlewareOptions.DefaultContent"/> is used.
     /// </summary>
     public string ContentToDisplay { get; set; } = default!;
 

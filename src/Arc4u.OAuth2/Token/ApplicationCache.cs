@@ -8,7 +8,8 @@ using Microsoft.Extensions.Options;
 namespace Arc4u.OAuth2.Token;
 
 /// <summary>
-/// Read the cache used to store the tokens! If nothing is identified, Default is used!
+/// An <see cref="ITokenCache"/> that stores the tokens in the cache designated by <see cref="TokenCacheOptions.CacheName"/>
+/// (the default cache when the name is empty or unknown). The keys are lower-cased and suffixed with <c>_TokenCache</c>.
 /// </summary>
 [Export(typeof(ITokenCache)), Shared]
 public class ApplicationCache(ICacheHelper cacheHelper, ILogger logger, IOptions<TokenCacheOptions> options) : ITokenCache
@@ -17,9 +18,9 @@ public class ApplicationCache(ICacheHelper cacheHelper, ILogger logger, IOptions
     private readonly TokenCacheOptions _tokenCacheOptions = options.Value;
 
     /// <summary>
-    /// Remove at the same time the token and the extra claims added to the cache via a call to an implementation of the IClaimsFiller...
+    /// Removes the entry stored for the key. The claims cached by the claims filler are stored under another key and are not removed.
     /// </summary>
-    /// <param name="key"></param>
+    /// <param name="key">The key of the token.</param>
     public void DeleteItem(string key)
     {
         logger.Technical<ApplicationCache>().LogDeleteInTokenCache(key);

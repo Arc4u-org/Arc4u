@@ -7,22 +7,22 @@
 public class AuthenticationCookieSettingsOption
 {
     /// <summary>
-    /// The name of the HttpClient used to call the authentication server, from an instance of IHttpClientFactory.
+    /// Gets or sets the name of the HttpClient, created by the <see cref="IHttpClientFactory"/>, used to call the authentication server. The default is <c>Authentication</c>.
     /// </summary>
     public string HttpClientName { get; set; } = "Authentication";
 
     /// <summary>
-    /// The base uri of the Blazor SSR application.
+    /// Gets or sets the base uri of the Blazor SSR application. The default is <c>https://localhost</c>.
     /// </summary>
     public Uri BaseUri { get; set; } = new("https://localhost");
 
     /// <summary>
-    /// The url on the Blazor SSR application to call to get the token.
+    /// Gets or sets the url, on the Blazor SSR application, called to get the token. The default is <c>/authentication/token</c>.
     /// </summary>
     public string TokenRequestUrl { get; set; } = "/authentication/token";
 
     /// <summary>
-    /// The id of the provider performing the authentication.
+    /// Gets or sets the key of the token provider performing the authentication. The default is <c>Client</c> (<c>ClientTokenProvider</c>).
     /// </summary>
     public string ProviderId { get; set; } = "Client";
 }

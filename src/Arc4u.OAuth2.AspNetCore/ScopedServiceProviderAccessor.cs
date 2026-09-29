@@ -21,9 +21,10 @@ public class ScopedServiceProviderAccessor : IScopedServiceProviderAccessor
     private readonly IHttpContextAccessor? _httpContextAccessor;
 
     /// <summary>
-    /// Will inject the http context accessor. This is nerver null on a service but the http context can be null if the context is not created from a request context like gRPC or http.
+    /// Initializes a new instance of the <see cref="ScopedServiceProviderAccessor"/> class.
+    /// The http context accessor is never null on a service, but its <c>HttpContext</c> is null when the code does not run in a request, for example in a background job.
     /// </summary>
-    /// <param name="httpContextAccessor"></param>
+    /// <param name="httpContextAccessor">The accessor of the current HTTP context.</param>
     public ScopedServiceProviderAccessor(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
@@ -41,6 +42,9 @@ public class ScopedServiceProviderAccessor : IScopedServiceProviderAccessor
     }
 
     /// <inheritdoc/>
+    /// <exception cref="NullReferenceException">Getter: no service provider was set for the current async flow and there is no current HTTP request.</exception>
+    /// <exception cref="ArgumentNullException">Setter: the value is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Setter: the value is not an <see cref="IServiceScope"/>.</exception>
     public IServiceProvider ServiceProvider
     {
         get

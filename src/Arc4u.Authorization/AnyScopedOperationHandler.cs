@@ -9,7 +9,7 @@ namespace Arc4u.Authorization;
 /// is granted at least <b>one</b> of the required scoped operations (OR logic).
 /// </summary>
 /// <remarks>
-/// Registered with scoped lifetime by <see cref="ScopedOperationsExtension.AddScopedOperationsPolicy"/>;
+/// Registered with scoped lifetime by the <c>AddAnyOperations</c> methods of <see cref="PoliciesBuilder"/> (it is not registered by <see cref="ScopedOperationsExtension.AddScopedOperationsPolicy"/>);
 /// the <see cref="ExportAttribute"/>/<see cref="ScopedAttribute"/> pair additionally exposes the
 /// handler to the Arc4u dependency-injection scanner. If the principal is <see langword="null"/>
 /// (e.g. on Blazor WebAssembly before authentication), the requirement fails immediately.

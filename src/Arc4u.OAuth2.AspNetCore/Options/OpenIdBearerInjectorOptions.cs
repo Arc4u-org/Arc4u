@@ -13,12 +13,12 @@ public class OpenIdBearerInjectorOptions
     public string OnBehalfOfOpenIdSettingsKey { get; set; } = "Obo_for_OpenId";
 
     /// <summary>
-    /// Which provider is used to create an On behal of token.
+    /// Gets or sets the key of the <see cref="Arc4u.OAuth2.Token.ITokenProvider"/> that creates an on-behalf-of token. The default is <c>Obo</c>.
     /// </summary>
     public string OboProviderKey { get; set; } = "Obo";
 
     /// <summary>
-    /// The OpenId KeyValues settings resolver name
+    /// Gets or sets the name of the <see cref="Arc4u.Configuration.SimpleKeyValueSettings"/> holding the OpenID settings. The default is <c>Cookies</c> (<see cref="Constants.CookiesAuthenticationType"/>).
     /// </summary>
     public string OpenIdSettingsKey { get; set; } = Constants.CookiesAuthenticationType;
 }
