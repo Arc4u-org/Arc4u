@@ -1,3 +1,8 @@
-# Owned by #186. Add sub-pages of this guide below Overview.
 - name: Overview
   href: index.md
+- name: Fluent result chains
+  href: fluent-results.md
+- name: Results to HTTP responses
+  href: http-mapping.md
+- name: Validation errors
+  href: validation.md
