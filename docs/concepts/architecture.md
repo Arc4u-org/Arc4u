@@ -144,7 +144,8 @@ layer.
 | Business layer | `Arc4u.Caching` and its providers | [Caching](../guides/caching/index.md) |
 | Business layer | `Arc4u.Dispatcher` | [Dispatcher](../guides/dispatcher/index.md) |
 | Data access layer | `Arc4u.EfCore`, `Arc4u.MongoDB`, `Arc4u.OData` | [Data access](../guides/data/index.md) |
-| Service agents | `Arc4u.OAuth2.Client`, `Arc4u.OAuth2.Client.Authentication`, `Arc4u.gRPC` | [Client authentication and Blazor](../guides/authentication-client/index.md) |
+| Service agents | `Arc4u.OAuth2.Client`, `Arc4u.OAuth2.Client.Authentication` | [Client authentication and Blazor](../guides/authentication-client/index.md) |
+| Service agents | `Arc4u.gRPC` | [gRPC and API versioning](../guides/grpc-versioning/index.md) |
 | Domain model | `Arc4u.Data`, `Arc4u.Core` | [Data access](../guides/data/index.md) |
 | Cross-cutting | `Arc4u.Dependency`, `Arc4u.Dependency.Tool` | [Dependency injection](../guides/dependency-injection/index.md) |
 | Cross-cutting | `Arc4u.Configuration` and its extensions | [Configuration](../guides/configuration/index.md) |

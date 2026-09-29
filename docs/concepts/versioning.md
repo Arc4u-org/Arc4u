@@ -39,10 +39,16 @@ The versions published on NuGet.org so far fall into these lines:
 | 5.0.x.y (2021 to 2022) | `Arc4u.Standard.*` | Four parts, tied to .NET | `netstandard2.0`, `netstandard2.1` |
 | 6.0.x.y and 6.1.x.y (2022 to 2023) | `Arc4u.Standard.*` | Four parts, tied to .NET | `netstandard2.0`, `net6.0`, `net7.0` |
 | 8.0.0 to 8.3.2 (2023 to 2025) | `Arc4u.Standard.*` | Semantic versioning | `netstandard2.0`, `net8.0`, `net9.0` |
-| 9.0.0 previews (since 2025) | `Arc4u.*` | Semantic versioning | Published previews: `net8.0`, `net9.0`, `net10.0` |
+| 9.0.0 previews (since 2025) | `Arc4u.*` | Semantic versioning | `9.0.0-preview02` to `9.0.0-preview37`: `net8.0`, `net9.0`, `net10.0` (`9.0.0-preview01`: `net8.0`, `net9.0`) |
 
 The code on the `develop/9.0.0` branch, which this site documents, targets `net10.0` and
 `net11.0` (see [Target frameworks](../migration/8x-to-9.md#target-frameworks)).
+
+> [!NOTE]
+> A few packages also have a stable `1.0.0` version outside these lines, for example
+> `Arc4u.Standard.Core`, `Arc4u.AspNetCore.Results` and `Arc4u.Dependency.Tool`. Ignore it:
+> `dotnet add package Arc4u.Dependency.Tool` without `--prerelease` installs `1.0.0`, not a
+> 9.0.0 preview.
 
 Before 8.0.0, a version followed the .NET version it was built with. For example, `6.0.9.1`
 was built with .NET 6.0.9:
@@ -70,8 +76,10 @@ What the rename does and does not change:
 - **The rename does not change namespaces.** The 8.x packages already used `Arc4u.*`
   namespaces. Other changes in Arc4u 9 moved or removed some types; the migration guide lists
   them.
-- **Some 8.x packages already had the new name**: `Arc4u.AspNetCore.Results` and
-  `Arc4u.Configuration.Store.EfCore`. They keep it.
+- **Some packages already had the new name before 9**: `Arc4u.AspNetCore.Results`,
+  `Arc4u.Configuration.Store.EfCore` and `Arc4u.Prism.DI.Wpf` (removed in 9).
+  `Arc4u.Configuration.Store` was published under its new name for `8.2.0-preview01` to
+  `8.2.0-preview20`, then as `Arc4u.Standard.Configuration.Store` until 8.3.2.
 - **A package ID can differ from its folder name** in the repository: `Arc4u.Caching.SqlServer`
   is built from `src/Arc4u.Caching.Sql`.
 - **Paths of static web assets change.** ASP.NET Core serves the files of a Razor class library
@@ -98,7 +106,9 @@ The complete list of renamed packages is in
   same version were built and tested together.
 - **The `Standard` suffix no longer meant anything.** It dates from the packages that targeted
   .NET Standard only (the 5.x packages target only `netstandard2.0` and `netstandard2.1`).
-  Arc4u 9 targets only current .NET versions.
+  Arc4u 9 targets current .NET versions only, except `Arc4u.Dependency`, which also targets
+  `netstandard2.0`, and the `Arc4u.Dependency.Tool` source generators, which target
+  `netstandard2.0` as source generators must.
 
 ## Trade-offs
 

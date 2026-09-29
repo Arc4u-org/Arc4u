@@ -65,15 +65,17 @@ builder.Services.AddOpenTelemetry()
 ```
 
 `AddOpenTelemetry` comes from the `OpenTelemetry.Extensions.Hosting` package; add the
-exporters you use as usual.
+exporters you use as usual. `Arc4u.Diagnostics` contains an
+<xref:Arc4u.Diagnostics.OpenTelemetrySettings> class, but no Arc4u code reads it.
 
 ### Replace a behavior through dependency injection
 
 There are three ways to change what Arc4u does, depending on how the behavior is registered.
 
-**Register your implementation before the Arc4u registration call.** Most Arc4u `Add...`
+**Register your implementation before the Arc4u registration call.** Several Arc4u `Add...`
 methods register their defaults with `TryAdd...`, which does nothing when the service is
-already registered. For example, `AddJwtAuthentication` registers
+already registered (others use a plain `Add...`; check the method before relying on this).
+For example, `AddJwtAuthentication` registers
 <xref:Arc4u.OAuth2.Events.StandardBearerEvents> as `JwtBearerEvents` this way. To handle
 the JwtBearer events yourself, derive from it and register your class first:
 
@@ -104,8 +106,10 @@ authentication methods.
 
 **Register a new key.** When Arc4u resolves an implementation by key, add yours under a key
 of your own and put that key in configuration. This token provider is registered under
-`ApiKey`; setting `ProviderId` to `ApiKey` in the security settings of an HTTP or gRPC client
-selects it:
+`ApiKey`. When the security settings of an HTTP client set `ProviderId` to `ApiKey` and
+`AuthenticationType` to `Inject`, `JwtHttpHandler` calls it and sends the key in an
+`X-Api-Key` header: with `Inject`, a token type other than `Bearer` or `Basic` is used as the
+header name.
 
 ```csharp
 using Arc4u;
@@ -123,13 +127,17 @@ public sealed class ApiKeyTokenProvider(IConfiguration configuration) : ITokenPr
         var key = configuration["Downstream:ApiKey"];
         return Task.FromResult(key is null
             ? Result.Fail<TokenInfo>("Downstream:ApiKey is not configured.")
-            : Result.Ok(new TokenInfo("Bearer", key)));
+            : Result.Ok(new TokenInfo("X-Api-Key", key, DateTime.UtcNow.AddMinutes(5))));
     }
 
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
         => ValueTask.CompletedTask;
 }
 ```
+
+Use the `TokenInfo` constructor that takes an expiry date: the two-argument constructor
+parses the token as a JWT and throws for any other value. `JwtHttpHandler` does not send a
+token whose expiry date has passed.
 
 The `[Export]` and `[Shared]` attributes let the Arc4u source generator write the
 registration for you. Without the generator, write it by hand:
