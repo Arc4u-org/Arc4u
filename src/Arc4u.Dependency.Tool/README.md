@@ -1,87 +1,29 @@
 # Arc4u.Dependency.Tool
 
-The Arc4u.Dependency.Tool contains 2 code generators.
+Source generators that turn the `[Export]`, `[Shared]` and `[Scoped]` attributes of `Arc4u.Dependency` into `IServiceCollection` registrations at build time, with no reflection at startup.
 
-## AttributeGenerator
+## Install
 
-This code generator will analyze the code and see if an ExportAttribute from Arc4u exits.
-If yes, the code will check if SharedAttribute or ScopedAttribute is present.
-
-Based on this evaluation the code generator will generate the corresponding registration in IServiceCollection.
-
-Example:
-```csharp
-[Export(typeof(ITest), Scoped]
-public Test : ITest
-{
-}
+```bash
+dotnet add package Arc4u.Dependency --prerelease
+dotnet add package Arc4u.Dependency.Tool --prerelease
 ```
 
-The Generator will generate:
-```csharp
-    services.AddTransient<ITest, Test>();
-```
-
-If a name is added to the export, we will have:
+## Usage
 
 ```csharp
-[Export("key", typeof(ITest), Scoped]
-public Test : ITest
-{
-}
+using Arc4u.Dependency;
+
+// Registers the [Export] classes of this project (assembly Contoso.Api).
+builder.Services.RegisterApiTypes();
+// Registers the types listed in Application.Dependency:RegisterTypes of Configs/appsettings.json.
+builder.Services.RegisterTypes();
 ```
 
-The Generator will generate:
-```csharp
-    services.AddKeyedTransient<ITest, Test>("key");
-```
+`RegisterTypes` is generated only when the project declares `<AdditionalFiles Include="Configs/appsettings.json" />`.
 
-The name of the extension method is based on the name of the Assembly.
-Assembly name = xxx.Host => RegisterHostTypes.
+## Documentation
 
-## GenerateRegisteredTypes
-
-Arc4u.Dependency let you add types in a json file to register them in the IServiceCollection.
-
-The same capability is offered but by inspecting the nuget packages dll and validating that the expected type
-is present, if yes the entry is generated.
-
-Example:
-```json
-{
-  "Application.Dependency": {
-    "Assemblies": [
-    ],
-    "RegisterTypes": [
-      "Arc4u.Caching.Memory.MemoryCache, Arc4u.Caching.Memory"
-    ]
-  }
-}
-```
-
-The Arc4u MemoryCache is defined in the Arc4u.Caching.Memory package and contains the following ExportAttribute:
-
-```csharp
-[Export("Memory", typeof(ICache))]
-public class MemoryCache : BaseDistributeCache<MemoryCache>, ICache
-{
-}
-```
-
-The code generator will generate the following code:
-
-```csharp
-services.AddKeyedTransient<Arc4u.Caching.ICache, Arc4u.Caching.Memory.MemoryCache>("Memory");
-```
-
-The extension method is named: RegisterTypes.
-
-> Attention.
-> The target project must add an AddtionnalFile entry including the "Configs\appsettings.json".
-
-```xml
-  <ItemGroup>
-    <AdditionalFiles Include="Configs\appsettings.json" />
-  </ItemGroup>
-```
-
+- Guide: [Dependency injection](https://arc4u-org.github.io/Arc4u/guides/dependency-injection/)
+- Generated code: [Source generator reference](https://arc4u-org.github.io/Arc4u/guides/dependency-injection/source-generators.html)
+- Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)

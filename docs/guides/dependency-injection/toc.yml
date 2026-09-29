@@ -1,3 +1,7 @@
 # Owned by #180. Add sub-pages of this guide below Overview.
 - name: Overview
   href: index.md
+- name: Source generator reference
+  href: source-generators.md
+- name: Migrate from IContainer
+  href: migrate-from-icontainer.md
