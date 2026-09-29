@@ -5,6 +5,9 @@ namespace Arc4u.Configuration.Store;
 
 using Internals;
 
+/// <summary>
+/// Extension methods to register the service that keeps the configuration in sync with the section store.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
     private static readonly TimeSpan DefaultPollingInterval = TimeSpan.FromSeconds(15);
@@ -19,9 +22,9 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Add the monitoring service that will track the changes in the store
     /// </summary>
-    /// <param name="services"></param>
-    /// <param name="pollingInterval"></param>
-    /// <returns></returns>
+    /// <param name="services">The service collection.</param>
+    /// <param name="pollingInterval">The delay between two checks of the store for modified sections.</param>
+    /// <returns>The service collection, to chain calls.</returns>
     public static IServiceCollection AddSectionStoreService(this IServiceCollection services, TimeSpan pollingInterval)
     {
         services.AddSingleton<ISectionStoreService, SectionStoreService>();
@@ -30,9 +33,9 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Add the monitoring service that will track the changes in the store with a default polling interval
+    /// Add the monitoring service that will track the changes in the store with a default polling interval (15 seconds).
     /// </summary>
-    /// <param name="services"></param>
-    /// <returns></returns>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection, to chain calls.</returns>
     public static IServiceCollection AddSectionStoreService(this IServiceCollection services) => services.AddSectionStoreService(DefaultPollingInterval);
 }

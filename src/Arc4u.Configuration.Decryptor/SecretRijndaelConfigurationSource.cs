@@ -7,7 +7,13 @@ namespace Arc4u.Configuration.Decryptor;
 /// </summary>
 public class SecretRijndaelConfigurationSource : IConfigurationSource
 {
+    /// <summary>
+    /// The default prefix (<c>Decrypt:</c>) that marks a configuration value as encrypted.
+    /// </summary>
     public const string PrefixDefault = "Decrypt:";
+    /// <summary>
+    /// The default name (<c>EncryptionRijndael</c>) of the configuration section that contains the Rijndael <c>Key</c> and <c>IV</c> (both base64 encoded).
+    /// </summary>
     public const string SecretSectionNameDefault = "EncryptionRijndael";
 
     /// <summary>

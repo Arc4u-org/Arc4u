@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Arc4u.Configuration;
 
 // Extension class to register a key/value with IOption<T>...
+/// <summary>
+/// Extension methods to register a section of the configuration as named key/value settings.
+/// </summary>
 public static class ConfigurationSettingsExtension
 {
     /// <summary>

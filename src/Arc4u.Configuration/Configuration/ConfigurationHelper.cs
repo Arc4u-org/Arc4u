@@ -4,6 +4,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.Configuration;
 
+/// <summary>
+/// Helpers to build an <see cref="IConfiguration"/> from files or embedded resources and to register the <see cref="ApplicationConfig"/> options.
+/// </summary>
+/// <example>
+/// <code language="csharp">
+/// var builder = WebApplication.CreateBuilder(args);
+///
+/// builder.Services.AddApplicationConfig(builder.Configuration, "Application.Configuration");
+/// </code>
+/// </example>
 public static class ConfigurationHelper
 {
     /// <summary>
@@ -23,6 +33,14 @@ public static class ConfigurationHelper
         return configBuilder.Build();
     }
 
+    /// <summary>
+    /// Builds an <see cref="IConfiguration"/> from JSON files embedded as resources in assemblies.
+    /// </summary>
+    /// <param name="fileTypes">
+    /// The resources to load. Each item has the form <c>"AssemblyName, full.resource.name"</c>.
+    /// </param>
+    /// <returns>The configuration built from the resources. Resources that are not found in the assembly are ignored.</returns>
+    /// <exception cref="ApplicationException">An item of <paramref name="fileTypes"/> is not made of exactly two comma-separated parts.</exception>
     public static IConfiguration GetConfigurationFromResourceStream(params string[] fileTypes)
     {
         var configBuilder = new ConfigurationBuilder();
@@ -66,6 +84,24 @@ public static class ConfigurationHelper
         return configuration;
     }
 
+    /// <summary>
+    /// Validates and registers the <see cref="ApplicationConfig"/> options.
+    /// The application name, the environment name, the logging name and the time zone must all be provided.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="option">The action that fills the <see cref="ApplicationConfig"/>.</param>
+    /// <exception cref="ConfigurationException">One or more of the required values are missing; the message lists all of them.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// services.AddApplicationConfig(config =>
+    /// {
+    ///     config.ApplicationName = "MyApp";
+    ///     config.Environment.Name = "Development";
+    ///     config.Environment.LoggingName = "MyApp";
+    ///     config.Environment.TimeZone = "Europe/Brussels";
+    /// });
+    /// </code>
+    /// </example>
     public static void AddApplicationConfig(this IServiceCollection services, Action<ApplicationConfig> option)
     {
         var validate = new ApplicationConfig();
@@ -103,6 +139,27 @@ public static class ConfigurationHelper
         services.Configure<ApplicationConfig>(option);
     }
 
+    /// <summary>
+    /// Reads the <see cref="ApplicationConfig"/> from a configuration section, validates it and registers it as options.
+    /// The same validation as <see cref="AddApplicationConfig(IServiceCollection, Action{ApplicationConfig})"/> applies.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration that contains the section.</param>
+    /// <param name="sectionName">The name of the section. The default is <c>Application.Configuration</c>.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="configuration"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="sectionName"/> is empty.</exception>
+    /// <exception cref="NullReferenceException">The section cannot be bound to an <see cref="ApplicationConfig"/>.</exception>
+    /// <exception cref="ConfigurationException">One or more of the required values are missing.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// // appsettings.json:
+    /// // "Application.Configuration": {
+    /// //   "ApplicationName": "MyApp",
+    /// //   "Environment": { "Name": "Development", "LoggingName": "MyApp", "TimeZone": "Europe/Brussels" }
+    /// // }
+    /// services.AddApplicationConfig(configuration);
+    /// </code>
+    /// </example>
     public static void AddApplicationConfig(this IServiceCollection services, IConfiguration configuration, string sectionName = "Application.Configuration")
     {
         ArgumentNullException.ThrowIfNull(configuration);

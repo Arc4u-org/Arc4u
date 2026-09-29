@@ -2,6 +2,9 @@ using System.Security.Cryptography.X509Certificates;
 using Arc4u.Security.Cryptography;
 
 namespace Arc4u.Configuration.Decryptor;
+/// <summary>
+/// Options of the certificate based configuration decryption (see <see cref="SecretDecryptorConfiguratorExtensions.AddCertificateDecryptorConfiguration(Microsoft.Extensions.Configuration.IConfigurationBuilder)"/>).
+/// </summary>
 public class SecretCertificateOptions
 {
     /// <summary>

@@ -1,5 +1,8 @@
 namespace Arc4u.Configuration.Store;
 
+/// <summary>
+/// Extension methods that simplify the use of an <see cref="ISectionStore"/>.
+/// </summary>
 public static class ISectionStoreExtensions
 {
     /// <summary>
