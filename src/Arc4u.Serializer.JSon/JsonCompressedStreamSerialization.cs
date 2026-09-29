@@ -38,10 +38,17 @@ public abstract class JsonCompressedStreamSerialization : JsonCompressedStreamSe
     {
     }
 
+    /// <summary>Wraps the stream in a compression stream. The underlying stream must be left open.</summary>
+    /// <param name="stream">The stream that receives the compressed data.</param>
+    /// <returns>The compression stream.</returns>
     protected abstract Stream CreateForCompression(Stream stream);
 
+    /// <summary>Wraps the stream in a decompression stream.</summary>
+    /// <param name="stream">The stream that contains the compressed data.</param>
+    /// <returns>The decompression stream.</returns>
     protected abstract Stream CreateForDecompression(Stream stream);
 
+    /// <inheritdoc/>
     public byte[] Serialize<T>(T value)
     {
         Activity.Current?.SetTag("SerializerType", SerializerType);
@@ -55,6 +62,7 @@ public abstract class JsonCompressedStreamSerialization : JsonCompressedStreamSe
         return output.ToArray();
     }
 
+    /// <inheritdoc/>
     public T? Deserialize<T>(byte[] data)
     {
         Activity.Current?.SetTag("SerializerType", SerializerType);
@@ -64,6 +72,7 @@ public abstract class JsonCompressedStreamSerialization : JsonCompressedStreamSe
         return InternalDeserialize<T>(uncompressed);
     }
 
+    /// <inheritdoc/>
     public object? Deserialize(byte[] data, Type objectType)
     {
         Activity.Current?.SetTag("SerializerType", SerializerType);

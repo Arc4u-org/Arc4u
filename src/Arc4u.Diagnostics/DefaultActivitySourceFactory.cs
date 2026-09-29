@@ -9,6 +9,7 @@ namespace Arc4u.Diagnostics;
 /// </summary>
 public class DefaultActivitySourceFactory : IActivitySourceFactory
 {
+    /// <summary>Initializes a new instance of the <see cref="DefaultActivitySourceFactory"/> class with an empty cache of <see cref="ActivitySource"/> instances.</summary>
     public DefaultActivitySourceFactory()
     {
         _activitySources = new ConcurrentDictionary<string, ActivitySource>();
@@ -22,6 +23,7 @@ public class DefaultActivitySourceFactory : IActivitySourceFactory
     /// <param name="name">The name of the <see cref="ActivitySource"/>.</param>
     /// <param name="version">An optinal parameter to add a version to an <see cref="ActivitySource"/>.</param>
     /// <returns>A specific instance of an <see cref="ActivitySource"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>, empty or white space.</exception>
     public ActivitySource Get(string name, string? version = null)
     {
         if (string.IsNullOrWhiteSpace(name))

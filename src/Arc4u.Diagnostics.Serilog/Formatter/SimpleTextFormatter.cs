@@ -6,8 +6,13 @@ using Serilog.Formatting.Display;
 
 namespace Arc4u.Diagnostics.Formatter;
 
+/// <summary>
+/// A Serilog <see cref="ITextFormatter"/> that writes each event on one line: timestamp, level, Arc4u category, identity, process id, thread id, activity id,
+/// source class, method, message and the non-standard properties serialized as JSON. Exceptions and stack traces are written on the following lines.
+/// </summary>
 public class SimpleTextFormatter : ITextFormatter
 {
+    /// <summary>Initializes a new instance of the <see cref="SimpleTextFormatter"/> class.</summary>
     public SimpleTextFormatter()
     {
         MessageFormatter = new MessageTemplateTextFormatter("{Message}");
@@ -25,6 +30,9 @@ public class SimpleTextFormatter : ITextFormatter
     // Serialize in json the properties non Arc4u standard.
     private JsonPropertiesFormatter PropertyFormatter { get; set; }
 
+    /// <summary>Formats the event as text. Any error raised while formatting is swallowed so that a logging failure never reaches the application.</summary>
+    /// <param name="logEvent">The event to format.</param>
+    /// <param name="output">The writer that receives the text.</param>
     public void Format(LogEvent logEvent, TextWriter output)
     {
         try

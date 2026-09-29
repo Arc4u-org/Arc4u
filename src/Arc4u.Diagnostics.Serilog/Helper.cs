@@ -3,6 +3,7 @@ using Serilog.Events;
 
 namespace Arc4u.Diagnostics;
 
+/// <summary>Helper methods to read the Arc4u properties of a Serilog <see cref="LogEvent"/>.</summary>
 public static class Helper
 {
     const string ExceptionDetail = nameof(ExceptionDetail);
@@ -11,8 +12,11 @@ public static class Helper
     /// The non standard one are added in the Properties list.
     /// Remove State property, used by Serilog to store the message!
     /// </summary>
-    /// <param name="logEvent"></param>
-    /// <returns></returns>
+    /// <param name="logEvent">The Serilog event.</param>
+    /// <returns>
+    /// A tuple with the Arc4u standard properties (category, application, identity, class, method, activity id, process id, thread id, stack trace; a default value when absent)
+    /// and the list of the other properties. The category is <see cref="MessageCategory.Technical"/> when it is absent or not a defined value.
+    /// </returns>
     public static (MessageCategory Category,
                     string Application,
                     string Identity,
@@ -90,6 +94,9 @@ public static class Helper
         return (_category, application, identity, classType, methodName, activityId, processId, threadId, stacktrace, filteredProperties);
     }
 
+    /// <summary>Converts a Serilog <see cref="LogEventLevel"/> to the corresponding <see cref="LogLevel"/>; unknown values map to <see cref="LogLevel.Debug"/>.</summary>
+    /// <param name="level">The Serilog level.</param>
+    /// <returns>The equivalent <see cref="LogLevel"/>.</returns>
     public static LogLevel ToMessageType(this LogEventLevel level)
     {
         switch (level)
@@ -111,6 +118,11 @@ public static class Helper
         }
     }
 
+    /// <summary>Gets the value of a scalar property.</summary>
+    /// <typeparam name="T">The expected type of the value.</typeparam>
+    /// <param name="pv">The property value.</param>
+    /// <param name="defaultValue">The value returned when <paramref name="pv"/> is not a scalar or its value is not of type <typeparamref name="T"/>.</param>
+    /// <returns>The typed scalar value, or <paramref name="defaultValue"/>.</returns>
     public static T GetValue<T>(LogEventPropertyValue pv, T defaultValue)
     {
         switch (pv.GetType().Name)

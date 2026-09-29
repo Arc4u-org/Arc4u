@@ -9,6 +9,11 @@ namespace Arc4u.Diagnostics.Monitoring;
 /// </summary>
 public sealed class SystemResources : IHostedService, IDisposable
 {
+    /// <summary>Initializes a new instance of the <see cref="SystemResources"/> class.</summary>
+    /// <param name="logger">The logger used to write the monitoring entries.</param>
+    /// <param name="internalPeriodInSeconds">The interval, in seconds, between two measures. Must be greater than 0.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="logger"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="internalPeriodInSeconds"/> is 0.</exception>
     public SystemResources(ILogger<SystemResources> logger, uint internalPeriodInSeconds = 10)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -26,6 +31,9 @@ public sealed class SystemResources : IHostedService, IDisposable
     private readonly uint interval;
     private readonly ILogger<SystemResources> _logger;
 
+    /// <summary>Starts the timer that collects and logs the CPU and memory usage, after <see cref="StartMonitoringDelayInSeconds"/> seconds and then every interval.</summary>
+    /// <param name="cancellationToken">Not used.</param>
+    /// <returns>A completed task.</returns>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         Scheduler = new Timer(CollectData, null, TimeSpan.FromSeconds(StartMonitoringDelayInSeconds), TimeSpan.FromSeconds(interval));
@@ -73,6 +81,9 @@ public sealed class SystemResources : IHostedService, IDisposable
                .LogMonitoring();
     }
 
+    /// <summary>Stops the timer.</summary>
+    /// <param name="cancellationToken">Not used.</param>
+    /// <returns>A completed task.</returns>
     public Task StopAsync(CancellationToken cancellationToken)
     {
         Scheduler?.Change(Timeout.Infinite, Timeout.Infinite);
@@ -89,6 +100,7 @@ public sealed class SystemResources : IHostedService, IDisposable
     /// </summary>
     public uint StartMonitoringDelayInSeconds { get; set; } = 10;
 
+    /// <summary>Releases the timer.</summary>
     public void Dispose()
     {
         Scheduler?.Dispose();

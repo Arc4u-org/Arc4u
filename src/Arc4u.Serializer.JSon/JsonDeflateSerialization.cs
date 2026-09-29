@@ -37,13 +37,16 @@ public class JsonDeflateSerialization : JsonCompressedStreamSerialization
     {
     }
 
+    /// <inheritdoc/>
     protected override string SerializerType => "Json+DeflateCompression";
 
+    /// <inheritdoc/>
     protected override Stream CreateForCompression(Stream stream)
     {
         return new DeflateStream(stream, CompressionLevel.Fastest, leaveOpen: true);
     }
 
+    /// <inheritdoc/>
     protected override Stream CreateForDecompression(Stream stream)
     {
         return new DeflateStream(stream, CompressionMode.Decompress);

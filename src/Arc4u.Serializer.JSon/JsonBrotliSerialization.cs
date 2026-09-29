@@ -6,7 +6,6 @@ namespace Arc4u.Serializer;
 
 /// <summary>
 /// Implement object serialization with Json and Brotli compression (https://en.wikipedia.org/wiki/Brotli).
-/// Only available for .NET Standard 2.1 / .NET Core 3.0+
 /// </summary>
 public class JsonBrotliSerialization : JsonCompressedStreamSerialization
 {
@@ -38,8 +37,10 @@ public class JsonBrotliSerialization : JsonCompressedStreamSerialization
     {
     }
 
+    /// <inheritdoc/>
     protected override string SerializerType => "Json+BrotliCompression";
 
+    /// <inheritdoc/>
     protected override Stream CreateForCompression(Stream stream)
     {
         // Be careful when choosing the compression level for Brötli.
@@ -47,6 +48,7 @@ public class JsonBrotliSerialization : JsonCompressedStreamSerialization
         return new BrotliStream(stream, CompressionLevel.Fastest, leaveOpen: true);
     }
 
+    /// <inheritdoc/>
     protected override Stream CreateForDecompression(Stream stream)
     {
         return new BrotliStream(stream, CompressionMode.Decompress);

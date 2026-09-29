@@ -7,27 +7,45 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.Caching;
 
+/// <summary>
+/// Base class of the <see cref="ICache"/> implementations built on top of a Microsoft <see cref="IDistributedCache"/> (memory, Redis, SQL Server).
+/// Values are serialized with an <see cref="IObjectSerialization"/> before being stored, and each operation is traced with an Arc4u <see cref="ActivitySource"/> when an
+/// <see cref="IActivitySourceFactory"/> is registered. A derived class must set <see cref="DistributeCache"/> and <see cref="SerializerFactory"/> and
+/// set <see cref="IsInitialized"/> in its <see cref="Initialize(string)"/> override; every data operation throws a <see cref="CacheNotInitializedException"/> until then.
+/// </summary>
+/// <typeparam name="T">The type of the derived cache, used as the category of the logger.</typeparam>
 public abstract class BaseDistributeCache<T> : ICache
 {
     private bool disposed;
 
+    /// <summary>The entry options used by the <c>Put</c> overloads that have no timeout. By default no expiration is defined.</summary>
     protected DistributedCacheEntryOptions DefaultOption = new();
     private IObjectSerialization? _serializerFactory;
     private readonly ILogger<T> _logger;
 
+    /// <summary>Gets or sets the underlying distributed cache.</summary>
     protected IDistributedCache? DistributeCache { get; set; }
 
+    /// <summary>The lock used by derived classes to make <see cref="Initialize(string)"/> thread safe.</summary>
     protected readonly object _lock = new();
+    /// <summary>Gets or sets a value indicating whether the cache is initialized and can be used.</summary>
     protected bool IsInitialized { get; set; }
 
     // The reason why the cache is not initialized, this will be used when an exception is thrown.
+    /// <summary>Gets or sets the reason why the cache is not initialized; it is the message of the <see cref="CacheNotInitializedException"/> thrown by the operations.</summary>
     protected string NotInitializedReason { get; set; } = string.Empty;
 
+    /// <summary>The service provider used to resolve the serializer.</summary>
     protected readonly IServiceProvider _container;
 
+    /// <summary>Gets the service provider used to resolve the serializer.</summary>
     protected IServiceProvider Container => _container;
     private readonly ActivitySource? _activitySource;
 
+    /// <summary>Initializes a new instance of the <see cref="BaseDistributeCache{T}"/> class.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="container">The service provider, used to resolve the <see cref="IObjectSerialization"/> and the optional <see cref="IActivitySourceFactory"/>.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="logger"/> or <paramref name="container"/> is <see langword="null"/>.</exception>
     protected BaseDistributeCache(ILogger<T> logger, IServiceProvider container)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -42,12 +60,15 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>Disposes the underlying distributed cache when it is disposable.</summary>
+    /// <param name="disposing"><see langword="true"/> when called from <see cref="Dispose()"/>; <see langword="false"/> when called from a finalizer.</param>
     protected virtual void Dispose(bool disposing)
     {
         if (!disposed)
@@ -65,6 +86,12 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <summary>Gets the value stored for the key and deserializes it.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <returns>The value, or the default of <typeparamref name="TValue"/> when the key does not exist.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="DataCacheException">The cache or the deserialization failed; the message is the one of the original exception.</exception>
     public TValue? Get<TValue>(string key)
     {
         CheckIfInitialized();
@@ -90,6 +117,13 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <summary>Asynchronously gets the value stored for the key and deserializes it.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="cancellation">A token to cancel the operation.</param>
+    /// <returns>The value, or the default of <typeparamref name="TValue"/> when the key does not exist.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="DataCacheException">The cache or the deserialization failed; the message is the one of the original exception.</exception>
     public async Task<TValue?> GetAsync<TValue>(string key, CancellationToken cancellation = default)
     {
         CheckIfInitialized();
@@ -116,8 +150,11 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <inheritdoc/>
     public virtual void Initialize(string store) { }
 
+    /// <summary>Gets or sets the serializer used to convert the values to and from bytes.</summary>
+    /// <exception cref="NullReferenceException">The getter is used before a serializer has been set.</exception>
     protected IObjectSerialization SerializerFactory
     {
         get
@@ -132,6 +169,12 @@ public abstract class BaseDistributeCache<T> : ICache
         set => _serializerFactory = value;
     }
 
+    /// <summary>Serializes the value and stores it with the <see cref="DefaultOption"/> (no expiration by default).</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/> or the default of its type.</param>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/> or the default value of <typeparamref name="TValue"/>.</exception>
     public void Put<TValue>(string key, TValue value)
     {
         CheckIfInitialized();
@@ -153,6 +196,14 @@ public abstract class BaseDistributeCache<T> : ICache
         DistributeCache?.Set(key, blob, DefaultOption);
     }
 
+    /// <summary>Asynchronously serializes the value and stores it with the <see cref="DefaultOption"/> (no expiration by default).</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>.</param>
+    /// <param name="cancellation">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the value is stored.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public async Task PutAsync<TValue>(string key, TValue value, CancellationToken cancellation = default)
     {
         CheckIfInitialized();
@@ -178,6 +229,14 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <summary>Serializes the value and stores it with an absolute or a sliding expiration.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="timeout">The validity period of the value.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>.</param>
+    /// <param name="isSlided"><see langword="true"/> to use a sliding expiration (the period restarts each time the value is read); <see langword="false"/> for an absolute expiration relative to now.</param>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public void Put<TValue>(string key, TimeSpan timeout, TValue value, bool isSlided = false)
     {
         CheckIfInitialized();
@@ -210,6 +269,16 @@ public abstract class BaseDistributeCache<T> : ICache
         DistributeCache?.Set(key, blob, dceo);
     }
 
+    /// <summary>Asynchronously serializes the value and stores it with an absolute or a sliding expiration.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="timeout">The validity period of the value.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>.</param>
+    /// <param name="isSlided"><see langword="true"/> to use a sliding expiration (the period restarts each time the value is read); <see langword="false"/> for an absolute expiration relative to now.</param>
+    /// <param name="cancellation">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the value is stored.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public async Task PutAsync<TValue>(string key, TimeSpan timeout, TValue value, bool isSlided = false, CancellationToken cancellation = default)
     {
         CheckIfInitialized();
@@ -246,6 +315,10 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <summary>Removes the value stored for the key.</summary>
+    /// <param name="key">The key of the value.</param>
+    /// <returns><see langword="true"/> when the operation succeeded; <see langword="false"/> when the underlying cache raised an error.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     public bool Remove(string key)
     {
         using var activity = _activitySource?.StartActivity("Remove from cache.", ActivityKind.Producer);
@@ -265,6 +338,11 @@ public abstract class BaseDistributeCache<T> : ICache
         }
 
     }
+    /// <summary>Asynchronously removes the value stored for the key.</summary>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="cancellation">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> when the operation succeeded; <see langword="false"/> when the underlying cache raised an error.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     public async Task<bool> RemoveAsync(string key, CancellationToken cancellation = default)
     {
         using var activity = _activitySource?.StartActivity("Remove from cache.", ActivityKind.Producer);
@@ -287,6 +365,12 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <summary>Tries to get the value stored for the key. Errors raised while reading or deserializing are swallowed.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="value">The value, or the default of <typeparamref name="TValue"/> when it is not found or an error occurred.</param>
+    /// <returns><see langword="true"/> when a non-null value was read; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     public bool TryGetValue<TValue>(string key, out TValue? value)
     {
         CheckIfInitialized();
@@ -304,6 +388,12 @@ public abstract class BaseDistributeCache<T> : ICache
 
     }
 
+    /// <summary>Asynchronously tries to get the value stored for the key. Errors raised while reading or deserializing are swallowed.</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="cancellation">A token to cancel the operation.</param>
+    /// <returns>The value, or the default of <typeparamref name="TValue"/> when it is not found or an error occurred.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     public async Task<TValue?> TryGetValueAsync<TValue>(string key, CancellationToken cancellation = default)
     {
         CheckIfInitialized();
@@ -318,6 +408,8 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <summary>Throws when the cache is not initialized.</summary>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized; the message is <see cref="NotInitializedReason"/>.</exception>
     protected void CheckIfInitialized()
     {
         if (!IsInitialized)
@@ -326,6 +418,8 @@ public abstract class BaseDistributeCache<T> : ICache
         }
     }
 
+    /// <summary>Returns the name of the type <typeparamref name="T"/>.</summary>
+    /// <returns>The name of <typeparamref name="T"/>.</returns>
     public override string ToString()
     {
         return typeof(T).Name;

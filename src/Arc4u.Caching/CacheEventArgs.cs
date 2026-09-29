@@ -5,6 +5,9 @@ namespace Arc4u.Caching;
 /// </summary>
 public class CacheEventArgs : EventArgs
 {
+    /// <summary>Initializes a new instance of the <see cref="CacheEventArgs"/> class.</summary>
+    /// <param name="key">The key of the entry.</param>
+    /// <param name="action">The action performed on the entry.</param>
     public CacheEventArgs(string key, CacheAction action)
     {
         _key = key;

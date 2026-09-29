@@ -1,5 +1,6 @@
 ﻿namespace Arc4u.Configuration.Redis;
 
+/// <summary>The options of a Redis Sentinel cache.</summary>
 public class RedisSentinelCacheOption
 {
     /// <summary>
@@ -23,7 +24,7 @@ public class RedisSentinelCacheOption
     public string? RedisPassword { get; set; }
 
     /// <summary>
-    /// Password for Sentinel authentication
+    /// Index of the Redis database to use. Default is 0.
     /// </summary>
     public int? DefaultDatabase { get; set; } = 0;
 

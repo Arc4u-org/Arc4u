@@ -5,8 +5,10 @@ using Serilog.Sinks.PeriodicBatching;
 
 namespace Arc4u.Diagnostics.Serilog.Sinks.Memory;
 
+/// <summary>A batched Serilog sink that keeps the log events in memory, in the static <see cref="LogMessages"/> collection.</summary>
 public class MemoryLogDbSink : IBatchedLogEventSink
 {
+    /// <summary>Initializes a new instance of the <see cref="MemoryLogDbSink"/> class.</summary>
     public MemoryLogDbSink() //: base(50, TimeSpan.FromMilliseconds(500))
     {
         MessageFormatter = new MessageTemplateTextFormatter("{Message}");
@@ -17,8 +19,12 @@ public class MemoryLogDbSink : IBatchedLogEventSink
     // Serialize in json the properties non Arc4u standard.
     private JsonPropertiesFormatter PropertyFormatter { get; set; }
 
+    /// <summary>Gets the in-memory collection, shared by all the instances, that receives the log messages.</summary>
     public static MemoryLogMessages LogMessages { get; } = [];
 
+    /// <summary>Converts each event of the batch to a <see cref="LogMessage"/> and adds it to <see cref="LogMessages"/>. Events that cannot be converted are ignored.</summary>
+    /// <param name="events">The batch of events.</param>
+    /// <returns>A completed task.</returns>
     public Task EmitBatchAsync(IEnumerable<LogEvent> events)
     {
         foreach (var _event in events)
@@ -59,6 +65,8 @@ public class MemoryLogDbSink : IBatchedLogEventSink
         return Task.CompletedTask;
     }
 
+    /// <summary>Called when no event is available; does nothing.</summary>
+    /// <returns>A completed task.</returns>
     public Task OnEmptyBatchAsync()
     {
         return Task.CompletedTask;

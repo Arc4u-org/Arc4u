@@ -12,6 +12,10 @@ using StackExchangeRedisCache = Microsoft.Extensions.Caching.StackExchangeRedis.
 
 namespace Arc4u.Caching.Redis;
 
+/// <summary>
+/// An <see cref="ICache"/> stored in a Redis deployment monitored by Redis Sentinel, resolved with the kind <c>RedisSentinel</c>.
+/// The master name, the sentinel endpoints, the password and the database come from the <see cref="RedisSentinelCacheOption"/> named after the store.
+/// </summary>
 [Export("RedisSentinel", typeof(ICache))]
 public class RedisSentinelCache : BaseDistributeCache<RedisSentinelCache>, ICache
 {
@@ -24,6 +28,10 @@ public class RedisSentinelCache : BaseDistributeCache<RedisSentinelCache>, ICach
     /// </summary>
     private readonly IOptionsMonitor<RedisSentinelCacheOption> _options;
 
+    /// <summary>Initializes a new instance of the <see cref="RedisSentinelCache"/> class.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="container">The service provider used to resolve the serializer.</param>
+    /// <param name="options">The named options of the Redis Sentinel caches.</param>
     public RedisSentinelCache(
         ILogger<RedisSentinelCache> logger,
         IServiceProvider container,
@@ -34,6 +42,15 @@ public class RedisSentinelCache : BaseDistributeCache<RedisSentinelCache>, ICach
         _options = options;
     }
 
+    /// <summary>
+    /// Creates the underlying Redis cache, connected through the sentinels, from the options named <paramref name="store"/> and resolves the <see cref="IObjectSerialization"/>
+    /// (the one registered with <see cref="RedisSentinelCacheOption.SerializerName"/> if any, otherwise the default one).
+    /// When no serializer can be resolved the cache stays uninitialized and the operations throw <see cref="CacheNotInitializedException"/>.
+    /// Calling it again on an initialized cache only logs a warning.
+    /// </summary>
+    /// <param name="store">The name of the cache, as declared in the configuration.</param>
+    /// <exception cref="ArgumentException"><paramref name="store"/> is empty.</exception>
+    /// <exception cref="InvalidOperationException">No sentinel endpoint or no master name is configured.</exception>
     public override void Initialize([DisallowNull] string store)
     {
         if (string.IsNullOrEmpty(store))
@@ -137,5 +154,8 @@ public class RedisSentinelCache : BaseDistributeCache<RedisSentinelCache>, ICach
         }
     }
 
+    /// <summary>Returns the name of the cache given to <see cref="Initialize(string)"/>.</summary>
+    /// <returns>The name of the cache.</returns>
+    /// <exception cref="InvalidOperationException">The cache has not been initialized.</exception>
     public override string ToString() => Name ?? throw new InvalidOperationException("The 'Name' property must not be null.");
 }
