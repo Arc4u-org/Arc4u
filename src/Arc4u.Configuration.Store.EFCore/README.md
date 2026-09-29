@@ -12,15 +12,17 @@ dotnet add package Arc4u.Configuration.Store.EfCore --prerelease
 
 ```csharp
 using Arc4u.Configuration.Store;
+using Arc4u.Dependency;
 using Microsoft.EntityFrameworkCore;
 
-// SettingsContext maps the SectionEntity type: modelBuilder.Entity<SectionEntity>().Configure();
+builder.Configuration.AddSectionStoreConfiguration(options => options.Add("MaxItems", 42));
+builder.Services.AddILogger();
 builder.Services.AddDbContext<SettingsContext>(options => options.UseSqlite("Data Source=settings.db"));
 builder.Services.AddDbContextSectionStore<SettingsContext>();
 builder.Services.AddSectionStoreService();
 ```
 
-Call `app.Services.UseSectionStoreConfiguration()` after the database schema exists.
+`SettingsContext` maps the section entity with `modelBuilder.Entity<SectionEntity>().Configure()`. Call `app.Services.UseSectionStoreConfiguration()` after the database schema exists.
 
 ## Documentation
 

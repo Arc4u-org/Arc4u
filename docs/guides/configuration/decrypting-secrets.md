@@ -8,7 +8,7 @@ Connection strings, client secrets and passwords do not belong in a repository i
 the values **encrypted** and decrypts them when the application builds its configuration. A new
 developer clones the repository and starts the application; only the certificate must be
 available on the machine that runs it. See [Configuration](index.md) for the other parts of
-Arc4u configuration.
+Arc4u configuration, and the [concepts](../../concepts/index.md) for how Arc4u fits together.
 
 ## How it works
 
@@ -185,8 +185,9 @@ process may read. The `File` variant loads the certificate and key with
 certificate store, which suits containers.
 
 > [!NOTE]
-> Versions before Arc4u 9 accepted a flat `EncryptionCertificate:Name`. That layout is no longer read:
-> the certificate must be under `Store` or `File`. See
+> Arc4u 6.0.11 to 6.0.13 accepted a flat `EncryptionCertificate:Name`. Arc4u 6.0.14 moved it under
+> `CertificateStore` (next to `File`), and the child was renamed `Store` in the 8.x line, which
+> Arc4u 9 keeps. Only `Store` and `File` are read now. See
 > [Troubleshooting](#no-certificate-information-found-in-the-configuration).
 
 ### Options in code
@@ -243,7 +244,7 @@ env:
 ```
 
 `tls.crt` and `tls.key` are the file names of a `kubernetes.io/tls` secret when it is mounted as a volume. Both must be PEM,
-and the key must be unencrypted (a PKCS#8 `PRIVATE KEY`, `RSA PRIVATE KEY` or `EC PRIVATE KEY` block).
+and the key must be unencrypted (a PKCS#8 `PRIVATE KEY` or `RSA PRIVATE KEY` block).
 To convert a key, use `openssl pkcs8 -topk8 -nocrypt -in old.key -out key.pem`.
 
 ### Load the certificate yourself
@@ -401,9 +402,10 @@ configuration built from the earlier providers and `SecretSectionName`. Returnin
   `IConfiguration`. Do not log the configuration.
 - **One key per environment.** Use a different certificate per environment so that a leak in a
   test environment does not expose production secrets. A secret is only as private as the private key that decrypts it.
-- **Start-up fails on purpose.** The decryptor does not catch exceptions: a missing certificate or a value that
-  cannot be decrypted stops the application at startup, so the error is visible instead of silently
-  leaving an encrypted string in a connection string.
+- **Start-up fails on purpose, mostly.** The decryptor does not catch exceptions: a missing certificate
+  or a value that cannot be decrypted with an RSA key stops the application at startup, so the error is
+  visible. The exception is an ECDSA certificate, which does not fail (see
+  [Troubleshooting](#values-are-empty-with-an-ecdsa-certificate)).
 - **Not a secret manager.** The encrypted values are public data. Rotating or revoking a secret means
   re-encrypting and redeploying. For secrets that change often, use a dedicated secret store and a
   configuration provider for it.
@@ -422,8 +424,11 @@ Check, in this order:
 
 ### No certificate information found in the configuration
 
-The application stops with an `InvalidOperationException`. The section exists but has neither a `Store` nor a `File` child. This happens with the flat layout
-of older versions (`EncryptionCertificate:Name`). Move the settings under `Store` or `File`.
+The application stops with an `InvalidOperationException`. The section exists but has neither a
+`Store` nor a `File` child. This happens with the flat layout of Arc4u 6.0.11 to 6.0.13
+(`EncryptionCertificate:Name`) and with the `CertificateStore` child of 6.0.14
+(`EncryptionCertificate:CertificateStore:Name`). Rename it to `Store`, or move the settings under
+`Store` or `File`.
 
 ### Certificate name cannot be null
 
@@ -444,6 +449,26 @@ process, which is not always the folder of the application.
 The value was encrypted with another certificate, or the certificate has no private key
 (`The certificate ... has no private key!`). The exact type and message depend on the operating
 system. Encrypt the value again with the public certificate that matches `key.pem`.
+
+### Values are empty with an ECDSA certificate
+
+Encryption and decryption use the RSA key of the certificate. With an ECDSA certificate nothing
+throws: `Encrypt` returns an empty string for short values (or `..<data>` with empty key and IV parts
+for long ones), and decrypting with an ECDSA pair gives an empty value. If a decrypted value is
+empty, check that the certificate has an RSA key (`openssl x509 -in cert.pem -noout -text` shows
+`Public Key Algorithm: rsaEncryption`).
+
+### The decryptor reads my earlier sources a second time
+
+To find the values to decrypt, the decryptor builds a temporary configuration from all the sources
+registered before it. Those sources are therefore loaded twice.
+
+> [!WARNING]
+> Known issue: a source that cannot be read twice fails. `AddJsonStream` before the decryptor throws
+> "Stream was not readable" (the stream was consumed by the first build), and a remote provider such as
+> Azure Key Vault loads twice, doubling its calls. Files, environment variables and command-line
+> sources are not affected. Prefer file-based sources before the decryptor, and add stream or remote
+> sources after it (their values are then not decrypted).
 
 ### The input is not a valid Base-64 string
 

@@ -8,7 +8,8 @@ feature limit, a timeout or a switch then means a redeployment or a restart. The
 persists the sections you choose in a database, lets your code or an administrator change them, and
 reloads them in every running instance within a polling interval. The consumers use the usual
 options types (`IOptionsMonitor<T>`), so they do not know that the values come from a database. See
-[Configuration](index.md) for the other parts of Arc4u configuration.
+[Configuration](index.md) for the other parts of Arc4u configuration, and the
+[concepts](../../concepts/index.md) for how Arc4u fits together.
 
 ## How it works
 
@@ -154,9 +155,9 @@ is the case for `builder.Configuration` in `WebApplication` and the generic host
 | Moment | Values seen by the application |
 |---|---|
 | Before `UseSectionStoreConfiguration` | The initial data (from `appsettings.json` or the value passed in code). The database is not read yet. |
-| At `UseSectionStoreConfiguration` | Sections that have no row are inserted with the initial data. Existing rows are never overwritten by the initial data, so from the first run on the database wins over `appsettings.json`. |
-| Every polling interval | The hosted service reads all rows. If the resulting values differ from the current ones, the provider reloads and the configuration change token fires. If nothing changed, nothing fires. |
-| After `ISectionStore.ResetAsync` | All rows are deleted. At the next poll the initial data is inserted again and the application returns to its startup values. |
+| At `UseSectionStoreConfiguration` | Sections that have no row are inserted with the initial data. Existing rows are never overwritten by the initial data. The configuration is **not** refreshed yet. |
+| First and every later poll | Values stored in the database appear at the first poll, not at `UseSectionStoreConfiguration`: an `IOptions<T>` resolved before `app.Run` keeps the `appsettings.json` value. The hosted service reads all rows. If the resulting values differ from the current ones, the provider reloads and the configuration change token fires. If nothing changed, nothing fires. |
+| After `ISectionStore.ResetAsync` | All rows are deleted. At the next poll the initial data is inserted again, but that poll publishes an empty set: the section values vanish for one interval, and `OnChange` fires twice. At the following poll the startup values are back. See the known issue below. |
 
 So a change in the database is visible after at most one polling interval, in every instance of the
 application. `IOptionsMonitor<T>.OnChange` fires at that poll, and `CurrentValue` returns the new values.
@@ -168,6 +169,11 @@ Which options interface sees the change:
 | `IOptionsMonitor<T>` | Yes, `CurrentValue` and `OnChange`. |
 | `IOptionsSnapshot<T>` | Yes, at the next scope (for example the next HTTP request). |
 | `IOptions<T>` | No, it keeps the value read at first use. |
+
+> [!WARNING]
+> Known issue: after `ResetAsync`, the first poll finds no rows, re-inserts the initial data but publishes
+> an empty set. Consumers of `IOptionsMonitor<T>` see default values for one polling interval.
+> Avoid `ResetAsync` on a live application, or restart the instances afterwards.
 
 A poll that throws (for example when the database is unreachable) is logged and the next poll runs
 after the interval; the application keeps the last values.
@@ -280,9 +286,9 @@ existing rows. Create the schema (migration or `EnsureCreated`) before you call 
 
 ### My change in `appsettings.json` is ignored
 
-After the first start, the database row for the section exists and wins over `appsettings.json`. Change the value
+After the first start, the database row for the section exists and its value replaces the `appsettings.json` one from the first poll on. Change the value
 in the store (see above), or delete the row: it is inserted again with the file values at the next
-start (or the next poll after `ResetAsync`).
+start.
 
 ### The section is not persisted
 
