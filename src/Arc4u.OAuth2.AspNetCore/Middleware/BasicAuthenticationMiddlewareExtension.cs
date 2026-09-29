@@ -14,8 +14,21 @@ using X509CertificateLoader = Arc4u.Security.Cryptography.X509CertificateLoader;
 
 namespace Arc4u.OAuth2.Middleware;
 
+/// <summary>Registers and configures the <see cref="BasicAuthenticationMiddleware"/>.</summary>
 public static class BasicAuthenticationMiddlewareExtension
 {
+    /// <summary>Adds the <see cref="BasicAuthenticationMiddleware"/> to the request pipeline. It must run before the authentication middleware.</summary>
+    /// <param name="app">The application builder.</param>
+    /// <returns>The application builder, to chain calls.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="app"/> is <see langword="null"/>.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// builder.Services.AddBasicAuthenticationSettings(builder.Configuration);
+    /// // ...
+    /// app.UseBasicAuthentication();
+    /// app.UseAuthentication();
+    /// </code>
+    /// </example>
     public static IApplicationBuilder UseBasicAuthentication(this IApplicationBuilder app)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -23,6 +36,21 @@ public static class BasicAuthenticationMiddlewareExtension
         return app.UseMiddleware<BasicAuthenticationMiddleware>();
     }
 
+    /// <summary>
+    /// Registers the Basic authentication settings from a configuration section. The section is bound to <see cref="BasicAuthenticationConfigurationSectionOptions"/>,
+    /// which points to the sections holding the <see cref="BasicSettingsOptions"/> and the certificates used to decrypt the credentials sent in headers.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section to bind. The default is <c>Authentication:Basic</c>.</param>
+    /// <param name="certificateLoader">The loader of the certificates. When <see langword="null"/>, a default <c>X509CertificateLoader</c> is used.</param>
+    /// <param name="throwExceptionIfSectionDoesntExist"><see langword="true"/> to throw when the section does not exist; otherwise nothing is registered.</param>
+    /// <exception cref="ConfigurationException">The section is missing (and <paramref name="throwExceptionIfSectionDoesntExist"/> is <see langword="true"/>) or a mandatory value is empty.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// builder.Services.AddBasicAuthenticationSettings(builder.Configuration);
+    /// </code>
+    /// </example>
     public static void AddBasicAuthenticationSettings(this IServiceCollection services, IConfiguration configuration, string sectionName = "Authentication:Basic", IX509CertificateLoader? certificateLoader = null, bool throwExceptionIfSectionDoesntExist = true)
     {
         var section = configuration.GetSection(sectionName);
@@ -66,6 +94,10 @@ public static class BasicAuthenticationMiddlewareExtension
 
     }
 
+    /// <summary>Registers the Basic authentication settings from code.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="options">The action that configures the settings.</param>
+    /// <exception cref="ConfigurationException">The default UPN suffix or a certificate header is invalid, or a mandatory value of the Basic settings is empty.</exception>
     public static void AddBasicAuthenticationSettings(this IServiceCollection services, Action<BasicAuthenticationConfigurationOptions> options)
     {
         var basicOptions = new BasicAuthenticationConfigurationOptions();
@@ -114,6 +146,10 @@ public static class BasicAuthenticationMiddlewareExtension
 
     }
 
+    /// <summary>Registers the authority of the Basic settings, when there is one, as the named authority <c>Basic</c>.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="options">The action that configures the <see cref="BasicSettingsOptions"/>.</param>
+    /// <returns><see langword="true"/> when the settings define an authority and it has been registered.</returns>
     public static bool RegisterBasicAuthority(IServiceCollection services, Action<BasicSettingsOptions> options)
     {
         var validate = new BasicSettingsOptions();
@@ -132,6 +168,10 @@ public static class BasicAuthenticationMiddlewareExtension
         return true;
     }
 
+    /// <summary>Validates the <see cref="BasicSettingsOptions"/> and converts them into the key/value settings read by the token providers.</summary>
+    /// <param name="options">The action that configures the <see cref="BasicSettingsOptions"/>.</param>
+    /// <returns>The settings (see <see cref="TokenKeys"/>). Multiple scopes are separated by a space.</returns>
+    /// <exception cref="ConfigurationException"><c>ProviderId</c>, <c>ClientId</c>, <c>AuthenticationType</c> or the scopes are missing.</exception>
     public static SimpleKeyValueSettings BuildBasics(this Action<BasicSettingsOptions> options)
     {
         var validate = new BasicSettingsOptions();

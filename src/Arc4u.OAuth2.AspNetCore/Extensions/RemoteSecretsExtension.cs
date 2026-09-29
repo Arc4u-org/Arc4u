@@ -6,8 +6,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.Extensions;
+/// <summary>Registers the remote secrets: named <see cref="SimpleKeyValueSettings"/> consumed by the <c>RemoteSecret</c> token provider.</summary>
 public static class RemoteSecretsExtension
 {
+    /// <summary>Registers one remote secret from code.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="options">The action that configures the secret.</param>
+    /// <param name="optionKey">The name under which the settings are registered.</param>
+    /// <exception cref="ConfigurationException">A mandatory field (<c>HeaderKey</c>, <c>ClientSecret</c>, <c>ProviderId</c>, <c>AuthenticationType</c>) is empty.</exception>
     public static void AddRemoteSecretsAuthentication(this IServiceCollection services, Action<RemoteSecretSettingsOptions> options, [DisallowNull] string optionKey)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -20,6 +26,19 @@ public static class RemoteSecretsExtension
         services.Configure<SimpleKeyValueSettings>(optionKey, BuildRemoteSecretsSettings(options));
     }
 
+    /// <summary>
+    /// Registers the remote secrets of a configuration section: each child of the section is a <see cref="RemoteSecretSettingsOptions"/> registered under the name of the child.
+    /// Nothing is registered when the section does not exist or is empty.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section holding the secrets. The default is <c>Authentication:RemoteSecrets</c>.</param>
+    /// <exception cref="ConfigurationException">A mandatory field (<c>HeaderKey</c>, <c>ClientSecret</c>, <c>ProviderId</c>, <c>AuthenticationType</c>) is empty.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// services.AddRemoteSecretsAuthentication(configuration);
+    /// </code>
+    /// </example>
     public static void AddRemoteSecretsAuthentication(this IServiceCollection services, [DisallowNull] IConfiguration configuration, [DisallowNull] string sectionName = "Authentication:RemoteSecrets")
     {
         ArgumentNullException.ThrowIfNull(configuration);

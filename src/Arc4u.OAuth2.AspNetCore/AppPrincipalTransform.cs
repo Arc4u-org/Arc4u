@@ -35,6 +35,16 @@ public class AppPrincipalTransform : IClaimsTransformation
     private readonly ILogger<AppPrincipalTransform> _logger;
     private readonly TokenCacheOptions _cacheOptions;
 
+    /// <summary>Initializes a new instance of the <see cref="AppPrincipalTransform"/> class.</summary>
+    /// <param name="applicationContext">The scoped application context that receives the principal.</param>
+    /// <param name="claimProfileFiller">The filler that builds the user profile from the claims.</param>
+    /// <param name="claimAuthorizationFiller">The filler that builds the authorization from the claims.</param>
+    /// <param name="serviceProvider">The service provider, used to resolve the claims filler and the cache key generator when extra claims are loaded.</param>
+    /// <param name="options">The claims filler options.</param>
+    /// <param name="cacheHelper">The helper giving access to the token cache.</param>
+    /// <param name="activitySourceFactory">The factory of the activity source used for telemetry.</param>
+    /// <param name="tokenCacheOptions">The token cache options, giving the lifetime of the cached claims.</param>
+    /// <param name="logger">The logger.</param>
     public AppPrincipalTransform(
         IApplicationContext applicationContext,
         IClaimProfileFiller claimProfileFiller,
@@ -63,6 +73,15 @@ public class AppPrincipalTransform : IClaimsTransformation
         }
     }
 
+    /// <summary>
+    /// Builds an <see cref="AppPrincipal"/> from the principal and stores it in the <see cref="IApplicationContext"/>.
+    /// When <see cref="ClaimsFillerOptions.LoadClaimsFromClaimsFillerProvider"/> is enabled, the extra claims are first loaded from the cache or from the registered
+    /// <see cref="IClaimsFiller"/> and added to the identity, except those listed in <see cref="ClaimsFillerOptions.ClaimsToExclude"/>.
+    /// </summary>
+    /// <param name="principal">The principal to transform.</param>
+    /// <returns>The <see cref="AppPrincipal"/> built from the identity of <paramref name="principal"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="principal"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">The principal has no identity.</exception>
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
         ArgumentNullException.ThrowIfNull(principal);

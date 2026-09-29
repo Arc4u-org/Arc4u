@@ -12,12 +12,20 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Middleware;
 
+/// <summary>
+/// A middleware that challenges the OpenID Connect scheme for unauthenticated requests whose path matches one of the
+/// <see cref="ForceOpenIdMiddleWareOptions.ForceAuthenticationForPaths"/>. It is meant for the parts of a site used from a browser (Swagger, Hangfire, ...) where the user must be sent to the login page.
+/// </summary>
 public class ForceOpenIdMiddleWare
 {
     private readonly RequestDelegate _next;
     private readonly ForceOpenIdMiddleWareOptions _options;
     private readonly Regex? _pathsRegex;
 
+    /// <summary>Initializes a new instance of the <see cref="ForceOpenIdMiddleWare"/> class.</summary>
+    /// <param name="next">The next middleware of the pipeline.</param>
+    /// <param name="options">The options listing the paths.</param>
+    /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public ForceOpenIdMiddleWare(RequestDelegate next, IOptions<ForceOpenIdMiddleWareOptions> options)
     {
         _next = next ?? throw new ArgumentNullException(nameof(next));
@@ -65,6 +73,10 @@ public class ForceOpenIdMiddleWare
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
     }
 
+    /// <summary>Processes the request.</summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="logger">The logger.</param>
+    /// <returns>A task that completes when the request is challenged or the rest of the pipeline is done.</returns>
     public async Task InvokeAsync(HttpContext context, ILogger<ForceOpenIdMiddleWare> logger)
     {
         // if we have some part of the site working like a web page (swagger, hangfire, etc.)

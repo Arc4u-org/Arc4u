@@ -7,17 +7,30 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 
 namespace Arc4u.OAuth2.Middleware;
+/// <summary>
+/// A middleware that enriches the request of an authenticated <see cref="AppPrincipal"/>: it ensures the request carries a <c>traceparent</c> header
+/// and sets the current culture of the principal profile from the <c>culture</c> request header.
+/// </summary>
 public class AddContextToPrincipalMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ActivitySource? _activitySource;
 
+    /// <summary>Initializes a new instance of the <see cref="AddContextToPrincipalMiddleware"/> class.</summary>
+    /// <param name="next">The next middleware of the pipeline.</param>
+    /// <param name="activitySourceFactory">The factory of the activity source used for telemetry.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="next"/> is <see langword="null"/>.</exception>
     public AddContextToPrincipalMiddleware(RequestDelegate next, IActivitySourceFactory activitySourceFactory)
     {
         _next = next ?? throw new ArgumentNullException(nameof(next));
         _activitySource = activitySourceFactory.GetArc4u();
     }
 
+    /// <summary>Processes the request.</summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="logger">The logger.</param>
+    /// <returns>A task that completes when the rest of the pipeline is done.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="context"/> is <see langword="null"/>.</exception>
     public async Task InvokeAsync(HttpContext context, ILogger<AddContextToPrincipalMiddleware> logger)
     {
         ArgumentNullException.ThrowIfNull(context);

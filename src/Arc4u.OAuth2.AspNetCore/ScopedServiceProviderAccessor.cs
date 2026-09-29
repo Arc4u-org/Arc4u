@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.AspNetCore;
 
+/// <summary>Gives access to the <see cref="IServiceProvider"/> of the current scope: the one set explicitly for the current async flow, otherwise the one of the current HTTP request.</summary>
 [Export(typeof(IScopedServiceProviderAccessor))]
 [Shared]
 public class ScopedServiceProviderAccessor : IScopedServiceProviderAccessor
@@ -28,6 +29,7 @@ public class ScopedServiceProviderAccessor : IScopedServiceProviderAccessor
         _httpContextAccessor = httpContextAccessor;
     }
 
+    /// <summary>Clears the service provider set for the current async flow, for example when its scope is disposed.</summary>
     public void InvalidateServiceProvider()
     {
         var holder = _serviceProviderCurrent.Value;

@@ -8,9 +8,16 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Security;
 
+/// <summary>
+/// Default <see cref="IUserObjectIdentifier"/>: the identifier is the value of the first claim whose type is one of the configured
+/// <see cref="ClaimsIdentifierOption"/> claim types (by default the object identifier claims).
+/// </summary>
 [Export(typeof(IUserObjectIdentifier)), Shared]
 public class UserObjectIdentifier : IUserObjectIdentifier
 {
+    /// <summary>Initializes a new instance of the <see cref="UserObjectIdentifier"/> class.</summary>
+    /// <param name="identifierOptions">The claim types that identify a user.</param>
+    /// <param name="logger">The logger.</param>
     public UserObjectIdentifier(IOptions<ClaimsIdentifierOption> identifierOptions, ILogger<UserObjectIdentifier> logger)
     {
         ArgumentNullException.ThrowIfNull(identifierOptions);
@@ -23,6 +30,7 @@ public class UserObjectIdentifier : IUserObjectIdentifier
     private readonly ClaimsIdentifierOption _identifierOptions;
     private readonly ILogger<UserObjectIdentifier> _logger;
 
+    /// <inheritdoc/>
     public string? Getidentifier(ClaimsIdentity identity)
     {
         ArgumentNullException.ThrowIfNull(identity);

@@ -5,11 +5,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.Middleware;
+/// <summary>
+/// A middleware that protects resource paths with authorization policies. When the current principal does not satisfy the policy of the requested path,
+/// the response is a status 200 with the configured content instead of the resource.
+/// </summary>
 public class ValidateResourcesRightMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ValidateResourcesRightMiddlewareOptions _options;
 
+    /// <summary>Initializes a new instance of the <see cref="ValidateResourcesRightMiddleware"/> class.</summary>
+    /// <param name="next">The next middleware of the pipeline.</param>
+    /// <param name="options">The protected resources.</param>
+    /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public ValidateResourcesRightMiddleware(RequestDelegate next, ValidateResourcesRightMiddlewareOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -19,6 +27,9 @@ public class ValidateResourcesRightMiddleware
         _options = options;
     }
 
+    /// <summary>Processes the request.</summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>A task that completes when the response is written or the rest of the pipeline is done.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         if (!context.Request.Path.HasValue)

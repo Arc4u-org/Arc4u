@@ -12,9 +12,18 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.TokenProvider;
 
+/// <summary>
+/// An <see cref="ITokenProvider"/> for user name and password credentials. The token is cached (key: authority, scope, user and a hash of the password) and requested again
+/// through the <see cref="ICredentialTokenProvider"/> registered as <c>CredentialDirect</c> when it is missing or expires in less than one minute.
+/// </summary>
+/// <param name="tokenCache">The token cache.</param>
+/// <param name="logger">The logger.</param>
+/// <param name="container">The service provider used to resolve the <see cref="ICredentialTokenProvider"/>.</param>
+/// <param name="authorities">The named authority options.</param>
 [Export(CredentialTokenCacheTokenProvider.ProviderName, typeof(ITokenProvider))]
 public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<CredentialTokenCacheTokenProvider> logger, IServiceProvider container, IOptionsMonitor<AuthorityOptions> authorities) : ITokenProvider
 {
+    /// <summary>The key (<c>Credential</c>) under which the provider is registered.</summary>
     public const string ProviderName = "Credential";
 
     private const string User = "User";
@@ -38,6 +47,11 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
         return await GetTokenAsync(settings, credential).ConfigureAwait(false);
     }
 
+    /// <summary>Not supported.</summary>
+    /// <param name="settings">The provider settings.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotImplementedException">Always thrown.</exception>
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
@@ -126,6 +140,10 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
 
     }
 
+    /// <summary>Requests a token for the credentials from the <c>CredentialDirect</c> <see cref="ICredentialTokenProvider"/>, without using the cache.</summary>
+    /// <param name="settings">The provider settings.</param>
+    /// <param name="credential">The user credentials.</param>
+    /// <returns>The token, or a failed result when the credential token provider is not registered or the request fails.</returns>
     protected async Task<Result<TokenInfo>> CreateBasicTokenInfoAsync(IKeyValueSettings settings, CredentialsResult credential)
     {
         var basicTokenProvider = container.GetKeyedService<ICredentialTokenProvider>(CredentialTokenProvider.ProviderName);

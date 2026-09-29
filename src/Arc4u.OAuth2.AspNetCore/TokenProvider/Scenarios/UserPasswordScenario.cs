@@ -24,9 +24,11 @@ public sealed class UserPasswordScenario : IClientTokenScenario
     private const string Password = "Password";
     private const string ClientSecret = "ClientSecret";
 
+    /// <inheritdoc/>
     public IReadOnlyCollection<string> KnownKeys { get; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ClientId, User, Password, ClientSecret };
 
+    /// <inheritdoc/>
     public void Validate(string optionKey, ClientTokenSettingsOptions options)
     {
         new ClientTokenValidation(optionKey)
@@ -36,6 +38,7 @@ public sealed class UserPasswordScenario : IClientTokenScenario
             .ThrowIfInvalid();
     }
 
+    /// <inheritdoc/>
     public void WriteTo(string optionKey, ClientTokenSettingsOptions options, SimpleKeyValueSettings settings)
     {
         var s = options.Settings;
