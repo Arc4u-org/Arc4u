@@ -3,8 +3,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <!-- disable warning when XML comments are missing -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <!-- By default every projects are packable -->
     <IsPackable>true</IsPackable>
     <!-- But unit test project are not. -->
