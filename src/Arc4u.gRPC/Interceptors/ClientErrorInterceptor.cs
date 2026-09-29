@@ -47,10 +47,10 @@ public class ClientErrorInterceptor : Interceptor
     /// <typeparam name="TRequest">The request message type.</typeparam>
     /// <typeparam name="TResponse">The response message type.</typeparam>
     /// <param name="request">The request message.</param>
-    /// <param name="context">The client call context.</param>
-    /// <param name="continuation">The delegate starting the call.</param>
-    /// <returns>The call returned by the continuation.</returns>
-    /// <exception cref="UnauthorizedAccessException">The server answered <c>PermissionDenied</c>.</exception>
+    /// <param name="context"></param>
+    /// <param name="continuation"></param>
+    /// <returns></returns>
+    /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
         try
@@ -76,10 +76,10 @@ public class ClientErrorInterceptor : Interceptor
     /// <typeparam name="TRequest">The request message type.</typeparam>
     /// <typeparam name="TResponse">The response message type.</typeparam>
     /// <param name="request">The request message.</param>
-    /// <param name="context">The client call context.</param>
-    /// <param name="continuation">The delegate starting the call.</param>
-    /// <returns>The call returned by the continuation.</returns>
-    /// <exception cref="UnauthorizedAccessException">The server answered <c>PermissionDenied</c>.</exception>
+    /// <param name="context"></param>
+    /// <param name="continuation"></param>
+    /// <returns></returns>
+    /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(
                                     TRequest request,
                                     ClientInterceptorContext<TRequest, TResponse> context,
@@ -111,10 +111,10 @@ public class ClientErrorInterceptor : Interceptor
     /// </summary>
     /// <typeparam name="TRequest">The request message type.</typeparam>
     /// <typeparam name="TResponse">The response message type.</typeparam>
-    /// <param name="context">The client call context.</param>
-    /// <param name="continuation">The delegate starting the call.</param>
-    /// <returns>The call returned by the continuation.</returns>
-    /// <exception cref="UnauthorizedAccessException">The server answered <c>PermissionDenied</c>.</exception>
+    /// <param name="context"></param>
+    /// <param name="continuation"></param>
+    /// <returns></returns>
+    /// <exception cref="UnauthorizedAccessException"></exception>
     public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
                                     ClientInterceptorContext<TRequest, TResponse> context,
                                     AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
