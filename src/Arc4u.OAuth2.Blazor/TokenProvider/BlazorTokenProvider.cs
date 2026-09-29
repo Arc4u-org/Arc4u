@@ -15,6 +15,7 @@ namespace Arc4u.OAuth2.TokenProvider;
 [Export(ProviderName, typeof(ITokenProvider))]
 public class BlazorTokenProvider : ITokenProvider
 {
+    /// <summary>The key (<c>blazor</c>) under which the provider is registered.</summary>
     public const string ProviderName = "blazor";
 
     /// <summary>
@@ -35,14 +36,14 @@ public class BlazorTokenProvider : ITokenProvider
     private readonly ITokenWindowInterop _windowInterop;
 
     /// <summary>
-    /// Asynchronously retrieves an OAuth2 token.
+    /// Asynchronously retrieves an OAuth2 token: the one kept in the local storage when it is still valid, otherwise a new one obtained by opening the authority page in a window.
     /// </summary>
     /// <param name="settings">The settings to be used for getting the token.</param>
     /// <param name="platformParameters">The platform-specific parameters, if any (not used in this implementation).</param>
     /// <returns>A task representing the asynchronous operation, containing the requested <see cref="TokenInfo"/> if successful.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when the settings parameter or its Values property is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the settings parameter, its Values property, or the <c>Authority</c> or <c>RedirectUrl</c> value is missing.</exception>
     /// <exception cref="UriFormatException">Thrown when the RedirectUrl from settings is not a valid URL.</exception>
-    /// <exception cref="Exception">Thrown when no token is found after the window operation.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no token is found after the window operation.</exception>
     public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -104,11 +105,11 @@ public class BlazorTokenProvider : ITokenProvider
     }
 
     /// <summary>
-    /// Signs out the user by clearing the token.
+    /// Signs out the user by removing the token from the local storage.
     /// </summary>
-    /// <param name="settings">The settings to be used for signing out (not used in this implementation).</param>
-    /// <param name="cancellationToken">The Cancellation token <see cref="CancellationToken"/></param>
-    /// <returns><see cref="ValueTask"/></returns>
+    /// <param name="settings">The settings, which are not used.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the token is removed.</returns>
     public async ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
         await _localStorage.RemoveItemAsync("token", cancellationToken).ConfigureAwait(false);

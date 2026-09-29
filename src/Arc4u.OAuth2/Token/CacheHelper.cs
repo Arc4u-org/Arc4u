@@ -8,9 +8,14 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Token;
 
+/// <summary>Default <see cref="ICacheHelper"/>: resolves the cache named by <see cref="TokenCacheOptions.CacheName"/>, and falls back to the default cache.</summary>
 [Export(typeof(ICacheHelper)), Shared]
 public class CacheHelper : ICacheHelper
 {
+    /// <summary>Initializes a new instance of the <see cref="CacheHelper"/> class.</summary>
+    /// <param name="cacheContext">The context giving access to the registered caches.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The token cache options.</param>
     public CacheHelper(ICacheContext cacheContext, ILogger<CacheHelper> logger, IOptions<TokenCacheOptions> options)
     {
         _cacheContext = cacheContext;
@@ -54,5 +59,6 @@ public class CacheHelper : ICacheHelper
 
     private readonly ICache _cache;
 
+    /// <inheritdoc/>
     public ICache GetCache() => _cache;
 }

@@ -11,8 +11,18 @@ using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Arc4u.OAuth2.Events
 {
+    /// <summary>
+    /// The default <see cref="CookieAuthenticationEvents"/> of the OpenID Connect authentication. On each request it loads the access and refresh tokens stored in the cookie ticket into the scoped
+    /// <see cref="TokenRefreshInfo"/> and, when the access token expires in less than <see cref="OidcAuthenticationOptions.ForceRefreshTimeoutTimeSpan"/>, refreshes it and renews the cookie.
+    /// The principal is rejected and the user signed out when the cookie is expired or the token cannot be refreshed.
+    /// </summary>
     public class StandardCookieEvents : CookieAuthenticationEvents
     {
+        /// <summary>Initializes a new instance of the <see cref="StandardCookieEvents"/> class.</summary>
+        /// <param name="serviceProvider">The service provider used to resolve the scoped <see cref="TokenRefreshInfo"/>.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="oidcOptions">The OpenID Connect authentication options.</param>
+        /// <param name="tokenRefreshProvider">The provider that refreshes the tokens.</param>
         public StandardCookieEvents(IServiceProvider serviceProvider,
             ILogger<StandardCookieEvents> logger,
             IOptions<OidcAuthenticationOptions> oidcOptions,
@@ -29,6 +39,7 @@ namespace Arc4u.OAuth2.Events
         private readonly ITokenRefreshProvider _tokenRefreshProvider;
         private readonly ILogger<StandardCookieEvents> _logger;
 
+        /// <inheritdoc/>
         public override async Task ValidatePrincipal(CookieValidatePrincipalContext cookieCtx)
         {
             ArgumentNullException.ThrowIfNull(_serviceProvider);

@@ -8,5 +8,8 @@ namespace Arc4u.OAuth2.Security;
 /// </summary>
 public interface IClaimsProvider
 {
+    /// <summary>Gets the extra claims of a user.</summary>
+    /// <param name="userIdentifier">The identifier of the user (see <c>ClaimsIdentifierOption</c>).</param>
+    /// <returns>The extra claims of the user.</returns>
     Task<IEnumerable<ClaimDto>> GetAsync(string userIdentifier);
 }

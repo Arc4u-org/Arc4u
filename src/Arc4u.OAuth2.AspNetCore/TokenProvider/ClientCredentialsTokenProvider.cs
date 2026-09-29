@@ -39,8 +39,17 @@ public class ClientCredentialsTokenProvider(
     IOptionsMonitor<AuthorityOptions> authorities,
     ILogger<ClientCredentialsTokenProvider> logger) : ITokenProvider
 {
+    /// <summary>The key (<c>ClientCredentials</c>) under which the provider is registered.</summary>
     public const string ProviderName = "ClientCredentials";
 
+    /// <summary>
+    /// Gets an application token with the client credentials grant. The <c>ClientId</c>, <c>ClientSecret</c> and <c>Scope</c> settings are required; the authority is taken from
+    /// the <c>Authority</c> setting (or the <c>Default</c> authority). A cached token is returned until it expires in less than one minute.
+    /// </summary>
+    /// <param name="settings">The provider settings (see <see cref="TokenKeys"/>).</param>
+    /// <param name="_">Not used.</param>
+    /// <returns>The token, or a failed result when a required setting is missing or the token cannot be obtained.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -105,6 +114,11 @@ public class ClientCredentialsTokenProvider(
         return result;
     }
 
+    /// <summary>Not supported.</summary>
+    /// <param name="settings">The provider settings.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotImplementedException">Always thrown.</exception>
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();

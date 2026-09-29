@@ -5,8 +5,12 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2.AspNetCore.Filters;
+/// <summary>An action filter that sets the UI culture of the current thread to the culture of the profile of the current principal.</summary>
 public class SetCultureActionFilter : IAsyncActionFilter
 {
+    /// <summary>Initializes a new instance of the <see cref="SetCultureActionFilter"/> class.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="application">The application context giving the current principal.</param>
     public SetCultureActionFilter(ILogger logger, IApplicationContext application)
     {
         _logger = logger;
@@ -16,6 +20,7 @@ public class SetCultureActionFilter : IAsyncActionFilter
     private readonly ILogger _logger;
     private readonly IApplicationContext _application;
 
+    /// <inheritdoc/>
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         if (_application?.Principal?.Profile is not null)

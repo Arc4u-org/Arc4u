@@ -4,17 +4,26 @@ using Microsoft.Extensions.Options;
 namespace Arc4u.OAuth2.Options
 {
     /// <summary>
-    /// This class is registered by default in the static class "AuthenticationExtensions" in the method AddOidcAuthentication".
+    /// Configures the authentication cookie when no ticket store is used (the session is kept in the cookie). It is registered (with <c>TryAddSingleton</c>) by
+    /// <c>AddOidcAuthentication</c> and <c>AddHybridAuthentication</c> when <see cref="OidcAuthenticationOptions.AuthenticationCacheTicketStoreOption"/> is not set.
     /// </summary>
     public class ConfigureStandardCookieAuthenticationOptions : IPostConfigureOptions<CookieAuthenticationOptions>
     {
         private readonly IOptionsMonitor<OidcAuthenticationOptions> _options;
 
+        /// <summary>Initializes a new instance of the <see cref="ConfigureStandardCookieAuthenticationOptions"/> class.</summary>
+        /// <param name="optionsMonitor">The OpenID Connect authentication options.</param>
         public ConfigureStandardCookieAuthenticationOptions(IOptionsMonitor<OidcAuthenticationOptions> optionsMonitor)
         {
             _options = optionsMonitor;
         }
 
+        /// <summary>
+        /// Configures the cookie: the name comes from <see cref="OidcAuthenticationOptions.CookieName"/>, the expiration is the shorter of
+        /// <see cref="OidcAuthenticationOptions.AuthenticationTicketTtl"/> and <see cref="OidcAuthenticationOptions.RefreshTokenLifetime"/> (sliding), and the cookie is essential, <c>SameSite=Lax</c> and secure.
+        /// </summary>
+        /// <param name="name">The name of the options instance.</param>
+        /// <param name="options">The cookie options to configure.</param>
         public void PostConfigure(string? name, CookieAuthenticationOptions options)
         {
             options.Cookie.Name = _options.CurrentValue.CookieName;

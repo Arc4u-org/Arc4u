@@ -4,13 +4,32 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.Extensions;
+/// <summary>Registers the <see cref="AuthorityOptions"/> of the identity providers. The authorities are named options; the one used by default is named <c>Default</c>.</summary>
 public static class AuthorityOptionsExtension
 {
+    /// <summary>Registers the authority named <c>Default</c> from code.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="options">The action that configures the authority.</param>
+    /// <example>
+    /// <code language="csharp">
+    /// services.AddDefaultAuthority(o => o.SetData(new Uri("https://login.example.com/tenant"), null, null, null));
+    /// </code>
+    /// </example>
     public static void AddDefaultAuthority(this IServiceCollection services, Action<AuthorityOptions> options)
     {
         services.AddAuthority(options, "Default");
     }
 
+    /// <summary>Registers the authority named <c>Default</c> from a configuration section.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section describing the authority (<c>Url</c>, <c>TokenEndpoint</c>, <c>Issuer</c>, <c>MetaDataAddress</c>). The default is <c>Authentication:DefaultAuthority</c>.</param>
+    /// <exception cref="ConfigurationException">The section does not exist or cannot be bound.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// services.AddDefaultAuthority(configuration);
+    /// </code>
+    /// </example>
     public static void AddDefaultAuthority(this IServiceCollection services, IConfiguration configuration, string sectionName = "Authentication:DefaultAuthority")
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -41,6 +60,11 @@ public static class AuthorityOptionsExtension
         });
     }
 
+    /// <summary>Registers a named authority from code.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="options">The action that configures the authority.</param>
+    /// <param name="optionKey">The name of the authority. Token providers select it with the <c>Authority</c> key of their settings.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> or <paramref name="options"/> is <see langword="null"/>, or <paramref name="optionKey"/> is empty.</exception>
     public static void AddAuthority(this IServiceCollection services, Action<AuthorityOptions> options, string optionKey)
     {
         ArgumentNullException.ThrowIfNull(services);

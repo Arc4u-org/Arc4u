@@ -7,8 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.TicketStore
 {
+    /// <summary>An <see cref="ITicketStore"/> that keeps the authentication tickets in an Arc4u cache. Each ticket is stored under a key made of <see cref="CacheTicketStoreOptions.KeyPrefix"/> and a new guid.</summary>
     public class CacheTicketStore : ITicketStore
     {
+        /// <summary>Initializes a new instance of the <see cref="CacheTicketStore"/> class.</summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="cacheContext">The context giving access to the registered caches.</param>
+        /// <param name="options">The options giving the name of the cache and the key prefix. When the cache does not exist, the default cache is used.</param>
+        /// <exception cref="ArgumentNullException">The cache name or the key prefix is <see langword="null"/>.</exception>
         public CacheTicketStore(ILogger<CacheTicketStore> logger, ICacheContext cacheContext, IOptionsMonitor<CacheTicketStoreOptions> options)
         {
             ArgumentNullException.ThrowIfNull(options.CurrentValue.KeyPrefix);
@@ -37,6 +43,7 @@ namespace Arc4u.OAuth2.TicketStore
             return _cacheContext.Default;
         }
 
+        /// <inheritdoc/>
         public async Task RemoveAsync(string key)
         {
             await _cache.RemoveAsync(key).ConfigureAwait(false);
@@ -44,6 +51,7 @@ namespace Arc4u.OAuth2.TicketStore
             _logger.Technical().LogDeleteAuthenticationTicket(key);
         }
 
+        /// <inheritdoc/>
         public async Task RenewAsync(string key, AuthenticationTicket ticket)
         {
             var expiresUtc = ticket.Properties.ExpiresUtc;
@@ -59,6 +67,7 @@ namespace Arc4u.OAuth2.TicketStore
 
         }
 
+        /// <inheritdoc/>
         public async Task<AuthenticationTicket?> RetrieveAsync(string key)
         {
             try
@@ -87,6 +96,7 @@ namespace Arc4u.OAuth2.TicketStore
             }
         }
 
+        /// <inheritdoc/>
         public async Task<string> StoreAsync(AuthenticationTicket ticket)
         {
             var key = _keyPrefix + Guid.NewGuid().ToString();

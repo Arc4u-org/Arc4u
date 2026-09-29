@@ -32,6 +32,10 @@ public sealed class AppPrincipalServerAuthenticationStateProvider : ServerAuthen
     private readonly IClaimAuthorizationFiller _authorizationFiller;
     private readonly IApplicationContext _applicationContext;
 
+    /// <summary>Initializes a new instance of the <see cref="AppPrincipalServerAuthenticationStateProvider"/> class.</summary>
+    /// <param name="claimsFiller">The filler that builds the user profile from the claims.</param>
+    /// <param name="authorizationFiller">The filler that builds the authorization from the claims.</param>
+    /// <param name="applicationContext">The circuit-scoped application context that receives the principal.</param>
     public AppPrincipalServerAuthenticationStateProvider(
         IClaimProfileFiller claimsFiller,
         IClaimAuthorizationFiller authorizationFiller,
@@ -42,6 +46,8 @@ public sealed class AppPrincipalServerAuthenticationStateProvider : ServerAuthen
         _applicationContext = applicationContext;
     }
 
+    /// <summary>Gets the authentication state and, for an authenticated user, sets the <see cref="AppPrincipal"/> in the circuit-scoped <see cref="IApplicationContext"/>.</summary>
+    /// <returns>The authentication state, whose user is the <see cref="AppPrincipal"/> when the user is authenticated.</returns>
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         // The base provider returns the state seeded from HttpContext.User when the circuit was established.

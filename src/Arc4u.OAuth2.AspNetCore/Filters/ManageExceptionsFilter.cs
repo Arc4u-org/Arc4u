@@ -14,8 +14,11 @@ namespace Arc4u.OAuth2.AspNetCore.Filters;
 /// Logs the exception (with the ActivityId to use to retrieve it in the log) and sets an <c>ObjectResult</c> carrying problem details.
 /// The result is a 403 for an <see cref="UnauthorizedAccessException"/> and a generic 500 (mentioning the ActivityId) for any other exception.
 /// </summary>
+/// <param name="logger">The logger.</param>
+/// <param name="application">The application context giving the activity id of the current request.</param>
 public class ManageExceptionsFilter(ILogger<ManageExceptionsFilter> logger, IApplicationContext application) : IAsyncExceptionFilter
 {
+    /// <inheritdoc/>
     public Task OnExceptionAsync(ExceptionContext context)
     {
         // If the activity id is not set, create one. This is the case for anonymous users.

@@ -15,18 +15,34 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Middleware;
 
+/// <summary>
+/// A middleware that gives a bearer token to requests authenticated with the OpenID Connect (cookie) authentication, so the token can be used by the code that reads the <c>Authorization</c> header.
+/// The token is requested from the on-behalf-of provider when on-behalf-of settings exist, otherwise from the provider of the OpenID settings. The header is replaced by <c>Bearer &lt;token&gt;</c>
+/// and the token is stored in the <see cref="ClaimsIdentity.BootstrapContext"/>. The culture of the principal profile is added to the request in the <c>culture</c> header.
+/// </summary>
 public class OpenIdBearerInjectorMiddleware
 {
     private readonly OpenIdBearerInjectorSettingsOptions _options;
     private readonly RequestDelegate _next;
     private ActivitySource? _activitySource;
 
+    /// <summary>Initializes a new instance of the <see cref="OpenIdBearerInjectorMiddleware"/> class.</summary>
+    /// <param name="next">The next middleware of the pipeline.</param>
+    /// <param name="options">The settings of the injector.</param>
+    /// <exception cref="ConfigurationException">The options have no current value.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="next"/> is <see langword="null"/>.</exception>
     public OpenIdBearerInjectorMiddleware([DisallowNull] RequestDelegate next, [DisallowNull] IOptionsMonitor<OpenIdBearerInjectorSettingsOptions> options)
     {
         _options = options.CurrentValue ?? throw new ConfigurationException("No current value exists for OpenIdBearerInjectorSettingsOptions");
         _next = next ?? throw new ArgumentNullException(nameof(next));
     }
 
+    /// <summary>Processes the request.</summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="activitySourceFactory">The factory of the activity source used for telemetry.</param>
+    /// <param name="logger">The logger.</param>
+    /// <returns>A task that completes when the rest of the pipeline is done.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="context"/> is <see langword="null"/>.</exception>
     public async Task InvokeAsync([DisallowNull] HttpContext context, IActivitySourceFactory activitySourceFactory, ILogger<OpenIdBearerInjectorMiddleware> logger)
     {
         ArgumentNullException.ThrowIfNull(context);

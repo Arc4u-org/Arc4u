@@ -6,13 +6,17 @@ namespace Arc4u.Blazor.Caching;
 /// <summary>
 /// Provides a secure cache implementation.
 /// </summary>
+/// <remarks>
+/// The values are kept in memory, in the browser session of the application. The expiration arguments (<c>timeout</c> and <c>isSlided</c>) are ignored,
+/// and a value added under a key that already exists does not replace the existing one.
+/// </remarks>
 [Export(typeof(ISecureCache)), Shared]
 public class SecureCache : ISecureCache
 {
     private Dictionary<string, object> _repository = [];
 
     /// <summary>
-    /// Disposes the cache object.
+    /// Disposes the cache object. There is nothing to release.
     /// </summary>
     public void Dispose()
     {
@@ -23,6 +27,7 @@ public class SecureCache : ISecureCache
     /// </summary>
     /// <param name="key">The key of the value to get.</param>
     /// <returns>The value associated with the specified key.</returns>
+    /// <exception cref="KeyNotFoundException">There is no value for the key.</exception>
     public TValue Get<TValue>(string key)
     {
         return (TValue)_repository[key];
@@ -34,22 +39,23 @@ public class SecureCache : ISecureCache
     /// <param name="key">The key of the value to get.</param>
     /// <param name="cancellation">A cancellation token that can be used to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the value associated with the specified key.</returns>
+    /// <exception cref="KeyNotFoundException">There is no value for the key.</exception>
     public Task<TValue?> GetAsync<TValue>(string key, CancellationToken cancellation = default)
     {
         return Task.FromResult((TValue?)_repository[key]);
     }
 
     /// <summary>
-    /// Initializes the secure cache with a store.
+    /// Empties the cache. The store name is not used.
     /// </summary>
-    /// <param name="store">The store to initialize the cache with.</param>
+    /// <param name="store">The store name, which is ignored.</param>
     public void Initialize(string store)
     {
         _repository = [];
     }
 
     /// <summary>
-    /// Adds the specified key and value to the cache.
+    /// Adds the specified key and value to the cache. Nothing is done when the key already exists.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
     /// <param name="value">The value of the element to add.</param>
@@ -61,12 +67,12 @@ public class SecureCache : ISecureCache
     }
 
     /// <summary>
-    /// Adds the specified key and value to the cache, and sets the expiration time for the element.
+    /// Adds the specified key and value to the cache. The expiration arguments are ignored and nothing is done when the key already exists.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
-    /// <param name="timeout">The time at which the element should expire.</param>
+    /// <param name="timeout">The expiration time, which is ignored.</param>
     /// <param name="value">The value of the element to add.</param>
-    /// <param name="isSlided">A boolean value that determines whether the expiration time should be reset every time the element is accessed.</param>
+    /// <param name="isSlided">The sliding expiration flag, which is ignored.</param>
     public void Put<T>(string key, TimeSpan timeout, T value, bool isSlided = false)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -75,7 +81,7 @@ public class SecureCache : ISecureCache
     }
 
     /// <summary>
-    /// Asynchronously adds the specified key and value to the cache.
+    /// Asynchronously adds the specified key and value to the cache. Nothing is done when the key already exists.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
     /// <param name="value">The value of the element to add.</param>
@@ -91,12 +97,12 @@ public class SecureCache : ISecureCache
     }
 
     /// <summary>
-    /// Asynchronously adds the specified key and value to the cache, and sets the expiration time for the element.
+    /// Asynchronously adds the specified key and value to the cache. The expiration arguments are ignored and nothing is done when the key already exists.
     /// </summary>
     /// <param name="key">The key of the element to add.</param>
-    /// <param name="timeout">The time at which the element should expire.</param>
+    /// <param name="timeout">The expiration time, which is ignored.</param>
     /// <param name="value">The value of the element to add.</param>
-    /// <param name="isSlided">A boolean value that determines whether the expiration time should be reset every time the element is accessed.</param>
+    /// <param name="isSlided">The sliding expiration flag, which is ignored.</param>
     /// <param name="cancellation">A cancellation token that can be used to cancel the operation.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     public Task PutAsync<T>(string key, TimeSpan timeout, T value, bool isSlided = false, CancellationToken cancellation = default)

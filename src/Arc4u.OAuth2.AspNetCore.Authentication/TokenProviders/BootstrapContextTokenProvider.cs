@@ -7,20 +7,19 @@ using FluentResults;
 
 namespace Arc4u.OAuth2.TokenProviders
 {
+    /// <summary>An <see cref="ITokenProvider"/> that returns the access token stored in the <see cref="ClaimsIdentity.BootstrapContext"/> of the current principal, that is the token of the incoming request.</summary>
+    /// <param name="applicationContext">The application context giving the current principal.</param>
     [Export(BootstrapContextTokenProvider.ProviderName, typeof(ITokenProvider))]
     public class BootstrapContextTokenProvider(IApplicationContext applicationContext) : ITokenProvider
     {
+        /// <summary>The key (<c>Bootstrap</c>) under which the provider is registered.</summary>
         public const string ProviderName = "Bootstrap";
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="settings"></param>
-        /// <param name="platformParameters"></param>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="ArgumentException" />
-        /// <exception cref="TimeoutException" />
-        /// <returns><see cref="TokenInfo"/></returns>
+        /// <summary>Gets the token of the current principal.</summary>
+        /// <param name="settings">The provider settings, which must not be <see langword="null"/>.</param>
+        /// <param name="platformParameters">Not used.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="settings"/> or the current principal is <see langword="null"/>.</exception>
+        /// <returns>The token, or a failed result when the identity has no token or the token is expired.</returns>
         public Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
         {
             ArgumentNullException.ThrowIfNull(settings);
@@ -45,11 +44,11 @@ namespace Arc4u.OAuth2.TokenProviders
         }
 
         /// <summary>
-        /// There is no way to signout in this scenario.
+        /// Not supported: there is no way to sign out in this scenario.
         /// </summary>
-        /// <param name="settings"></param>
-        /// <param name="cancellationToken"></param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <param name="settings">The provider settings.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
         public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();

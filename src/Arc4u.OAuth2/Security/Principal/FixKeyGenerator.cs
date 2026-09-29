@@ -10,6 +10,9 @@ namespace Arc4u.OAuth2.Security.Principal;
 [Export(typeof(ICacheKeyGenerator)), Shared]
 public class FixKeyGenerator : ICacheKeyGenerator
 {
+    /// <summary>Gets the fixed cache key <c>ClaimsVaultRef</c>, whatever the identity.</summary>
+    /// <param name="identity">The identity, which is ignored.</param>
+    /// <returns>The constant key <c>ClaimsVaultRef</c>.</returns>
     public string GetClaimsKey(ClaimsIdentity identity)
     {
         return "ClaimsVaultRef";

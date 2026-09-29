@@ -10,8 +10,36 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2.Extensions
 {
+    /// <summary>Extension methods that register the OpenID Connect authentication of a client application.</summary>
     public static class AuthenticationExtensions
     {
+        /// <summary>
+        /// Registers the OpenID Connect authentication of a client application from code, based on <c>Duende.IdentityModel.OidcClient</c>: the <c>OidcClient</c> and its options
+        /// (authority, client id, scopes, redirect uris, browser), the default authority and the claim identifiers. The token provider named <c>OidcClientIdentityModel</c> uses them to log the user in.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="browser">The browser that displays the login page.</param>
+        /// <param name="loggerFactory">The logger factory of the <c>OidcClient</c>.</param>
+        /// <param name="authenticationOptions">The action that configures the <see cref="OidcClientAuthenticationOptions"/>. <see cref="OidcClientAuthenticationOptions.OidcClientSettingsOption"/> is required.</param>
+        /// <param name="settingsKey">The name of the key/value settings registered for the client. The default is <c>OidcClient</c>.</param>
+        /// <exception cref="ArgumentNullException">An argument or a required option is <see langword="null"/>.</exception>
+        /// <example>
+        /// <code language="csharp">
+        /// services.AddOidcClientAuthentication(browser, loggerFactory, options =>
+        /// {
+        ///     options.DefaultAuthority = new AuthorityOptions(new Uri("https://login.example.com/tenant/v2.0"), null, null, null);
+        ///     options.CallbackPath = "myapp://callback";
+        ///     options.PostLogoutRedirectUri = "myapp://callback";
+        ///     options.ClaimsIdentifierOptions = o => o.Add("oid");
+        ///     options.OidcClientSettingsOption = o =>
+        ///     {
+        ///         o.ClientId = "my-client-id";
+        ///         o.Scopes.Add("openid");
+        ///         o.Scopes.Add("offline_access");
+        ///     };
+        /// });
+        /// </code>
+        /// </example>
         public static void AddOidcClientAuthentication(this IServiceCollection services, IBrowser browser, ILoggerFactory loggerFactory,
             Action<OidcClientAuthenticationOptions> authenticationOptions, string settingsKey = "OidcClient")
         {
@@ -89,6 +117,22 @@ namespace Arc4u.OAuth2.Extensions
             });
         }
 
+        /// <summary>
+        /// Registers the OpenID Connect authentication of a client application from the configuration. In addition to what the overload taking an action registers, the domain mappings,
+        /// the claims filler and the extra authorization and token request parameters are read from the sections named by <see cref="OidcClientAuthenticationSectionOptions"/>.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="browser">The browser that displays the login page.</param>
+        /// <param name="loggerFactory">The logger factory of the <c>OidcClient</c>.</param>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="authenticationSectionName">The section bound to <see cref="OidcClientAuthenticationSectionOptions"/>. The default is <c>Authentication</c>.</param>
+        /// <param name="settingsKey">The name of the key/value settings registered for the client. The default is <c>OidcClient</c>.</param>
+        /// <exception cref="ConfigurationException">The section does not exist or a mandatory value is missing.</exception>
+        /// <example>
+        /// <code language="csharp">
+        /// services.AddOidcClientAuthentication(browser, loggerFactory, configuration);
+        /// </code>
+        /// </example>
         public static void AddOidcClientAuthentication(this IServiceCollection services, IBrowser browser, ILoggerFactory loggerFactory,
             IConfiguration configuration, string authenticationSectionName = "Authentication", string settingsKey = "OidcClient")
         {

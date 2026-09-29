@@ -6,8 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.Middleware;
 
+/// <summary>Adds the <see cref="ValidateResourcesRightMiddleware"/>.</summary>
 public static class ValidateResourcesRightMiddlewareExtension
 {
+    /// <summary>Adds the <see cref="ValidateResourcesRightMiddleware"/> to the request pipeline from code. The middleware is not added when no resource is configured.</summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="options">The action that configures the protected resources.</param>
+    /// <returns>The application builder, to chain calls.</returns>
+    /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
+    /// <exception cref="ConfigurationException">A resource has no path or no policy, or the default content is empty.</exception>
     public static IApplicationBuilder UseResourcesRightValidationFor(this IApplicationBuilder app, Action<ValidateResourcesRightMiddlewareOptions> options)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -61,6 +68,18 @@ public static class ValidateResourcesRightMiddlewareExtension
         return app.UseMiddleware<ValidateResourcesRightMiddleware>(validate);
     }
 
+    /// <summary>Adds the <see cref="ValidateResourcesRightMiddleware"/> to the request pipeline from a configuration section. Nothing is added when the section is missing or defines no resource.</summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="sectionName">The section, bound to <see cref="ValidateResourcesRightMiddlewareOptions"/>. The default is <c>Authentication:ResourcesRights</c>.</param>
+    /// <returns>The application builder, to chain calls.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="app"/> is <see langword="null"/> or <paramref name="sectionName"/> is empty.</exception>
+    /// <exception cref="ConfigurationException">A resource has no path or no policy, or the default content is empty.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// app.UseAuthentication();
+    /// app.UseResourcesRightValidationFor();
+    /// </code>
+    /// </example>
     public static IApplicationBuilder UseResourcesRightValidationFor(this IApplicationBuilder app, string sectionName = "Authentication:ResourcesRights")
     {
         ArgumentNullException.ThrowIfNull(app);

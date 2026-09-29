@@ -5,8 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.Extensions
 {
+    /// <summary>Validation of the <see cref="OidcClientSettingsOption"/>.</summary>
     public static class OidcClientSettingsExtension
     {
+        /// <summary>Validates the OpenID Connect client settings. Nothing is registered.</summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="option">The action that configures the settings.</param>
+        /// <exception cref="MissingFieldException">The provider id or the client id is empty, or there is no scope.</exception>
         public static void ValidateOIdcClientSettings(this IServiceCollection services, Action<OidcClientSettingsOption> option)
         {
             var validate = new OidcClientSettingsOption();

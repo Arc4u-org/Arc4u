@@ -15,8 +15,15 @@ namespace Arc4u.OAuth2.Events
     internal partial class StandardBearerEventsJsonContext : JsonSerializerContext
     {
     }
+    /// <summary>
+    /// The default <see cref="JwtBearerEvents"/>: failures are logged and answered with a 401 status, and the bearer token is kept in the <see cref="ClaimsIdentity.BootstrapContext"/> of the validated identity.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
     public class StandardBearerEvents(ILogger<StandardBearerEvents> logger) : JwtBearerEvents
     {
+        /// <summary>Answers the challenge with a 401 status and a JSON <see cref="ProblemDetails"/> body. For an expired token, the <c>x-token-expired</c> header gives the expiration date.</summary>
+        /// <param name="context">The challenge context.</param>
+        /// <returns>A task that completes when the response is written.</returns>
         public override Task Challenge(JwtBearerChallengeContext context)
         {
             context.HandleResponse();
@@ -39,16 +46,17 @@ namespace Arc4u.OAuth2.Events
             }, StandardBearerEventsJsonContext.Default.ProblemDetails));
         }
 
+        /// <inheritdoc/>
         public override Task MessageReceived(MessageReceivedContext context)
         {
             return base.MessageReceived(context);
         }
 
         /// <summary>
-        /// Log the exception, reason why the authentication is failing.
+        /// Logs the exception, the reason why the authentication failed, fails the authentication and answers with a 401 status.
         /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
+        /// <param name="context">The authentication failure context.</param>
+        /// <returns>A completed task.</returns>
         public override Task AuthenticationFailed(AuthenticationFailedContext context)
         {
             logger.Technical().LogException(context.Exception);
@@ -61,10 +69,11 @@ namespace Arc4u.OAuth2.Events
         }
 
         /// <summary>
-        /// Save the access token in the identity.BootstrapContext
+        /// Saves the access token, read from the <c>Authorization</c> header, in the <see cref="ClaimsIdentity.BootstrapContext"/> of the identity.
+        /// The authentication fails with a 401 status when the header does not carry a <c>Bearer</c> token.
         /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
+        /// <param name="context">The token validated context.</param>
+        /// <returns>A completed task.</returns>
         public override Task TokenValidated(TokenValidatedContext context)
         {
             if (context.SecurityToken is not null)

@@ -12,8 +12,20 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.DataProtection
 {
+    /// <summary>Extension methods to persist the data protection keys in an Arc4u cache.</summary>
     public static class CacheStoreExtension
     {
+        /// <summary>Persists the data protection keys in a cache, from code.</summary>
+        /// <param name="builder">The data protection builder.</param>
+        /// <param name="option">The action that configures the <see cref="CacheStoreOption"/>.</param>
+        /// <returns>The data protection builder, to chain calls.</returns>
+        /// <exception cref="ArgumentNullException"><see cref="CacheStoreOption.CacheKey"/> is <see langword="null"/>.</exception>
+        /// <example>
+        /// <code language="csharp">
+        /// builder.Services.AddDataProtection()
+        ///     .PersistKeysToCache(o => { o.CacheKey = "DataProtection"; o.CacheName = "Default"; });
+        /// </code>
+        /// </example>
         public static IDataProtectionBuilder PersistKeysToCache(this IDataProtectionBuilder builder, Action<CacheStoreOption> option)
         {
             var validate = new CacheStoreOption();
@@ -36,6 +48,12 @@ namespace Arc4u.OAuth2.DataProtection
             return builder;
         }
 
+        /// <summary>Persists the data protection keys in a cache described by a configuration section.</summary>
+        /// <param name="builder">The data protection builder.</param>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="configSectionName">The section holding the <see cref="CacheStoreOption"/>. The default is <c>DataProtectionStore</c>.</param>
+        /// <returns>The data protection builder, to chain calls.</returns>
+        /// <exception cref="ConfigurationException">The section does not exist or has no <c>CacheKey</c> or <c>CacheName</c>.</exception>
         public static IDataProtectionBuilder PersistKeysToCache(this IDataProtectionBuilder builder, [DisallowNull] IConfiguration configuration, [DisallowNull] string configSectionName = "DataProtectionStore")
         {
             ArgumentNullException.ThrowIfNull(configuration);

@@ -6,8 +6,21 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Arc4u.OAuth2.TicketStore
 {
+    /// <summary>Registers the <see cref="CacheTicketStore"/>.</summary>
     public static class CacheTicketStoreExtension
     {
+        /// <summary>Registers the <see cref="CacheTicketStoreOptions"/> and the <see cref="CacheTicketStore"/> as <see cref="ITicketStore"/>, unless another ticket store is already registered.</summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="action">The action that configures the options.</param>
+        /// <example>
+        /// <code language="csharp">
+        /// builder.Services.AddCacheTicketStore(o =>
+        /// {
+        ///     o.CacheName = "Default";
+        ///     o.KeyPrefix = "AuthSessionStore-";
+        /// });
+        /// </code>
+        /// </example>
         public static void AddCacheTicketStore(this IServiceCollection services, Action<CacheTicketStoreOptions> action)
         {
             var validate = new CacheTicketStoreOptions();
@@ -22,6 +35,11 @@ namespace Arc4u.OAuth2.TicketStore
             services.TryAddTransient<ITicketStore, CacheTicketStore>();
         }
 
+        /// <summary>Registers the <see cref="CacheTicketStore"/> with the options of a configuration section.</summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="sectionName">The section holding the <see cref="CacheTicketStoreOptions"/>. The default is <c>AuthenticationCacheTicketStore</c>. The default values of the options are used when the section does not exist.</param>
+        /// <exception cref="ConfigurationException">The ticket store cannot be created.</exception>
         public static void AddCacheTicketStore(this IServiceCollection services, IConfiguration configuration, string sectionName = "AuthenticationCacheTicketStore")
         {
             var action = PrepareAction(configuration, sectionName);

@@ -20,15 +20,24 @@ sealed partial class CredentialTokenJsonContext : JsonSerializerContext
 {
 }
 
+/// <summary>
+/// An <see cref="ICredentialTokenProvider"/> that requests a token from the token endpoint of an authority with the OAuth2 resource owner password grant.
+/// The provider is registered under the name <see cref="ProviderName"/>. The authority is read from the <c>Authority</c> key of the settings (or the <c>Default</c> authority), the
+/// <c>ClientId</c>, optional <c>ClientSecret</c> and <c>Scope</c> (default <c>openid</c>) keys come from the settings too. Failing requests are retried during <see cref="AuthorityOptions.RetryInterval"/> (90 seconds by default).
+/// </summary>
+/// <param name="logger">The logger.</param>
+/// <param name="authorityOptions">The named authority options.</param>
 [Export(ProviderName, typeof(ICredentialTokenProvider)), Shared]
 public class CredentialTokenProvider(ILogger<CredentialTokenProvider> logger, IOptionsMonitor<AuthorityOptions> authorityOptions) : ICredentialTokenProvider
 {
+    /// <summary>The name (<c>CredentialDirect</c>) under which the provider is registered.</summary>
     public const string ProviderName = "CredentialDirect";
 
     private static readonly TimeSpan DefaultRetryInterval = TimeSpan.FromSeconds(90);
 
     private readonly ILogger<CredentialTokenProvider> _logger = logger;
 
+    /// <inheritdoc/>
     public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings settings, CredentialsResult credential)
     {
         var result = GetContext(settings, out var clientId, out var authority, out var scope, out var clientSecret);

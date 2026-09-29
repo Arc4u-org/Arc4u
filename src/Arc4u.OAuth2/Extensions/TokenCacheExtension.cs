@@ -5,8 +5,22 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Extensions;
+/// <summary>Registers the <see cref="TokenCacheOptions"/>.</summary>
 public static class TokenCacheExtension
 {
+    /// <summary>Registers the token cache options from code.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="options">The action that configures the options.</param>
+    /// <exception cref="ConfigurationException"><see cref="TokenCacheOptions.CacheName"/> is empty or <see cref="TokenCacheOptions.MaxTime"/> is zero.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// services.AddTokenCache(o =>
+    /// {
+    ///     o.CacheName = "Token";
+    ///     o.MaxTime = TimeSpan.FromMinutes(30);
+    /// });
+    /// </code>
+    /// </example>
     public static void AddTokenCache(this IServiceCollection services, Action<TokenCacheOptions> options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -17,6 +31,16 @@ public static class TokenCacheExtension
         AddTokenCache(services, tokenCacheOptions);
 
     }
+    /// <summary>Registers the token cache options from a configuration section.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section to bind. The default is <c>Authentication:TokenCache</c>. <c>MaxTime</c> keeps its default (50 minutes) when it is not in the section.</param>
+    /// <exception cref="ConfigurationException"><see cref="TokenCacheOptions.CacheName"/> is empty or <see cref="TokenCacheOptions.MaxTime"/> is zero.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// services.AddTokenCache(configuration);
+    /// </code>
+    /// </example>
     public static void AddTokenCache(this IServiceCollection services, IConfiguration configuration, string sectionName = "Authentication:TokenCache")
     {
         ArgumentNullException.ThrowIfNull(configuration);

@@ -64,8 +64,17 @@ public static class ClientTokensExtension
     /// Reads the <paramref name="sectionName"/> section and registers a named
     /// <see cref="SimpleKeyValueSettings"/> per entry, selecting the matching
     /// <see cref="IClientTokenScenario"/> by the entry's discriminator through <see cref="Scenario"/>.
+    /// Nothing is registered when the section does not exist or is empty. An entry is registered only once per service collection.
     /// </summary>
-    /// <param name="sectionName">Section name to read the configuration from the builder.Configuration</param>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration to read the section from, for example <c>builder.Configuration</c>.</param>
+    /// <param name="sectionName">The section to read. The default is <c>Authentication:ClientTokens</c>.</param>
+    /// <exception cref="ConfigurationException">An entry has no <c>Scenario</c>, an unknown scenario, an empty authentication type, or is invalid for its scenario.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// builder.Services.AddClientTokens(builder.Configuration);
+    /// </code>
+    /// </example>
     public static void AddClientTokens(this IServiceCollection services,
         [DisallowNull] IConfiguration configuration,
         [DisallowNull] string sectionName = "Authentication:ClientTokens")

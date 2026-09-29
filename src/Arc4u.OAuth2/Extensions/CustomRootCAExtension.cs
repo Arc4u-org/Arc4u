@@ -10,10 +10,19 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Extensions;
 
+/// <summary>Extensions on <see cref="IHttpClientBuilder"/> to trust custom root certificate authorities.</summary>
 public static class CustomRootCaExtension
 {
+    /// <summary>Extensions on the <see cref="IHttpClientBuilder"/> <paramref name="builder"/>.</summary>
+    /// <param name="builder">The HTTP client builder.</param>
     extension(IHttpClientBuilder builder)
     {
+        /// <summary>
+        /// Configures the primary handler of the HTTP client to validate server certificates against the custom root CA certificates
+        /// registered as <c>CARootOption</c> options. When the standard validation fails, the chain is rebuilt with the custom certificates as the only trust store (revocation is not checked).
+        /// </summary>
+        /// <param name="certificateOptionKey">The name of the <c>CARootOption</c> to use, or <see langword="null"/> to use all the registered root CA options.</param>
+        /// <returns>The builder, to chain calls.</returns>
         public IHttpClientBuilder ConfigureLocalCaCertificate(string? certificateOptionKey = null)
         {
             return builder.ConfigurePrimaryHttpMessageHandler(sp =>

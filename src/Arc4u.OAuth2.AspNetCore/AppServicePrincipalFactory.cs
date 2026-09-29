@@ -14,9 +14,14 @@ using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Arc4u.OAuth2;
 
+/// <summary>
+/// Creates an <see cref="AppPrincipal"/> on the server side. A token is requested from the <see cref="ITokenProvider"/> designated by the
+/// <c>ProviderId</c> key of the settings, its claims are added to an identity, and the identity is transformed by the registered <see cref="IClaimsTransformation"/>.
+/// </summary>
 [Export(typeof(IAppPrincipalFactory))]
 public class AppServicePrincipalFactory : IAppPrincipalFactory
 {
+    /// <summary>The settings key (<c>ProviderId</c>) that holds the key of the token provider.</summary>
     public const string ProviderKey = "ProviderId";
 
     private readonly IServiceProvider _container;
@@ -25,6 +30,12 @@ public class AppServicePrincipalFactory : IAppPrincipalFactory
     private readonly IClaimsTransformation _claimsTransformation;
     private readonly ActivitySource? _activitySource;
 
+    /// <summary>Initializes a new instance of the <see cref="AppServicePrincipalFactory"/> class.</summary>
+    /// <param name="container">The service provider used to resolve the token providers.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="settings">The named token provider settings.</param>
+    /// <param name="claimsTransformation">The transformation that builds the <see cref="AppPrincipal"/>.</param>
+    /// <param name="activitySourceFactory">The factory of the activity source used for telemetry.</param>
     public AppServicePrincipalFactory(IServiceProvider container, ILogger<AppServicePrincipalFactory> logger, IOptionsMonitor<SimpleKeyValueSettings> settings, IClaimsTransformation claimsTransformation, IActivitySourceFactory activitySourceFactory)
     {
         _container = container;
@@ -44,6 +55,7 @@ public class AppServicePrincipalFactory : IAppPrincipalFactory
         throw new NotSupportedException($"Creating a principal requires the settings identifying the token provider. Use the overload taking a settings name or an {nameof(IKeyValueSettings)} instance.");
     }
 
+    /// <inheritdoc/>
     public async Task<Result<AppPrincipal>> CreatePrincipalAsync(string settingsResolveName, object? parameter)
     {
         var settings = _settings.Get(settingsResolveName);
@@ -149,7 +161,14 @@ public class AppServicePrincipalFactory : IAppPrincipalFactory
         }
     }
 
+    /// <summary>Removes the cached claims of the current user of the <see cref="IApplicationContext"/>.</summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the cache entry is removed.</returns>
     public ValueTask SignOutUserAsync(CancellationToken cancellationToken) => RemoveCacheFromUserAsync(cancellationToken);
 
+    /// <summary>Removes the cached claims of the current user of the <see cref="IApplicationContext"/>. The settings are not used.</summary>
+    /// <param name="settings">The token provider settings, which are ignored.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the cache entry is removed.</returns>
     public ValueTask SignOutUserAsync(IKeyValueSettings settings, CancellationToken cancellationToken) => RemoveCacheFromUserAsync(cancellationToken);
 }

@@ -17,12 +17,26 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Middleware;
 
+/// <summary>
+/// A middleware that converts credentials into a bearer token. The credentials are read from a Basic <c>Authorization</c> header or, when the
+/// <see cref="BasicAuthenticationSettingsOptions.CertificateHeaderOptions"/> are configured, from an encrypted header or query string parameter.
+/// A token is requested for them from the token provider designated by the <c>ProviderId</c> of the settings, cached in the <see cref="ITokenCache"/>,
+/// and the <c>Authorization</c> header of the request is replaced by <c>Bearer &lt;token&gt;</c>.
+/// Errors are logged and the request continues without change.
+/// </summary>
 public class BasicAuthenticationMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly BasicAuthenticationSettingsOptions _options;
     private readonly ILogger<BasicAuthenticationMiddleware> _logger;
 
+    /// <summary>Initializes a new instance of the <see cref="BasicAuthenticationMiddleware"/> class.</summary>
+    /// <param name="next">The next middleware of the pipeline.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="options">The Basic authentication settings.</param>
+    /// <param name="serviceProvider">The service provider used to check that the token provider is registered.</param>
+    /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
+    /// <exception cref="ConfigurationException">The settings are missing, have no <c>ProviderId</c> or designate a token provider that is not registered.</exception>
     public BasicAuthenticationMiddleware(RequestDelegate next,
                                          ILogger<BasicAuthenticationMiddleware> logger,
                                          IOptionsMonitor<BasicAuthenticationSettingsOptions> options,
@@ -60,6 +74,9 @@ public class BasicAuthenticationMiddleware
         }
     }
 
+    /// <summary>Processes the request.</summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>A task that completes when the rest of the pipeline is done.</returns>
     public async Task Invoke(HttpContext context)
     {
         try

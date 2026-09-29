@@ -4,20 +4,30 @@ using Microsoft.Extensions.Options;
 namespace Arc4u.OAuth2.Options
 {
     /// <summary>
-    /// This class is registered by default in the AuthenticationExtensions static class.
-    /// This is possible to registe anothe one via the OidcAuthenticationBuilderOptions.
+    /// Configures the authentication cookie so the session is kept in an <see cref="ITicketStore"/>. It is registered (with <c>TryAddSingleton</c>) by
+    /// <c>AddOidcAuthentication</c> and <c>AddHybridAuthentication</c> when <see cref="OidcAuthenticationOptions.AuthenticationCacheTicketStoreOption"/> is set;
+    /// another <see cref="IPostConfigureOptions{TOptions}"/> of the cookie options registered before replaces it.
     /// </summary>
     public class ConfigureCookieWithTicketStoreAuthenticationOptions : IPostConfigureOptions<CookieAuthenticationOptions>
     {
         private readonly ITicketStore _ticketStore;
         private readonly IOptionsMonitor<OidcAuthenticationOptions> _options;
 
+        /// <summary>Initializes a new instance of the <see cref="ConfigureCookieWithTicketStoreAuthenticationOptions"/> class.</summary>
+        /// <param name="ticketStore">The store in which the authentication tickets are kept.</param>
+        /// <param name="optionsMonitor">The OpenID Connect authentication options.</param>
         public ConfigureCookieWithTicketStoreAuthenticationOptions(ITicketStore ticketStore, IOptionsMonitor<OidcAuthenticationOptions> optionsMonitor)
         {
             _ticketStore = ticketStore;
             _options = optionsMonitor;
         }
 
+        /// <summary>
+        /// Configures the cookie: the ticket store keeps the session, the name comes from <see cref="OidcAuthenticationOptions.CookieName"/>, the expiration is the shorter of
+        /// <see cref="OidcAuthenticationOptions.AuthenticationTicketTtl"/> and <see cref="OidcAuthenticationOptions.RefreshTokenLifetime"/> (sliding), and the cookie is essential, <c>SameSite=Lax</c> and secure.
+        /// </summary>
+        /// <param name="name">The name of the options instance.</param>
+        /// <param name="options">The cookie options to configure.</param>
         public void PostConfigure(string? name, CookieAuthenticationOptions options)
         {
             options.SessionStore = _ticketStore;

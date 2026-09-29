@@ -6,9 +6,14 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Arc4u.Blazor;
 
+/// <summary>Rebuilds the <see cref="AppPrincipal"/> from the authentication state serialized by the Blazor server, and sets it in the <see cref="IApplicationContext"/>.</summary>
 [Export(typeof(IAppPrincipalAuthenticationStateProvider)), Shared]
 public class AppPrincipalFromAuthenticationState : IAppPrincipalAuthenticationStateProvider
 {
+    /// <summary>Initializes a new instance of the <see cref="AppPrincipalFromAuthenticationState"/> class.</summary>
+    /// <param name="claimsFiller">The filler that builds the user profile from the claims.</param>
+    /// <param name="authorizationFiller">The filler that builds the authorization from the claims.</param>
+    /// <param name="applicationContext">The application context that receives the principal.</param>
     public AppPrincipalFromAuthenticationState(IClaimProfileFiller claimsFiller, IClaimAuthorizationFiller authorizationFiller, IApplicationContext applicationContext)
     {
         _claimsFiller = claimsFiller;
@@ -19,8 +24,10 @@ public class AppPrincipalFromAuthenticationState : IAppPrincipalAuthenticationSt
     private readonly IClaimProfileFiller _claimsFiller;
     private readonly IClaimAuthorizationFiller _authorizationFiller;
     private readonly IApplicationContext _applicationContext;
+    /// <summary>Gets an authentication state for an anonymous user: a principal with an empty identity and no operation.</summary>
     public static AuthenticationState DefaultAuthenticationState => new AuthenticationState(new AppPrincipal(GetNoAuthorization(), new ClaimsIdentity(), "S-1-0-0" ));
 
+    /// <inheritdoc/>
     public Task<AuthenticationState> DeserializeAuthenticationStateAsync(
         AuthenticationStateData? authenticationStateData)
     {

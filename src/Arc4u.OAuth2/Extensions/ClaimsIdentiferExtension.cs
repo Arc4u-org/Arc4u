@@ -5,8 +5,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.Extensions;
+/// <summary>Registers the <see cref="ClaimsIdentifierOption"/>, the claim types used to identify a user.</summary>
 public static class ClaimsidentifierExtension
 {
+    /// <summary>Registers the claim types used to identify a user from code.</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="options">The action that configures the claim types.</param>
     public static void AddClaimsIdentifier(this IServiceCollection services, Action<ClaimsIdentifierOption> options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -14,11 +18,19 @@ public static class ClaimsidentifierExtension
         services.Configure<ClaimsIdentifierOption>(options);
     }
 
+    /// <summary>Registers the claim types used to identify a user from a configuration section (an array of claim types).</summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section holding the array. The default is <c>Authentication:ClaimsIdentifier</c>. When the section is missing, the object identifier claim types (<c>ObjectIdentifier</c> and <c>OID</c> of <c>ClaimTypes</c>) are used.</param>
     public static void AddClaimsIdentifier(this IServiceCollection services, IConfiguration configuration, [DisallowNull] string sectionName = "Authentication:ClaimsIdentifier")
     {
         AddClaimsIdentifier(services, PrepareAction(configuration, sectionName));
     }
 
+    /// <summary>Builds the action that fills a <see cref="ClaimsIdentifierOption"/> from a configuration section.</summary>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="sectionName">The section holding the array of claim types.</param>
+    /// <returns>An action that adds the claim types of the section, or the default object identifier claim types when the section does not exist.</returns>
     public static Action<ClaimsIdentifierOption> PrepareAction(IConfiguration configuration, [DisallowNull] string sectionName)
     {
         if (string.IsNullOrEmpty(sectionName))

@@ -12,6 +12,10 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.Events
 {
+    /// <summary>
+    /// The default <see cref="OpenIdConnectEvents"/>. It validates the audience and the issuer of the access token received from the token endpoint, forces https redirect urls (except for localhost),
+    /// adds the extra authorization and token request parameters (see <see cref="ApiExtraContextAuthenticationOption"/>), and answers failures with a simple html message.
+    /// </summary>
     public sealed partial class StandardOpenIdConnectEvents : OpenIdConnectEvents
 
     {
@@ -20,6 +24,11 @@ namespace Arc4u.OAuth2.Events
         private readonly IOptionsMonitor<SimpleKeyValueSettings> _openIdOptions;
         private readonly IOptionsMonitor<ApiExtraContextAuthenticationOption> _extraContextOptions;
 
+        /// <summary>Initializes a new instance of the <see cref="StandardOpenIdConnectEvents"/> class.</summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="oidcOptions">The OpenID Connect authentication options.</param>
+        /// <param name="openIdOptions">The named OpenID settings.</param>
+        /// <param name="extraContextOptions">The extra parameters added to the authorization and token requests.</param>
         public StandardOpenIdConnectEvents(ILogger<StandardOpenIdConnectEvents> logger, IOptionsMonitor<OidcAuthenticationOptions> oidcOptions, IOptionsMonitor<SimpleKeyValueSettings> openIdOptions, IOptionsMonitor<ApiExtraContextAuthenticationOption> extraContextOptions)
         {
             _hybridOptions = oidcOptions.CurrentValue;
@@ -31,6 +40,7 @@ namespace Arc4u.OAuth2.Events
         [GeneratedRegex(@"\b(?:http:\/\/localhost|https:\/\/)\b", RegexOptions.IgnoreCase)]
         private static partial Regex HttpRegex();
 
+        /// <inheritdoc/>
         public override Task TokenResponseReceived(TokenResponseReceivedContext context)
         {
             if (string.IsNullOrWhiteSpace(context.TokenEndpointResponse.AccessToken))
@@ -79,6 +89,7 @@ namespace Arc4u.OAuth2.Events
 
         }
 
+        /// <inheritdoc/>
         public override Task RedirectToIdentityProvider(RedirectContext context)
         {
             // force https for redirect uri but for localhost.
@@ -99,6 +110,7 @@ namespace Arc4u.OAuth2.Events
             return base.RedirectToIdentityProvider(context);
         }
 
+        /// <inheritdoc/>
         public override Task AuthorizationCodeReceived(AuthorizationCodeReceivedContext context)
         {
             // Some Idp require extra parameters to link application definition to the right Api context.
@@ -110,6 +122,7 @@ namespace Arc4u.OAuth2.Events
             return base.AuthorizationCodeReceived(context);
         }
 
+        /// <inheritdoc/>
         public override async Task AuthenticationFailed(AuthenticationFailedContext context)
         {
             ArgumentNullException.ThrowIfNull(context);
@@ -125,6 +138,7 @@ namespace Arc4u.OAuth2.Events
 
         }
 
+        /// <inheritdoc/>
         public override Task AccessDenied(AccessDeniedContext context)
         {
             ArgumentNullException.ThrowIfNull(context);
@@ -135,6 +149,7 @@ namespace Arc4u.OAuth2.Events
 
         }
 
+        /// <inheritdoc/>
         public override Task RemoteFailure(RemoteFailureContext context)
         {
             ArgumentNullException.ThrowIfNull(context);

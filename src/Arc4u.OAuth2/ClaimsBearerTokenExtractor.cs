@@ -20,9 +20,18 @@ internal partial class ClaimsBearerTokenContext : JsonSerializerContext
 {
 }
 
+/// <summary>
+/// An <see cref="IClaimsFiller"/> that extracts the claims of a JWT access token.
+/// The token is taken from the <see cref="ClaimsIdentity.BootstrapContext"/> of the identity or, when there is none, requested
+/// from the <see cref="ITokenProvider"/> registered for the identity authentication type.
+/// </summary>
 [Export(typeof(IClaimsFiller))]
 public class ClaimsBearerTokenExtractor : IClaimsFiller
 {
+    /// <summary>Initializes a new instance of the <see cref="ClaimsBearerTokenExtractor"/> class.</summary>
+    /// <param name="settings">The named token provider settings, keyed by authentication type.</param>
+    /// <param name="serviceProvider">The service provider used to resolve the keyed <see cref="ITokenProvider"/>.</param>
+    /// <param name="logger">The logger.</param>
     public ClaimsBearerTokenExtractor(IOptionsMonitor<SimpleKeyValueSettings> settings, IServiceProvider serviceProvider, ILogger<ClaimsBearerTokenExtractor> logger)
     {
         _settings = settings;
@@ -34,6 +43,12 @@ public class ClaimsBearerTokenExtractor : IClaimsFiller
     private readonly ILogger<ClaimsBearerTokenExtractor> _logger;
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Reads the claims contained in the access token of the identity.
+    /// </summary>
+    /// <param name="identity">The identity for which the claims are loaded. It must be a <see cref="ClaimsIdentity"/>.</param>
+    /// <returns>The claims found in the token. The list is empty when the identity is not a <see cref="ClaimsIdentity"/>, no token provider is configured for it, or the token cannot be obtained.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="identity"/> is <see langword="null"/>.</exception>
     public async Task<IEnumerable<ClaimDto>> GetAsync(IIdentity identity)
     {
         ArgumentNullException.ThrowIfNull(identity);
