@@ -14,17 +14,22 @@ namespace Arc4u.Caching;
 public class CacheContext : ICacheContext
 {
     // Constant used to resolve the ICache interface to retrieve the MemoryCache implementation.
+    /// <summary>The kind of cache implemented by the memory cache (<c>Arc4u.Caching.Memory</c>).</summary>
     public const string Memory = "Memory";
 
     // Constant used to resolve the ICache interface to retrieve the Sql implementation.
+    /// <summary>The kind of cache implemented by the SQL Server cache (<c>Arc4u.Caching.Sql</c>).</summary>
     public const string Sql = "Sql";
 
     // Constant used to resolve the ICache interface to retrieve the Redis implementation.
+    /// <summary>The kind of cache implemented by the Redis cache (<c>Arc4u.Caching.Redis</c>).</summary>
     public const string Redis = "Redis";
 
     // Constant used to resolve the ICache interface to retrieve the Redis Sentinel implementation.
+    /// <summary>The kind of cache implemented by the Redis Sentinel cache (<c>Arc4u.Caching.Redis</c>).</summary>
     public const string RedisSentinel = "RedisSentinel";
 
+    /// <summary>The kind of cache implemented by the Dapr state store cache (<c>Arc4u.Caching.Dapr</c>).</summary>
     public const string Dapr = "Dapr";
 
     private Dictionary<string, ICache> _caches = [];
@@ -38,7 +43,11 @@ public class CacheContext : ICacheContext
 
     /// <summary>
     /// Initialise the cache following the caching config section.
+    /// The caches flagged <c>IsAutoStart</c> are created and initialized immediately; the others are registered and initialized on their first use.
     /// </summary>
+    /// <param name="configuration">The configuration that contains the <c>Caching</c> section.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="dependency">The service provider used to resolve the <see cref="ICache"/> implementations by kind.</param>
     public CacheContext(IConfiguration configuration, ILogger<CacheContext> logger, IServiceProvider dependency)
     {
         _logger = logger;
@@ -49,6 +58,7 @@ public class CacheContext : ICacheContext
     /// <summary>
     /// Accessor to retrieve the default cache defined in the caching config section of the config file.
     /// </summary>
+    /// <exception cref="InvalidOperationException">No cache is configured with the default name.</exception>
     public ICache Default
     {
         get { return this[_cacheConfigName]; }
@@ -101,6 +111,7 @@ public class CacheContext : ICacheContext
         }
     }
 
+    /// <inheritdoc/>
     public bool Exist(string cacheName)
     {
         return _caches.ContainsKey(cacheName) || _uninitializedCaches.ContainsKey(cacheName);

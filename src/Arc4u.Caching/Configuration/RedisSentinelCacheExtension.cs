@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.Configuration.Redis;
 
+/// <summary>Extension methods to register the options of a Redis Sentinel cache.</summary>
 public static class RedisSentinelCacheExtension
 {
     /// <summary>
