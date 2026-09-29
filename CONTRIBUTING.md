@@ -63,8 +63,13 @@ to run every test.
    `<returns>`). They generate the [API reference](https://arc4u-org.github.io/Arc4u/api/index.html).
 5. If the change affects how Arc4u is used, update the matching guide under `docs/` and the
    package `README.md` (see below).
-6. Build and run the tests, then open a pull request against `develop/9.0.0` that explains
-   what changed and why, and links the issue it resolves.
+6. Add a line to [`CHANGELOG.md`](CHANGELOG.md) under `## [Unreleased]`, in the matching
+   section (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed` or `Security`), for every change
+   users can see. A breaking change also needs a section in the
+   [migration guide](docs/migration/8x-to-9.md).
+7. Build and run the tests, then open a pull request against `develop/9.0.0` that explains
+   what changed and why, and links the issue it resolves. The pull request template has a
+   checklist of these steps.
 
 ## Documentation
 
@@ -124,6 +129,21 @@ reported as warnings.
 > then, the build also reports about 20 known warnings from `src/` files, and the site is not
 > published automatically yet. Only warnings from files under `docs/` concern documentation
 > changes.
+
+## Release a version
+
+This section is for maintainers. [`CHANGELOG.md`](CHANGELOG.md) is the single source of release
+notes: the documentation site shows it on its
+[Changelog page](https://arc4u-org.github.io/Arc4u/releases/), and a GitHub Release only links to it.
+
+1. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [<version>] - <YYYY-MM-DD>`, add a new empty
+   `## [Unreleased]` section above it, and add the link definition of the version at the end of the
+   file.
+2. Merge that change, publish the NuGet packages, and tag the commit `v<version>`.
+3. Create the GitHub Release from that tag. Its notes are a short summary and a link to the
+   version's entry, on GitHub (`CHANGELOG.md`) and on the site
+   (`https://arc4u-org.github.io/Arc4u/releases/`). Do not write the release notes a second time.
+4. For a major version, also link the migration guide in the release notes.
 
 ## License
 
