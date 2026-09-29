@@ -3,18 +3,31 @@ using Realms;
 
 namespace Arc4u.Diagnostics.Serilog.Sinks.RealmDb;
 
+/// <summary>An <see cref="ILogStore"/> that reads the log messages persisted in a Realm database, the most recent first.</summary>
 public class RealmLoggingDbCtx : ILogStore
 {
+    /// <summary>Initializes a new instance of the <see cref="RealmLoggingDbCtx"/> class and opens the Realm database.</summary>
+    /// <param name="config">The configuration of the Realm database.</param>
+    /// <param name="loggerFactory">The logger factory (not used).</param>
     public RealmLoggingDbCtx(RealmConfiguration config, ILoggerFactory loggerFactory)
     {
         _realm = Realm.GetInstance(config);
     }
 
+    /// <inheritdoc/>
     public void RemoveAll()
     {
         _realm.Write(_realm.RemoveAll<LogDBMessage>);
     }
 
+    /// <summary>
+    /// Gets a page of the messages ordered by descending timestamp. <paramref name="skip"/> entries are skipped first;
+    /// then at most <paramref name="take"/> entries are examined and, when a criteria is given, only those whose text contains it (case-insensitive) are returned.
+    /// </summary>
+    /// <param name="criteria">Text that the message must contain. When empty, no filter is applied.</param>
+    /// <param name="skip">The number of messages to skip.</param>
+    /// <param name="take">The maximum number of messages to examine.</param>
+    /// <returns>The matching log messages.</returns>
     public List<LogMessage> GetLogs(string criteria, int skip, int take)
     {
         var hasCriteria = !string.IsNullOrWhiteSpace(criteria);
@@ -71,5 +84,6 @@ public class RealmLoggingDbCtx : ILogStore
 
     private readonly Realm _realm;
     private readonly ILoggerFactory _loggerFactory;
+    /// <summary>Gets the opened Realm database.</summary>
     public Realm Realm { get { return _realm; } }
 }
