@@ -117,6 +117,9 @@ public abstract class PersistEntity : NotifyEntity, IPersistEntity
 
     #endregion
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PersistEntity"/> class with <see cref="PersistChange.None"/>.
+    /// </summary>
     protected PersistEntity() : this(PersistChange.None)
     {
 
@@ -145,6 +148,10 @@ public abstract class PersistEntity : NotifyEntity, IPersistEntity
         _persistChange = entity._persistChange;
     }
 
+    /// <summary>
+    /// Validates the entity with the <see cref="System.ComponentModel.DataAnnotations"/> attributes of its properties.
+    /// </summary>
+    /// <returns>A successful result when the entity is valid; otherwise a failed result with one error per validation message.</returns>
     public Result TryValidate()
     {
         var result = new Result();
@@ -158,6 +165,12 @@ public abstract class PersistEntity : NotifyEntity, IPersistEntity
         return result;
     }
 
+    /// <summary>
+    /// Validates the entity with <see cref="TryValidate"/> and logs the errors, if any.
+    /// </summary>
+    /// <remarks>The <paramref name="logger"/> is currently not used: the errors are logged through the logging configured for FluentResults.</remarks>
+    /// <typeparam name="T">The category type of the logger.</typeparam>
+    /// <param name="logger">A logger, kept for signature compatibility.</param>
     public void Validate<T>(ILogger<T> logger)
     {
         TryValidate().LogIfFailed();

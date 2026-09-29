@@ -7,9 +7,22 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.Results.Logging;
 
+/// <summary>
+/// Default <see cref="IResultLogger"/>: writes the outcome of a <see cref="ResultBase"/> to an <see cref="ILogger{TCategoryName}"/>
+/// using the Arc4u business logging conventions.
+/// </summary>
+/// <remarks>
+/// Registered as a shared (singleton) service through the <c>Export</c> attribute. For a failed result each error is logged
+/// on its own: a <see cref="ValidationError"/> at the level matching its <see cref="Severity"/> (with its code as a property when set),
+/// an exceptional error as an exception, any other error at error level. The informational reasons of the result are then logged once.
+/// </remarks>
 [Export(typeof(IResultLogger)), Shared]
 public class FluentLogger : IResultLogger
 {
+    /// <summary>
+    /// Creates a logger writing to the given <paramref name="logger"/>.
+    /// </summary>
+    /// <param name="logger">The logger receiving the business messages.</param>
     public FluentLogger(ILogger<FluentLogger> logger)
     {
         _logger = logger;
@@ -18,6 +31,7 @@ public class FluentLogger : IResultLogger
     delegate void LogDelegate(string? message, params object?[] args);
 
     private readonly ILogger<FluentLogger> _logger;
+    /// <inheritdoc/>
     public void Log(string context, string content, ResultBase result, LogLevel logLevel)
     {
         if (!string.IsNullOrEmpty(context) && !string.IsNullOrEmpty(content))
@@ -31,6 +45,7 @@ public class FluentLogger : IResultLogger
         LogErrorsAndReasons(result);
     }
 
+    /// <inheritdoc/>
     public void Log<TContext>(string content, ResultBase result, LogLevel logLevel)
     {
         var logger = _logger.Business()

@@ -41,11 +41,12 @@ public class ClientErrorInterceptor : Interceptor
     #region UnaryCall
 
     /// <summary>
-    /// 
+    /// Intercepts an asynchronous unary call and converts the <see cref="RpcException"/> raised while starting it:
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged.
     /// </summary>
-    /// <typeparam name="TRequest"></typeparam>
-    /// <typeparam name="TResponse"></typeparam>
-    /// <param name="request"></param>
+    /// <typeparam name="TRequest">The request message type.</typeparam>
+    /// <typeparam name="TResponse">The response message type.</typeparam>
+    /// <param name="request">The request message.</param>
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
@@ -69,11 +70,12 @@ public class ClientErrorInterceptor : Interceptor
 
     #region ClientStreaming
     /// <summary>
-    /// 
+    /// Intercepts an asynchronous server streaming call and converts the <see cref="RpcException"/> raised while starting it:
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged. An <see cref="AggregateException"/> without an inner <see cref="RpcException"/> becomes an <see cref="InvalidOperationException"/>.
     /// </summary>
-    /// <typeparam name="TRequest"></typeparam>
-    /// <typeparam name="TResponse"></typeparam>
-    /// <param name="request"></param>
+    /// <typeparam name="TRequest">The request message type.</typeparam>
+    /// <typeparam name="TResponse">The response message type.</typeparam>
+    /// <param name="request">The request message.</param>
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>
@@ -104,10 +106,11 @@ public class ClientErrorInterceptor : Interceptor
     #region Duplex
 
     /// <summary>
-    /// 
+    /// Intercepts an asynchronous duplex streaming call and converts the <see cref="RpcException"/> raised while starting it:
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged. An <see cref="AggregateException"/> without an inner <see cref="RpcException"/> becomes an <see cref="InvalidOperationException"/>.
     /// </summary>
-    /// <typeparam name="TRequest"></typeparam>
-    /// <typeparam name="TResponse"></typeparam>
+    /// <typeparam name="TRequest">The request message type.</typeparam>
+    /// <typeparam name="TResponse">The response message type.</typeparam>
     /// <param name="context"></param>
     /// <param name="continuation"></param>
     /// <returns></returns>

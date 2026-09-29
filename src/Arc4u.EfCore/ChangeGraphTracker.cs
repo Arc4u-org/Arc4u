@@ -4,6 +4,15 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Arc4u.EfCore;
 
+/// <summary>
+/// Callbacks for <c>ChangeTracker.TrackGraph</c> that set the Entity Framework Core state of every entity of a graph from its <see cref="PersistChange"/>.
+/// </summary>
+/// <example>
+/// <code>
+/// context.ChangeTracker.TrackGraph(order, ChangeGraphTracker.Tracker);
+/// await context.SaveChangesAsync();
+/// </code>
+/// </example>
 public static class ChangeGraphTracker
 {
     /// <summary>

@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Arc4u.EfCore;
 
+/// <summary>
+/// Applies the includes of a <c>Graph&lt;T&gt;</c> to an <see cref="IQueryable{T}"/> for Entity Framework Core.
+/// </summary>
 public static class GraphExtension
 {
     private const string OnlyLevelOneIsAllowed = "It is not allowed to check more than one level!";
@@ -12,10 +15,11 @@ public static class GraphExtension
     /// <summary>
     /// Will apply the includes on the IQueryable&lt;T&gt; but the types having an association based on <see cref="IEnumerable"/>.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="graph"></param>
-    /// <param name="query"></param>
-    /// <returns></returns>
+    /// <typeparam name="T">The aggregate root type.</typeparam>
+    /// <param name="graph">The graph holding the include paths.</param>
+    /// <param name="query">The query to complete.</param>
+    /// <returns>The query with the single-valued includes applied.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
     public static IQueryable<T> ApplySingleReferences<T>(this Graph<T> graph, IQueryable<T> query) where T : class
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -68,17 +72,28 @@ public static class GraphExtension
     }
 
     /// <summary>
-    /// Will apply the includes on the IQueryable&gt;T&lt; but the types having an association based on <see cref="IEnumerable"/>.
+    /// Applies every include path of the graph (collections included) on the <see cref="IQueryable{T}"/>, using <c>Include</c> and <c>ThenInclude</c>.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="graph"></param>
-    /// <param name="query"></param>
-    /// <returns></returns>
+    /// <typeparam name="T">The aggregate root type.</typeparam>
+    /// <param name="graph">The graph holding the include paths.</param>
+    /// <param name="query">The query to complete.</param>
+    /// <returns>The query with every include of the graph applied.</returns>
     public static IQueryable<T> ApplySetReferences<T>(this Graph<T> graph, IQueryable<T> query) where T : class
     {
         return graph.Includes.Aggregate<string, IQueryable<T>>(query, (queryable, i) => queryable.BuildInclude(i) ?? queryable);
     }
 
+    /// <summary>
+    /// Applies the includes of the graph that start with a given first-level property.
+    /// </summary>
+    /// <typeparam name="TProperty">The type of the property.</typeparam>
+    /// <typeparam name="T">The aggregate root type.</typeparam>
+    /// <param name="graph">The graph holding the include paths.</param>
+    /// <param name="query">The query to complete.</param>
+    /// <param name="path">An expression selecting a property of the root type (one level only).</param>
+    /// <returns>The query with the matching includes (and their <c>ThenInclude</c>s) applied.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="path"/> goes deeper than one level.</exception>
     public static IQueryable<T> ApplyReferences<TProperty, T>(this Graph<T> graph, IQueryable<T> query, Expression<Func<T, TProperty>> path) where TProperty : class where T : class
     {
         ArgumentNullException.ThrowIfNull(query);

@@ -24,6 +24,17 @@ public static class ApiVersioningExtensions
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to register the api versioning to.</param>
     /// <returns>The <see cref="IServiceCollection"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// The default version is <see cref="ApiVersionDefault.V1"/>, but a version is mandatory (it is not assumed when missing),
+    /// supported versions are reported in the response headers and the API explorer substitutes the version in the documented URLs.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// var builder = WebApplication.CreateBuilder(args);
+    /// builder.Services.AddServiceApiVersioning();
+    /// </code>
+    /// </example>
     public static IServiceCollection AddServiceApiVersioning(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);

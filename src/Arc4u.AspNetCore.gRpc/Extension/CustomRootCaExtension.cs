@@ -10,10 +10,35 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.AspNetCore.gRpc;
 
+/// <summary>
+/// Extension for an <see cref="IHttpClientBuilder"/> that trusts private root certificates, for a gRPC client calling servers signed by an internal CA.
+/// </summary>
 public static class CustomRootCaExtension
 {
     extension(IHttpClientBuilder builder)
     {
+        /// <summary>
+        /// Configures the primary <see cref="SocketsHttpHandler"/> of the client so server certificates are also accepted when they chain to a configured custom root certificate.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The root certificates come from the <c>CARootOption</c> named <paramref name="certificateOptionKey"/>, or from all the registered custom root CA option keys when it is null or white space.
+        /// They are loaded once, when the handler is created, through the registered <c>IX509CertificateLoader</c>.
+        /// </para>
+        /// <para>
+        /// The custom trust is only consulted when the default validation reports an error; the revocation check is disabled for that validation.
+        /// When no certificate can be loaded, a warning is logged and the default validation is kept.
+        /// </para>
+        /// </remarks>
+        /// <param name="certificateOptionKey">The name of the CA root option to use; <see langword="null"/> to use all the registered ones.</param>
+        /// <returns>The <see cref="IHttpClientBuilder"/>, to chain calls.</returns>
+        /// <example>
+        /// <code>
+        /// using Arc4u.AspNetCore.gRpc;
+        ///
+        /// services.AddHttpClient("grpc").ConfigureLocalCaCertificateForGrpc("InternalCA");
+        /// </code>
+        /// </example>
         public IHttpClientBuilder ConfigureLocalCaCertificateForGrpc(string? certificateOptionKey = null)
         {
             return builder.ConfigurePrimaryHttpMessageHandler(sp =>
