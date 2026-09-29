@@ -3,7 +3,8 @@ name: Docs
 # Builds the DocFX site (docs/docfx.json) and publishes it to GitHub Pages.
 # - Pull requests touching docs/** or src/**: build only, any DocFX warning
 #   (bad crefs, broken xrefs, broken internal links, ...) fails the build.
-# - Push to develop/9.0.0 or manual run: build, then deploy to GitHub Pages.
+# - Push to develop/9.0.0: build, then deploy to GitHub Pages. A manual run
+#   (workflow_dispatch) builds everywhere but deploys only on develop/9.0.0.
 #
 # One-time repository settings (manual):
 #  - Settings -> Pages -> Source: GitHub Actions.
