@@ -3,8 +3,7 @@
 Arc4u is a framework to ease the development of .NET applications. It selects
 a number of technologies from the .NET ecosystem and packages them so that
 developers can integrate common enterprise concerns without reinventing them.
-The framework has been in use for many years and is published as open source
-under the MIT license.
+The framework has been in use for many years and is published as open source.
 
 The `develop/9.0.0` line targets `net10.0` and `net11.0` and ships as a set of
 NuGet packages named `Arc4u.*`, each covering one area, for example:
