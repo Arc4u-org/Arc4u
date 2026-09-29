@@ -8,8 +8,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2.DataProtection
 {
+    /// <summary>An <see cref="IXmlRepository"/> that persists the ASP.NET Core data protection keys in an Arc4u cache, so they are shared by all the instances of an application.</summary>
     public class CacheStore : IXmlRepository
     {
+        /// <summary>Initializes a new instance of the <see cref="CacheStore"/> class.</summary>
+        /// <param name="cacheContext">The context giving access to the registered caches.</param>
+        /// <param name="loggerFactory">The factory of loggers.</param>
+        /// <param name="serialization">The serializer of the list of keys.</param>
+        /// <param name="cacheKey">The key under which the list of keys is stored.</param>
+        /// <param name="cacheName">The name of the cache. When empty, the default cache is used.</param>
+        /// <exception cref="ArgumentNullException">An argument other than <paramref name="cacheName"/> is <see langword="null"/>.</exception>
         public CacheStore(ICacheContext cacheContext, ILoggerFactory loggerFactory, IObjectSerialization serialization, [DisallowNull] string cacheKey, string? cacheName = null)
         {
             ArgumentNullException.ThrowIfNull(serialization);
@@ -37,6 +45,7 @@ namespace Arc4u.OAuth2.DataProtection
         private readonly Lazy<ICache> _cache;
         private readonly IObjectSerialization _serialization;
 
+        /// <inheritdoc/>
         public IReadOnlyCollection<XElement> GetAllElements()
         {
             return GetElements().AsReadOnly();
@@ -64,6 +73,7 @@ namespace Arc4u.OAuth2.DataProtection
             return result;
         }
 
+        /// <inheritdoc/>
         public void StoreElement(XElement element, string friendlyName)
         {
             var result = GetElements();

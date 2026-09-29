@@ -6,8 +6,13 @@ using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.TicketStore
 {
+    /// <summary>An <see cref="ITicketStore"/> that keeps each authentication ticket in a file (<c>{guid}.bin</c>) of the directory configured in <see cref="FileTicketStoreOptions.StorePath"/>. It is meant for a single instance application.</summary>
     public class FileTicketStore : ITicketStore
     {
+        /// <summary>Initializes a new instance of the <see cref="FileTicketStore"/> class.</summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="options">The options giving the directory of the tickets.</param>
+        /// <exception cref="ArgumentNullException">The store path is <see langword="null"/>.</exception>
         public FileTicketStore(ILogger<FileTicketStore> logger, IOptionsMonitor<FileTicketStoreOptions> options)
         {
             _logger = logger;
@@ -20,6 +25,7 @@ namespace Arc4u.OAuth2.TicketStore
         private readonly DirectoryInfo _directoryStore;
         private readonly object _lock = new();
         private readonly ILogger<FileTicketStore> _logger;
+        /// <inheritdoc/>
         public Task RemoveAsync(string key)
         {
             var fullPath = GetPath(key);
@@ -33,6 +39,7 @@ namespace Arc4u.OAuth2.TicketStore
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public async Task RenewAsync(string key, AuthenticationTicket ticket)
         {
             await RemoveAsync(key).ConfigureAwait(false);
@@ -47,6 +54,7 @@ namespace Arc4u.OAuth2.TicketStore
             return;
         }
 
+        /// <inheritdoc/>
         public Task<AuthenticationTicket?> RetrieveAsync(string key)
         {
             var fullPath = GetPath(key);
@@ -70,6 +78,7 @@ namespace Arc4u.OAuth2.TicketStore
 
         private string GetPath(string key) => Path.Combine(_directoryStore.FullName, key + ".bin");
 
+        /// <inheritdoc/>
         public Task<string> StoreAsync(AuthenticationTicket ticket)
         {
             var key = Guid.NewGuid().ToString();

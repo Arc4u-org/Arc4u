@@ -15,6 +15,18 @@ using Microsoft.IdentityModel.Logging;
 
 namespace Arc4u.OAuth2.TokenProviders
 {
+    /// <summary>
+    /// An <see cref="ITokenProvider"/> that exchanges the access token of the current user for a token for another API, with the on-behalf-of flow
+    /// (<c>urn:ietf:params:oauth:grant-type:jwt-bearer</c>). The user token is the <see cref="ClaimsIdentity.BootstrapContext"/> of the current principal or, if empty, the access token of the scoped <see cref="TokenRefreshInfo"/>.
+    /// The <c>ClientId</c>, <c>ClientSecret</c> and <c>Scope</c> come from the settings (see <see cref="OnBehalfOfSettingsOptions"/>) and the request goes to the token endpoint of the <c>Default</c> authority.
+    /// The resulting token is cached until it expires.
+    /// </summary>
+    /// <param name="tokenRefreshInfo">The scoped access and refresh tokens of the user.</param>
+    /// <param name="cacheHelper">The helper giving access to the token cache.</param>
+    /// <param name="activitySourceFactory">The factory of the activity source used for telemetry.</param>
+    /// <param name="applicationContext">The application context giving the current principal.</param>
+    /// <param name="authorities">The named authority options.</param>
+    /// <param name="logger">The logger.</param>
     [Export(ProviderName, typeof(ITokenProvider))]
     public class AzureADOboTokenProvider(TokenRefreshInfo tokenRefreshInfo,
         ICacheHelper cacheHelper,
@@ -23,10 +35,17 @@ namespace Arc4u.OAuth2.TokenProviders
         IOptionsMonitor<AuthorityOptions> authorities,
         ILogger<AzureADOboTokenProvider> logger) : ITokenProvider
     {
+        /// <summary>The key (<c>Obo</c>) under which the provider is registered.</summary>
         public const string ProviderName = "Obo";
         private readonly ActivitySource? _activitySource = activitySourceFactory?.GetArc4u();
         private readonly AuthorityOptions _defaultAuthority = authorities.Get("Default");
 
+        /// <summary>Gets a token for the API designated by the settings, on behalf of the current user.</summary>
+        /// <param name="settings">The on-behalf-of settings (client id, client secret and scope).</param>
+        /// <param name="_">Not used.</param>
+        /// <returns>The token, or a failed result when there is no principal or no token for the user.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
+        /// <exception cref="HttpRequestException">The token endpoint does not answer with a success status code.</exception>
         public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
         {
             ArgumentNullException.ThrowIfNull(settings);
@@ -134,6 +153,11 @@ namespace Arc4u.OAuth2.TokenProviders
             }
         }
 
+        /// <summary>Not supported.</summary>
+        /// <param name="settings">The provider settings.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>Never returns.</returns>
+        /// <exception cref="NotImplementedException">Always thrown.</exception>
         public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();

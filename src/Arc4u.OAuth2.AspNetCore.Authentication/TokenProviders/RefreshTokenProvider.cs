@@ -20,8 +20,16 @@ namespace Arc4u.OAuth2.TokenProviders
     [Export(typeof(ITokenRefreshProvider))]
     public class RefreshTokenProvider : ITokenRefreshProvider
     {
+        /// <summary>The name (<c>Refresh</c>) of the provider.</summary>
         public const string ProviderName = "Refresh";
 
+        /// <summary>Initializes a new instance of the <see cref="RefreshTokenProvider"/> class.</summary>
+        /// <param name="refreshInfo">The scoped access and refresh tokens of the user, updated by the refresh.</param>
+        /// <param name="openIdConnectOptions">The options of the OpenID Connect scheme, giving the client id, the secret and the token endpoint.</param>
+        /// <param name="oidcOptions">The OpenID Connect authentication options.</param>
+        /// <param name="activitySourceFactory">The factory of the activity source used for telemetry.</param>
+        /// <param name="extraContextOptions">The extra parameters added to the token requests.</param>
+        /// <param name="logger">The logger.</param>
         public RefreshTokenProvider(TokenRefreshInfo refreshInfo,
             IOptionsMonitor<OpenIdConnectOptions> openIdConnectOptions,
             IOptions<OidcAuthenticationOptions> oidcOptions,
@@ -44,6 +52,11 @@ namespace Arc4u.OAuth2.TokenProviders
         private readonly ActivitySource? _activitySource;
         private readonly IOptionsMonitor<ApiExtraContextAuthenticationOption> _extraContextOptions;
 
+        /// <summary>Calls the token endpoint of the authority with the <c>refresh_token</c> grant and stores the new tokens in the scoped <see cref="TokenRefreshInfo"/>.</summary>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>The updated <see cref="TokenRefreshInfo"/>.</returns>
+        /// <exception cref="InvalidOperationException">The refresh token is expired.</exception>
+        /// <exception cref="HttpRequestException">The token endpoint does not answer with a success status code.</exception>
         public async Task<TokenRefreshInfo?> RefreshTokenAsync(CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(_tokenRefreshInfo);

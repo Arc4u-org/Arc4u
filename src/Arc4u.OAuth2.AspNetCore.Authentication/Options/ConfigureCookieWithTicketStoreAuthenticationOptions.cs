@@ -12,12 +12,21 @@ namespace Arc4u.OAuth2.Options
         private readonly ITicketStore _ticketStore;
         private readonly IOptionsMonitor<OidcAuthenticationOptions> _options;
 
+        /// <summary>Initializes a new instance of the <see cref="ConfigureCookieWithTicketStoreAuthenticationOptions"/> class.</summary>
+        /// <param name="ticketStore">The store in which the authentication tickets are kept.</param>
+        /// <param name="optionsMonitor">The OpenID Connect authentication options.</param>
         public ConfigureCookieWithTicketStoreAuthenticationOptions(ITicketStore ticketStore, IOptionsMonitor<OidcAuthenticationOptions> optionsMonitor)
         {
             _ticketStore = ticketStore;
             _options = optionsMonitor;
         }
 
+        /// <summary>
+        /// Configures the cookie: the ticket store keeps the session, the name comes from <see cref="OidcAuthenticationOptions.CookieName"/>, the expiration is the shorter of
+        /// <see cref="OidcAuthenticationOptions.AuthenticationTicketTtl"/> and <see cref="OidcAuthenticationOptions.RefreshTokenLifetime"/> (sliding), and the cookie is essential, <c>SameSite=Lax</c> and secure.
+        /// </summary>
+        /// <param name="name">The name of the options instance.</param>
+        /// <param name="options">The cookie options to configure.</param>
         public void PostConfigure(string? name, CookieAuthenticationOptions options)
         {
             options.SessionStore = _ticketStore;

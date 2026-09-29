@@ -7,8 +7,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.OAuth2.Extensions
 {
+    /// <summary>Registers the <see cref="OpenIdSettingsOption"/> as the key/value settings read by the token providers.</summary>
     public static class OpenIdSettingsExtension
     {
+        /// <summary>Validates the OpenID settings and registers them as the named <see cref="SimpleKeyValueSettings"/> <c>Cookies</c> (<see cref="Constants.CookiesAuthenticationType"/>). When an authority is set, it is registered as the named authority <c>Cookies</c>.</summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="option">The action that configures the settings.</param>
+        /// <returns>The settings registered.</returns>
+        /// <exception cref="MissingFieldException">The provider id, the client id or the scopes are empty, or no audience is given while <see cref="OpenIdSettingsOption.ValidateAudience"/> is <see langword="true"/>.</exception>
         public static SimpleKeyValueSettings ConfigureOpenIdSettings(this IServiceCollection services, Action<OpenIdSettingsOption> option)
         {
             var validate = new OpenIdSettingsOption();
@@ -67,6 +73,12 @@ namespace Arc4u.OAuth2.Extensions
             return settings;
         }
 
+        /// <summary>Reads the OpenID settings from a configuration section and registers them as the named <see cref="SimpleKeyValueSettings"/> <c>Cookies</c>.</summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="sectionName">The section holding the <see cref="OpenIdSettingsOption"/>, for example <c>Authentication:OpenId.Settings</c>.</param>
+        /// <returns>The settings registered.</returns>
+        /// <exception cref="MissingFieldException">The provider id, the client id or the scopes are empty, or no audience is given while <see cref="OpenIdSettingsOption.ValidateAudience"/> is <see langword="true"/>.</exception>
         public static SimpleKeyValueSettings ConfigureOpenIdSettings(this IServiceCollection services, IConfiguration configuration, [DisallowNull] string sectionName)
         {
             return ConfigureOpenIdSettings(services, PrepareAction(configuration, sectionName));

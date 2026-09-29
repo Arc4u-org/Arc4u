@@ -7,6 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2.Token
 {
+    /// <summary>
+    /// A <see cref="DelegatingHandler"/> that adds the token of the current user to the requests of an <see cref="HttpClient"/>.
+    /// The token provider is selected by the <c>ProviderId</c> of the settings. Nothing is added when the request already has an <c>Authorization</c> header,
+    /// when the authentication type of the settings differs from the one of the current identity (unless it is <c>Inject</c>), when no provider or no valid token is found.
+    /// The culture of the user is added in a <c>culture</c> header.
+    /// </summary>
+    /// <typeparam name="T">The type used as category of the logger.</typeparam>
     public class JwtHttpHandler<T> : DelegatingHandler
     {
 
@@ -64,6 +71,7 @@ namespace Arc4u.OAuth2.Token
             return containerResolve?.GetService<IApplicationContext>();
         }
 
+        /// <inheritdoc/>
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(request);

@@ -16,6 +16,14 @@ namespace Arc4u.OAuth2.Extensions
 {
     public static partial class AuthenticationExtensions
     {
+        /// <summary>
+        /// Registers the hybrid authentication, from code: OpenID Connect with cookies for browser requests, and JWT bearer for requests that carry an <c>Authorization: Bearer</c> header.
+        /// The <c>Arc4uScheme</c> policy scheme selects the JWT bearer scheme when the header starts with <c>Bearer </c> and the OpenID Connect scheme otherwise.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="authenticationOptions">The action that configures the <see cref="HybridAuthenticationOptions"/>. <see cref="HybridAuthenticationOptions.OAuth2SettingsOptions"/> is required in addition to the required <see cref="OidcAuthenticationOptions"/> members.</param>
+        /// <returns>The <see cref="AuthenticationBuilder"/>, to chain calls.</returns>
+        /// <exception cref="ArgumentNullException">An argument or a required option is <see langword="null"/>.</exception>
         public static AuthenticationBuilder AddHybridAuthentication(this IServiceCollection services,
             Action<HybridAuthenticationOptions> authenticationOptions)
         {
@@ -86,6 +94,27 @@ namespace Arc4u.OAuth2.Extensions
             return authenticationBuilder;
         }
 
+        /// <summary>
+        /// Registers the hybrid authentication from the configuration. It does what
+        /// <see cref="AddOidcAuthentication(IServiceCollection, IConfiguration, string, IX509CertificateLoader?)"/> does and, in addition, reads the JWT bearer settings from the section
+        /// of <see cref="HybridAuthenticationSectionOptions.OAuth2SettingsSectionPath"/> (<c>Authentication:OAuth2.Settings</c> by default) and the optional Basic authentication settings from
+        /// <see cref="HybridAuthenticationSectionOptions.BasicAuthenticationSectionPath"/> (<c>Authentication:Basic</c> by default).
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="authenticationSectionName">The section bound to <see cref="HybridAuthenticationSectionOptions"/>. The default is <c>Authentication</c>.</param>
+        /// <param name="certificateLoader">The loader of the certificates. When <see langword="null"/>, a default <c>X509CertificateLoader</c> is used.</param>
+        /// <returns>The <see cref="AuthenticationBuilder"/>, to chain calls.</returns>
+        /// <exception cref="ConfigurationException">The section does not exist or a mandatory value is missing.</exception>
+        /// <exception cref="MissingFieldException">A certificate cannot be found from its configuration section.</exception>
+        /// <example>
+        /// <code language="csharp">
+        /// builder.Services.AddHybridAuthentication(builder.Configuration);
+        /// // ...
+        /// app.UseAuthentication();
+        /// app.UseAuthorization();
+        /// </code>
+        /// </example>
         public static AuthenticationBuilder AddHybridAuthentication(this IServiceCollection services,
             IConfiguration configuration, string authenticationSectionName = "Authentication",
             IX509CertificateLoader? certificateLoader = null)

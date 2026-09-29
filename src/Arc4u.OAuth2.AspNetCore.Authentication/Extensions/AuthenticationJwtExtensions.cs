@@ -122,6 +122,42 @@ namespace Arc4u.OAuth2.Extensions
             return authenticationBuilder;
         }
 
+        /// <summary>
+        /// Registers the JWT bearer authentication from the configuration. It is meant for an API only scenario.
+        /// </summary>
+        /// <param name="services">The service collection.</param>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="authenticationSectionName">The section bound to <see cref="JwtAuthenticationSectionOptions"/>. The default is <c>Authentication</c>.</param>
+        /// <param name="certificateLoader">The loader of the certificates. When <see langword="null"/>, a default <c>X509CertificateLoader</c> is used.</param>
+        /// <returns>The <see cref="AuthenticationBuilder"/>, to chain calls.</returns>
+        /// <exception cref="InvalidOperationException">The section does not exist.</exception>
+        /// <exception cref="MissingFieldException">The default authority or the OAuth2 settings section path is missing, or the certificate cannot be found.</exception>
+        /// <remarks>
+        /// <para>
+        /// Besides the JWT bearer scheme, the method registers, from the sections named by <see cref="JwtAuthenticationSectionOptions"/>: the OAuth2 settings, the claim identifiers, the domain mappings, the token cache,
+        /// the claims filler, the client tokens (<c>Authentication:ClientTokens</c>) and the remote secrets (<c>Authentication:RemoteSecrets</c>).
+        /// </para>
+        /// <para>A minimal configuration:</para>
+        /// <code language="json">
+        /// {
+        ///   "Authentication": {
+        ///     "DefaultAuthority": { "Url": "https://login.example.com/tenant/v2.0" },
+        ///     "OAuth2.Settings": {
+        ///       "Audiences": [ "api://my-api" ]
+        ///     },
+        ///     "TokenCache": { "CacheName": "Default" }
+        ///   }
+        /// }
+        /// </code>
+        /// </remarks>
+        /// <example>
+        /// <code language="csharp">
+        /// builder.Services.AddJwtAuthentication(builder.Configuration);
+        /// // ...
+        /// app.UseAuthentication();
+        /// app.UseAuthorization();
+        /// </code>
+        /// </example>
         public static AuthenticationBuilder AddJwtAuthentication(this IServiceCollection services,
             IConfiguration configuration, [DisallowNull] string authenticationSectionName = "Authentication",
             IX509CertificateLoader? certificateLoader = null)
