@@ -109,12 +109,12 @@ a `ProblemHttpResult`; `ValidationProblem` is part of the type but is never the 
 | `Result` succeeded | `To...OkResult` | `204 No Content` | None |
 | `Result<T>` succeeded with a value | `To...OkResult` | `200 OK` | The value, or the value returned by the mapper |
 | `Result<T>` succeeded with `null` | `To...OkResult` | Depends on the endpoint style, see [null values](#null-values) | |
-| `Result` succeeded | `To...CreatedResult(location)` | `201 Created` | None |
+| `Result` succeeded | `To...CreatedResult(location)` | `201 Created`, `Location` header when a location is passed | None |
 | `Result<T>` succeeded with a value | `To...CreatedResult(location)` | `201 Created`, `Location` header | The value, or the value returned by the mapper |
 | `Result<T>` succeeded with `null` | `To...CreatedResult(location)` | `201 Created`, no `Location` header | Empty |
 
-For a `Result` (without a value), the `To...CreatedResult` methods have a type parameter that the compiler cannot
-infer and that is not used. Write `result.ToActionCreatedResultAsync<Order>(location)` with any type.
+For a `Result` (without a value), the `To...CreatedResultAsync` methods (not the synchronous ones) have a type parameter
+that the compiler cannot infer and that is not used. Write `result.ToActionCreatedResultAsync<Order>(location)` with any type.
 
 ### Map the value
 
@@ -156,7 +156,7 @@ return a `ProblemDetailError` with status `404` when a missing entity is an erro
 ### Return 201 Created with a Location
 
 The `Location` depends on the value the business layer returns (the new identifier). Compute it in
-`OnSuccess`, then convert in a second step. If you wrote the whole chain in one expression, the URI would be
+`OnSuccessNotNull`, then convert in a second step. If you wrote the whole chain in one expression, the URI would be
 evaluated before the result exists.
 
 ```csharp
@@ -171,15 +171,28 @@ public async Task<ActionResult<OrderDto>> Create(OrderDto dto)
     Uri? location = null;
 
     var result = await orders.CreateAsync(dto)
-                             .OnSuccess(created => location = new Uri(Url.ActionLink("Get", "Orders", new { id = created.Id })!))
+                             .OnSuccessNotNull(created => location = new Uri(Url.ActionLink("Get", "Orders", new { id = created.Id })!))
                              .ConfigureAwait(false);
 
     return await result.ToActionCreatedResultAsync(location).ConfigureAwait(false);
 }
 ```
 
-With `IOrderService.CreateAsync` returning `Task<Result<OrderDto>>`. In a minimal API, pass a `Uri` directly:
-`orders.CreateAsync(dto).ToHttpCreatedResultAsync(new Uri($"/orders/{id}", UriKind.Relative))`.
+`OnSuccessNotNull` is used because `OnSuccess` also runs when the value is `null`. `IOrderService.CreateAsync` returns
+`Task<Result<OrderDto>>`. A minimal API uses the same two steps:
+
+```csharp
+// Program.cs (excerpt)
+app.MapPost("/orders", async (OrderDto dto, IOrderService orders) =>
+{
+    Uri? location = null;
+
+    var result = await orders.CreateAsync(dto);
+    result.OnSuccessNotNull(created => location = new Uri($"/orders/{created.Id}", UriKind.Relative));
+
+    return await result.ToHttpCreatedResultAsync(location);
+});
+```
 
 ## How errors map to a response
 
@@ -192,11 +205,13 @@ A failed result is converted by `ToProblemDetails`, which looks at the errors in
 | 3 | At least one `ProblemDetailError` | Its `StatusCode`, or `500` | Its `Type`, or `about:blank` | Its title, detail, instance, severity and metadata. Only the first is used. |
 | 4 | Any other error | `400` | `about:blank` | Title `Error.`, detail is the message of the first error. |
 
-Every response is served as `application/problem+json`. Requests with a successful result never go through
+Every response is served as `application/problem+json` (controllers add `; charset=utf-8`; the JSON blocks below show
+the controller headers). Requests with a successful result never go through
 this mapping.
 
 The `type` URIs of rows 1 and 2 are constants in the library that point to the page
-`https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes` of the Arc4u wiki. Treat them as identifiers.
+`https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes` of the Arc4u wiki. Treat them as identifiers. The `expected-error` URI is used only by the `ToGenericMessage` overload that honors
+`unexpectedType: false`. Keep the wiki page (or at least its headings) available while responses carry these URIs.
 
 ### Unexpected error: an exception
 
@@ -229,8 +244,8 @@ With only `Create("no status set")`, the response is a `500` with `"type":"about
 
 ### Validation error
 
-Status `422` with a `ValidationProblemDetails`. The `errors` member groups the messages by severity name, in the order
-`Error`, `Warning`, `Info`. The error codes are not part of the response:
+Status `422` with a `ValidationProblemDetails`. The `errors` member groups the messages by severity name; the keys are sorted
+alphabetically (`Error`, `Info`, `Warning`). The error codes are not part of the response:
 
 ```http
 HTTP/1.1 422 Unprocessable Entity
@@ -313,7 +328,9 @@ FromResultToProblemDetailExtension.SetFromErrorFactory(errors =>
 
 > [!CAUTION]
 > Do not call `FromError` from inside your factory to reuse the default mapping. `FromError` calls the factory that is
-> currently registered, which is yours, so the call recurses until the process dies with a stack overflow.
+> currently registered, which is yours, so the call recurses until the process dies with a stack overflow. Capturing
+> `FromError` in a variable before calling `SetFromErrorFactory` does not help: the value is a delegate that reads the
+> current factory when it runs.
 
 ### Build a ProblemDetails by hand
 

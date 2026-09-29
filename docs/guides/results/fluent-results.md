@@ -61,8 +61,9 @@ public interface IOrderRepository
 ## The methods
 
 Every method exists on `Result`, `Result<T>`, `Task<Result>`, `Task<Result<T>>`, `ValueTask<Result>`
-and `ValueTask<Result<T>>`, so the chain works before and after an `await`. They are all in the
-static class <xref:Arc4u.Results.ResultExtension>.
+and `ValueTask<Result<T>>`, so the chain works before and after an `await`. They are in the
+static class <xref:Arc4u.Results.ResultExtension>, except `LogIfFailed` on a plain `Result` or `Result<T>`, which is FluentResults' own.
+`OnSuccessNull` and `OnSuccessNotNull` exist only for `Result<T>`.
 
 | Method | Runs the callback when | Callback receives |
 |---|---|---|
@@ -185,7 +186,7 @@ error gives `400`. The rules and the exact JSON are in [Results to HTTP response
 
 | Error | Logged as |
 |---|---|
-| `ValidationError` | At the level matching its `Severity` (`Error`, `Warning`, `Info`), with its code in a `Code` property when set |
+| `ValidationError` | At the level matching its `Severity` (`Error`, `Warning`, `Info`), with its code in a `Code` property (empty when no code was set) |
 | `IExceptionalError` | The exception, with `LogException` |
 | Any other error, including `ProblemDetailError` | Error level |
 
@@ -196,6 +197,9 @@ The informational reasons of the result (not the errors) are then logged once, a
 > `LogIfFailed(LogLevel.Warning)` on a `ProblemDetailError` still writes at error level. `FluentLogger` uses the
 > level only for an optional `content` line, which is logged when you call the FluentResults overload
 > `LogIfFailed(context, content, logLevel)` with a non-empty context and content.
+>
+> Known issue: that overload makes the singleton `FluentLogger` add a `Context` property to its logger, and the
+> property is never cleared. It then appears on every later result log in the process. Avoid the overload until it is fixed.
 
 `FluentLogger` needs the Arc4u `ILogger<T>`; register it as shown in the [overview](index.md#code).
 
@@ -211,6 +215,10 @@ Use `FluentLogger` as the model: it receives the `ResultBase` and decides what t
 You passed an asynchronous lambda to a method that is not named `*Async`. Rename the call to
 `OnSuccessAsync` (or `OnSuccessNotNullAsync`, `OnSuccessNullAsync`, `OnFailedAsync`) and await the chain.
 The `OnFailedAsync` callback has one parameter, the collection of errors: `OnFailedAsync(async errors => ...)`.
+
+### `OnSuccess(() => throw ...)` gives CS0619
+
+A lambda that only throws also binds to the obsolete `Func<Task>` overload. Cast it: `OnSuccess((Action)(() => throw new InvalidOperationException()))`.
 
 ### The method `OnFailed(action, result)` does not exist
 

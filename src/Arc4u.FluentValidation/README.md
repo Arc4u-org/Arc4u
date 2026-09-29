@@ -12,17 +12,13 @@ dotnet add package Arc4u.FluentValidation --prerelease
 
 ```csharp
 using Arc4u.Validation;
-using FluentResults;
 using FluentValidation;
 
-public record NewOrder(string Name);
+var validator = new InlineValidator<string>();
+validator.RuleFor(name => name).NotEmpty();
 
-public class NewOrderValidator : AbstractValidator<NewOrder>
-{
-    public NewOrderValidator() => RuleFor(x => x.Name).NotEmpty();
-
-    public static Result<NewOrder> Check(NewOrder order) => new NewOrderValidator().ValidateWithResult(order);
-}
+// A failed Result<string> holding one ValidationError per failure.
+var result = validator.ValidateWithResult("");
 ```
 
 ## Documentation

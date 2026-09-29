@@ -178,16 +178,25 @@ app.MapGet("/orders/{id:int}", (int id, IOrderService orders) => orders.GetAsync
 | `FromResultToProblemDetailExtension.FromError` (set with `SetFromErrorFactory`) | Built-in mapping | Change the status codes, the `type` URIs or the shape of the `ProblemDetails` for the whole application. Call `SetFromErrorFactory` once at startup. |
 
 ```csharp
+using System.Diagnostics;
 using Arc4u.AspNetCore.Results;
+using FluentResults;
 using Microsoft.AspNetCore.Mvc;
 
 FromResultToProblemDetailExtension.SetFromErrorFactory(errors =>
-    new ProblemDetails
+{
+    if (errors.OfType<IExceptionalError>().Any())
+    {
+        return Result.Fail(errors).ToGenericMessage(Activity.Current?.Id, true);   // never expose Exception.Message
+    }
+
+    return new ProblemDetails
     {
         Title = "Request failed",
         Detail = errors.First().Message,
         Status = StatusCodes.Status400BadRequest
-    });
+    };
+});
 ```
 
 The factory is static and applies to the whole process. It replaces the default mapping completely, including
@@ -218,6 +227,8 @@ Some older notes use `ToActionResultAsync`. The methods are `ToActionOkResultAsy
 > [!WARNING]
 > - `LogIfFailed(LogLevel)` accepts a level, but `FluentLogger` logs each error at a level it chooses itself
 >   (see [Logging failures](fluent-results.md#logging-failures)). The level you pass has no effect.
+> - `LogIfFailed(context, content, level)` makes the singleton `FluentLogger` add a `Context` property that is never
+>   cleared, so it appears on every later result log in the process. Avoid that overload until it is fixed.
 > - Three of the four `ToGenericMessage` overloads ignore their `unexpectedType` argument
 >   (see [Results to HTTP responses](http-mapping.md#the-generic-500-message)).
 
