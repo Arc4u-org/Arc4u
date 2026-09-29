@@ -77,7 +77,7 @@ What the rename does and does not change:
   namespaces. Other changes in Arc4u 9 moved or removed some types; the migration guide lists
   them.
 - **Some packages already had the new name before 9**: `Arc4u.AspNetCore.Results`,
-  `Arc4u.Configuration.Store.EfCore` and `Arc4u.Prism.DI.Wpf` (removed in 9).
+  `Arc4u.Configuration.Store.EfCore` and `Arc4u.Prism.DI.Wpf` (deprecated, not shipped in 9).
   `Arc4u.Configuration.Store` was published under its new name for `8.2.0-preview01` to
   `8.2.0-preview20`, then as `Arc4u.Standard.Configuration.Store` until 8.3.2.
 - **A package ID can differ from its folder name** in the repository: `Arc4u.Caching.SqlServer`

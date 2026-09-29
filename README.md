@@ -9,7 +9,7 @@ logging, authentication, caching, results, gRPC and data access. It selects tech
 from the .NET ecosystem and adds what applications in an enterprise usually need on top of
 them. It has been used in production for many years.
 
-Arc4u 9 is in preview on the `develop/9.0.0` branch: the packages are published as `9.0.0-previewNN` and target `net10.0` and `net11.0`, so install them with `--prerelease`. See [Versioning](https://arc4u-org.github.io/Arc4u/concepts/versioning.html) for how versions and package names work.
+Arc4u 9 is in preview on the `develop/9.0.0` branch: the packages are published as `9.0.0-previewNN` (the previews on NuGet target `net8.0`, `net9.0` and `net10.0`; the code on the branch targets `net10.0` and `net11.0`), so install them with `--prerelease`. See [Versioning](https://arc4u-org.github.io/Arc4u/concepts/versioning.html) for how versions and package names work.
 
 ## Quick start
 

@@ -15,8 +15,8 @@ about five minutes.
   dotnet --version
   ```
 
-  Arc4u 9 targets `net10.0` and `net11.0`. The `9.0.0-preview` packages on NuGet include
-  `net10.0` assemblies, so a .NET 10 SDK is enough to use them.
+  The Arc4u 9 code targets `net10.0` and `net11.0`. The `9.0.0-preview` packages on NuGet
+  target `net8.0`, `net9.0` and `net10.0`, so a .NET 10 SDK is enough to use them.
 - A .NET project to add Arc4u to. [Build your first Arc4u app](first-app.md) starts from
   `dotnet new web`.
 
