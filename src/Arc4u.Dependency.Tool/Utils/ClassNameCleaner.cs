@@ -2,10 +2,18 @@ using System.Text.RegularExpressions;
 
 namespace Arc4u.Dependency.Tool;
 
+/// <summary>
+/// Turns a name into a valid C# identifier.
+/// </summary>
 public static class ClassNameCleaner
 {
     private static readonly Regex InvalidCharsRegex = new(@"[^a-zA-Z0-9_]", RegexOptions.Compiled);
 
+    /// <summary>
+    /// Removes the characters that are not letters, digits or underscores, and prefixes the result with an underscore when it starts with a digit.
+    /// </summary>
+    /// <param name="className">The name to clean.</param>
+    /// <returns>A valid identifier.</returns>
     public static string CleanClassName(string className)
     {
         // Remove invalid characters using the compiled regex

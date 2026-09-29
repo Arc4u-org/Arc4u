@@ -7,10 +7,18 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Arc4u.Dependency.Tool;
 
+/// <summary>
+/// A source generator that emits, for the compiling assembly, a <c>Register&lt;Assembly&gt;Types(this IServiceCollection)</c> extension method
+/// registering every class decorated with the <c>Export</c> attribute (lifetime given by <c>Shared</c> or <c>Scoped</c>).
+/// </summary>
 [Generator]
 public class DependencyToolGenerator : IIncrementalGenerator
 {
 
+    /// <summary>
+    /// Registers the generation of the <c>Dependencies.g.cs</c> file.
+    /// </summary>
+    /// <param name="context">The generator initialization context.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
 #if DEBUG

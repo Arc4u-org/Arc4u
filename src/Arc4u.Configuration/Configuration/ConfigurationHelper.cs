@@ -148,7 +148,7 @@ public static class ConfigurationHelper
     /// <param name="sectionName">The name of the section. The default is <c>Application.Configuration</c>.</param>
     /// <exception cref="ArgumentNullException"><paramref name="configuration"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException"><paramref name="sectionName"/> is empty.</exception>
-    /// <exception cref="NullReferenceException">The section cannot be bound to an <see cref="ApplicationConfig"/>.</exception>
+    /// <exception cref="NullReferenceException">The section is missing or empty, so it cannot be bound to an <see cref="ApplicationConfig"/>.</exception>
     /// <exception cref="ConfigurationException">One or more of the required values are missing.</exception>
     /// <example>
     /// <code language="csharp">

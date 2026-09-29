@@ -30,8 +30,8 @@ public class ClaimsProfileFiller : IClaimProfileFiller
     /// </summary>
     /// <param name="identity">The identity, which must be a <see cref="System.Security.Claims.ClaimsIdentity"/>.</param>
     /// <returns>
-    /// The profile. The account name and the domain are extracted from the user principal name; the culture falls back to <c>en-GB</c>
-    /// when the culture claim is missing or invalid, and the security identifier to <c>S-1-0-0</c> when the sid claim is missing.
+    /// The profile. The account name and the domain are extracted from the user principal name; the culture is the invariant culture when the culture claim is missing, falls back to <c>en-GB</c>
+    /// when the claim is not a valid culture name, and the security identifier to <c>S-1-0-0</c> when the sid claim is missing.
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="identity"/> is <see langword="null"/>.</exception>
     /// <exception cref="NotSupportedException"><paramref name="identity"/> is not a <see cref="System.Security.Claims.ClaimsIdentity"/>.</exception>

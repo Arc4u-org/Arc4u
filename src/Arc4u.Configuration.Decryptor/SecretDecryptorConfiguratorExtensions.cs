@@ -14,7 +14,7 @@ namespace Arc4u.Configuration.Decryptor;
 ///     .AddCertificateDecryptorConfiguration();
 ///
 /// // appsettings.json contains the certificate description and the encrypted value:
-/// // "EncryptionCertificate": { "Name": "MyCertificate", "Location": "LocalMachine" },
+/// // "EncryptionCertificate": { "Store": { "Name": "MyCertificate", "Location": "LocalMachine" } },
 /// // "ConnectionStrings": { "Db": "Decrypt:AbC..." }
 /// var configuration = builder.Build();
 /// </code>

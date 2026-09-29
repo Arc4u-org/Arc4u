@@ -1,10 +1,11 @@
 namespace Arc4u.Dispatcher.Notification;
 
-/// <summary>Extension methods to publish a notification to all the registered handlers, either in parallel or one after the other.</summary>
+/// <summary>Extension methods to publish a notification to all the registered handlers, either concurrently or one after the other.</summary>
 public static class PublishersExtension
 {
     /// <summary>
-    /// Call each <see cref="INotificationHandler{T}"/> in parallel.
+    /// Call each <see cref="INotificationHandler{T}"/> concurrently: the handlers are started one after the other on the calling thread, then awaited together.
+    /// A handler that throws before returning its task prevents the following handlers from starting.
     /// </summary>
     /// <typeparam name="T">The type of the object notified</typeparam>
     /// <param name="notifier">The collection of handlers to call.</param>
@@ -18,7 +19,7 @@ public static class PublishersExtension
                                    .ToArray()).ConfigureAwait(false);
     }
 
-    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2}"/> in parallel and waits for all of them to complete.</summary>
+    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2}"/> concurrently (all the handlers are started one after the other on the calling thread, then awaited together). A handler that throws before returning its task prevents the following handlers from starting.</summary>
     /// <typeparam name="T1">The type of the notification value number 1.</typeparam>
     /// <typeparam name="T2">The type of the notification value number 2.</typeparam>
     /// <param name="notifier">The collection of handlers to call.</param>
@@ -33,7 +34,7 @@ public static class PublishersExtension
                                    .ToArray()).ConfigureAwait(false);
     }
 
-    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2, T3}"/> in parallel and waits for all of them to complete.</summary>
+    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2, T3}"/> concurrently (all the handlers are started one after the other on the calling thread, then awaited together). A handler that throws before returning its task prevents the following handlers from starting.</summary>
     /// <typeparam name="T1">The type of the notification value number 1.</typeparam>
     /// <typeparam name="T2">The type of the notification value number 2.</typeparam>
     /// <typeparam name="T3">The type of the notification value number 3.</typeparam>
@@ -50,7 +51,7 @@ public static class PublishersExtension
                                    .ToArray()).ConfigureAwait(false);
     }
 
-    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2, T3, T4}"/> in parallel and waits for all of them to complete.</summary>
+    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2, T3, T4}"/> concurrently (all the handlers are started one after the other on the calling thread, then awaited together). A handler that throws before returning its task prevents the following handlers from starting.</summary>
     /// <typeparam name="T1">The type of the notification value number 1.</typeparam>
     /// <typeparam name="T2">The type of the notification value number 2.</typeparam>
     /// <typeparam name="T3">The type of the notification value number 3.</typeparam>
@@ -69,7 +70,7 @@ public static class PublishersExtension
                                    .ToArray()).ConfigureAwait(false);
     }
 
-    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2, T3, T4, T5}"/> in parallel and waits for all of them to complete.</summary>
+    /// <summary>Calls every registered <see cref="INotificationHandler{T1, T2, T3, T4, T5}"/> concurrently (all the handlers are started one after the other on the calling thread, then awaited together). A handler that throws before returning its task prevents the following handlers from starting.</summary>
     /// <typeparam name="T1">The type of the notification value number 1.</typeparam>
     /// <typeparam name="T2">The type of the notification value number 2.</typeparam>
     /// <typeparam name="T3">The type of the notification value number 3.</typeparam>

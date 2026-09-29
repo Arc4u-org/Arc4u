@@ -8,12 +8,19 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Arc4u.Dependency.Tool;
 
+/// <summary>
+/// A source generator that reads the <c>Application.Dependency</c> section of the <c>Configs/appsettings.json</c> (or <c>wwwroot/appsettings.json</c>) additional file
+/// and emits an extension method on <c>IServiceCollection</c> (<c>RegisterTypes</c>, or <c>RegisterWwwTypes</c> for the <c>wwwroot</c> file) registering the listed types that carry the <c>Export</c> attribute.
+/// </summary>
 [Generator]
-
 public class GenerateRegisteredTypes : IIncrementalGenerator
 {
     const string section = "Application.Dependency";
     const string settingsFileName = "appsettings.json";
+    /// <summary>
+    /// Registers the generation of the <c>GeneratedTypes.g.cs</c> file from the <c>appsettings.json</c> additional file.
+    /// </summary>
+    /// <param name="context">The generator initialization context.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
 #if DEBUG
@@ -64,6 +71,11 @@ public class GenerateRegisteredTypes : IIncrementalGenerator
         });
     }
 
+    /// <summary>
+    /// Gets the root directory of the source files of the compilation (the common part of the shortest source file directories).
+    /// </summary>
+    /// <param name="compilation">The compilation.</param>
+    /// <returns>The directory, or <see langword="null"/> when it cannot be determined.</returns>
     public string? GetAssemblyPath(Compilation compilation)
     {
         var symbolPaths = compilation.Assembly.Locations

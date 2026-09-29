@@ -60,7 +60,7 @@ public abstract class BaseTransactionScope : IDisposable
     /// <summary>
     /// Disposes the underlying <see cref="System.Transactions.TransactionScope"/>.
     /// </summary>
-    /// <param name="disposing"><see langword="true"/> when called from <see cref="Dispose()"/>; <see langword="false"/> when called from a finalizer.</param>
+    /// <param name="disposing"><see langword="true"/> when called from <see cref="Dispose()"/>; derived classes with a finalizer pass <see langword="false"/>.</param>
     protected virtual void Dispose(Boolean disposing)
     {
         if (!disposed)
