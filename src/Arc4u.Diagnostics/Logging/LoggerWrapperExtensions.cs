@@ -2,11 +2,14 @@ using Arc4u.Diagnostics;
 
 namespace Arc4u.Diagnostics;
 
-/// <summary>Fluent extension methods that add properties to the next log entry of an <see cref="ILoggerWrapper{T}"/>.</summary>
-/// <remarks>The keys defined in <see cref="LoggingConstants"/> are reserved: using one of them throws a <see cref="ReservedLoggingKeyException"/>.</remarks>
+/// <summary>Fluent extension methods that add properties to the additional fields of an <see cref="ILoggerWrapper{T}"/>; they are written with the log entries of that logger.</summary>
+/// <remarks>
+/// The keys defined in <see cref="LoggingConstants"/> are reserved: using one of them throws a <see cref="ReservedLoggingKeyException"/>.
+/// Known issue: properties are not cleared after an entry is written; they persist on later entries written by the same logger instance, whose lifetime follows its consumer.
+/// </remarks>
 public static class LoggerWrapperExtensions
 {
-    /// <summary>Adds a property to the next log entry, replacing the value if the key is already present.</summary>
+    /// <summary>Adds a property to the additional fields of the logger, replacing the value if the key is already present.</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger wrapper.</param>
     /// <param name="key">The property name.</param>
@@ -20,7 +23,7 @@ public static class LoggerWrapperExtensions
         return logger;
     }
 
-    /// <summary>Adds a property to the next log entry, replacing the value if the key is already present, only when the condition is <see langword="true"/>.</summary>
+    /// <summary>Adds a property to the additional fields of the logger, replacing the value if the key is already present, only when the condition is <see langword="true"/>.</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger wrapper.</param>
     /// <param name="condition">When <see langword="false"/>, nothing is added and <paramref name="value"/> is not evaluated.</param>
@@ -38,7 +41,7 @@ public static class LoggerWrapperExtensions
         return logger;
     }
 
-    /// <summary>Adds a property to the next log entry only when the key is not already present and the value is not <see langword="null"/>; otherwise nothing changes.</summary>
+    /// <summary>Adds a property to the additional fields of the logger only when the key is not already present and the value is not <see langword="null"/>; otherwise nothing changes.</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger wrapper.</param>
     /// <param name="key">The property name.</param>
@@ -58,7 +61,7 @@ public static class LoggerWrapperExtensions
         return logger;
     }
 
-    /// <summary>Adds a property to the next log entry, or replaces its value if the key is already present.</summary>
+    /// <summary>Adds a property to the additional fields of the logger, or replaces its value if the key is already present.</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger wrapper.</param>
     /// <param name="key">The property name.</param>
@@ -72,7 +75,7 @@ public static class LoggerWrapperExtensions
         return logger;
     }
 
-    /// <summary>Adds a numeric property to the next log entry, or replaces its value if the key is already present, only when the condition is <see langword="true"/>.</summary>
+    /// <summary>Adds a numeric property to the additional fields of the logger, or replaces its value if the key is already present, only when the condition is <see langword="true"/>.</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger wrapper.</param>
     /// <param name="condition">When <see langword="false"/>, nothing is added and <paramref name="value"/> is not evaluated.</param>
@@ -91,7 +94,8 @@ public static class LoggerWrapperExtensions
         return logger;
     }
 
-    /// <summary>Requests that the stack trace is added, in the <see cref="LoggingConstants.Stacktrace"/> property, to the log entry: the stack trace of the exception when one is logged, otherwise the current stack trace.</summary>
+    /// <summary>Requests that the stack trace is added, in the <see cref="LoggingConstants.Stacktrace"/> property, to the log entries: the stack trace of the exception when one is logged, otherwise the current stack trace.</summary>
+    /// <remarks>Known issue: the setting is not reset after an entry is written; it applies to later entries written by the same logger instance.</remarks>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger wrapper.</param>
     /// <returns>The same logger wrapper, for chaining.</returns>

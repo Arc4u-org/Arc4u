@@ -1,7 +1,7 @@
 namespace Arc4u.Caching;
 
 /// <summary>
-/// The interface define the contract implemented by a cache.
+/// The interface defines the contract implemented by a cache.
 /// </summary>
 public interface ICache : IDisposable
 {
@@ -13,7 +13,7 @@ public interface ICache : IDisposable
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key used to identify the value in the cache.</param>
     /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/> (or the default value of <typeparamref name="T"/> for the distributed caches).</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/> (or the default value of <typeparamref name="T"/>). This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     void Put<T>(string key, T value);
 
@@ -23,7 +23,7 @@ public interface ICache : IDisposable
     /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
     /// <param name="cancellation">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>A task that completes when the value is saved.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>. This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     Task PutAsync<T>(string key, T value, CancellationToken cancellation = default);
 
@@ -33,7 +33,7 @@ public interface ICache : IDisposable
     /// <param name="timeout">The period of validity of the value. When it expires, the value is removed from the cache.</param>
     /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
     /// <param name="isSlided"><see langword="true"/> to restart the period each time the value is read (sliding expiration); <see langword="false"/> for an absolute expiration. Not every cache supports a sliding expiration (the Dapr cache throws <see cref="NotSupportedException"/>).</param>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>. This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="NotSupportedException"><paramref name="isSlided"/> is <see langword="true"/> and the cache does not support it.</exception>
     void Put<T>(string key, TimeSpan timeout, T value, bool isSlided = false);
@@ -46,7 +46,7 @@ public interface ICache : IDisposable
     /// <param name="isSlided"><see langword="true"/> to restart the period each time the value is read (sliding expiration); <see langword="false"/> for an absolute expiration. Not every cache supports a sliding expiration (the Dapr cache throws <see cref="NotSupportedException"/>).</param>
     /// <param name="cancellation">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>A task that completes when the value is saved.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>. This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="NotSupportedException"><paramref name="isSlided"/> is <see langword="true"/> and the cache does not support it.</exception>
     Task PutAsync<T>(string key, TimeSpan timeout, T value, bool isSlided = false, CancellationToken cancellation = default);

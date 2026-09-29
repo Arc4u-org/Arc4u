@@ -13,13 +13,15 @@ namespace Arc4u.Diagnostics;
 /// <typeparam name="T">The category type of the logger.</typeparam>
 public interface ILoggerWrapper<T> : ILogger<T>, ILoggerCallerMember
 {
-    /// <summary>Gets the additional properties that are added to the next log entry.</summary>
+    /// <summary>Gets the additional properties that are written with the log entries of this logger.</summary>
+    /// <remarks>Known issue: properties are not cleared after an entry is written; they persist on later entries written by the same logger instance, whose lifetime follows its consumer.</remarks>
     public Dictionary<string, object?> AdditionalFields { get; }
 
     /// <summary>Sets a value indicating whether the stack trace is added to the log entry.</summary>
     public bool IncludeStackTrace { set; }
 
-    /// <summary>Sets the category, the calling member and optionally the source context type of the next log entry.</summary>
+    /// <summary>Sets the category, the calling member and optionally the source context type used by the log entries of this logger.</summary>
+    /// <remarks>The values stay set until <see cref="SetContext"/> is called again on the same instance (the source context type is only replaced when <paramref name="realType"/> is given).</remarks>
     /// <param name="category">The message category, see <see cref="MessageCategory"/>.</param>
     /// <param name="caller">The name of the calling member.</param>
     /// <param name="realType">The type to report as the source context instead of <typeparamref name="T"/>, or <see langword="null"/> to keep <typeparamref name="T"/>.</param>
