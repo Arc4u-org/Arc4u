@@ -15,6 +15,7 @@ Use the guide URL as is for the guide's index page; for a sub-page use .../<topi
 (for example https://arc4u-org.github.io/Arc4u/guides/caching/redis.html). The API column is a namespace page that exists
 in the API reference: package READMEs are not built by DocFX, so a wrong URL is never reported.
 '(none)' means the package has no API page: omit the API reference line.
+The package ID (title, install command) is the <PackageId> of the .csproj, not the folder name.
 
   Package                                  Guide                          API reference
   Arc4u                                    concepts/                      api/Arc4u.html
@@ -25,7 +26,7 @@ in the API reference: package READMEs are not built by DocFX, so a wrong URL is 
   Arc4u.Configuration                      guides/configuration/          api/Arc4u.Configuration.html
   Arc4u.Configuration.Decryptor            guides/configuration/          api/Arc4u.Configuration.Decryptor.html
   Arc4u.Configuration.Store                guides/configuration/          api/Arc4u.Configuration.Store.html
-  Arc4u.Configuration.Store.EFCore         guides/configuration/          api/Arc4u.Configuration.Store.html
+  Arc4u.Configuration.Store.EfCore         guides/configuration/          api/Arc4u.Configuration.Store.html   (folder src/Arc4u.Configuration.Store.EFCore)
   Arc4u.Diagnostics                        guides/diagnostics/            api/Arc4u.Diagnostics.html
   Arc4u.Diagnostics.Serilog                guides/diagnostics/            api/Arc4u.Diagnostics.Serilog.html
   Arc4u.Diagnostics.Serilog.Sinks.RealmDb  guides/diagnostics/            api/Arc4u.Diagnostics.Serilog.Sinks.RealmDb.html
@@ -40,7 +41,7 @@ in the API reference: package READMEs are not built by DocFX, so a wrong URL is 
   Arc4u.Caching                            guides/caching/                api/Arc4u.Caching.html
   Arc4u.Caching.Memory                     guides/caching/                api/Arc4u.Caching.Memory.html
   Arc4u.Caching.Redis                      guides/caching/                api/Arc4u.Caching.Redis.html
-  Arc4u.Caching.Sql                        guides/caching/                api/Arc4u.Caching.Sql.html
+  Arc4u.Caching.SqlServer                  guides/caching/                api/Arc4u.Caching.Sql.html   (folder src/Arc4u.Caching.Sql)
   Arc4u.Caching.Dapr                       guides/caching/                api/Arc4u.Caching.Dapr.html
   Arc4u.Serializer                         guides/caching/                api/Arc4u.Serializer.html
   Arc4u.Serializer.JSon                    guides/caching/                api/Arc4u.Serializer.html
@@ -49,7 +50,7 @@ in the API reference: package READMEs are not built by DocFX, so a wrong URL is 
   Arc4u.FluentValidation                   guides/results/                api/Arc4u.FluentValidation.html
   Arc4u.gRPC                               guides/grpc-versioning/        api/Arc4u.gRPC.html
   Arc4u.AspNetCore.gRpc                    guides/grpc-versioning/        api/Arc4u.AspNetCore.gRpc.html
-  Arc4u.AspNetCore.Versioning              guides/grpc-versioning/        api/Arc4u.AspNetCore.Versioning.html
+  Arc4u.AspNetCore.Versioning              guides/grpc-versioning/        api/Arc4u.AspNetCore.Versioning.html   (not on NuGet.org yet)
   Arc4u.Data                               guides/data/                   api/Arc4u.Data.html
   Arc4u.EfCore                             guides/data/                   api/Arc4u.EfCore.html
   Arc4u.MongoDB                            guides/data/                   api/Arc4u.MongoDB.html

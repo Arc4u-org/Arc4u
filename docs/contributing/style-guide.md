@@ -131,6 +131,8 @@ description: "Configure named caches backed by memory, Redis, SQL Server or Dapr
 - Write product names correctly: Arc4u, .NET, ASP.NET Core, Blazor, Microsoft Entra ID,
   Azure AD B2C, ADFS, Keycloak, ForgeRock, OpenID Connect (OIDC), gRPC, Redis, Dapr,
   Serilog, OpenTelemetry, NuGet, Kubernetes.
+- A package name is the `<PackageId>` of its `.csproj`, which can differ from the folder name
+  (`Arc4u.Caching.SqlServer` lives in `src/Arc4u.Caching.Sql`).
 - Put in `code` style: package names, namespaces, types, members, configuration keys,
   file names, paths, commands and literal values.
 
@@ -207,7 +209,7 @@ repository that references the projects in `src/`. You need the SDK pinned in
 `src/global.json` (see [CONTRIBUTING.md](../../CONTRIBUTING.md#prerequisites)).
 
 ```bash
-cd "$(mktemp -d)"          # a fresh folder of your own, outside the repository
+cd "$(mktemp -d)" && cd "$(pwd -P)"   # a fresh folder of your own; pwd -P resolves the macOS /var symlink
 cp <repo>/src/global.json .
 cat > DocSamples.csproj <<'EOF'
 <Project Sdk="Microsoft.NET.Sdk.Web">
