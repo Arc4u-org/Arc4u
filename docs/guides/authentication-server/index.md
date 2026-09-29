@@ -10,7 +10,9 @@ profile and the Arc4u authorization (roles, operations and scopes). Read this gu
 a web application that must authenticate users against an identity provider such as Microsoft Entra ID,
 Azure AD B2C, ADFS, Keycloak or ForgeRock. The principal is stored in the
 [application context](../../concepts/glossary.md#application-context), described in
-[Concepts](../../concepts/index.md).
+[Concepts](../../concepts/index.md). The services are registered through dependency injection, as described in
+[Design principles](../../concepts/design-principles.md); where authentication sits in the layers of an Arc4u
+application is shown in [Architecture](../../concepts/architecture.md).
 
 ## What it solves
 
@@ -235,13 +237,14 @@ The registration methods add their defaults with `TryAdd`, or you register the s
 | <xref:Arc4u.OAuth2.Token.ITokenProvider> (keyed) | `Oidc`, `Bootstrap`, `Obo`, `Credential`, ... | Provide a token for a `ProviderId` of your settings. |
 
 For example, to answer an unauthenticated API call with a 401 whose `ProblemDetails.Status` is also 401,
-derive from `StandardBearerEvents`:
+derive from `StandardBearerEvents` (the override keeps the `x-token-expired` header of the base class):
 
 ```csharp
 // MyBearerEvents.cs
 using Arc4u.OAuth2.Events;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 public sealed class MyBearerEvents(ILogger<StandardBearerEvents> logger) : StandardBearerEvents(logger)
 {
@@ -249,6 +252,11 @@ public sealed class MyBearerEvents(ILogger<StandardBearerEvents> logger) : Stand
     {
         context.HandleResponse();
         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        if (context.AuthenticateFailure is SecurityTokenExpiredException expired)
+        {
+            context.Response.Headers.Append("x-token-expired", expired.Expires.ToString("o"));
+        }
+
         await context.Response.WriteAsJsonAsync(new ProblemDetails
         {
             Title = context.Error ?? "Unauthorized",

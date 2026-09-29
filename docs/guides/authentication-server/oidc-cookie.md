@@ -195,13 +195,81 @@ registers the token cache, the claims filler options, the domain mapping, the on
 
 On the token response, <xref:Arc4u.OAuth2.Events.StandardOpenIdConnectEvents> checks the access token:
 
-- its `aud` claim must contain one of `OpenId.Settings:Audiences`, otherwise the sign-in fails with
-  `Invalid audience`;
+- one of its `aud` values must be found in `OpenId.Settings:Audiences`, otherwise the sign-in fails with
+  `Invalid audience`. The comparison is a substring search in the space-separated list of the configured
+  audiences (see the warning below);
 - its `iss` claim must be equal (ignoring case) to `DefaultAuthority:Url`, otherwise the sign-in fails with
   `Invalid authority`.
 
-The access token must be a JWT. The id token is validated by ASP.NET Core (signature, lifetime, nonce and the
-`ClientId` audience).
+The access token must be a JWT. The id token is validated by ASP.NET Core: signature, lifetime, nonce, and an
+audience equal to `ClientId` or to one of `OpenId.Settings:Audiences`.
+
+> [!WARNING]
+> Known issue: because the audience check of the access token is a substring search, an `aud` that is part of a
+> configured audience is accepted. With `"Audiences": [ "api://my-api" ]`, access tokens for `api://my`,
+> `my-api` or even `i` are accepted. The same events are used by `AddHybridAuthentication`. Configure audiences
+> that no other audience issued by your provider is a part of, or add an exact check as shown below.
+
+The following events class checks the audiences exactly, then delegates everything to the Arc4u events.
+`StandardOpenIdConnectEvents` is sealed, so it is wrapped rather than derived:
+
+```csharp
+// ExactAudienceOpenIdConnectEvents.cs
+using System.IdentityModel.Tokens.Jwt;
+using Arc4u.Configuration;
+using Arc4u.OAuth2.Events;
+using Arc4u.OAuth2.Token;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Extensions.Options;
+
+public sealed class ExactAudienceOpenIdConnectEvents(
+    StandardOpenIdConnectEvents inner,
+    IOptionsMonitor<SimpleKeyValueSettings> settings) : OpenIdConnectEvents
+{
+    public override Task TokenResponseReceived(TokenResponseReceivedContext context)
+    {
+        var accessToken = context.TokenEndpointResponse.AccessToken;
+        var openIdSettings = settings.Get(Arc4u.OAuth2.Constants.CookiesAuthenticationType).Values;
+
+        if (!string.IsNullOrWhiteSpace(accessToken) &&
+            openIdSettings.TryGetValue(TokenKeys.Audiences, out var audiences))
+        {
+            var allowed = audiences.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (!new JwtSecurityToken(accessToken).Audiences.Any(aud => allowed.Contains(aud, StringComparer.Ordinal)))
+            {
+                context.Fail("Invalid audience");
+                return Task.CompletedTask;
+            }
+        }
+
+        return inner.TokenResponseReceived(context);
+    }
+
+    public override Task RedirectToIdentityProvider(RedirectContext context) => inner.RedirectToIdentityProvider(context);
+
+    public override Task AuthorizationCodeReceived(AuthorizationCodeReceivedContext context) => inner.AuthorizationCodeReceived(context);
+
+    public override Task AuthenticationFailed(AuthenticationFailedContext context) => inner.AuthenticationFailed(context);
+
+    public override Task AccessDenied(AccessDeniedContext context) => inner.AccessDenied(context);
+
+    public override Task RemoteFailure(RemoteFailureContext context) => inner.RemoteFailure(context);
+}
+```
+
+Register it before `AddOidcAuthentication` (or `AddHybridAuthentication`), which only adds its own events when
+none is registered:
+
+```csharp
+using Arc4u.OAuth2.Events;
+using Arc4u.OAuth2.Extensions;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+
+builder.Services.AddTransient<StandardOpenIdConnectEvents>();
+builder.Services.AddTransient<OpenIdConnectEvents, ExactAudienceOpenIdConnectEvents>();
+builder.Services.AddOidcAuthentication(builder.Configuration);
+```
 
 ## Session and refresh
 
@@ -278,7 +346,10 @@ builder.Services.AddOidcAuthentication(builder.Configuration);
 builder.Services.PostConfigure<OidcAuthenticationOptions>(options => options.ValidateAudience = false);
 ```
 
-The same `PostConfigure` with `ValidateAuthority = false` disables the issuer check. Prefer configuring an
+`OpenId.Settings:ValidateAudience: false` also turns off the audience validation of the **id token** by the
+OpenID Connect handler, and removes the audience list from the settings. The `PostConfigure` alone, with the
+audiences kept in the configuration, disables only the Arc4u check of the access token and keeps the id token
+check. The same `PostConfigure` with `ValidateAuthority = false` disables the issuer check. Prefer configuring an
 audience in the identity provider when it is possible.
 
 ### Configure from code
@@ -319,8 +390,10 @@ builder.Services.AddOidcAuthentication(options =>
 In a cookie session the access token is not in the `BootstrapContext` of the identity. Resolve the keyed
 `ITokenProvider` named `Oidc` to get it (refreshed when needed), or add `app.UseOpenIdBearerInjector()` after
 `UseAuthentication()`: for cookie-authenticated requests, it puts the token in the `Authorization` header of
-the request and in the `BootstrapContext`, so code written for bearer tokens works unchanged. Its options are
-registered by the configuration overloads; with the code overload, call `builder.Services.AddOpenIdBearerInjector()`. Calling other
+the request and in the `BootstrapContext`, so code written for bearer tokens works unchanged. When on-behalf-of
+settings named `Obo_for_OpenId` exist (`Authentication:OnBehalfOf:Obo_for_OpenId`), the injector puts an
+on-behalf-of token obtained with the `Obo` provider instead of the user's token. Its options are registered by
+the configuration overloads; with the code overload, call `builder.Services.AddOpenIdBearerInjector()`. Calling other
 APIs with this token, directly or on behalf of the user, is covered in
 [Client authentication](../authentication-client/index.md).
 

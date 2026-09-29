@@ -56,8 +56,9 @@ type is listed in `Authentication:ClaimsIdentifier` (by default the object ident
 
 > [!IMPORTANT]
 > When the token has none of the `ClaimsIdentifier` claim types, every authenticated request fails with a 500
-> (`NullReferenceException: No distinguish key found for the identity`). Identity providers other than Microsoft
-> Entra ID usually have no `oid` claim: set the identifier, for example `"ClaimsIdentifier": [ "sub" ]`.
+> (`NullReferenceException: No distinguish key found for the identity`). The default claim types are Microsoft
+> identity platform claims; other providers usually identify the user with `sub`: set the identifier, for
+> example `"ClaimsIdentifier": [ "sub" ]`.
 
 ## Load the user's rights with a claims filler
 
@@ -122,7 +123,8 @@ a slow store slows down that request only.
 
 A scope is a free string that partitions the rights, for example a tenant or a business unit. The default scope
 is the empty string. Each entry of `roles` and `operations` must have a `scope` (use `""` for the default
-scope): an entry without scope makes the creation of the principal fail. The JSON of the example above is:
+scope): an entry without scope makes the creation of the principal fail. The claim of the example above is
+(`JsonSerializer` also writes an empty `"scopes": []`):
 
 ```json
 {
@@ -195,9 +197,31 @@ builder.Services.AddScoped<IApplicationAuthorizationPolicy, ApplicationAuthoriza
 ```
 
 `IsAuthorizeAsync(policyName)` returns `false` when there is no principal or the policy is not satisfied;
-`AuthorizeAsync(policyName, message)` throws `UnauthorizedAccessException` instead. In MVC controllers, the
-`ManageExceptionsFilter` of `Arc4u.OAuth2.AspNetCore` (namespace `Arc4u.OAuth2.AspNetCore.Filters`) turns
-this exception into a 403 `ProblemDetails`.
+`AuthorizeAsync(policyName, message)` throws `UnauthorizedAccessException` instead. Catch it and answer 403
+yourself:
+
+```csharp
+using Arc4u.Authorization;
+
+app.MapPost("/orders", async (IApplicationAuthorizationPolicy policy) =>
+{
+    try
+    {
+        await policy.AuthorizeAsync("WriteOrders");
+        return Results.Ok();
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Forbid();
+    }
+}).RequireAuthorization();
+```
+
+> [!WARNING]
+> Known issue: `ManageExceptionsFilter` of `Arc4u.OAuth2.AspNetCore` is meant to turn this exception into a 403
+> `ProblemDetails` in MVC controllers, but in an HTTP application it throws `ReservedLoggingKeyException:
+> ActivityId` while logging (`IApplicationContext.ActivityID` is only set by the gRPC authorization interceptor),
+> and the request ends with a 500. Do not rely on it; handle `UnauthorizedAccessException` yourself.
 
 ### Protect resource paths from configuration
 
@@ -254,7 +278,7 @@ the given name, the surname, the email and the `upn`, the long claim types of
 | `GivenName`, `SurName` | `given_name`, `family_name` |
 | `Email` | `email` |
 | `PrincipalName` | `upn` |
-| `SamAccountName`, `Domain` | Derived from `upn` (`user@domain` or `DOMAIN\user`). The domain is mapped with `Authentication:DomainsMapping`, otherwise the first label of the domain is used. |
+| `SamAccountName`, `Domain` | Derived from `upn` (`user@domain` or `DOMAIN\user`). The domain is mapped with `Authentication:DomainsMapping`. Otherwise, for `user@domain` the first label of the domain is used (`contoso` for `contoso.com`), and for `DOMAIN\user` the domain is kept as is. |
 | `Name` | `<Domain>\<SamAccountName>` |
 | `Sid` | The Arc4u `sid` claim, `S-1-0-0` when absent |
 | `Company`, `Culture` | The Arc4u `company` and `culture` claims |

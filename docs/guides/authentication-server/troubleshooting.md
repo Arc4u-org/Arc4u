@@ -31,8 +31,9 @@ The registration methods validate the configuration and throw when the applicati
 | `The AuthenticationMethod should be either FormPost or RedirectGet.` | `Authentication:AuthenticationMethod` has another value. |
 | `Unable to find the required services. Please add all the required services by calling 'IServiceCollection.AddAuthorization' ...` | Call `builder.Services.AddAuthorization()`: the Arc4u methods only register the authorization core services. |
 
-The exception type depends on the method and the section (`ConfigurationException`, `MissingFieldException` or
-`InvalidOperationException`): search for the message.
+The exception type depends on the method and the section (`ConfigurationException`, `MissingFieldException`,
+`InvalidOperationException`, and `KeyNotFoundException` or `FileNotFoundException` for the certificates): search
+for the message.
 
 > [!NOTE]
 > Arc4u 8.3.0 threw an `ArgumentNullException` on `MetaDataAddress` when the metadata address was not configured
@@ -60,13 +61,14 @@ HTTP status, or replace the events as shown in [Extensibility points](index.md#e
 ### 500: No distinguish key found for the identity
 
 `NullReferenceException: No distinguish key found for the identity ...`: none of the `Authentication:ClaimsIdentifier`
-claim types is in the token. The default, `oid`, only exists in Microsoft Entra ID tokens. Set it to a claim of
+claim types is in the token. The default claim types (`http://schemas.microsoft.com/identity/claims/objectidentifier`,
+`oid`) are Microsoft identity platform claims; other providers usually identify the user with `sub`. Set it to a claim of
 your tokens, for example `"ClaimsIdentifier": [ "sub" ]`. See [Identity providers](identity-providers.md).
 
 ### 500: Bad Arc4u usage
 
 `InvalidOperationException: Bad Arc4u usage.` comes from the Arc4u logging extensions: `ILogger<T>` is not the
-Arc4u logger. Call `builder.Services.AddApplicationContext()` (or `AddILogger()` of `Arc4u.Dependency`), see
+Arc4u logger. Call `builder.Services.AddApplicationContext()` (or `AddILogger()`, namespace `Arc4u.Dependency`, package `Arc4u.Diagnostics`), see
 [Code](index.md#code).
 
 ### 403 with `[Authorize(Roles = ...)]` although the token has the role
@@ -139,6 +141,8 @@ when there is one.
 |---|---|---|
 | OpenID Connect, hybrid | `ValidateAudience` and `ValidateAuthority` of `OidcAuthenticationOptions` are only applied by `AddOidcAuthentication(Action<OidcAuthenticationOptions>)`. The configuration overloads and both `AddHybridAuthentication` overloads keep them `true`. | `builder.Services.PostConfigure<OidcAuthenticationOptions>(o => o.ValidateAudience = false)` (or `ValidateAuthority`). See [Disable the audience check](oidc-cookie.md#disable-the-audience-check). |
 | OpenID Connect, hybrid | With `OpenId.Settings:ValidateAudience: false` alone, the sign-in fails with `KeyNotFoundException` for the key `Audiences`. | Same `PostConfigure`. |
+| OpenID Connect, hybrid | Security: the audience check of the access token is a substring search in the space-separated list of `OpenId.Settings:Audiences`, so an `aud` that is part of a configured audience (`api://my` for `api://my-api`) is accepted. | Use audiences that no other audience of your provider is a part of, or register the exact check of [Token checks](oidc-cookie.md#token-checks). |
+| MVC filters | `ManageExceptionsFilter` throws `ReservedLoggingKeyException: ActivityId` in HTTP applications, so an `UnauthorizedAccessException` ends with a 500 instead of a 403. | Catch `UnauthorizedAccessException` yourself, see [Check a policy from code](claims-and-authorization.md#check-a-policy-from-code). |
 | JWT bearer | The challenge answers 401 with a `ProblemDetails` whose `Status` is 403. | Replace `JwtBearerEvents`, see [Extensibility points](index.md#extensibility-points). |
 | JWT bearer | The `iss` claim is not validated (`ValidateIssuer = false`): any token signed by the keys of the authority's metadata is accepted. | Keep the audience check enabled; add an issuer check in your own `JwtBearerEvents.TokenValidated` if you need one. |
 | JWT bearer | `Authentication:ValidateAudience` and `Authentication:ValidateAuthority` are bound but never read by `AddJwtAuthentication`. | Use `Authentication:OAuth2.Settings:ValidateAudience`. |

@@ -20,7 +20,7 @@ Whatever the provider, check these values first. They explain most sign-in failu
 | `DefaultAuthority:MetaDataAddress` | Needed when the metadata document is not at `<Url>/.well-known/openid-configuration`. |
 | `OpenId.Settings:Scopes` | Arc4u adds no scope. Request `openid`, the scope that issues a refresh token, and a scope of your API so that the access token has its audience. |
 | `OpenId.Settings:Audiences`, `OAuth2.Settings:Audiences` | The `aud` claim of the access tokens. Some providers issue none by default. |
-| `ClaimsIdentifier` | The default (`oid`) only exists in Microsoft Entra ID tokens. |
+| `ClaimsIdentifier` | The default claim types (`http://schemas.microsoft.com/identity/claims/objectidentifier`, `oid`) are Microsoft identity platform claims; other providers usually identify the user with `sub`. |
 | `ResponseType` | `code` works with Entra ID, Azure AD B2C and ADFS. For other providers, `code id_token token` may be needed (comment of `OidcAuthenticationSectionOptions.ResponseType`). |
 
 ## Microsoft Entra ID
