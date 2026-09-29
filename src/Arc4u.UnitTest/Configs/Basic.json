@@ -53,8 +53,7 @@
         "System": "Warning",
         "Hangfire": "Warning",
         "KubeMQ.SDK": "Warning",
-        "Grpc": "Warning",
-        "NServiceBus": "Warning"
+        "Grpc": "Warning"
       }
     },
     "WriteTo:SeqLogger": {

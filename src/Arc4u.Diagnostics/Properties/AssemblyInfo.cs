@@ -7,7 +7,6 @@
 [assembly: InternalsVisibleTo("Arc4u.Caching.Memory")]
 [assembly: InternalsVisibleTo("Arc4u.Caching.Redis")]
 [assembly: InternalsVisibleTo("Arc4u.Caching.Sql")]
-[assembly: InternalsVisibleTo("Arc4u.NServiceBus")]
 [assembly: InternalsVisibleTo("Arc4u.Serializer")]
 [assembly: InternalsVisibleTo("Arc4u.Serializer.JSon")]
 [assembly: InternalsVisibleTo("Arc4u.Serializer.Protobuf")]
@@ -32,8 +31,6 @@
 [assembly: InternalsVisibleTo("Arc4u")]
 [assembly: InternalsVisibleTo("Arc4u.OAuth2")]
 [assembly: InternalsVisibleTo("Arc4u.OAuth2.Owin")]
-[assembly: InternalsVisibleTo("Arc4u.NServiceBus")]
-[assembly: InternalsVisibleTo("Arc4u.NServiceBus.RabbitMQ")]
 [assembly: InternalsVisibleTo("Arc4u.WsFederation")]
 [assembly: InternalsVisibleTo("Arc4u.ServiceModel")]
 
