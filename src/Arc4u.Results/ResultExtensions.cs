@@ -132,7 +132,7 @@ public static class ResultExtension
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result> OnSuccess(this ValueTask<Result> result, Action action)
     {
@@ -153,7 +153,7 @@ public static class ResultExtension
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result> OnSuccessAsync(this ValueTask<Result> result, Func<Task> func)
     {
@@ -346,7 +346,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccess<TValue>(this ValueTask<Result<TValue>> result, Action action)
     {
@@ -368,7 +368,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccess<TValue>(this ValueTask<Result<TValue>> result, Action<TValue> action)
     {
@@ -390,7 +390,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessAsync<TValue>(this ValueTask<Result<TValue>> result, Func<Task> func)
     {
@@ -412,7 +412,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessAsync<TValue>(this ValueTask<Result<TValue>> result, Func<TValue, Task> func)
     {
@@ -522,7 +522,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessNull<TValue>(this ValueTask<Result<TValue>> result, Action action)
     {
@@ -544,7 +544,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessNullAsync<TValue>(this ValueTask<Result<TValue>> result, Func<Task> func)
     {
@@ -738,7 +738,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessNotNull<TValue>(this ValueTask<Result<TValue>> result, Action action)
     {
@@ -760,7 +760,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessNotNull<TValue>(this ValueTask<Result<TValue>> result, Action<TValue> action)
     {
@@ -782,7 +782,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessNotNullAsync<TValue>(this ValueTask<Result<TValue>> result, Func<Task> func)
     {
@@ -804,7 +804,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnSuccessNotNullAsync<TValue>(this ValueTask<Result<TValue>> result, Func<TValue, Task> func)
     {
@@ -884,6 +884,11 @@ public static class ResultExtension
     /// Collects the errors of a typed result into an untyped global one, the synchronous twin of
     /// <see cref="OnFailed{TValue}(Task{Result{TValue}}, Result)"/>.
     /// </summary>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="globalResult">The result that collects the errors of the failed result.</param>
+    /// <returns>The <paramref name="result"/> received, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="globalResult"/> is <see langword="null"/>.</exception>
     public static Result<TValue> OnFailed<TValue>(this Result<TValue> result, Result globalResult)
     {
         ArgumentNullException.ThrowIfNull(globalResult);
@@ -920,6 +925,11 @@ public static class ResultExtension
     /// Collects the errors of an untyped result into a typed global one, the synchronous twin of
     /// <see cref="OnFailed{TGlobal}(Task{Result}, Result{TGlobal})"/>.
     /// </summary>
+    /// <typeparam name="TGlobal">The type of the value carried by the global result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="globalResult">The result that collects the errors of the failed result.</param>
+    /// <returns>The <paramref name="result"/> received, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="globalResult"/> is <see langword="null"/>.</exception>
     public static Result OnFailed<TGlobal>(this Result result, Result<TGlobal> globalResult)
     {
         ArgumentNullException.ThrowIfNull(globalResult);
@@ -1151,7 +1161,7 @@ public static class ResultExtension
     /// <remarks>Use it to aggregate the errors of several steps into a single result. The original result is returned unchanged.</remarks>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="globalResult">The result that collects the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="globalResult"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result> OnFailed(this ValueTask<Result> result, Result globalResult)
     {
@@ -1170,6 +1180,11 @@ public static class ResultExtension
     /// Collects the errors of an untyped result into a typed global one, the ValueTask twin of
     /// <see cref="OnFailed{TGlobal}(Task{Result}, Result{TGlobal})"/>.
     /// </summary>
+    /// <typeparam name="TGlobal">The type of the value carried by the global result.</typeparam>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="globalResult">The result that collects the errors of the failed result.</param>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="globalResult"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result> OnFailed<TGlobal>(this ValueTask<Result> result, Result<TGlobal> globalResult)
     {
         ArgumentNullException.ThrowIfNull(globalResult);
@@ -1189,7 +1204,7 @@ public static class ResultExtension
     /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result> OnFailed(this ValueTask<Result> result, Action<IReadOnlyCollection<IError>> action)
     {
@@ -1210,7 +1225,7 @@ public static class ResultExtension
     /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result> OnFailedAsync(this ValueTask<Result> result, Func<IReadOnlyCollection<IError>, Task> func)
     {
@@ -1232,7 +1247,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="globalResult">The result that collects the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="globalResult"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnFailed<TValue>(this ValueTask<Result<TValue>> result, Result globalResult)
     {
@@ -1255,7 +1270,7 @@ public static class ResultExtension
     /// <typeparam name="TGlobal">The type of the value carried by the global result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="globalResult">The result that collects the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="globalResult"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnFailed<TValue, TGlobal>(this ValueTask<Result<TValue>> result, Result<TGlobal> globalResult)
     {
@@ -1277,7 +1292,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="action">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="action"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnFailed<TValue>(this ValueTask<Result<TValue>> result, Action<IReadOnlyCollection<IError>> action)
     {
@@ -1299,7 +1314,7 @@ public static class ResultExtension
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="func">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static async ValueTask<Result<TValue>> OnFailedAsync<TValue>(this ValueTask<Result<TValue>> result, Func<IReadOnlyCollection<IError>, Task> func)
     {
@@ -1319,11 +1334,11 @@ public static class ResultExtension
     #region LogIfFailed
 
     /// <summary>
-    /// Awaits the task, then logs the result at <paramref name="logLevel"/> when it is failed.
+    /// Awaits the task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>The logging itself is done by the <c>LogIfFailed</c> extension of FluentResults. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
     /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="logLevel">The level used to log the failure. Defaults to <see cref="LogLevel.Error"/>.</param>
+    /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>
     /// <returns>A task completing with the awaited result, unchanged.</returns>
     public static async Task<Result> LogIfFailed(this Task<Result> result, LogLevel logLevel = LogLevel.Error)
     {
@@ -1334,12 +1349,12 @@ public static class ResultExtension
         return r;
     }
     /// <summary>
-    /// Awaits the task, then logs the result at <paramref name="logLevel"/> when it is failed.
+    /// Awaits the task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>The logging itself is done by the <c>LogIfFailed</c> extension of FluentResults. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="logLevel">The level used to log the failure. Defaults to <see cref="LogLevel.Error"/>.</param>
+    /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>
     /// <returns>A task completing with the awaited result, unchanged.</returns>
     public static async Task<Result<TValue>> LogIfFailed<TValue>(this Task<Result<TValue>> result, LogLevel logLevel = LogLevel.Error)
     {
@@ -1351,12 +1366,12 @@ public static class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the value task, then logs the result at <paramref name="logLevel"/> when it is failed.
+    /// Awaits the value task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>The logging itself is done by the <c>LogIfFailed</c> extension of FluentResults. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
     /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="logLevel">The level used to log the failure. Defaults to <see cref="LogLevel.Error"/>.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     public static async ValueTask<Result> LogIfFailed(this ValueTask<Result> result, LogLevel logLevel = LogLevel.Error)
     {
         var r = await result.ConfigureAwait(false);
@@ -1366,13 +1381,13 @@ public static class ResultExtension
         return r;
     }
     /// <summary>
-    /// Awaits the value task, then logs the result at <paramref name="logLevel"/> when it is failed.
+    /// Awaits the value task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>The logging itself is done by the <c>LogIfFailed</c> extension of FluentResults. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="logLevel">The level used to log the failure. Defaults to <see cref="LogLevel.Error"/>.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
     public static async ValueTask<Result<TValue>> LogIfFailed<TValue>(this ValueTask<Result<TValue>> result, LogLevel logLevel = LogLevel.Error)
     {
         var r = await result.ConfigureAwait(false);

@@ -14,7 +14,7 @@ namespace Arc4u.AspNetCore.Results;
 /// the <c>ToActionCreatedResult</c> family answers <c>201 Created</c> with a location. A failed result is turned into an
 /// <see cref="ObjectResult"/> whose value is the <see cref="ProblemDetails"/> built by <see cref="FromResultToProblemDetailExtension"/>.
 /// </para>
-/// <para>The methods ending with <c>Async</c> await the task or value task first. The overloads with a mapper project the value before it is written to the response.</para>
+/// <para>The overloads on a <see cref="Task"/> or <see cref="ValueTask"/> await it first; the ones on a plain result do not await anything. The overloads with a mapper project the value before it is written to the response.</para>
 /// </remarks>
 /// <example>
 /// <code>
@@ -595,7 +595,7 @@ public static class FromResultToActionResultExtension
     /// Awaits the task, then converts the result to an <see cref="ActionResult"/>: <c>201 Created</c> with the given <paramref name="location"/> on success, an <see cref="ObjectResult"/> carrying the <see cref="ProblemDetails"/> on failure.
     /// </summary>
     /// <remarks>The problem details of a failed result are built by <c>ToProblemDetails</c>, see <see cref="FromResultToProblemDetailExtension"/>.</remarks>
-    /// <typeparam name="TResult">Unused: it only differentiates the overload, so it must be specified explicitly.</typeparam>
+    /// <typeparam name="TResult">Unused, but it must be specified explicitly because it cannot be inferred.</typeparam>
     /// <param name="result">The task producing the result to convert.</param>
     /// <param name="location">The URI of the created resource, set in the <c>Location</c> header; may be <see langword="null"/>.</param>
     /// <returns>The HTTP response representing the outcome of the result.</returns>
@@ -616,7 +616,7 @@ public static class FromResultToActionResultExtension
     /// Converts the result to an <see cref="ActionResult"/>: <c>201 Created</c> with the given <paramref name="location"/> on success, an <see cref="ObjectResult"/> carrying the <see cref="ProblemDetails"/> on failure.
     /// </summary>
     /// <remarks>The problem details of a failed result are built by <c>ToProblemDetails</c>, see <see cref="FromResultToProblemDetailExtension"/>.</remarks>
-    /// <typeparam name="TResult">Unused: it only differentiates the overload, so it must be specified explicitly.</typeparam>
+    /// <typeparam name="TResult">Unused, but it must be specified explicitly because it cannot be inferred.</typeparam>
     /// <param name="result">The result to convert.</param>
     /// <param name="location">The URI of the created resource, set in the <c>Location</c> header; may be <see langword="null"/>.</param>
     /// <returns>The HTTP response representing the outcome of the result.</returns>

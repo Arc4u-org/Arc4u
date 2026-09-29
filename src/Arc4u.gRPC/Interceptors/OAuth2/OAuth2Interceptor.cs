@@ -14,6 +14,7 @@ namespace Arc4u.gRPC.Interceptors;
 /// <summary>
 /// Inject in the Metadata's message the Bearer token of the authenticated user.
 /// </summary>
+/// <typeparam name="T">The category type of the logger.</typeparam>
 public class OAuth2Interceptor<T> : Interceptor
 {
     /// <summary>

@@ -29,7 +29,7 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
     readonly TContext _mongoContext;
 
     /// <inheritdoc/>
-    /// <exception cref="MongoClientException">No settings are defined for the database name.</exception>
+    /// <remarks>The client is created once from the named <see cref="MongoClientSettings"/> of the database. When no settings were registered under that name, the options system returns default settings, so the client silently targets <c>localhost:27017</c>.</remarks>
     public IMongoClient CreateClient()
     {
         if (null != _client)

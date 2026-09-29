@@ -79,7 +79,7 @@ public static class DefaultValidatorExtensions
     /// <summary>
     /// Requires the property to be a <see cref="DateTime"/> whose <see cref="DateTime.Kind"/> is <see cref="DateTimeKind.Utc"/>.
     /// </summary>
-    /// <remarks>The rule fails when the value is not a <see cref="DateTime"/> (or a nullable <see cref="DateTime"/>) or is <see langword="null"/>.</remarks>
+    /// <remarks>The <typeparamref name="TProperty"/> is constrained to structs, so a nullable <see cref="DateTime"/> property cannot use this rule; the rule fails when the value is not a <see cref="DateTime"/>.</remarks>
     /// <typeparam name="T">The type of the validated object.</typeparam>
     /// <typeparam name="TProperty">The type of the property.</typeparam>
     /// <param name="ruleBuilder">The rule builder.</param>
@@ -92,7 +92,7 @@ public static class DefaultValidatorExtensions
     /// <summary>
     /// Requires the property to be a <see cref="DateTime"/> with no time part (<see cref="DateTime.TimeOfDay"/> is zero).
     /// </summary>
-    /// <remarks>The rule fails when the value is not a <see cref="DateTime"/> (or a nullable <see cref="DateTime"/>) or is <see langword="null"/>. The <see cref="DateTime.Kind"/> is not checked.</remarks>
+    /// <remarks>The <typeparamref name="TProperty"/> is constrained to structs, so a nullable <see cref="DateTime"/> property cannot use this rule; the rule fails when the value is not a <see cref="DateTime"/>. The <see cref="DateTime.Kind"/> is not checked.</remarks>
     /// <typeparam name="T">The type of the validated object.</typeparam>
     /// <typeparam name="TProperty">The type of the property.</typeparam>
     /// <param name="ruleBuilder">The rule builder.</param>

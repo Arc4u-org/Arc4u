@@ -47,10 +47,10 @@ public class ClientErrorInterceptor : Interceptor
     /// <typeparam name="TRequest">The request message type.</typeparam>
     /// <typeparam name="TResponse">The response message type.</typeparam>
     /// <param name="request">The request message.</param>
-    /// <param name="context"></param>
-    /// <param name="continuation"></param>
-    /// <returns></returns>
-    /// <exception cref="UnauthorizedAccessException"></exception>
+    /// <param name="context">The client call context.</param>
+    /// <param name="continuation">The delegate starting the call.</param>
+    /// <returns>The call returned by the continuation.</returns>
+    /// <exception cref="UnauthorizedAccessException">The server answered <c>PermissionDenied</c>.</exception>
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
         try
@@ -71,15 +71,15 @@ public class ClientErrorInterceptor : Interceptor
     #region ClientStreaming
     /// <summary>
     /// Intercepts an asynchronous server streaming call and converts the <see cref="RpcException"/> raised while starting it:
-    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged.
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged. An <see cref="AggregateException"/> without an inner <see cref="RpcException"/> becomes an <see cref="InvalidOperationException"/>.
     /// </summary>
     /// <typeparam name="TRequest">The request message type.</typeparam>
     /// <typeparam name="TResponse">The response message type.</typeparam>
     /// <param name="request">The request message.</param>
-    /// <param name="context"></param>
-    /// <param name="continuation"></param>
-    /// <returns></returns>
-    /// <exception cref="UnauthorizedAccessException"></exception>
+    /// <param name="context">The client call context.</param>
+    /// <param name="continuation">The delegate starting the call.</param>
+    /// <returns>The call returned by the continuation.</returns>
+    /// <exception cref="UnauthorizedAccessException">The server answered <c>PermissionDenied</c>.</exception>
     public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(
                                     TRequest request,
                                     ClientInterceptorContext<TRequest, TResponse> context,
@@ -107,14 +107,14 @@ public class ClientErrorInterceptor : Interceptor
 
     /// <summary>
     /// Intercepts an asynchronous duplex streaming call and converts the <see cref="RpcException"/> raised while starting it:
-    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged.
+    /// <c>PermissionDenied</c> becomes an <see cref="UnauthorizedAccessException"/>, any other status is rethrown unchanged. An <see cref="AggregateException"/> without an inner <see cref="RpcException"/> becomes an <see cref="InvalidOperationException"/>.
     /// </summary>
     /// <typeparam name="TRequest">The request message type.</typeparam>
     /// <typeparam name="TResponse">The response message type.</typeparam>
-    /// <param name="context"></param>
-    /// <param name="continuation"></param>
-    /// <returns></returns>
-    /// <exception cref="UnauthorizedAccessException"></exception>
+    /// <param name="context">The client call context.</param>
+    /// <param name="continuation">The delegate starting the call.</param>
+    /// <returns>The call returned by the continuation.</returns>
+    /// <exception cref="UnauthorizedAccessException">The server answered <c>PermissionDenied</c>.</exception>
     public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
                                     ClientInterceptorContext<TRequest, TResponse> context,
                                     AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)

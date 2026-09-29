@@ -34,6 +34,8 @@ public static class CustomRootCaExtension
         /// <returns>The <see cref="IHttpClientBuilder"/>, to chain calls.</returns>
         /// <example>
         /// <code>
+        /// using Arc4u.AspNetCore.gRpc;
+        ///
         /// services.AddHttpClient("grpc").ConfigureLocalCaCertificateForGrpc("InternalCA");
         /// </code>
         /// </example>

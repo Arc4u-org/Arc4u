@@ -4,8 +4,8 @@ using Grpc.Core.Interceptors;
 namespace Arc4u.gRPC.Interceptors;
 
 /// <summary>
-/// The relative path interceptor sufixes the service name.
-/// When used with a proxy like Yarp and a sufix is created to route the service to a specifi service
+/// The relative path interceptor prefixes the service name with a relative path.
+/// When used with a proxy like Yarp and a path prefix is used to route the call to a specific service
 /// the interceptor can be used.
 /// </summary>
 public abstract class AddSuffixPathInterceptor : Interceptor

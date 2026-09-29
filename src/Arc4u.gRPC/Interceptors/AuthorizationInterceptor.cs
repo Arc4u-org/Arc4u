@@ -12,7 +12,7 @@ namespace Arc4u.gRPC.Interceptors;
 /// Server interceptor that prepares the Arc4u context of a call and hides unexpected server errors.
 /// </summary>
 /// <remarks>
-/// For each call it applies the <c>culture</c> request header (when present and a principal exists) to the current thread and to the principal profile,
+/// For each unary, server-streaming and duplex call (client-streaming calls are not intercepted) it applies the <c>culture</c> request header (when present and a principal exists) to the current thread and to the principal profile,
 /// and sets <see cref="IApplicationContext.ActivityID"/> to the current activity id (or a new GUID). Duplex calls on <c>/grpc.reflection</c> are left untouched.
 /// An <see cref="RpcException"/> thrown by the service is logged and rethrown; any other exception is logged and replaced by an <c>Internal</c> status with a generic message.
 /// </remarks>
