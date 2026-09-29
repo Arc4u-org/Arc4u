@@ -1,4 +1,20 @@
-- name: Home
-  href: index.md
+# Top navigation bar. Each entry points to the section's own toc.yml (the left sidebar).
+# Owned by #175: do not add or rename sections without discussing it on #173.
+- name: Getting started
+  href: getting-started/
+  topicHref: getting-started/index.md
+- name: Concepts
+  href: concepts/
+  topicHref: concepts/index.md
+- name: Guides
+  href: guides/
+  topicHref: guides/index.md
 - name: API reference
   href: api/
+  topicHref: api/index.md
+- name: Migration
+  href: migration/
+  topicHref: migration/8x-to-9.md
+- name: Releases
+  href: releases/
+  topicHref: releases/index.md

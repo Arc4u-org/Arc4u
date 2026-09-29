@@ -56,10 +56,17 @@
     "content": [
       {
         "files": [ "**/*.{md,yml}" ],
-        "exclude": [ "_site/**", "obj/**", "README.md", ".config/**" ]
+        "exclude": [ "_site/**", "obj/**", "README.md", ".config/**", "_templates/**", "contributing/**" ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [ "**/images/**" ],
+        "exclude": [ "_site/**", "obj/**", "_templates/**", "contributing/**" ]
       }
     ],
     "output": "_site",
+    "xref": [ "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json" ],
     "globalMetadata": {
       "_appTitle": "Arc4u",
       "_appName": "Arc4u",

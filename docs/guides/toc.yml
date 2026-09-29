@@ -1,0 +1,36 @@
+# Owned by #175. Each guide owns its folder and the folder's toc.yml:
+# add sub-pages there, never here.
+- name: Overview
+  href: index.md
+- name: Dependency injection
+  href: dependency-injection/toc.yml
+  topicHref: dependency-injection/index.md
+- name: Configuration
+  href: configuration/toc.yml
+  topicHref: configuration/index.md
+- name: Diagnostics and logging
+  href: diagnostics/toc.yml
+  topicHref: diagnostics/index.md
+- name: Server authentication
+  href: authentication-server/toc.yml
+  topicHref: authentication-server/index.md
+- name: Client authentication and Blazor
+  href: authentication-client/toc.yml
+  topicHref: authentication-client/index.md
+- name: Caching
+  href: caching/toc.yml
+  topicHref: caching/index.md
+- name: Results and errors
+  href: results/toc.yml
+  topicHref: results/index.md
+- name: gRPC and API versioning
+  href: grpc-versioning/toc.yml
+  topicHref: grpc-versioning/index.md
+- name: Data access
+  href: data/toc.yml
+  topicHref: data/index.md
+- name: Dispatcher
+  href: dispatcher/toc.yml
+  topicHref: dispatcher/index.md
+- name: Package support
+  href: package-support.md
