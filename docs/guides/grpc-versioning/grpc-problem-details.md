@@ -234,7 +234,7 @@ exception escape. See [gRPC services and clients](grpc.md).
 
 Either the client called `ToProblemDetailError()`, which keeps a single error, or the failure was
 larger than 6 KiB and some messages were left out (the result then ends with a warning saying how
-many). Use `ToResult()` and check `omitted_errors`.
+many). Use `ToResult()`: when messages were left out, its last error is a warning saying how many.
 
 ### `ToProblemDetails()` is not available in the client
 

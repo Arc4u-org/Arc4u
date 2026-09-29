@@ -12,6 +12,7 @@ dotnet add package Arc4u.gRPC --prerelease
 
 ```csharp
 using Arc4u.gRPC.Results;
+using Grpc.Core;
 
 try
 {

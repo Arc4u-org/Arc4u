@@ -16,8 +16,8 @@ HTTP/2 hosting in [Kestrel and HTTP/2](kestrel.md). The general ideas are in the
   forward a token. `OAuth2Interceptor<T>` obtains it from an Arc4u
   [token provider](../../concepts/glossary.md#token-provider) and puts it in the `authorization`
   metadata of every call, together with the user's culture.
-- **Server context.** `AuthorizationInterceptor` applies the culture header and sets the activity ID
-  of the Arc4u application context, and hides unexpected exceptions behind an `Internal` status.
+- **Server context.** `AuthorizationInterceptor` applies the culture header (when the application
+  context already has a principal) and sets the activity ID of the Arc4u application context, and hides unexpected exceptions behind an `Internal` status.
 - **Consistent failures.** `AddGrpcAuthenticationControl()` turns the redirect an interactive
   authentication challenge produces into a `401`, which a gRPC client understands.
 - **Timing.** `AddGrpcMonitoringTimeElapsed()` logs how long each call took.
@@ -46,7 +46,7 @@ sequenceDiagram
 ## Install
 
 ```bash
-dotnet add package Arc4u.AspNetCore.gRpc --prerelease   # service
+dotnet add package Arc4u.AspNetCore.gRpc --prerelease   # service (also for ConfigureLocalCaCertificateForGrpc)
 dotnet add package Arc4u.gRPC --prerelease              # client
 ```
 
@@ -94,8 +94,8 @@ app.Run();
 
 | Call | What it does |
 |---|---|
-| `AddApplicationContext()` | Registers the scoped <xref:Arc4u.Security.Principal.IApplicationContext> and the Arc4u logger. `AuthorizationInterceptor` and the timing middleware need both. |
-| `Interceptors.Add<AuthorizationInterceptor>()` | Applies the `culture` request header to the current thread and to the principal profile, sets `ApplicationContext.ActivityID` to `Activity.Current?.Id` (or a new GUID), logs exceptions and turns any exception that is not an `RpcException` into `StatusCode.Internal` with the message "An error occurs.". |
+| `AddApplicationContext()` | Registers the scoped <xref:Arc4u.Security.Principal.IApplicationContext> and the Arc4u logger. `AuthorizationInterceptor` needs both; the timing middleware only needs the Arc4u logger. |
+| `Interceptors.Add<AuthorizationInterceptor>()` | Applies the `culture` request header to the current thread and to the principal profile, only when the application context already has a principal (for example after JWT bearer authentication), sets `ApplicationContext.ActivityID` to `Activity.Current?.Id` (or a new GUID), logs every exception, `RpcException` included, at error level (expected `NotFound` or validation failures too), and turns any exception that is not an `RpcException` into `StatusCode.Internal` with the message "An error occurs.". |
 | `AddGrpcAuthenticationControl()` | A gRPC request (content type containing `grpc`) that ends with a `302` is answered with `401` and its headers are cleared. Add it before `UseAuthentication()`. |
 | `AddGrpcMonitoringTimeElapsed()` | Writes the service type, method name, elapsed milliseconds and response status to the technical log of every gRPC endpoint. Pass an `Action<Type, TimeSpan>` to also feed a metric. |
 
@@ -143,14 +143,20 @@ public class BearerInterceptor(
 
 ```csharp
 // Program.cs
+using Arc4u.Security.Principal;
 using Orders.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddApplicationContext();
 builder.Services.AddTransient<BearerInterceptor>();
 builder.Services.AddGrpcClient<OrderService.OrderServiceClient>(options => options.Address = new Uri("https://orders.example.com"))
                 .AddInterceptor<BearerInterceptor>();
 ```
+
+`AddApplicationContext()` registers the Arc4u logger: the interceptor logs through it and throws
+`InvalidOperationException` ("Bad Arc4u usage.") on the first call without it. To add a token the interceptor
+also needs an `IApplicationContext` with a principal and a keyed `ITokenProvider`.
 
 `"OAuth2"` is the default name under which `ConfigureOAuth2Settings` registers the settings
 (`Constants.BearerAuthenticationType`); use the name you passed there. The token settings and the
@@ -175,8 +181,12 @@ scheme is the token's type; otherwise the header is `Bearer <token>`. The interc
 `culture` metadata with the two-letter code of the principal's current culture, which
 `AuthorizationInterceptor` applies on the other side.
 
-When one of the conditions is not met, the interceptor logs at trace level, adds nothing and lets
-the call go on: the service then answers `Unauthenticated`. It never throws.
+When one of the conditions is not met, the interceptor adds nothing and lets the call go on: the
+service then answers `Unauthenticated`. Most cases log at trace level; an identity whose
+authentication type differs from the settings' returns silently, without a log entry. The interceptor
+catches token provider errors, but it throws when the Arc4u logger is not registered, and a
+`KeyNotFoundException` when an `authorization` metadata already exists and the settings have no
+`AuthenticationType`.
 
 ### Route through a reverse proxy with a path prefix
 
@@ -216,12 +226,19 @@ public static class CaSample
 
 Without an argument it uses every root registered with `AddCustomRootCA`; pass the name of one
 registration to use only that one. When no certificate can be loaded, it logs a warning and keeps
-the default validation. The registration and the configuration of the roots are described in the
+the default validation.
+
+The method needs the Arc4u logger (`AddApplicationContext()` or `AddILogger()`; without it creating
+the handler throws "Bad Arc4u usage.") and a registered `IX509CertificateLoader`. It lives in
+`Arc4u.AspNetCore.gRpc`, so a client that uses it references that package too. The registration and the configuration of the roots are described in the
 [Authentication (server)](../authentication-server/index.md) guide.
 
 > [!CAUTION]
-> The custom trust is only consulted when the default validation reports an error, and revocation is
-> not checked for it. Register only roots that you control.
+> Known issue (security): when the default validation reports any error, the certificate is only
+> re-validated against the custom roots. The **host name is not checked**: a certificate issued by a
+> configured root is accepted for any server, and revocation is not checked either. Register only
+> roots that you control, and do not use this method where a server could present a certificate from
+> such a root for another host.
 
 ### Declare the rights of a method
 
@@ -264,7 +281,8 @@ Arc4u ones.
 
 ### The service answers `Unauthenticated` although the client is signed in
 
-The interceptor added no token; it logs why at trace level. Enable the `Trace` level for
+The interceptor added no token; it usually logs why at trace level (not when the principal's authentication type differs from the
+settings'). Enable the `Trace` level for
 `ILogger<BearerInterceptor>` and look for a missing application context, principal, authentication
 type or token provider. A common cause is settings registered under another name than the one passed
 to `settings.Get(...)`.

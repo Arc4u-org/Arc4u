@@ -57,7 +57,7 @@ arbitrary name. The keys used on this page are:
 | `Kestrel:Endpoints:<name>:Certificate:KeyPath` | `string` | none | Private key file for a PEM certificate. |
 | `Kestrel:Endpoints:<name>:Certificate:Password` | `string` | none | Password of the certificate file, if any. |
 | `Kestrel:Endpoints:<name>:Certificate:Subject` | `string` | none | Subject of the certificate to find in a store. |
-| `Kestrel:Endpoints:<name>:Certificate:Store` | `string` | none | Store to search, for example `My`. |
+| `Kestrel:Endpoints:<name>:Certificate:Store` | `string` | `My` | Store to search. |
 | `Kestrel:Endpoints:<name>:Certificate:Location` | `string` | `CurrentUser` | `LocalMachine` or `CurrentUser`. |
 | `Kestrel:Endpoints:<name>:Certificate:AllowInvalid` | `bool` | `false` | Accept a certificate that fails validation. |
 
@@ -262,8 +262,8 @@ in code and in configuration can be mixed.
 ### The gRPC client fails with `HTTP_1_1_REQUIRED`
 
 The client sees the exception "The HTTP/2 server closed the connection. HTTP/2 error code
-'HTTP_1_1_REQUIRED'", and the server logs "HTTP/2 is not enabled for ...: the endpoint is configured to
-use HTTP/1.1 and HTTP/2, but TLS is not enabled". The endpoint has `Http1AndHttp2` without a
+'HTTP_1_1_REQUIRED'", and the server logs once at startup "HTTP/2 is not enabled for {endpoint}. The endpoint is configured to
+use HTTP/1.1 and HTTP/2, but TLS is not enabled.". The endpoint has `Http1AndHttp2` without a
 certificate. Give it a certificate, or, for a plain-text endpoint, set `Protocols` to `Http2`.
 
 ### A browser or `curl` gets "An HTTP/1.x request was sent to an HTTP/2 only endpoint"
