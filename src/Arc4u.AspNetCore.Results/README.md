@@ -1,52 +1,29 @@
-# Results
+# Arc4u.AspNetCore.Results
 
-## ProblemDetails
+Turns a FluentResults `Result` or `Result<T>` into a controller `ActionResult`, a minimal API `IResult` or a typed `Results<...>`, and every failure into a `ProblemDetails` with the right status code.
 
-Implement extension methods for `ProblemDetails` to make it easier to create `ProblemDetails` instances.
+## Install
 
-ProblemDetails is a simple POCO object and this package adds a fluent Api to create one.  
-
-Classicaly we have
-```csharp
-var problemDetails = new ProblemDetails
-{
-    Title = "Some title",
-    Detail = "Some detail",
-    Status = 400,
-    Type = "Some type",
-    Instance = "Instance"
-}
+```bash
+dotnet add package Arc4u.AspNetCore.Results --prerelease
 ```
 
-When using the fluent Api we can write.
+## Usage
 
 ```csharp
-var problemDetails = new ProblemDetails()
-                    .WithTitle("Some title")
-                    .WithDetail("Some detail")
-                    .WithStatusCode(StatusCodes.Status400BadRequest)
-                    .WithType(new Uri("about:blank"))
-                    .WithSeverity(Severity.Error.ToString());
+using Arc4u.AspNetCore.Results;
+using FluentResults;
+
+var app = WebApplication.CreateBuilder(args).Build();
+
+// 200 with the value, or a ProblemDetails (400, 422, 500 or the status of your ProblemDetailError).
+app.MapGet("/orders/{id:int}", (int id, IOrders orders) => orders.GetAsync(id).ToHttpOkResultAsync());
+
+public interface IOrders { Task<Result<string>> GetAsync(int id); }
 ```
-The method WithType asks for a Uri to be sure that the type is referring to a url.
 
+## Documentation
 
-## From Results to ProblemDetails
-
-As it is a common scenario to return a ProblemDetails from an action, this package provides extension methods to convert the results to ProblemDetails.
-
-Different scenarios are covered:
-- ToGenericMessage: Converts a result to a ProblemDetails with a generic message saying the information is logged.
-- ToProblemDetails: Converts a result to a ProblemDetails or a generic one if the errors contain at least one exception.
-
-The developers will generaly not used the ToGenericMessage method, but it is used by the ToProblemDetails method, the ToProblemDetails method is taking care to manage this to a generic message if any exception(s) are part of the error messages collection.
-
-A default Function implementation exists to convert an exception to a ProblemDetails, but it is possible to provide a custom implementation.
-Just use the static method 'SetFromErrorFactory(Func<IEnumerable<IError>, ProblemDetails> fromErrors)' to set your custom implementation.
-
-The Arc4u framework covers the following Error types:
-- IExceptionalError => will result in a Generic message with an Http Status Code equal to 500.
-- ProblemDetailsError => will be converted to a ProblemDetails with a default Http Status Code equal to 400 if another one is not given!
-- ValidationError => will be converted to a ValidationProblemDetails with a Http Status Code equal to 422.
-
-If you have your own error type, you can implement the IError interface and provide a custom implementation to convert it to a ProblemDetails.
+- Guide: [Results and errors](https://arc4u-org.github.io/Arc4u/guides/results/)
+- API reference: [Arc4u.AspNetCore.Results](https://arc4u-org.github.io/Arc4u/api/Arc4u.AspNetCore.Results.html)
+- Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)
