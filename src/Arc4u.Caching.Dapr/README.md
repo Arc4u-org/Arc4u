@@ -1,5 +1,25 @@
 # Arc4u.Caching.Dapr
 
-Core Framework used to use dapr.io state.
+The `Dapr` cache kind of Arc4u: a named cache stored in a Dapr state store.
 
-Documentation is under construction.
+## Install
+
+```bash
+dotnet add package Arc4u.Caching.Dapr --prerelease
+```
+
+## Usage
+
+```csharp
+builder.Services.AddCacheContext(builder.Configuration);
+builder.Services.AddKeyedTransient<ICache, DaprCache>(CacheContext.Dapr);
+```
+
+The `Caching` section declares the cache with `"Kind": "Dapr"` and `"Settings": { "Name": "<state store name>" }`. The
+application needs a Dapr sidecar and a state store component with that name.
+
+## Documentation
+
+- Guide: [Caching](https://arc4u-org.github.io/Arc4u/guides/caching/dapr.html)
+- API reference: [Arc4u.Caching.Dapr](https://arc4u-org.github.io/Arc4u/api/Arc4u.Caching.Dapr.html)
+- Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)
