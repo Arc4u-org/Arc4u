@@ -66,11 +66,17 @@ public class Scope<TScope, TInstance> : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets the value held by the enclosing scope, or the default value of <typeparamref name="TInstance"/> when this scope has no parent.
+    /// </summary>
     protected TInstance? ParentValue
     {
         get { return null == Parent ? default(TInstance) : Parent.Value; }
     }
 
+    /// <summary>
+    /// Gets the innermost active scope of the current asynchronous flow, or <see langword="null"/> when there is none.
+    /// </summary>
     protected static Scope<TScope, TInstance>? Ambient
     {
         get { return _instance.Value; }

@@ -1,6 +1,23 @@
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Arc4u.Dispatcher.Notification;
+/// <summary>
+/// Extension method to register the notification handler collections (<see cref="INotificationHandlers{T}"/> and its overloads with up to five type arguments).
+/// </summary>
+/// <example>
+/// <code language="csharp">
+/// services.AddNotificationHandlersAsScoped();
+///
+/// // Register the handlers, then publish through the collection.
+/// services.AddScoped&lt;INotificationHandler&lt;Order&gt;, AuditOrderHandler&gt;();
+///
+/// public class OrderService(INotificationHandlers&lt;Order&gt; handlers)
+/// {
+///     public Task PlaceAsync(Order order, CancellationToken cancellationToken)
+///         =&gt; handlers.PublishWhenAllAsync(order, cancellationToken);
+/// }
+/// </code>
+/// </example>
 public static class NotificationHandlersExtension
 {
     /// <summary>

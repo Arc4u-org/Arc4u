@@ -62,11 +62,17 @@ public class Scope<T> : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets the innermost active scope of the current asynchronous flow, or <see langword="null"/> when there is none.
+    /// </summary>
     protected static Scope<T>? Ambient
     {
         get { return _instance.Value; }
     }
 
+    /// <summary>
+    /// Gets the value held by the enclosing scope, or the default value of <typeparamref name="T"/> when this scope has no parent.
+    /// </summary>
     protected T? ParentValue
     {
         get { return null == Parent ? default : Parent.Value; }

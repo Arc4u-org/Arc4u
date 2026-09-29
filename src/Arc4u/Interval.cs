@@ -22,10 +22,10 @@ public static class Interval
     /// 		<item>if <typeparamref name="T"/> is an <see cref="Enum"/>, the lowest and upmost values are represented respectively by the lowest and upmost underlying values of the <see cref="Enum"/>.
     /// In case of <see cref="Enum"/> decorated with the <see cref="FlagsAttribute"/>, the upmost value is then represented by the combination of all underlying values of the <see cref="Enum"/>.</item>
     /// 		<item>if <typeparamref name="T"/> is exposing the NegativeInfinity and PositiveInfinity fields, they represent respectively the lowest and upmost values, as for <see cref="float"/>, <see cref="double"/>.</item>
-    /// 		<item>if <typeparamref name="T"/> is exposing the MinValue and MaxValue fields, they represent respectively the lowest and upmost values, as for <see cref=byte"/>, <see cref="int32"/>, <see cref="DateTime"/> or <see cref="char"/>… </item>
+    /// 		<item>if <typeparamref name="T"/> is exposing the MinValue and MaxValue fields, they represent respectively the lowest and upmost values, as for <see cref="byte"/>, <see cref="int"/>, <see cref="DateTime"/> or <see cref="char"/>… </item>
     /// 		<item>otherwise, <c>default(T)</c> represents the lowest and upmost values.</item>
     /// 	</list>
-    /// As a consequence <c>default(T)</c> could be used to represent the universe <see cref="Interval&lt;T&gt;"/> and the default <see cref="Empty"/> interval.
+    /// As a consequence <c>default(T)</c> could be used to represent the universe <see cref="Interval&lt;T&gt;"/> and the default <see cref="Empty{T}"/> interval.
     /// In this case only and by convention, the default empty <see cref="Interval&lt;T&gt;"/> is composed of <seealso cref="BoundDirection.Closed"/> boudaries.
     /// As another consequence, <c>default(T)</c> could be used to represent the universe <see cref="Interval&lt;T&gt;"/> and the <see cref="SingletonOf"/> the default value.
     /// In such case the <see cref="Interval&lt;T&gt;"/> represents then universe and a singleton.
@@ -69,7 +69,7 @@ public static class Interval
     /// with <see cref="BoundDirection.Opened"/> boundaries.
     /// Except when <typeparamref name="T"/> represents a reference type, 
     /// the default empty interval is composed of <see cref="BoundDirection.Closed"/> boundaries.
-    /// It enables the distinction between the default <see cref="Empty"/> interval and 
+    /// It enables the distinction between the default <see cref="Empty{T}"/> interval and 
     /// the <see cref="Universe"/> interval.
     /// </remarks>
     /// <seealso cref="Interval&lt;T&gt;.IsEmpty"/>        
@@ -105,7 +105,7 @@ public static class Interval
     /// with <see cref="BoundDirection.Opened"/> boundaries;
     /// except when <typeparamref name="T"/> represents a reference type,
     /// the default empty interval is composed of <see cref="BoundDirection.Closed"/> boundaries.
-    /// It enables the distinction between the default <see cref="Empty"/> interval and
+    /// It enables the distinction between the default <see cref="Empty{T}"/> interval and
     /// the <see cref="Universe"/> interval.
     /// </remarks>
     /// <seealso cref="Empty"/>
@@ -126,7 +126,7 @@ public static class Interval
     }
 
     /// <summary>
-    /// Indicates whether the specified <see cref="Interval&lt;T&gt;"/> object is <c>null</c> or an <see cref="P:Interval´1.Empty"/> interval.
+    /// Indicates whether the specified <see cref="Interval&lt;T&gt;"/> object is <c>null</c> or an <see cref="Empty{T}"/> interval.
     /// </summary>
     /// <typeparam name="T">The value type of the interval.</typeparam>
     /// <param name="value">An <see cref="Interval&lt;T&gt;"/> reference.</param>
