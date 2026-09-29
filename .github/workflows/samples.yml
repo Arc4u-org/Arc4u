@@ -1,0 +1,73 @@
+name: Samples
+
+# Builds every project under samples/ against the Arc4u projects in src/ (the samples use
+# ProjectReferences), so a change in src/ that breaks a sample fails here. The GettingStarted
+# sample is also started and called once: the anonymous endpoint must answer 200 and the
+# protected one 401 (no identity provider is needed for that).
+#
+# Do not make this a required check: path filters would leave PRs that touch neither
+# samples/** nor src/** waiting forever on a check that never runs.
+
+on:
+  pull_request:
+    branches:
+      - 'develop/9.0.0'
+    paths:
+      - 'samples/**'
+      - 'src/**'
+      - '.github/workflows/samples.yml'
+  push:
+    branches:
+      - 'develop/9.0.0'
+    paths:
+      - 'samples/**'
+      - 'src/**'
+      - '.github/workflows/samples.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: samples-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+
+      # The referenced src/ projects also target net11.0, so the SDK pinned in src/global.json
+      # is required to build them. The samples target net10.0: the 10.0 SDK brings that runtime.
+      # samples/ has no global.json, so the newest SDK (the one from src/global.json) builds them.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+          dotnet-version: '10.0.x'
+
+      - name: Build samples
+        run: |
+          dotnet --info
+          for project in samples/*/*.csproj; do
+            echo "::group::$project"
+            dotnet build "$project" --configuration Release
+            echo "::endgroup::"
+          done
+
+      - name: Smoke test GettingStarted
+        working-directory: samples/GettingStarted
+        run: |
+          dotnet run --configuration Release --no-build --urls http://localhost:5080 > app.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl --silent --output /dev/null http://localhost:5080/hello/CI && break
+            sleep 1
+          done
+          anonymous=$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5080/hello/CI)
+          protected=$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:5080/me)
+          kill %1 || true
+          cat app.log
+          echo "GET /hello/CI -> $anonymous (expected 200)"
+          echo "GET /me       -> $protected (expected 401)"
+          test "$anonymous" = "200"
+          test "$protected" = "401"
