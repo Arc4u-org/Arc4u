@@ -1,6 +1,6 @@
 # Arc4u
 
-Base library of the Arc4u framework: intervals and periods, timeout and time zone helpers, exceptions, extension methods and the security and diagnostics building blocks that the other Arc4u packages build on.
+Base library of the Arc4u framework: intervals and periods, timeout and time zone helpers, exceptions, extension methods and the security building blocks that the other Arc4u packages build on.
 
 ## Install
 

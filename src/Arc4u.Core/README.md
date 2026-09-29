@@ -1,6 +1,6 @@
 # Arc4u.Core
 
-Small abstractions shared by all Arc4u packages: the `IKeyValueSettings` and `IAppSettings` contracts and the `ValueObject` base class for domain value objects.
+Small abstractions shared by most Arc4u packages: the `IKeyValueSettings` and `IAppSettings` contracts and the `ValueObject` base class for domain value objects.
 
 ## Install
 

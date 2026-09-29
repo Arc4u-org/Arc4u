@@ -114,7 +114,7 @@ public class AuditHandler : INotificationHandler<string, int>
 }
 ```
 
-Register the handler with `services.AddScoped<INotificationHandler<string, int>, AuditHandler>()`. Resolve `INotificationHandlers<string, int>` from a scope, not from the root provider, unless you registered your handlers as singletons.
+Register the handler with `services.AddScoped<INotificationHandler<string, int>, AuditHandler>()`. Resolve `INotificationHandlers<string, int>` from a scope. Resolving it from the root provider throws when scope validation is on (the ASP.NET Core Development default), unless you call `AddNotificationHandlersAsScoped(ServiceLifetime.Transient)` and register singleton or transient handlers.
 
 ### Run the handlers in parallel or one after the other
 
@@ -132,7 +132,7 @@ Both methods return once every handler has completed. If there is no handler reg
 The two methods differ when a handler throws:
 
 - `PublishForEachAsync` stops at the first exception. The handlers after the failing one are not called.
-- `PublishWhenAllAsync` lets every handler that started run to completion, then throws the first exception (the others are not surfaced by `await`). A handler that throws synchronously, before its first `await`, is different: the exception propagates immediately, the handlers registered after it are never started, and the ones already started are not awaited.
+- `PublishWhenAllAsync` lets every handler that started run to completion, then throws the first exception to fail (the others are not surfaced by `await`). A handler whose `HandleAsync` is not an `async` method and throws before returning its `Task` is different: the exception propagates immediately, the handlers registered after it are never started, and the ones already started are not awaited. An `async` handler that throws before its first `await` returns a faulted task and behaves like any other async fault.
 
 The dispatcher does not catch, log or retry. If a reaction must not break the use case, catch inside the handler.
 
@@ -160,7 +160,7 @@ Plain dependency injection already lets you inject `IEnumerable<IOrderReaction>`
 
 ### `InvalidOperationException`: no service for type `INotificationHandlers<...>`
 
-You did not call `AddNotificationHandlersAsScoped()`. Call it once at startup.
+You did not call `AddNotificationHandlersAsScoped()`. Call it once at startup. In a minimal API endpoint that takes `INotificationHandlers<T>` as a parameter, the symptom is different: the parameter is inferred as a request body and the request fails with HTTP 400 (`Implicit body inferred for parameter "notifier" but no body was provided`).
 
 ### My handler is never called
 
@@ -170,7 +170,7 @@ You did not call `AddNotificationHandlersAsScoped()`. Call it once at startup.
 
 ### `Cannot resolve scoped service ... from root provider`
 
-`INotificationHandlers<T>` is scoped by default. Resolve it from a scope, for example from `HttpContext.RequestServices` or an `IServiceScope`, or pass `ServiceLifetime.Transient` to `AddNotificationHandlersAsScoped` and register singleton handlers.
+`INotificationHandlers<T>` is scoped by default. Resolve it from a scope, for example from `HttpContext.RequestServices` or an `IServiceScope`, or pass `ServiceLifetime.Transient` to `AddNotificationHandlersAsScoped` and register singleton or transient handlers.
 
 ### `AddNotificationHandlersAsScoped(ServiceLifetime.Singleton)` does not register singletons
 
