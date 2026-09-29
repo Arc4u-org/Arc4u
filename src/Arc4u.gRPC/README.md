@@ -1,53 +1,30 @@
 # Arc4u.gRPC
 
-Core Framework to use gRPC.
+gRPC interceptors and helpers for Arc4u: forward the caller's bearer token and culture, and read a failed call as a failed `Result` carrying a ProblemDetails.
 
-## Reading a failed call as a Result
+## Install
 
-A service built with Arc4u.AspNetCore.gRpc sends the `ProblemDetails` of a failure along with the gRPC status.
-Turn the fault back into a failed `Result`:
+```bash
+dotnet add package Arc4u.gRPC --prerelease
+```
+
+## Usage
 
 ```csharp
 using Arc4u.gRPC.Results;
 
 try
 {
-    var response = await client.GetAsync(request, cancellationToken: cancellationToken);
-    return Result.Ok(response.ToDomain());
+    var reply = await client.GetOrderAsync(request, cancellationToken: cancellationToken);
 }
 catch (RpcException e)
 {
-    return e.ToResult<EnvironmentInfo>();
+    var failed = e.ToResult<OrderReply>(); // a failed FluentResults Result<OrderReply>
 }
 ```
 
-Rendered with `ToProblemDetails()`, the result gives back the document the service produced - validation messages
-included. A fault carrying no ProblemDetails, such as a transport failure that never reached the service, is
-mapped from its gRPC status alone (`Unavailable` → 503, `DeadlineExceeded` → 504...). When the service had to
-leave validation messages out, a last warning says how many.
+## Documentation
 
-## The arc4u.grpc.v1 contract
-
-The document is the `arc4u.grpc.v1.ProblemDetails` message, packed in the details of the `google.rpc.Status`
-carried by the `grpc-status-details-bin` trailer. Its proto file is:
-
-- in this repository: `src/Arc4u.gRPC/Protos/arc4u/grpc/v1/problem_details.proto`;
-- in the package: `content/protos/arc4u/grpc/v1/problem_details.proto`.
-
-A client in another language generates its code from that file and reads the detail with its own helper:
-`StatusProto.fromThrowable` (Java), `status.FromError(err).Details()` (Go), `rpc_status.from_call` (Python).
-
-A .NET application never compiles it: the message is compiled in this assembly. When one of its own protos needs
-the message - a ProblemDetails per item of a stream, for instance - it just imports it, the package puts the file
-on the Grpc.Tools import path:
-
-```proto
-import "arc4u/grpc/v1/problem_details.proto";
-
-message ImportLineResult {
-  oneof result {
-    string order_id = 1;
-    arc4u.grpc.v1.ProblemDetails problem = 2;
-  }
-}
-```
+- Guide: [gRPC and API versioning](https://arc4u-org.github.io/Arc4u/guides/grpc-versioning/)
+- API reference: [Arc4u.gRPC](https://arc4u-org.github.io/Arc4u/api/Arc4u.gRPC.html)
+- Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)

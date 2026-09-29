@@ -1,15 +1,17 @@
 # Arc4u.AspNetCore.gRpc
 
-Core framework to integrate gRpc in asp net core.
+ASP.NET Core support for hosting gRPC services with Arc4u: report a failed `Result` as an `RpcException` carrying a ProblemDetails, return 401 instead of a redirect, and log call durations.
 
-## Reporting a failed Result
+## Install
 
-A gRPC service reports a failed `Result` by throwing the `RpcException` built from it:
+```bash
+dotnet add package Arc4u.AspNetCore.gRpc --prerelease
+```
+
+## Usage
 
 ```csharp
 using Arc4u.AspNetCore.gRpc.Results;
-
-var result = await useCase.ExecuteAsync(context.CancellationToken);
 
 if (result.IsFailed)
 {
@@ -17,15 +19,10 @@ if (result.IsFailed)
 }
 ```
 
-The exception is derived from the very `ProblemDetails` a REST endpoint returns for the same failure
-(`ToProblemDetails()`), so both transports report it identically:
+`result` is a failed FluentResults `Result`; the exception carries the same ProblemDetails a REST endpoint would return.
 
-- the gRPC status code is the closest counterpart of the HTTP status (404 → `NotFound`, 422 and 400 →
-  `InvalidArgument`, 500 → `Internal`...), and the status detail is the `Detail` of the ProblemDetails;
-- the `ProblemDetails` itself is sent following the gRPC richer error model: packed as an
-  `arc4u.grpc.v1.ProblemDetails` in the `google.rpc.Status` of the `grpc-status-details-bin` trailer. Every gRPC
-  language can read it - see the Arc4u.gRPC package for the contract.
+## Documentation
 
-gRPC clients cap the metadata of a response (8 KiB by default in Java and in the C core behind Python), so the
-trailer is kept within 6 KiB: when a validation failure has too many messages, the least severe ones are left out
-and their number is sent in `omitted_errors`.
+- Guide: [gRPC and API versioning](https://arc4u-org.github.io/Arc4u/guides/grpc-versioning/)
+- API reference: [Arc4u.AspNetCore.gRpc](https://arc4u-org.github.io/Arc4u/api/Arc4u.AspNetCore.gRpc.html)
+- Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)
