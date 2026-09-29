@@ -1,3 +1,11 @@
 # Owned by #184. Add sub-pages of this guide below Overview.
 - name: Overview
   href: index.md
+- name: Token providers
+  href: token-providers.md
+- name: HttpClient and gRPC clients
+  href: httpclient-grpc.md
+- name: Blazor
+  href: blazor.md
+- name: Desktop and mobile clients
+  href: desktop.md
