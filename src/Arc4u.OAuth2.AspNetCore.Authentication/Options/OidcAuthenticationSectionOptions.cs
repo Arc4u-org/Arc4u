@@ -16,7 +16,7 @@ namespace Arc4u.OAuth2.Options;
         /// <summary>Gets or sets the name of the authentication cookie. Required: use a name specific to the application, for example <c>.MyApp.Cookies</c>.</summary>
         public string CookieName { get; set; } = default!;
 
-        /// <summary>Gets or sets a value indicating whether the issuer of the access token must be the default authority. The default is <see langword="true"/>. This value is not copied to <see cref="OidcAuthenticationOptions"/> by the configuration based registration.</summary>
+        /// <summary>Gets or sets a value indicating whether the issuer of the access token must be the default authority. The default is <see langword="true"/>. This value is not copied to <see cref="OidcAuthenticationOptions"/> by the configuration based registration (nor by the hybrid registrations): <see cref="OidcAuthenticationOptions.ValidateAuthority"/> stays <see langword="true"/>.</summary>
         public bool ValidateAuthority { get; set; } = true;
 
         /// <summary>Gets or sets the path of the section holding the <see cref="OpenIdSettingsOption"/>. The default is <c>Authentication:OpenId.Settings</c>.</summary>
@@ -75,7 +75,7 @@ namespace Arc4u.OAuth2.Options;
 
         /// <summary>
         /// Gets or sets a value indicating whether the audience of the access token must be validated. The default is <see langword="true"/>.
-        /// This value is not copied to <see cref="OidcAuthenticationOptions"/> by the configuration based registration: use <see cref="OpenIdSettingsOption.ValidateAudience"/> of the OpenID settings section.
+        /// This value is not copied to <see cref="OidcAuthenticationOptions"/> by the configuration based registration (nor by the hybrid registrations), so <see cref="OidcAuthenticationOptions.ValidateAudience"/> stays <see langword="true"/> whatever is configured here.
         /// </summary>
         public bool ValidateAudience { get; set; } = true;
 

@@ -56,12 +56,12 @@ namespace Arc4u.OAuth2.Client.Authentication.Options;
         /// <summary>Gets or sets a value indicating whether the profile of the user is loaded from the user info endpoint. The default is <see langword="false"/>.</summary>
         public bool LoadProfile { get; set; }
         /// <summary>
-        /// Define the claim type used to identify the name of the user.
+        /// Gets or sets the claim type holding the name of the user. The default is <c>name</c>. It is not currently read by the client authentication.
         /// </summary>
         public string NameClaimType { get; set; } = "name";
 
         /// <summary>
-        /// Define the claim type used to identify the role of the user.
+        /// Gets or sets the claim type holding the roles of the user. The default is <c>role</c>. It is not currently read by the client authentication.
         /// </summary>
         public string RoleClaimType { get; set; } = "role";
 

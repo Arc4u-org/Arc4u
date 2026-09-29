@@ -105,8 +105,38 @@ namespace Arc4u.OAuth2.Extensions
         /// <param name="authenticationSectionName">The section bound to <see cref="HybridAuthenticationSectionOptions"/>. The default is <c>Authentication</c>.</param>
         /// <param name="certificateLoader">The loader of the certificates. When <see langword="null"/>, a default <c>X509CertificateLoader</c> is used.</param>
         /// <returns>The <see cref="AuthenticationBuilder"/>, to chain calls.</returns>
-        /// <exception cref="ConfigurationException">The section does not exist or a mandatory value is missing.</exception>
-        /// <exception cref="MissingFieldException">A certificate cannot be found from its configuration section.</exception>
+        /// <exception cref="ConfigurationException">The section does not exist, a mandatory value is missing, or the OAuth2 settings have no audience while <c>ValidateAudience</c> is <see langword="true"/> (the default).</exception>
+        /// <exception cref="MissingFieldException">A certificate cannot be found from its configuration section, or the OpenID settings have no client id, no scope, or no audience while <c>ValidateAudience</c> is <see langword="true"/>.</exception>
+        /// <remarks>
+        /// <para>
+        /// In addition to the configuration required by <c>AddOidcAuthentication</c>, the OAuth2 settings (<c>Authentication:OAuth2.Settings</c>) are mandatory and must contain at least one audience,
+        /// unless <c>ValidateAudience</c> is <see langword="false"/> in that section. A minimal configuration:
+        /// </para>
+        /// <code language="json">
+        /// {
+        ///   "Application.configuration": { "ApplicationName": "MyApp" },
+        ///   "Authentication": {
+        ///     "DefaultAuthority": { "Url": "https://login.example.com/tenant/v2.0" },
+        ///     "CookieName": ".MyApp.Cookies",
+        ///     "OpenId.Settings": {
+        ///       "ClientId": "my-client-id",
+        ///       "ClientSecret": "my-client-secret",
+        ///       "Audiences": [ "my-client-id" ],
+        ///       "Scopes": [ "openid", "profile" ]
+        ///     },
+        ///     "OAuth2.Settings": { "Audiences": [ "api://my-api" ] },
+        ///     "DataProtection": {
+        ///       "EncryptionCertificate": { "Store": { "Name": "MyAppCertificate" } },
+        ///       "CacheStore": { "CacheKey": "DataProtection", "CacheName": "Default" }
+        ///     },
+        ///     "TokenCache": { "CacheName": "Default" }
+        ///   }
+        /// }
+        /// </code>
+        /// <para>
+        /// Known issue: the <c>ValidateAudience</c> and <c>ValidateAuthority</c> values of <see cref="OidcAuthenticationOptions"/> are not copied by the hybrid registrations and stay <see langword="true"/>.
+        /// </para>
+        /// </remarks>
         /// <example>
         /// <code language="csharp">
         /// builder.Services.AddHybridAuthentication(builder.Configuration);

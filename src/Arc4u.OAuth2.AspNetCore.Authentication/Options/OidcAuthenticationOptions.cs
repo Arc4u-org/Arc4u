@@ -19,7 +19,8 @@ namespace Arc4u.OAuth2.Options;
         /// <summary>Gets or sets the name of the authentication cookie. Use a name specific to the application.</summary>
         public string CookieName { get; set; } = default!;
 
-        /// <summary>Gets or sets a value indicating whether the issuer of the access token received from the token endpoint must be the <see cref="DefaultAuthority"/>. The default is <see langword="true"/>.</summary>
+        /// <summary>Gets or sets a value indicating whether the issuer of the access token received from the token endpoint must be the <see cref="DefaultAuthority"/>. The default is <see langword="true"/>.
+        /// Only the code based <c>AddOidcAuthentication</c> overload applies this value; the configuration overloads and both <c>AddHybridAuthentication</c> overloads do not copy it, so it stays <see langword="true"/> there.</summary>
         public bool ValidateAuthority { get; set; } = true;
 
         /// <summary>Gets or sets the action that fills the <see cref="OpenIdSettingsOption"/> (client id, secret, scopes, ...). Required.</summary>
@@ -70,6 +71,9 @@ namespace Arc4u.OAuth2.Options;
         /// <summary>
         /// Gets or sets a value indicating whether the audience of the access token received from the token endpoint must be one of the audiences of the OpenID settings.
         /// The default is <see langword="true"/>. Identity providers like Keycloak do not issue an audience by default: disable it or configure the audience in the identity provider.
+        /// Only the code based <c>AddOidcAuthentication</c> overload applies this value; the configuration overloads and both <c>AddHybridAuthentication</c> overloads do not copy it, so it stays <see langword="true"/> there.
+        /// Known issue: when <see cref="OpenIdSettingsOption.ValidateAudience"/> is <see langword="false"/> the <c>Audiences</c> key is not registered in the OpenID settings, so this value must be <see langword="false"/> too,
+        /// otherwise the handling of the token response throws a <see cref="KeyNotFoundException"/> for the <c>Audiences</c> key. With the configuration overloads this cannot be set.
         /// </summary>
         public bool ValidateAudience { get; set; } = true;
 

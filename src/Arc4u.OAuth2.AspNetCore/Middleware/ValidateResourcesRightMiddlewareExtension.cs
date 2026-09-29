@@ -68,11 +68,12 @@ public static class ValidateResourcesRightMiddlewareExtension
         return app.UseMiddleware<ValidateResourcesRightMiddleware>(validate);
     }
 
-    /// <summary>Adds the <see cref="ValidateResourcesRightMiddleware"/> to the request pipeline from a configuration section.</summary>
+    /// <summary>Adds the <see cref="ValidateResourcesRightMiddleware"/> to the request pipeline from a configuration section. Nothing is added when the section is missing or defines no resource.</summary>
     /// <param name="app">The application builder.</param>
     /// <param name="sectionName">The section, bound to <see cref="ValidateResourcesRightMiddlewareOptions"/>. The default is <c>Authentication:ResourcesRights</c>.</param>
     /// <returns>The application builder, to chain calls.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="app"/> is <see langword="null"/> or <paramref name="sectionName"/> is empty.</exception>
+    /// <exception cref="ConfigurationException">A resource has no path or no policy, or the default content is empty.</exception>
     /// <example>
     /// <code language="csharp">
     /// app.UseAuthentication();

@@ -16,7 +16,7 @@ public class ClaimsFillerOptions
     // public List<string> SettingsKeys { get; set; } = [];
 
     /// <summary>
-    /// Claim types that are not added to the principal. Empty by default; the configuration based registration uses
+    /// Claim types returned by the <c>IClaimsFiller</c> that are not added to the principal (the claims already in the token, such as <c>aud</c> or <c>iss</c>, are not removed). Empty by default; the configuration based registration uses
     /// <c>AddClaimsFillerExtension.DefaultClaimsToExclude</c> when the section has no <c>ClaimsToExclude</c>.
     /// </summary>
     public List<string> ClaimsToExclude { get; set; } = [];

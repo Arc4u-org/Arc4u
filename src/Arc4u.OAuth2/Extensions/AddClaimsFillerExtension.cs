@@ -7,7 +7,7 @@ namespace Arc4u.OAuth2.Extensions;
 /// <summary>Registers the <see cref="ClaimsFillerOptions"/>.</summary>
 public static class AddClaimsFillerExtension
 {
-    /// <summary>The claim types excluded from the principal when <see cref="ClaimsFillerOptions.ClaimsToExclude"/> is not configured.</summary>
+    /// <summary>The claim types, among those returned by the claims filler, excluded from the principal when <see cref="ClaimsFillerOptions.ClaimsToExclude"/> is not configured.</summary>
     public static readonly List<string> DefaultClaimsToExclude = [ "aud", "iss", "iat", "nbf", "acr", "aio", "appidacr", "ipaddr", "scp", "tid", "uti", "unique_name", "apptype", "appid", "ver" ];
     /// <summary>Registers the <see cref="ClaimsFillerOptions"/> from code.</summary>
     /// <param name="services">The service collection.</param>

@@ -38,7 +38,8 @@ namespace Arc4u.OAuth2.Extensions
         /// <param name="services">The service collection.</param>
         /// <param name="authenticationOptions">The action that configures the <see cref="OidcAuthenticationOptions"/>. <see cref="OidcAuthenticationOptions.OpenIdSettingsOptions"/>, <see cref="OidcAuthenticationOptions.DataProtectionCertificate"/> and <see cref="OidcAuthenticationOptions.DataProtectionCacheStoreOption"/> are required.</param>
         /// <returns>The <see cref="AuthenticationBuilder"/>, to chain calls.</returns>
-        /// <exception cref="ArgumentNullException">An argument or a required option is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">An argument, <see cref="OidcAuthenticationOptions.OpenIdSettingsOptions"/> or <see cref="OidcAuthenticationOptions.DataProtectionCertificate"/> is <see langword="null"/>.</exception>
+        /// <exception cref="NullReferenceException"><see cref="OidcAuthenticationOptions.DefaultAuthority"/> or <see cref="OidcAuthenticationOptions.DataProtectionCacheStoreOption"/> is <see langword="null"/>.</exception>
         /// <example>
         /// <code language="csharp">
         /// builder.Services.AddOidcAuthentication(options =>
@@ -149,7 +150,7 @@ namespace Arc4u.OAuth2.Extensions
         /// <param name="certificateLoader">The loader of the certificates. When <see langword="null"/>, a default <c>X509CertificateLoader</c> is used.</param>
         /// <returns>The <see cref="AuthenticationBuilder"/>, to chain calls.</returns>
         /// <exception cref="ConfigurationException">The section does not exist or a mandatory value (default authority, cookie name, claim types, section paths, response type, authentication method) is missing.</exception>
-        /// <exception cref="MissingFieldException">A certificate cannot be found from its configuration section.</exception>
+        /// <exception cref="MissingFieldException">A certificate cannot be found from its configuration section, or the OpenID settings have no client id, no scope, or no audience while <c>ValidateAudience</c> is <see langword="true"/>.</exception>
         /// <remarks>
         /// <para>
         /// Besides the authentication schemes, the method registers, from the sections named by <see cref="OidcAuthenticationSectionOptions"/>: the OpenID settings, the domain mappings, the token cache, the claims filler,

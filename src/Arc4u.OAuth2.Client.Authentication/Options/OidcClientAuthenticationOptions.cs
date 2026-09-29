@@ -38,12 +38,12 @@ namespace Arc4u.OAuth2.Client.Authentication.Options;
         public TimeSpan ClockSkew { get; set; } = TimeSpan.FromMinutes(5);
 
         /// <summary>
-        /// Define the claim type used to identify the name of the user.
+        /// Gets or sets the claim type holding the name of the user. The default is <c>name</c>. It is not currently read by the client authentication.
         /// </summary>
         public string NameClaimType { get; set; } = "name";
 
         /// <summary>
-        /// Define the claim type used to identify the role of the user.
+        /// Gets or sets the claim type holding the roles of the user. The default is <c>role</c>. It is not currently read by the client authentication.
         /// </summary>
         public string RoleClaimType { get; set; } = "role";
     }

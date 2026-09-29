@@ -28,7 +28,7 @@ namespace Arc4u.OAuth2.Options
         /// <summary>Gets or sets the scopes requested to the identity provider. At least one is required.</summary>
         public List<string> Scopes { get; set; } = [];
 
-        /// <summary>Gets or sets a value indicating whether the audience of the access token is validated. The default is <see langword="true"/>. Set it to <see langword="false"/> for identity providers, like Keycloak, that do not issue an audience by default.</summary>
+        /// <summary>Gets or sets a value indicating whether the audience of the id token is validated by the OpenID Connect handler. The default is <see langword="true"/>. When <see langword="false"/>, the <c>Audiences</c> key is not registered in the settings, and <see cref="OidcAuthenticationOptions.ValidateAudience"/> must be set to <see langword="false"/> too (only possible with the code based registration), otherwise the token response handling throws a <see cref="KeyNotFoundException"/>.</summary>
         public bool ValidateAudience { get; set; } = true;
     }
 }
