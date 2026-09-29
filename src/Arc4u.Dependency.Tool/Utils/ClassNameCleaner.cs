@@ -14,6 +14,7 @@ public static class ClassNameCleaner
     /// </summary>
     /// <param name="className">The name to clean.</param>
     /// <returns>A valid identifier.</returns>
+    /// <exception cref="IndexOutOfRangeException">No valid character remains after the cleaning.</exception>
     public static string CleanClassName(string className)
     {
         // Remove invalid characters using the compiled regex

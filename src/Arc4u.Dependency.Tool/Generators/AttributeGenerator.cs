@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Arc4u.Dependency.Tool;
 
 /// <summary>
-/// A source generator that emits, for the compiling assembly, a <c>Register&lt;Assembly&gt;Types(this IServiceCollection)</c> extension method
+/// A source generator that emits, for the compiling assembly, a <c>Register&lt;Name&gt;Types(this IServiceCollection)</c> (<c>Name</c> is the last dot-separated segment of the assembly name, cleaned into a valid identifier) extension method
 /// registering every class decorated with the <c>Export</c> attribute (lifetime given by <c>Shared</c> or <c>Scoped</c>).
 /// </summary>
 [Generator]
