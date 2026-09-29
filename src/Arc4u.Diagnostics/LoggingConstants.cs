@@ -1,6 +1,6 @@
 namespace Arc4u.Diagnostics;
 
-/// <summary>Names of the properties that the Arc4u logger adds to every log entry. These names are reserved and cannot be used as custom property keys.</summary>
+/// <summary>Reserved names of the properties used by the Arc4u logger. They cannot be used as custom property keys. Most are added by the logger to each entry; <see cref="ActivityId"/> and <see cref="Identity"/> are only present when an <see cref="IAddPropertiesToLog"/> provider supplies them and <see cref="Stacktrace"/> only when requested.</summary>
 public static class LoggingConstants
 {
     /// <summary>The name of the application.</summary>

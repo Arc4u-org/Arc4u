@@ -11,7 +11,7 @@ public static class ServicesMemoryRegistrationExtension
     /// <example>
     /// <code language="csharp">
     /// // Namespace: Arc4u.Diagnostics.Serilog.Sinks.Memory
-/// builder.Services.AddMemoryLogDB();
+    /// builder.Services.AddMemoryLogDB();
     /// </code>
     /// </example>
     public static IServiceCollection AddMemoryLogDB(this IServiceCollection services)

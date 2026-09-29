@@ -120,7 +120,7 @@ public class CacheContext : ICacheContext
     /// <summary>
     /// Indexer to retrieve the <see cref="ICache"/> implementation based on the caching config section. The key is the cache name.
     /// </summary>
-    /// <param name="cacheName"></param>
+    /// <param name="cacheName">The name of the cache, as declared in the configuration.</param>
     /// <returns>An <see cref="ICache"/> implementation defined in the cache config section.</returns>
     /// <exception cref="InvalidOperationException">Throw the exception when the cache name does not exist in the caching config section.</exception>
     public ICache this[string cacheName]

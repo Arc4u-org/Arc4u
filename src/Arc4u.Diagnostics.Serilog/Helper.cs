@@ -12,8 +12,11 @@ public static class Helper
     /// The non standard one are added in the Properties list.
     /// Remove State property, used by Serilog to store the message!
     /// </summary>
-    /// <param name="logEvent"></param>
-    /// <returns></returns>
+    /// <param name="logEvent">The Serilog event.</param>
+    /// <returns>
+    /// A tuple with the Arc4u standard properties (category, application, identity, class, method, activity id, process id, thread id, stack trace; a default value when absent)
+    /// and the list of the other properties. The category is <see cref="MessageCategory.Technical"/> when it is absent or not a defined value.
+    /// </returns>
     public static (MessageCategory Category,
                     string Application,
                     string Identity,

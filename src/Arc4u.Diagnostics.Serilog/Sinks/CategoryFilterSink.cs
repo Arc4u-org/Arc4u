@@ -33,7 +33,7 @@ public class CategoryFilterSink : ILogEventSink, IDisposable
     /// If no, the message is skipped.
     /// If yes, only messages with the registered categories are sent.
     /// </summary>
-    /// <param name="logEvent"></param>
+    /// <param name="logEvent">The event to filter.</param>
     public void Emit(LogEvent logEvent)
     {
         if (logEvent.Properties.TryGetValue(LoggingConstants.Category, out var propertyValue))

@@ -1,7 +1,7 @@
 namespace Arc4u.Diagnostics;
 
 /// <summary>
-/// Class used to bind settings from the configuration file.
+/// Class used to bind settings from the configuration file. This type is not consumed by any other Arc4u package.
 /// </summary>
 public partial class OpenTelemetrySettings
 {
@@ -12,12 +12,12 @@ public partial class OpenTelemetrySettings
         Address = string.Empty;
         Sources = [];
     }
-    /// <summary>Gets or sets the address of the OpenTelemetry collector.</summary>
+    /// <summary>Gets or sets the address setting.</summary>
     public string Address { get; set; }
 
-    /// <summary>Gets or sets the resource attributes attached to the telemetry.</summary>
+    /// <summary>Gets or sets the attributes setting.</summary>
     public Dictionary<string, object> Attributes { get; set; }
 
-    /// <summary>Gets or sets the names of the activity sources to collect.</summary>
+    /// <summary>Gets or sets the names of the activity sources.</summary>
     public List<string> Sources { get; set; }
 }

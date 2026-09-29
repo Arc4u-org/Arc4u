@@ -6,7 +6,7 @@ namespace Arc4u.Diagnostics;
 /// <summary>
 /// Helper class to unit test the Arc4u logging.
 /// </summary>
-/// <typeparam name="T"></typeparam>
+/// <typeparam name="T">The category type of the logger.</typeparam>
 public class NullLoggerWrapper<T> : ILoggerWrapper<T>
 {
     /// <summary>Gets the shared instance.</summary>

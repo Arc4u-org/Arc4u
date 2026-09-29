@@ -9,12 +9,20 @@ namespace Arc4u.Dependency;
 public static class ServicesRegistrationExtension
 {
     /// <summary>
-    /// Add to the <see cref="IServiceCollection"/> a scoped instance of <see cref="ILogger{LoggerMessage}"/> as ILogger.
-    /// This allows for static classes to resolve based on ILogger and via the fluent API, the from() method replaces
-    /// the class name.
+    /// Registers the Arc4u logging: <see cref="ILogger{TCategoryName}"/> is replaced by <see cref="LoggerWrapper{T}"/> (transient),
+    /// the non-generic <see cref="ILogger"/> resolves to <c>ILogger&lt;DefaultLogger&gt;</c> (transient), and <see cref="IScopedLogger{T}"/> resolves to
+    /// <see cref="ScopedLoggerWrapper{T}"/> (scoped). Any existing <see cref="ILogger{TCategoryName}"/> registration is removed first.
+    /// Unless already registered, a <see cref="NullLoggerProperties"/> is registered as <see cref="IAddPropertiesToLog"/> under the keys <c>"Scoped"</c> and <c>"Transient"</c>.
+    /// The registered loggers expose the fluent API of <see cref="ILoggerExtensions"/> (<c>Technical()</c>, <c>Business()</c>, <c>Monitoring()</c>), which also works on the
+    /// non-generic <see cref="ILogger"/> so that static classes can log by passing the type with <c>Technical(Type)</c> or <c>Technical&lt;T&gt;()</c>.
     /// </summary>
-    /// <param name="services"></param>
-    /// <returns><see cref="IServiceCollection"/></returns>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The same <see cref="IServiceCollection"/>, for chaining.</returns>
+    /// <example>
+    /// <code language="csharp">
+    /// builder.Services.AddILogger();
+    /// </code>
+    /// </example>
     public static IServiceCollection AddILogger(this IServiceCollection services)
     {
         services.RemoveAll(typeof(ILogger<>));

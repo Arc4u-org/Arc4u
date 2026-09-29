@@ -70,7 +70,6 @@ public sealed class DaprCache : ICache
     /// <summary>Creates the Dapr client and reads the name of the state store from the <see cref="DaprCacheOption"/> named <paramref name="store"/>. Calling it again on an initialized cache only logs a warning.</summary>
     /// <param name="store">The name of the cache, as declared in the configuration.</param>
     /// <exception cref="ArgumentException"><paramref name="store"/> is empty.</exception>
-    /// <exception cref="NullReferenceException">No state store name is defined in the options.</exception>
     public void Initialize(string store)
     {
         lock (_logger)
