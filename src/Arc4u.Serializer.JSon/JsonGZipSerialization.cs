@@ -37,13 +37,16 @@ public class JsonGZipSerialization : JsonCompressedStreamSerialization
     {
     }
 
+    /// <inheritdoc/>
     protected override string SerializerType => "Json+GZipCompression";
 
+    /// <inheritdoc/>
     protected override Stream CreateForCompression(Stream stream)
     {
         return new GZipStream(stream, CompressionLevel.Fastest, leaveOpen: true);
     }
 
+    /// <inheritdoc/>
     protected override Stream CreateForDecompression(Stream stream)
     {
         return new GZipStream(stream, CompressionMode.Decompress);

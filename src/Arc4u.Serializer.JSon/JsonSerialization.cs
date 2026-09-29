@@ -40,6 +40,7 @@ public class JsonSerialization : IObjectSerialization
         _context = context;
     }
 
+    /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     public byte[] Serialize<T>(T value)
@@ -56,6 +57,7 @@ public class JsonSerialization : IObjectSerialization
         }
     }
 
+    /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     public T? Deserialize<T>(byte[] data)
@@ -72,6 +74,7 @@ public class JsonSerialization : IObjectSerialization
         }
     }
 
+    /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     public object? Deserialize(byte[] data, Type objectType)

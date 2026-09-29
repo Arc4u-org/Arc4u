@@ -45,10 +45,16 @@ public abstract class JsonCompressedStreamSerializationBase
         _context = context;
     }
 
+    /// <summary>Gets the value written in the <c>SerializerType</c> tag of the current <see cref="System.Diagnostics.Activity"/>.</summary>
     protected abstract string SerializerType { get; }
 
+    /// <summary>Gets the pool of recyclable memory streams used to avoid large allocations.</summary>
     protected virtual RecyclableMemoryStreamManager RecyclableMemoryStreamManager => _recyclableMemoryStreamManager ??= new RecyclableMemoryStreamManager();
 
+    /// <summary>Writes the value as UTF-8 JSON to the stream, using the source generation context if one was given, otherwise the serializer options.</summary>
+    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <param name="utf8json">The stream that receives the JSON.</param>
+    /// <param name="value">The value to serialize.</param>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     protected void InternalSerialize<T>(Stream utf8json, T value)
@@ -63,6 +69,10 @@ public abstract class JsonCompressedStreamSerializationBase
         }
     }
 
+    /// <summary>Reads a value from a UTF-8 JSON stream, using the source generation context if one was given, otherwise the serializer options.</summary>
+    /// <typeparam name="T">The expected type of the value.</typeparam>
+    /// <param name="utf8json">The stream that contains the JSON.</param>
+    /// <returns>The deserialized value.</returns>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     protected T? InternalDeserialize<T>(Stream utf8json)
@@ -77,6 +87,10 @@ public abstract class JsonCompressedStreamSerializationBase
         }
     }
 
+    /// <summary>Reads a value of the given type from a UTF-8 JSON stream, using the source generation context if one was given, otherwise the serializer options.</summary>
+    /// <param name="utf8json">The stream that contains the JSON.</param>
+    /// <param name="returnType">The type of the object to create.</param>
+    /// <returns>The deserialized object.</returns>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     [UnconditionalSuppressMessage("Trimming", "IL3050", Justification = "The constructor is marked with RequiresUnreferencedCode.")]
     protected object? InternalDeserialize(Stream utf8json, Type returnType)

@@ -38,8 +38,10 @@ public class JsonBrotliSerialization : JsonCompressedStreamSerialization
     {
     }
 
+    /// <inheritdoc/>
     protected override string SerializerType => "Json+BrotliCompression";
 
+    /// <inheritdoc/>
     protected override Stream CreateForCompression(Stream stream)
     {
         // Be careful when choosing the compression level for Brötli.
@@ -47,6 +49,7 @@ public class JsonBrotliSerialization : JsonCompressedStreamSerialization
         return new BrotliStream(stream, CompressionLevel.Fastest, leaveOpen: true);
     }
 
+    /// <inheritdoc/>
     protected override Stream CreateForDecompression(Stream stream)
     {
         return new BrotliStream(stream, CompressionMode.Decompress);

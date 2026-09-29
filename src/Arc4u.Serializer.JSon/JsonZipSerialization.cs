@@ -6,6 +6,7 @@ using Microsoft.IO;
 
 namespace Arc4u.Serializer;
 
+/// <summary>Implements object serialization with JSON stored as a single entry (see <see cref="EntryName"/>) of a ZIP archive.</summary>
 public class JsonZipSerialization : JsonCompressedStreamSerializationBase, IObjectSerialization
 {
     /// <summary>
@@ -42,8 +43,10 @@ public class JsonZipSerialization : JsonCompressedStreamSerializationBase, IObje
     /// </summary>
     protected virtual string EntryName => "content";
 
+    /// <inheritdoc/>
     protected override string SerializerType => "Json+ZipArchive";
 
+    /// <inheritdoc/>
     public byte[] Serialize<T>(T value)
     {
         Activity.Current?.SetTag("SerializerType", SerializerType);
@@ -58,6 +61,11 @@ public class JsonZipSerialization : JsonCompressedStreamSerializationBase, IObje
         return output.ToArray();
     }
 
+    /// <summary>Reads the JSON entry of the ZIP archive and deserializes it.</summary>
+    /// <typeparam name="T">The expected type of the value.</typeparam>
+    /// <param name="data">The bytes of the ZIP archive.</param>
+    /// <returns>The deserialized value.</returns>
+    /// <exception cref="InvalidOperationException">The archive has no entry named <see cref="EntryName"/>.</exception>
     public T? Deserialize<T>(byte[] data)
     {
         Activity.Current?.SetTag("SerializerType", SerializerType);
@@ -73,6 +81,11 @@ public class JsonZipSerialization : JsonCompressedStreamSerializationBase, IObje
         return InternalDeserialize<T>(contentStream);
     }
 
+    /// <summary>Reads the JSON entry of the ZIP archive and deserializes it to the given type.</summary>
+    /// <param name="data">The bytes of the ZIP archive.</param>
+    /// <param name="objectType">The type of the object to create.</param>
+    /// <returns>The deserialized object.</returns>
+    /// <exception cref="InvalidOperationException">The archive has no entry named <see cref="EntryName"/>.</exception>
     public object? Deserialize(byte[] data, Type objectType)
     {
         Activity.Current?.SetTag("SerializerType", SerializerType);
