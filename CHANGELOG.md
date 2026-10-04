@@ -125,6 +125,9 @@ packages. It contains breaking changes: follow the
 - `TimeZoneContext` conversion from a specific local time.
 - Anonymous calls through service discovery.
 - Scope injection in `ILogger<T>`.
+- `FlagsEnum.TryPowerOfTwo` and `TryPowerOfTwoExponent` accepted values that are not powers of two,
+  so `FlagValues<T>()` also returned `None` and composite values
+  ([#261](https://github.com/Arc4u-org/Arc4u/issues/261)).
 
 ### Security
 

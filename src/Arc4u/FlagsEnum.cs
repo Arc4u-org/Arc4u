@@ -58,10 +58,12 @@ public static class FlagsEnum
         }
 
         var v = Math.Pow(2, Convert.ToDouble(power, CultureInfo.InvariantCulture));
-        if (Math.Floor(v) - v > epsilon)
+        if (double.IsNaN(v) || double.IsInfinity(v) || Math.Abs(Math.Round(v) - v) > epsilon)
         {
             return false;
         }
+
+        v = Math.Round(v);
 
         var underlyingValue = FlagsEnum.ConvertToUnderlyingEnumType<TEnum>(v);
         if (!Enum.IsDefined(type, underlyingValue))
@@ -150,13 +152,26 @@ public static class FlagsEnum
             return false;
         }
 
-        var v = Math.Log(Convert.ToDouble(value, CultureInfo.InvariantCulture), 2);
-        if (Math.Floor(v) - v > epsilon)
+        var d = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+        if (double.IsNaN(d) || double.IsInfinity(d) || d <= 0)
         {
             return false;
         }
 
-        result = (int)v;
+        var v = Math.Log2(d);
+        var exponent = Math.Round(v);
+        if (Math.Abs(exponent - v) > epsilon)
+        {
+            return false;
+        }
+
+        // For large integral values (e.g. 2^24 + 1) the logarithm is within epsilon of an integer, so require an exact match.
+        if (Math.Floor(d) == d && Math.Pow(2, exponent) != d)
+        {
+            return false;
+        }
+
+        result = (int)exponent;
         return true;
     }
 
