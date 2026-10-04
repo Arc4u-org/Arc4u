@@ -15,8 +15,11 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsRoslynComponent>true</IsRoslynComponent>
     <IsAotCompatible>false</IsAotCompatible>
-    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
+    <!-- No lib/ folder: avoid NU5128 (dependency group without matching lib) -->
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <Description>Source generators that turn Arc4u [Export] attributes and the Application.Dependency section of appsettings.json into IServiceCollection registrations at compile time.</Description>
   </PropertyGroup>
 
   <ItemGroup>
