@@ -24,28 +24,28 @@ namespace Arc4u.Dispatcher.Notification;
 public static class NotificationHandlersExtension
 {
     /// <summary>
-    /// Register notification handlers to used to publish notifications
+    /// Register notification handlers to used to publish notifications as Scoped.
     /// </summary>
     /// <param name="services"><see cref="IServiceCollection"/></param>
-    /// <param name="lifetime"><see cref="ServiceLifetime"/>. Singleton is registered ad Scoped</param>
-    public static void AddNotificationHandlersAsScoped(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Scoped)
+    public static void AddNotificationHandlersAsScoped(this IServiceCollection services)
     {
-        switch (lifetime)
-        {
-            case ServiceLifetime.Transient:
-                services.AddTransient(typeof(INotificationHandlers<>), typeof(NotificationHandlers<>));
-                services.AddTransient(typeof(INotificationHandlers<,>), typeof(NotificationHandlers<,>));
-                services.AddTransient(typeof(INotificationHandlers<,,>), typeof(NotificationHandlers<,,>));
-                services.AddTransient(typeof(INotificationHandlers<,,,>), typeof(NotificationHandlers<,,,>));
-                services.AddTransient(typeof(INotificationHandlers<,,,,>), typeof(NotificationHandlers<,,,,>));
-                break;
-            default:
-                services.AddScoped(typeof(INotificationHandlers<>), typeof(NotificationHandlers<>));
-                services.AddScoped(typeof(INotificationHandlers<,>), typeof(NotificationHandlers<,>));
-                services.AddScoped(typeof(INotificationHandlers<,,>), typeof(NotificationHandlers<,,>));
-                services.AddScoped(typeof(INotificationHandlers<,,,>), typeof(NotificationHandlers<,,,>));
-                services.AddScoped(typeof(INotificationHandlers<,,,,>), typeof(NotificationHandlers<,,,,>));
-                break;
-        }
+        services.AddScoped(typeof(INotificationHandlers<>), typeof(NotificationHandlers<>));
+        services.AddScoped(typeof(INotificationHandlers<,>), typeof(NotificationHandlers<,>));
+        services.AddScoped(typeof(INotificationHandlers<,,>), typeof(NotificationHandlers<,,>));
+        services.AddScoped(typeof(INotificationHandlers<,,,>), typeof(NotificationHandlers<,,,>));
+        services.AddScoped(typeof(INotificationHandlers<,,,,>), typeof(NotificationHandlers<,,,,>));
+    }
+
+    /// <summary>
+    /// Register notification handlers to used to publish notifications as Transient
+    /// </summary>
+    /// <param name="services"><see cref="IServiceCollection"/></param>
+    public static void AddNotificationHandlersAsTransient(this IServiceCollection services)
+    {
+        services.AddTransient(typeof(INotificationHandlers<>), typeof(NotificationHandlers<>));
+        services.AddTransient(typeof(INotificationHandlers<,>), typeof(NotificationHandlers<,>));
+        services.AddTransient(typeof(INotificationHandlers<,,>), typeof(NotificationHandlers<,,>));
+        services.AddTransient(typeof(INotificationHandlers<,,,>), typeof(NotificationHandlers<,,,>));
+        services.AddTransient(typeof(INotificationHandlers<,,,,>), typeof(NotificationHandlers<,,,,>));
     }
 }
