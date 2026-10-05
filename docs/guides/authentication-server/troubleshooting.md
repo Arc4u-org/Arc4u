@@ -149,7 +149,6 @@ when there is one.
 | JWT bearer | `HttpContext.User.Identity.Name` is `null` with `AddJwtAuthentication`: no name claim type is set and the claims are not mapped. | `PostConfigure<JwtBearerOptions>` with `NameClaimType = "name"`, see [What is validated](jwt-bearer.md#what-is-validated). |
 | All | `Authentication:TokenCache:CacheName` is required, even for an API that makes no outgoing call. | Point it to any configured cache. |
 | Resource rights | `UseResourcesRightValidationFor(sectionName)` adds nothing, without error, when the section does not exist. | Check the section path. |
-| Principal cache | `ServerPrincipalCache.Put(key, timeout, value, isSlided)` stores the `isSlided` boolean instead of the value, so the value is not cached. | Use the `PutAsync` overload, or the cache of `ICacheHelper.GetCache()`. |
 | Custom root CA | When the standard certificate validation fails, `ConfigureLocalCaCertificate` (and `ConfigureLocalCaCertificateForGrpc`) only check the chain: a certificate of the custom authority for another host name is accepted. | Issue certificates of the private authority only to trusted services. |
 | Middleware | `UseAddContextToPrincipal()` assumes that the request has an `Activity.Current` and answers 500 (`NullReferenceException`) when ASP.NET Core creates none, for example in an integration test without logging provider nor activity listener ([#124](https://github.com/Arc4u-org/Arc4u/issues/124)). | Keep a logging provider or an activity listener, or do not add the middleware in that host. |
 

@@ -75,7 +75,7 @@ public class ServerPrincipalCache : ISecureCache
     /// <inheritdoc/>
     public void Put<T>(string key, TimeSpan timeout, T value, bool isSlided = false)
     {
-        _cache?.Put(key, timeout, isSlided);
+        _cache?.Put(key, timeout, value, isSlided);
     }
 
     /// <inheritdoc/>
