@@ -60,6 +60,12 @@ front of a name that starts with a digit.
 | `Contoso.Billing.Business` | `RegisterBusinessTypes` |
 | `Contoso.Worker` | `RegisterWorkerTypes` |
 
+The name is the layer of the project, not its full name, because a host references the layers of a
+single microservice, where each layer exists once. Every generated method is an extension of
+`IServiceCollection` in the `Arc4u.Dependency` namespace, so two referenced projects with the same
+last segment make the call ambiguous (`CS0121`) (see
+[Register the services of several projects](index.md#register-the-services-of-several-projects)).
+
 The method is generated even when the project has no `[Export]` class; it is then empty.
 
 ### What is registered
@@ -147,14 +153,16 @@ public static partial class RegisterExtensions
 ### Which file is read
 
 The generator reads an additional file whose path, relative to the project, is exactly
-`Configs/appsettings.json` or `wwwroot/appsettings.json` (case-insensitive). The generator takes as
-project folder the shortest folder path that contains a `.cs` file of the compilation, so keep at
-least one source file, such as `Program.cs`, directly in the project folder. Other files named
+`Configs/appsettings.json` or `wwwroot/appsettings.json` (case-insensitive). The project folder is
+the `ProjectDir` MSBuild property, which every project using the .NET SDK sets. When the property
+is missing, the generator falls back to the shortest folder path that contains a `.cs` file of the
+compilation, and reports warning `ARC4UDEP007` if there is none. Other files named
 `appsettings.json` are ignored, even when declared as additional files.
 
-The file is parsed with `System.Text.Json` defaults: no comments, no trailing commas,
-case-sensitive property names. If parsing fails, the build shows warning `CS8785` and no method is
-generated. If the file has no `Application.Dependency` section, the method is generated empty.
+The file is parsed with `System.Text.Json`, accepting comments and trailing commas. Property names
+are case-sensitive. If the file cannot be read, the build reports error `ARC4UDEP001` at the
+offending line and the method is generated empty, so that its callers still compile. If the file
+has no `Application.Dependency` section, the method is generated empty.
 
 ### Entry format
 
@@ -170,18 +178,20 @@ generated. If the file has no `Application.Dependency` section, the method is ge
 
 Each entry of `RegisterTypes` is a string `Namespace.Type, AssemblyName`:
 
-- `AssemblyName` is matched against the files the project references: the first reference whose
-  path ends with `AssemblyName.dll` is used. Package references and project references both work.
-- Do not add `Version=`. When a version is present, the path of the reference must also contain
-  that version string. A four-part version such as `Version=9.0.0.0` never matches a NuGet folder
-  such as `9.0.0-preview37`, and the entry is skipped.
+- `AssemblyName` is matched against the names of the assemblies the project references. Package
+  references and project references both work.
+- `Version=` is optional. When present, it is compared with the assembly version of the reference
+  (`Version=9.0.0.0` matches the assembly of package `9.0.0-preview37`); only the parts given are
+  compared, so `Version=9.0` matches `9.0.1.0`. A reference whose path contains the version string
+  is also accepted.
 - The assembly is read as metadata, without being loaded. The type must be public, since the
   generated code references it, and must not be nested in another type: nested types are skipped.
 - The registration follows the `[Export]`, `[Shared]` and `[Scoped]` attributes of the type, with
   the same table as `DependencyToolGenerator`, except that a type with both `[Shared]` and `[Scoped]`
   is registered as a singleton here.
-- An entry whose assembly or type is not found, or whose type has no `[Export]`, is skipped without
-  a warning.
+- An entry that cannot be registered is skipped with a warning that points at it in
+  `appsettings.json`: `ARC4UDEP002` for a malformed entry, `ARC4UDEP003` when the assembly is not
+  referenced or has another version, `ARC4UDEP004` when the type is not found or has no `[Export]`.
 
 The generated method groups the registrations by assembly:
 

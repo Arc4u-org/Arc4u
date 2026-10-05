@@ -66,13 +66,13 @@ produces a warning:
      you do not want registered.
    - Keep `RegisterTypes` for the types of other packages. Put the section in
      `Configs/appsettings.json` of the host project, declare that file as `AdditionalFiles`, and
-     write each entry as a string without comments in the file (see
+     write each entry as a string (see
      [appsettings.json](index.md#appsettingsjson)).
    - Rename the assembly part of each entry to its 9 name: 8.x entries name 8.x assemblies, for
      example `"Arc4u.AppSettings, Arc4u.Standard.Configuration"` becomes
      `"Arc4u.AppSettings, Arc4u.Configuration"` (see
      [Package renames](../../migration/8x-to-9.md#package-renames)). An entry that still names an
-     8.x assembly is skipped without a warning.
+     8.x assembly is skipped with warning `ARC4UDEP003`.
    - Replace any `[ExportAttribute(...)]` spelling with `[Export(...)]`, and register yourself the
      contracts of classes that have several `[Export]` attributes (see [What changed](#what-changed)).
 4. Replace `IContainerResolve` with `IServiceProvider`, or better, inject the services themselves

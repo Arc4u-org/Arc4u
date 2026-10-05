@@ -170,9 +170,9 @@ The second generator reads the `Application.Dependency` section of the file
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `Application.Dependency:RegisterTypes` | array of strings | empty | Types to register, each written `Namespace.Type, AssemblyName`. The assembly must be referenced by the project and the type must carry `[Export]`; entries that do not match are skipped. |
+| `Application.Dependency:RegisterTypes` | array of strings | empty | Types to register, each written `Namespace.Type, AssemblyName`. The assembly must be referenced by the project and the type must carry `[Export]`; entries that do not match are skipped with a warning. |
 
-The file is parsed with strict JSON rules: no comments and no trailing commas. Key names are
+Comments and trailing commas are accepted, as in any `appsettings.json`. Key names are
 case-sensitive. The 8.x keys `Assemblies` and `RejectedTypes` are no longer read. The
 [source generator reference](source-generators.md#generateregisteredtypes) lists every matching rule.
 
@@ -298,8 +298,8 @@ listed.
 
 ### Register the services of several projects
 
-Each project that references `Arc4u.Dependency.Tool` gets its own method, named after its assembly.
-The host calls all of them:
+Each project that references `Arc4u.Dependency.Tool` gets its own method, named after the last
+segment of its assembly name. The host calls all of them:
 
 ```csharp
 // Program.cs of Contoso.Api, which references Contoso.Billing.Business and Contoso.Billing.Data
@@ -312,11 +312,19 @@ builder.Services.RegisterApiTypes();
 builder.Services.RegisterTypes();
 ```
 
-- Give each project a different last segment in its assembly name. Two referenced projects named
-  `Contoso.Billing.Business` and `Contoso.Shipping.Business` both produce `RegisterBusinessTypes`,
-  and the call is ambiguous (error `CS0121`).
-- Declare `Configs/appsettings.json` as an additional file in one project only, usually the host,
-  for the same reason: each such project produces a `RegisterTypes` method.
+The method names follow the Arc4u solution layout: a microservice has one host and one project
+per layer (`Domain`, `Business`, `Data`, `Facade`...). The last segment of the assembly name is the
+layer, and each layer exists once in a service, so `RegisterBusinessTypes` names the business layer
+of *this* service.
+
+> [!IMPORTANT]
+> A host references the layers of one service only. Two referenced projects whose names end with
+> the same layer, such as `Contoso.Billing.Business` and `Contoso.Shipping.Business`, both produce
+> `RegisterBusinessTypes`, and the call is ambiguous (error `CS0121`). This means that two services
+> are being hosted as one: give each service its own host, and let them talk through their APIs.
+> Likewise, declare `Configs/appsettings.json` as an additional file in the host only: each project
+> that declares it produces a `RegisterTypes` method.
+
 - The generated methods use `Add...`, not `TryAdd...`. A class registered by its own project and
   also listed in `RegisterTypes` is registered twice.
 
@@ -419,36 +427,37 @@ The `GenerateRegisteredTypes` generator did not find the file. Check that:
 - the file is at `Configs/appsettings.json` (or `wwwroot/appsettings.json` for `RegisterWwwTypes`)
   relative to the project folder; an `appsettings.json` at the root of the project is not read;
 - the file is declared with `<AdditionalFiles Include="Configs/appsettings.json" />`;
-- at least one `.cs` file sits directly in the project folder (usually `Program.cs`). The generator
-  locates `Configs` relative to the shortest folder path that contains source files;
-- the build output has no `CS8785` warning (next section).
+- the build output has no `ARC4UDEP007` warning: the project folder is read from the `ProjectDir`
+  MSBuild property, which every project using the .NET SDK sets.
+
+A file that cannot be read still produces `RegisterTypes`, empty, with error `ARC4UDEP001` (next
+section).
 
 The same error for `Register<Name>Types` means that the file lacks `using Arc4u.Dependency;`, that
 the project does not reference `Arc4u.Dependency.Tool`, or that the name does not match the last
 segment of the assembly name.
 
-### CS8785: Generator 'GenerateRegisteredTypes' failed to generate source
+### ARC4UDEP001: The appsettings.json file cannot be read
 
-The file cannot be read as the expected JSON. The message says why:
+The error points at the line of `appsettings.json` where reading stopped, and the generated method
+registers no type. The message says why, for example:
 
-- `JsonReaderException ... '/' is invalid after a value`: the file contains comments. Remove them.
-- `JsonReaderException ... The JSON array contains a trailing comma at the end which is not
-  supported in this mode`: the file contains a trailing comma. Remove it.
-- `JsonException: The JSON value could not be converted to System.String. Path: $.RegisterTypes[0]`:
-  the entries use the old object form (`{ "Type": "..." }`). Write each entry as a string.
+- `'"' is invalid after a value. Expected either ',', '}', or ']'`: a comma is missing between two
+  entries.
+- `The JSON value could not be converted to System.String. Path: $.RegisterTypes[0]`: the entries
+  use the old object form (`{ "Type": "..." }`). Write each entry as a string.
+- `the 'Application.Dependency' section must be an object whose RegisterTypes property is an array of
+  strings`: `RegisterTypes` is missing, `null` or a single string.
 
 ### A type listed in RegisterTypes is not registered
 
-The generator skips an entry without warning when:
+Each skipped entry produces a warning that points at the entry in `appsettings.json`:
 
-- the assembly name after the comma does not match a referenced assembly file (`<Name>.dll`);
-- the entry contains a `Version=` part that does not appear in the path of the referenced assembly.
-  A four-part version such as `Version=9.0.0.0` never matches a NuGet folder such as
-  `9.0.0-preview37`. Leave `Version=` out;
-- the assembly name is an 8.x name such as `Arc4u.Standard.Configuration` (see
-  [Package renames](../../migration/8x-to-9.md#package-renames));
-- the type name is misspelled, the type is nested in another type, or it has no `[Export]`
-  attribute.
+| Warning | Cause |
+|---|---|
+| `ARC4UDEP002` | The entry is not written `Namespace.Type, AssemblyName`, or its `Version=` is not a version number. |
+| `ARC4UDEP003` | The project does not reference the assembly, for example because the entry uses an 8.x name such as `Arc4u.Standard.Configuration` (see [Package renames](../../migration/8x-to-9.md#package-renames)), or the referenced assembly has another version than `Version=`. |
+| `ARC4UDEP004` | The assembly has no public, non-nested type of that name with the `[Export]` attribute: the name is misspelled, the type is nested in another type, or it has no `[Export]`. |
 
 Inspect the generated `GeneratedTypes.g.cs` file (see
 [Inspect the generated code](#inspect-the-generated-code)).
@@ -477,7 +486,10 @@ generic contracts such as `[Export(typeof(IRepository<Order>))]` work.
 
 ### CS0121: The call is ambiguous between the following methods or properties
 
-Two referenced projects generate a method with the same name. See
+Two referenced projects generate a method with the same name: either they belong to two services
+(for example `Contoso.Billing.Business` and `Contoso.Shipping.Business`), or two projects declare
+`Configs/appsettings.json` as an additional file. A host references the layers of one service only,
+and only the host declares the settings file. See
 [Register the services of several projects](#register-the-services-of-several-projects).
 
 ### InvalidOperationException: No service for type 'X' has been registered
