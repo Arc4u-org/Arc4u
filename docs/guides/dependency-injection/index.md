@@ -190,7 +190,14 @@ case-sensitive. The 8.x keys `Assemblies` and `RejectedTypes` are no longer read
 | `[Export("key")]` | `services.AddKeyedTransient<TClass>("key")` |
 
 `[Shared]` and `[Scoped]` combine with every form of `[Export]` (for example
-`[Export("key", typeof(IService)), Scoped]` gives `AddKeyedScoped`). Use one of them, not both.
+`[Export("key", typeof(IService)), Scoped]` gives `AddKeyedScoped`). Use one of them, not both: a
+class with both is registered as scoped, with warning `ARC4UDEP005`.
+
+An open generic class is registered with `typeof`: `[Export(typeof(IRepository<>)), Scoped]` on
+`Repository<T> : IRepository<T>` gives
+`services.AddScoped(typeof(IRepository<>), typeof(Repository<>))`. The class must implement the
+contract with its own type parameters, in the same order; otherwise the build reports error
+`ARC4UDEP006`.
 
 ### Register and resolve keyed services
 
@@ -376,7 +383,7 @@ warnings.
 ### Register what the attributes cannot express
 
 The attributes cover one class and one contract. For anything else, use the `IServiceCollection`
-methods of .NET next to the generated call: open generic types, factories, existing instances and
+methods of .NET next to the generated call: factories, existing instances and
 `TryAdd...` registrations.
 
 ```csharp
@@ -471,18 +478,28 @@ Inspect the generated `GeneratedTypes.g.cs` file (see
 >   `[ExportAttribute(...)]` or `[Arc4u.Dependency.Attribute.Export(...)]` is silently skipped.
 > - `[Export]` accepts several instances on a class, but only the first one is registered.
 > - `[Export]` on a `record` is ignored.
-> - A class with both `[Shared]` and `[Scoped]` is registered as scoped, but the same class listed
->   in `RegisterTypes` is registered as a singleton.
 
 Write the attribute as `[Export(...)]` with `using Arc4u.Dependency.Attribute;`, and register the
 other contracts of a multi-contract class yourself.
 
-### Build errors in Dependencies.g.cs for a generic class
+### ARC4UDEP005: A type has both [Shared] and [Scoped]
 
-The generator does not support open generic types: `[Export(typeof(IRepository<>))]` on
-`Repository<T>` produces code that does not compile (`CS7003`, `CS0246`). Remove the attribute and
-register the type with `services.AddScoped(typeof(IRepository<>), typeof(Repository<>))`. Closed
-generic contracts such as `[Export(typeof(IRepository<Order>))]` work.
+Both generators register the type as scoped and report this warning, at the class or at its entry in
+`appsettings.json`. Remove the attribute that does not apply.
+
+### ARC4UDEP006: Generic exported type cannot be registered
+
+The class is skipped, and the message says why:
+
+- an open generic class (`Repository<T>`) is exported with a closed or non-generic contract such as
+  `typeof(IRepository<Order>)`: export it with `typeof(IRepository<>)`;
+- the contract is open (`typeof(IRepository<>)`) but the class is not generic: export it with a
+  closed contract such as `typeof(IRepository<Order>)`;
+- the class does not implement the open contract with its own type parameters in the same order
+  (`Map<TKey, TValue> : IMap<TValue, TKey>`), so the container cannot build it;
+- the class is nested in a generic class;
+- the entry of `RegisterTypes` names a generic type (``Namespace.Type`1``): register it in code with
+  `services.Add...(typeof(...), typeof(...))`.
 
 ### CS0121: The call is ambiguous between the following methods or properties
 

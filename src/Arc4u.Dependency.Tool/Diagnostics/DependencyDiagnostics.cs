@@ -41,6 +41,22 @@ internal static class DependencyDiagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor ConflictingLifetimes = new(
+        id: "ARC4UDEP005",
+        title: "A type has both the [Shared] and [Scoped] attributes",
+        messageFormat: "'{0}' has both [Shared] and [Scoped]: it is registered as scoped. Remove the attribute that does not apply.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor GenericExportNotSupported = new(
+        id: "ARC4UDEP006",
+        title: "Generic exported type cannot be registered",
+        messageFormat: "'{0}' is not registered: {1}",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor ProjectDirectoryUnknown = new(
         id: "ARC4UDEP007",
         title: "The project folder cannot be determined",

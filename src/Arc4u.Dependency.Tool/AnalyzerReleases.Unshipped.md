@@ -9,4 +9,6 @@ ARC4UDEP001 | Arc4u.Dependency | Error | DependencyDiagnostics
 ARC4UDEP002 | Arc4u.Dependency | Warning | DependencyDiagnostics
 ARC4UDEP003 | Arc4u.Dependency | Warning | DependencyDiagnostics
 ARC4UDEP004 | Arc4u.Dependency | Warning | DependencyDiagnostics
+ARC4UDEP005 | Arc4u.Dependency | Warning | DependencyDiagnostics
+ARC4UDEP006 | Arc4u.Dependency | Error | DependencyDiagnostics
 ARC4UDEP007 | Arc4u.Dependency | Warning | DependencyDiagnostics

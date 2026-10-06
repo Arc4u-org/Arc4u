@@ -42,11 +42,11 @@ public class DependencyToolGenerator : IIncrementalGenerator
                                      compilationAndData,
                                      (spc, source) =>
                                      {
-                                         spc.AddSource("Dependencies.g.cs", SourceText.From(GenerateRegisterTypes(source.Left.AssemblyName, source.Right), Encoding.UTF8));
+                                         spc.AddSource("Dependencies.g.cs", SourceText.From(GenerateRegisterTypes(source.Left.AssemblyName, source.Right, spc.ReportDiagnostic), Encoding.UTF8));
                                      });
     }
 
-    private string GenerateRegisterTypes(string? assemblyName, ImmutableArray<(INamedTypeSymbol Type, Location Location)?> classes)
+    private string GenerateRegisterTypes(string? assemblyName, ImmutableArray<(INamedTypeSymbol Type, Location Location)?> classes, Action<Diagnostic> reportDiagnostic)
     {
         var sb = new StringBuilder();
 
@@ -67,39 +67,67 @@ public class DependencyToolGenerator : IIncrementalGenerator
             sb.AppendLine("    {");
             foreach (var _class in classes)
             {
+                var (type, location) = _class!.Value;
+
                 // Read the Export attribute information.
-                var type = _class!.Value.Type.GetAttributes().Select(a => a.AttributeClass!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)).ToList();
-                var exportAttribute = _class?.Type.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Arc4u.Dependency.Attribute.ExportAttribute");
-                var isScoped = IsScoped(_class?.Type);
-                var isShared = IsShared(_class?.Type);
-
-                if (exportAttribute is not null)
+                var exportAttribute = type.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Arc4u.Dependency.Attribute.ExportAttribute");
+                if (exportAttribute is null)
                 {
-                    var (contractName, contractType) = GetExportAttribute(exportAttribute);
-                    var action = isScoped ? "Scoped" : isShared ? "Singleton" : "Transient";
+                    continue;
+                }
 
-                    if (contractType is null)
+                var isScoped = IsScoped(type);
+                var isShared = IsShared(type);
+
+                // Scoped wins, as in GenerateRegisteredTypes: the shorter lifetime cannot capture a scoped dependency in a singleton.
+                if (isScoped && isShared)
+                {
+                    reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.ConflictingLifetimes, location, type.ToDisplayString()));
+                }
+
+                var (contractName, contractType) = GetExportAttribute(exportAttribute);
+                var action = isScoped ? "Scoped" : isShared ? "Singleton" : "Transient";
+
+                if (GetGenericError(type, contractType) is { } error)
+                {
+                    reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.GenericExportNotSupported, location, type.ToDisplayString(), error));
+                    continue;
+                }
+
+                if (type.Arity > 0)
+                {
+                    // An open generic is registered with the non-generic overloads: typeof(IService<>), typeof(TClass<>).
+                    var implementation = $"typeof({type.ConstructUnboundGenericType().ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
+                    var service = contractType is null ? implementation : $"typeof({contractType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
+                    var key = null != contractName ? $"\"{contractName}\", " : "";
+                    var keyed = null != contractName ? "Keyed" : "";
+                    sb.AppendLine(contractType is null && null == contractName
+                        ? $"        services.Add{action}({implementation});"
+                        : $"        services.Add{keyed}{action}({service}, {key}{implementation});");
+                    continue;
+                }
+
+                var typeName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                if (contractType is null)
+                {
+                    if (null != contractName)
                     {
-                        if (null != contractName)
-                        {
-                            sb.AppendLine($"        services.AddKeyed{action}<{_class?.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>(\"{contractName}\");");
-                        }
-                        else
-                        {
-                            sb.AppendLine($"        services.Add{action}<{_class?.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>();");
-                        }
+                        sb.AppendLine($"        services.AddKeyed{action}<{typeName}>(\"{contractName}\");");
                     }
                     else
                     {
-                        if (null != contractName)
-                        {
-                            sb.AppendLine($"        services.AddKeyed{action}<{contractType}, {_class?.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>(\"{contractName}\");");
-                        }
-                        else
-                        {
-                            sb.AppendLine($"        services.Add{action}<{contractType}, {_class?.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>();");
-                        }
-
+                        sb.AppendLine($"        services.Add{action}<{typeName}>();");
+                    }
+                }
+                else
+                {
+                    if (null != contractName)
+                    {
+                        sb.AppendLine($"        services.AddKeyed{action}<{contractType}, {typeName}>(\"{contractName}\");");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"        services.Add{action}<{contractType}, {typeName}>();");
                     }
                 }
             }
@@ -109,16 +137,64 @@ public class DependencyToolGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
+    // Returns why a class involving generics cannot be registered, or null when it can.
+    private static string? GetGenericError(INamedTypeSymbol type, ITypeSymbol? contractType)
+    {
+        for (var containing = type.ContainingType; containing is not null; containing = containing.ContainingType)
+        {
+            if (containing.Arity > 0)
+            {
+                return $"it is nested in the generic type '{containing.ToDisplayString()}'";
+            }
+        }
+
+        var openContract = contractType is INamedTypeSymbol { IsUnboundGenericType: true } ? (INamedTypeSymbol)contractType : null;
+        if (type.Arity == 0)
+        {
+            return openContract is null
+                ? null
+                : $"the contract '{openContract.ToDisplayString()}' is an open generic type, so the class must be an open generic type with the same type parameters";
+        }
+
+        if (contractType is null)
+        {
+            return null;
+        }
+
+        if (openContract is null)
+        {
+            return $"an open generic class must be exported with an open generic contract, such as typeof({type.ConstructUnboundGenericType().ToDisplayString()}), not with '{contractType.ToDisplayString()}'";
+        }
+
+        // The container closes the class with the type arguments of the requested service, in the same order.
+        var expected = openContract.OriginalDefinition.Construct(type.TypeParameters.CastArray<ITypeSymbol>().ToArray());
+        var implemented = type.AllInterfaces.Cast<ITypeSymbol>().Concat(BaseTypes(type));
+        if (!implemented.Any(t => SymbolEqualityComparer.Default.Equals(t, expected)))
+        {
+            return $"it must derive from or implement '{expected.ToDisplayString()}' to be registered as '{openContract.ToDisplayString()}'";
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<ITypeSymbol> BaseTypes(INamedTypeSymbol type)
+    {
+        for (var baseType = type.BaseType; baseType is not null; baseType = baseType.BaseType)
+        {
+            yield return baseType;
+        }
+    }
+
     private string ExtractName(string assemblyName)
     {
         return ClassNameCleaner.CleanClassName(assemblyName.Split('.').Last().Trim());
     }
     // Fetch the ContractName property value from the Export attribute.
-    private static (string? contractName, string? contractType) GetExportAttribute(AttributeData attribute)
+    private static (string? contractName, ITypeSymbol? contractType) GetExportAttribute(AttributeData attribute)
     {
         var constructorArguments = attribute.ConstructorArguments;
         string? contractName = null;
-        string? contractType = null;
+        ITypeSymbol? contractType = null;
 
         // Iterate over the constructor arguments and retrieve their values
         foreach (var constructorArgument in constructorArguments)
@@ -129,7 +205,7 @@ public class DependencyToolGenerator : IIncrementalGenerator
             }
             if (constructorArgument.Type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::System.Type")
             {
-                contractType = constructorArgument.Value?.ToString();
+                contractType = constructorArgument.Value as ITypeSymbol;
             }
         }
 
@@ -163,7 +239,7 @@ public class DependencyToolGenerator : IIncrementalGenerator
                     var symbol = (INamedTypeSymbol?)context.SemanticModel.GetDeclaredSymbol(classDeclaration);
                     if (symbol != null)
                     {
-                        return (symbol, classDeclaration.GetLocation());
+                        return (symbol, classDeclaration.Identifier.GetLocation());
                     }
                 }
             }

@@ -73,7 +73,8 @@ The method is generated even when the project has no `[Export]` class; it is the
 The generator visits every class declared in the project, public or not, including nested classes.
 Records are not visited. For each class with an `[Export]` attribute it writes one registration. The lifetime is
 `Scoped` when the class has `[Scoped]`, otherwise `Singleton` when it has `[Shared]`, otherwise
-`Transient`.
+`Transient`. A class with both `[Scoped]` and `[Shared]` is registered as scoped, with warning
+`ARC4UDEP005`.
 
 | `[Export]` arguments | Generated call |
 |---|---|
@@ -81,6 +82,13 @@ Records are not visited. For each class with an `[Export]` attribute it writes o
 | `typeof(IService)` | `services.Add{Lifetime}<IService, TClass>()` |
 | `"key"` | `services.AddKeyed{Lifetime}<TClass>("key")` |
 | `"key", typeof(IService)` | `services.AddKeyed{Lifetime}<IService, TClass>("key")` |
+
+An open generic class `TClass<T>` is registered with the `Type` overloads instead:
+`services.Add{Lifetime}(typeof(TClass<>))`, `services.Add{Lifetime}(typeof(IService<>), typeof(TClass<>))`
+or `services.AddKeyed{Lifetime}(typeof(IService<>), "key", typeof(TClass<>))`. The contract must be
+open (`typeof(IService<>)`) and implemented by the class with its type parameters in the same order.
+Any other generic combination, or a class nested in a generic class, is skipped with error
+`ARC4UDEP006`.
 
 For example, this project `Contoso.Billing.Business`:
 
@@ -145,8 +153,6 @@ public static partial class RegisterExtensions
 >   `[Arc4u.Dependency.Attribute.Export(...)]` are ignored without a warning.
 > - Only the first `[Export]` of a class is used, although the attribute allows several.
 > - `[Export]` on a `record` is ignored without a warning.
-> - An open generic class (`[Export(typeof(IRepository<>))]` on `Repository<T>`) produces code that
->   does not compile. Register open generics with `services.Add...(typeof(...), typeof(...))`.
 
 ## GenerateRegisteredTypes
 
@@ -187,8 +193,9 @@ Each entry of `RegisterTypes` is a string `Namespace.Type, AssemblyName`:
 - The assembly is read as metadata, without being loaded. The type must be public, since the
   generated code references it, and must not be nested in another type: nested types are skipped.
 - The registration follows the `[Export]`, `[Shared]` and `[Scoped]` attributes of the type, with
-  the same table as `DependencyToolGenerator`, except that a type with both `[Shared]` and `[Scoped]`
-  is registered as a singleton here.
+  the same table as `DependencyToolGenerator`: a type with both `[Shared]` and `[Scoped]` is
+  registered as scoped, with warning `ARC4UDEP005`. A generic type cannot be listed: it is skipped
+  with error `ARC4UDEP006`.
 - An entry that cannot be registered is skipped with a warning that points at it in
   `appsettings.json`: `ARC4UDEP002` for a malformed entry, `ARC4UDEP003` when the assembly is not
   referenced or has another version, `ARC4UDEP004` when the type is not found or has no `[Export]`.
