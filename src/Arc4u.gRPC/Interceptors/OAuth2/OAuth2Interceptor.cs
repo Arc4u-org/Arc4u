@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.Diagnostics;
 using Arc4u.OAuth2;
+using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Token;
 using Arc4u.Security.Principal;
 using Grpc.Core;
@@ -33,6 +35,28 @@ public class OAuth2Interceptor<T> : Interceptor
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         _settings = keyValuesSettings ?? throw new ArgumentNullException(nameof(keyValuesSettings));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OAuth2Interceptor{T}"/> class with the settings registered by name.
+    /// </summary>
+    /// <param name="serviceProvider"><see cref="IServiceProvider"/>, also used to resolve the settings.</param>
+    /// <param name="logger"><see cref="ILogger"/></param>
+    /// <param name="resolvingName">The name of the <see cref="SimpleKeyValueSettings"/> options holding the property bag for the token provider.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="serviceProvider"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ConfigurationException">No settings exist with that name.</exception>
+    public OAuth2Interceptor(IServiceProvider serviceProvider, ILogger<T> logger, string resolvingName)
+        : this(serviceProvider, logger, ResolveSettings(serviceProvider, resolvingName))
+    {
+    }
+
+    private static IKeyValueSettings ResolveSettings(IServiceProvider serviceProvider, string resolvingName)
+    {
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        return serviceProvider.TryGetNamedSettings(resolvingName, out var settings)
+            ? settings
+            : throw new ConfigurationException($"No settings found for {resolvingName}.");
     }
 
     private readonly IKeyValueSettings _settings;

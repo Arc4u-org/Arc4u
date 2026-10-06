@@ -33,13 +33,15 @@ the Arc4u source generator registers the exported ones (see
 ## Add the handler to an HttpClient
 
 Build a <xref:Arc4u.OAuth2.Token.JwtHttpHandler`1> with the service provider, a logger and the
-named settings, in `AddHttpMessageHandler`. The type parameter only sets the logger category.
+name of the settings, in `AddHttpMessageHandler`: the handler resolves the named
+`SimpleKeyValueSettings` options and throws `ConfigurationException` when none exist with that
+name. Another constructor takes the `IKeyValueSettings` themselves. The type parameter only sets
+the logger category.
 
 ```csharp
 // Program.cs
 using Arc4u.Configuration;
 using Arc4u.OAuth2.Token;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +51,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler<InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("Inventory")));
+        "Inventory"));
 
 var app = builder.Build();
 app.Run();
@@ -81,7 +83,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
 static JwtHttpHandler<InventoryClient> CreateHandler(IServiceProvider sp, string settingsName)
     => new(sp,
            sp.GetRequiredService<ILogger<InventoryClient>>(),
-           sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get(settingsName));
+           settingsName);
 ```
 
 A handler whose token provider sends a custom header (a remote secret with a `HeaderKey` other
@@ -120,7 +122,6 @@ client factory (`Grpc.Net.ClientFactory` package):
 // Program.cs
 using Arc4u.Configuration;
 using Arc4u.gRPC.Interceptors;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -130,7 +131,7 @@ builder.Services.AddGrpcClient<Inventory.InventoryClient>(options => options.Add
     .AddInterceptor(sp => new OAuth2Interceptor<Inventory.InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<Inventory.InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("Inventory")));
+        "Inventory"));
 
 var app = builder.Build();
 app.Run();

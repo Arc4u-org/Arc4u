@@ -83,7 +83,6 @@ using Arc4u.Dependency;
 using Arc4u.OAuth2.Token;
 using Arc4u.OAuth2.TokenProvider;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Options;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -96,13 +95,14 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler(
         sp,
         sp.GetRequiredService<ILogger<JwtHttpHandler>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("OAuth2")));
+        "OAuth2"));
 
 await builder.Build().RunAsync();
 ```
 
 `AttachCookiesHandler` must be registered because `AddAuthenticationCookie` adds it to its
-`HttpClient`. <xref:Arc4u.Blazor.Handlers.JwtHttpHandler> sends the token in the `Authorization`
+`HttpClient`. <xref:Arc4u.Blazor.Handlers.JwtHttpHandler> resolves the settings named `OAuth2`
+(it throws `ConfigurationException` when none exist), and sends the token in the `Authorization`
 header, with the token type as the scheme; when the provider fails, it logs the error and sends
 the request without a token. `ClientTokenProvider` keeps the token until it expires, so the token
 must be a JWT (it reads its expiration).
@@ -161,7 +161,6 @@ using Arc4u.Blazor.Options;
 using Arc4u.Security.Principal;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Options;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 

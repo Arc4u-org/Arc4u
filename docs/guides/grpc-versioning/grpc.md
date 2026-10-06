@@ -126,32 +126,24 @@ public class OrderGrpcService : OrderService.OrderServiceBase
 ### Client
 
 Register the generated client with the client factory and add the interceptor that forwards the
-token. `OAuth2Interceptor<T>` has no default constructor: derive from it and pick the token
-settings by name.
-
-```csharp
-using Arc4u.Configuration;
-using Arc4u.gRPC.Interceptors;
-using Microsoft.Extensions.Options;
-
-public class BearerInterceptor(
-    IServiceProvider serviceProvider,
-    ILogger<BearerInterceptor> logger,
-    IOptionsMonitor<SimpleKeyValueSettings> settings)
-    : OAuth2Interceptor<BearerInterceptor>(serviceProvider, logger, settings.Get("OAuth2"));
-```
+token. Build `OAuth2Interceptor<T>` with the name of the token settings: it resolves the named
+`SimpleKeyValueSettings` options and throws `ConfigurationException` when none exist with that
+name. Another constructor takes the `IKeyValueSettings` themselves.
 
 ```csharp
 // Program.cs
+using Arc4u.gRPC.Interceptors;
 using Arc4u.Security.Principal;
 using Orders.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationContext();
-builder.Services.AddTransient<BearerInterceptor>();
 builder.Services.AddGrpcClient<OrderService.OrderServiceClient>(options => options.Address = new Uri("https://orders.example.com"))
-                .AddInterceptor<BearerInterceptor>();
+                .AddInterceptor(sp => new OAuth2Interceptor<OrderService.OrderServiceClient>(
+                    sp,
+                    sp.GetRequiredService<ILogger<OrderService.OrderServiceClient>>(),
+                    "OAuth2"));
 ```
 
 `AddApplicationContext()` registers the Arc4u logger: the interceptor logs through it and throws
@@ -201,7 +193,7 @@ public class OrdersPrefixInterceptor() : AddSuffixPathInterceptor("orders/");
 ```
 
 With the `orders.proto` above, `GetOrder` is then sent to `/orders/orders.v1.OrderService/GetOrder`.
-Register the class like `BearerInterceptor` with `AddInterceptor<OrdersPrefixInterceptor>()`, and
+Register the class with `AddTransient<OrdersPrefixInterceptor>()` and `AddInterceptor<OrdersPrefixInterceptor>()`, and
 add a YARP route that matches `/orders/{**catch-all}` and removes the prefix with a path transform.
 
 ### Trust a private root CA
@@ -283,9 +275,9 @@ Arc4u ones.
 
 The interceptor added no token; it usually logs why at trace level (not when the principal's authentication type differs from the
 settings'). Enable the `Trace` level for
-`ILogger<BearerInterceptor>` and look for a missing application context, principal, authentication
-type or token provider. A common cause is settings registered under another name than the one passed
-to `settings.Get(...)`.
+the logger category of the interceptor (its type parameter, `OrderService.OrderServiceClient` above)
+and look for a missing application context, principal, authentication type or token provider. When
+the settings name passed to the interceptor does not exist, its creation throws `ConfigurationException`.
 
 ### `ClientErrorInterceptor` does not convert my errors
 

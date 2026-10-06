@@ -7,6 +7,7 @@ using Arc4u.Dependency.Attribute;
 using Arc4u.Diagnostics;
 using Arc4u.IdentityModel.Claims;
 using Arc4u.Network.Connectivity;
+using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Token;
 using Arc4u.Results.Validation;
 using Arc4u.Security.Principal;
@@ -48,14 +49,12 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
     }
 
     /// <summary>Creates the principal with the named settings.</summary>
-    /// <param name="settingsResolveName">The name of the key/value settings.</param>
+    /// <param name="settingsResolveName">The name of the <see cref="Arc4u.Configuration.SimpleKeyValueSettings"/> options holding the settings.</param>
     /// <param name="parameter">Optional parameter forwarded to the token provider.</param>
     /// <returns>The principal, or a failed result when the settings do not exist or the principal cannot be built.</returns>
     public async Task<Result<AppPrincipal>> CreatePrincipalAsync(string settingsResolveName, object? parameter = null)
     {
-        var settings = container.GetKeyedService<IKeyValueSettings>(settingsResolveName);
-
-        if (settings == null)
+        if (!container.TryGetNamedSettings(settingsResolveName, out var settings))
         {
             return Result.Fail($"No section {settingsResolveName} was found.");
         }
@@ -291,9 +290,7 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
     /// <exception cref="InvalidOperationException">No settings named <c>OAuth2</c> exist.</exception>
     public ValueTask SignOutUserAsync(CancellationToken cancellationToken)
     {
-        var settings = container.GetKeyedService<IKeyValueSettings>(DefaultSettingsResolveName);
-
-        if (null == settings)
+        if (!container.TryGetNamedSettings(DefaultSettingsResolveName, out var settings))
         {
             throw new InvalidOperationException($"No section {DefaultSettingsResolveName} was found.");
         }

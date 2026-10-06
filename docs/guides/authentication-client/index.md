@@ -158,7 +158,6 @@ using Arc4u.OAuth2.Token;
 using Arc4u.OAuth2.TokenProvider;
 using Arc4u.Security.Principal;
 using Arc4u.Serializer;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -186,7 +185,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler<InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("Inventory")));
+        "Inventory"));
 
 var app = builder.Build();
 app.Run();

@@ -2,6 +2,7 @@
 using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.Diagnostics;
+using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Token;
 using Arc4u.Security.Principal;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,7 @@ public class JwtHttpHandler<T> : DelegatingHandler
     /// </summary>
     /// <param name="container">The scoped container</param>
     /// <param name="logger">The logger</param>
-    /// <param name="resolvingName">The name used to resolve the settings</param>
+    /// <param name="resolvingName">The name of the <see cref="SimpleKeyValueSettings"/> options holding the settings.</param>
     /// <exception cref="ConfigurationException">No settings exist with that name, or no <see cref="IApplicationContext"/> is registered in the container.</exception>
     public JwtHttpHandler(IServiceProvider container, ILogger<T> logger, string resolvingName)
     {
@@ -34,7 +35,7 @@ public class JwtHttpHandler<T> : DelegatingHandler
         _container = container ?? throw new ArgumentNullException(nameof(container));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        if (!container.TryGetService(resolvingName, out _settings))
+        if (!container.TryGetNamedSettings(resolvingName, out _settings))
         {
             _logger.Technical().LogNoHttpHandlerSettingsFound(resolvingName);
             throw new ConfigurationException($"No settings found for {resolvingName}.");

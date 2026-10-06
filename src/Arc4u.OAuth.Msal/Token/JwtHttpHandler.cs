@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using Arc4u.Dependency;
 using Arc4u.Diagnostics;
 using Arc4u.OAuth2.AspNetCore;
+using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Token;
 using Arc4u.Security.Principal;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +28,7 @@ public class JwtHttpHandler : DelegatingHandler
 
         _logger = logger;
 
-        if (!container.TryGetService(resolvingName, out _settings))
+        if (!container.TryGetNamedSettings(resolvingName, out _settings))
         {
             _logger.LogResolvingIssueSettingsByName(resolvingName);
         }

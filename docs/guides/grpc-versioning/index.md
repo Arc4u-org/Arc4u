@@ -139,7 +139,7 @@ Use one HTTP/2 endpoint for gRPC and a plain HTTP/1 endpoint for the probes. See
 
 | Service | Default implementation | Replace it to |
 |---|---|---|
-| `OAuth2Interceptor<T>` | none (you derive from it) | Pick the token settings by name, or change how a call is authenticated. |
+| `OAuth2Interceptor<T>` | none (built with a settings name) | Change how a call is authenticated. |
 | `AddSuffixPathInterceptor` | none (abstract) | Prefix the path of every call so a reverse proxy can route it. |
 | `IRootCertificateExtractor` | `RootCertificateExtractor` | Fetch the server certificate another way. |
 

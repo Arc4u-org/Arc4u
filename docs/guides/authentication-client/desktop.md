@@ -105,7 +105,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -121,7 +120,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler<InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("OidcClient")));
+        "OidcClient"));
 
 using var host = builder.Build();
 ```
@@ -148,16 +147,17 @@ The handler (<xref:Arc4u.OAuth2.Client.Authentication.Token.JwtHttpHandler`1>) n
 `IApplicationContext` when it is created, and throws `ConfigurationException` without it. It uses
 the token type as the scheme and, when there is a principal, adds a `culture` header and an
 `activityid` header (when the context has an activity ID). Its constructor that takes a settings
-name resolves a keyed `IKeyValueSettings`, which `AddOidcClientAuthentication` does not register:
-pass the settings as above.
+name (for example `OidcClient`) resolves the named `SimpleKeyValueSettings` options registered by
+`AddOidcClientAuthentication` (or any `services.Configure<SimpleKeyValueSettings>(name, ...)`).
 
 ## Build the principal
 
 <xref:Arc4u.OAuth2.Client.Security.Principal.AppPrincipalFactory> builds the `AppPrincipal` of the
 user from the claims of the access token and of the claims filler, caches the claims in the
 `ISecureCache` (to work offline), and sets the principal in the `IApplicationContext`. Call
-`CreatePrincipalAsync(settings)` with the `OidcClient` settings at startup, and
-`SignOutUserAsync(settings, cancellationToken)` to sign out. It needs an `INetworkInformation`
+`CreatePrincipalAsync(settings)` with the `OidcClient` settings (or `CreatePrincipalAsync("OidcClient")`)
+at startup, and `SignOutUserAsync(settings, cancellationToken)` to sign out. The overloads without
+settings use the settings named `OAuth2`, resolved like the handler does. It needs an `INetworkInformation`
 (`AlwaysConnected` when the app has no offline mode) and an `ICacheKeyGenerator`.
 
 ## Sign in with a user name and password
@@ -184,9 +184,10 @@ API fails with the same exception. Catch it where you call the API, and sign the
 
 ### ConfigurationException: No settings found for OidcClient
 
-You used the constructor of `JwtHttpHandler<T>` that takes a settings name. Pass the settings
-themselves, as in [Register the services](#register-the-services). For the same reason,
-`AppPrincipalFactory.CreatePrincipalAsync("OidcClient")` returns a failed result: pass the settings.
+No named `SimpleKeyValueSettings` options are registered with that name (a keyed
+`IKeyValueSettings` is not used). Check the `settingsKey` given to `AddOidcClientAuthentication` (the
+default is `OidcClient`). For the same reason, `AppPrincipalFactory.CreatePrincipalAsync(name)`
+returns a failed result.
 
 ## See also
 
