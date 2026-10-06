@@ -161,9 +161,9 @@ cache throws `InvalidOperationException: At least one Sentinel endpoint must be 
 
 ### Operations fail or time out
 
-The initialization does not contact Redis, so a wrong host appears on the first operation. `Get` wraps the error in
-`DataCacheException`; `TryGetValue` and `Remove` return `false` instead of throwing. `Put` and `PutAsync` do not wrap the
-error: the StackExchange.Redis exception (for example `RedisConnectionException`) reaches you.
+The initialization does not contact Redis, so a wrong host appears on the first operation. `Get` and `Put` wrap the error in
+`DataCacheException`, with the StackExchange.Redis exception (for example `RedisConnectionException`) as `InnerException`;
+`TryGetValue` and `Remove` return `false` instead of throwing.
 
 ## See also
 

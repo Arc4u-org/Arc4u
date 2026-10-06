@@ -52,6 +52,7 @@
     <ProjectReference Include="..\Arc4u.AspNetCore.gRpc\Arc4u.AspNetCore.gRpc.csproj" />
     <ProjectReference Include="..\Arc4u.AspNetCore.Results\Arc4u.AspNetCore.Results.csproj" />
     <ProjectReference Include="..\Arc4u.Authorization\Arc4u.Authorization.csproj" />
+    <ProjectReference Include="..\Arc4u.Caching.Dapr\Arc4u.Caching.Dapr.csproj" />
     <ProjectReference Include="..\Arc4u.Caching.Memory\Arc4u.Caching.Memory.csproj" />
     <ProjectReference Include="..\Arc4u.Caching.Redis\Arc4u.Caching.Redis.csproj" />
     <ProjectReference Include="..\Arc4u.Caching.Sql\Arc4u.Caching.Sql.csproj" />

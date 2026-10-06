@@ -173,8 +173,13 @@ public class Catalog(ICacheContext caches)
 public record Product(string Id, string Name);
 ```
 
-`Get` returns `default` when the key does not exist. `Put` without a timeout keeps the value until it is removed or evicted
-by the store; with a timeout, the value expires after it.
+`Get` returns `default` when the key does not exist; `TryGetValue` returns `false` for a missing key, so it tells a stored `0`
+or `false` apart from no value. `Put` without a timeout keeps the value until it is removed or evicted by the store; with a
+timeout, the value expires after it. Every kind behaves the same way:
+
+- `Put` and `PutAsync` reject `null` with `ArgumentNullException` and store the default of a value type (`0`, `false`).
+- An error of the store or of the serializer is thrown as `DataCacheException`, with the original exception as
+  `InnerException`, by `Get` and `Put`. `TryGetValue` and `Remove` return `false` instead.
 
 ### Use several caches
 
@@ -302,11 +307,6 @@ The cache exists but could not finish its initialization. For the Memory, Redis 
 > Known issue, reproduced on `develop/9.0.0`. A `Memory` cache declared without a `Settings` section gets a size limit
 > of 100 bytes instead of the documented 100 MB, so values larger than that are not stored (`Put` succeeds, `Get`
 > returns `null`). Always declare `Settings` with a `SizeLimitInMB`. See [Memory cache](memory.md).
-
-### `ArgumentNullException` on `Put` with `0` or `false`
-
-The synchronous `Put(key, value)` (without a timeout) of the Memory, Redis and Sql caches rejects `default(T)`, so
-`Put("k", 0)` throws `ArgumentNullException`, while `PutAsync("k", 0)` and the overloads with a timeout store the value.
 
 ## See also
 

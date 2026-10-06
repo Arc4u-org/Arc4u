@@ -113,8 +113,8 @@ Each name has its own store and limit. Give a small, short-lived cache its own n
 ### Expire and evict
 
 `Put` with a `TimeSpan` expires the value (absolute, or sliding with `isSlided: true`). When the size limit is reached,
-the cache removes `CompactionPercentage` of its entries, and the entry being written when the limit is hit can be dropped too
-(`Get` then returns `null`). Values are never shared with another process: after a restart, or
+the cache removes `CompactionPercentage` of its entries in the background, and the `Put` that hits the limit throws
+`DataCacheException` (the value is not stored, and the previous value of the key is removed). Values are never shared with another process: after a restart, or
 in a second instance of the service, the cache is empty.
 
 ## Extensibility points
@@ -126,8 +126,8 @@ another key for a new kind (see [Caching](index.md#extensibility-points)).
 
 ### `Get` returns `null` right after `Put`
 
-Check, in this order: the value fits in `SizeLimitInMB`,
-and the timeout passed to `Put` is not already over.
+Check that the timeout passed to `Put` is not already over. A value that does not fit in `SizeLimitInMB` is not
+silently dropped: `Put` throws `DataCacheException` with a message about the size limit.
 
 ### `CacheNotInitializedException` mentioning `IObjectSerialization`
 

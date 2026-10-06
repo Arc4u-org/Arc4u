@@ -112,7 +112,7 @@ in `Durable`, per-instance data in memory. See [Use several caches](index.md#use
 `ConnectionString` is required and is checked when the cache is initialized. A `Sql` cache with no `Settings` section
 has none.
 
-### `DataCacheException` on `Get`, or `Put` fails with a SQL error
+### `DataCacheException` on `Get` or `Put`
 
 The table does not exist or has another name or schema. Create it with `dotnet sql-cache create`, then check `SchemaName`
 and `TableName`.

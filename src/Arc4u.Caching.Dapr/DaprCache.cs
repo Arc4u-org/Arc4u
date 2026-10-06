@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Arc4u.Configuration.Dapr;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Diagnostics;
@@ -41,14 +42,12 @@ public sealed class DaprCache : ICache
     /// <param name="key">The key of the value.</param>
     /// <returns>The value, or the default of <typeparamref name="TValue"/> when the key does not exist.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="DataCacheException">The Dapr client or the deserialization failed; the original exception is the inner exception.</exception>
     public TValue? Get<TValue>(string key)
     {
-        if (_daprClient is null)
-        {
-            throw new CacheNotInitializedException();
-        }
+        CheckIfInitialized();
 
-        return _daprClient.GetStateAsync<TValue>(_storeName, key).GetAwaiter().GetResult();
+        return ReadAsync<TValue>(key, CancellationToken.None).GetAwaiter().GetResult().Value;
     }
 
     /// <summary>Asynchronously gets the value stored in the state store for the key.</summary>
@@ -57,15 +56,47 @@ public sealed class DaprCache : ICache
     /// <param name="cancellation">A token to cancel the operation.</param>
     /// <returns>The value, or the default of <typeparamref name="TValue"/> when the key does not exist.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="DataCacheException">The Dapr client or the deserialization failed; the original exception is the inner exception.</exception>
     public async Task<TValue?> GetAsync<TValue>(string key, CancellationToken cancellation = default)
     {
-        if (_daprClient is null)
-        {
-            throw new CacheNotInitializedException();
-        }
+        CheckIfInitialized();
 
-        return await _daprClient.GetStateAsync<TValue>(_storeName, key, cancellationToken: cancellation).ConfigureAwait(false);
+        return (await ReadAsync<TValue>(key, cancellation).ConfigureAwait(false)).Value;
     }
+
+    // Dapr returns the default of TValue for a missing key, which cannot be distinguished from a stored 0 or false.
+    // Reading a JsonElement first tells whether the key exists (Undefined when it does not).
+    private async Task<(bool Found, TValue? Value)> ReadAsync<TValue>(string key, CancellationToken cancellation)
+    {
+        try
+        {
+            var element = await _daprClient!.GetStateAsync<JsonElement>(_storeName, key, cancellationToken: cancellation).ConfigureAwait(false);
+            if (element.ValueKind == JsonValueKind.Undefined)
+            {
+                return (false, default);
+            }
+
+            return (true, element.Deserialize<TValue>(_daprClient.JsonSerializerOptions));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new DataCacheException(ex.Message, ex);
+        }
+    }
+
+    private async Task SaveAsync<T>(string key, T value, IReadOnlyDictionary<string, string>? metadata, CancellationToken cancellation)
+    {
+        try
+        {
+            await _daprClient!.SaveStateAsync(_storeName, key, value, metadata: metadata, cancellationToken: cancellation).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new DataCacheException(ex.Message, ex);
+        }
+    }
+
+    private static Dictionary<string, string> TimeToLive(TimeSpan timeout) => new() { { "ttlInSeconds", timeout.TotalSeconds.ToString(CultureInfo.InvariantCulture) } };
 
     /// <summary>Creates the Dapr client and reads the name of the state store from the <see cref="DaprCacheOption"/> named <paramref name="store"/>. Calling it again on an initialized cache only logs a warning.</summary>
     /// <param name="store">The name of the cache, as declared in the configuration.</param>
@@ -108,69 +139,81 @@ public sealed class DaprCache : ICache
     /// <summary>Saves the value in the state store, without expiration.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
-    /// <param name="value">The value to save.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="DataCacheException">The Dapr client failed; the original exception is the inner exception.</exception>
     public void Put<T>(string key, T value)
     {
         CheckIfInitialized();
+        ArgumentNullException.ThrowIfNull(value);
 
-        _daprClient!.SaveStateAsync(_storeName, key, value).GetAwaiter().GetResult();
+        SaveAsync(key, value, null, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     /// <summary>Saves the value in the state store with a time to live (the <c>ttlInSeconds</c> metadata). A sliding expiration is not supported.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
     /// <param name="timeout">The time to live of the value.</param>
-    /// <param name="value">The value to save.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
     /// <param name="isSlided">Must be <see langword="false"/>.</param>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="NotSupportedException"><paramref name="isSlided"/> is <see langword="true"/>.</exception>
+    /// <exception cref="DataCacheException">The Dapr client failed; the original exception is the inner exception.</exception>
     public void Put<T>(string key, TimeSpan timeout, T value, bool isSlided = false)
     {
         CheckIfInitialized();
+        ArgumentNullException.ThrowIfNull(value);
 
         if (isSlided)
         {
             throw new NotSupportedException("Sliding is not supported in Dapr State.");
         }
 
-        _daprClient!.SaveStateAsync(_storeName, key, value, metadata: new Dictionary<string, string> { { "ttlInSeconds", timeout.TotalSeconds.ToString(CultureInfo.InvariantCulture) } }).GetAwaiter().GetResult();
+        SaveAsync(key, value, TimeToLive(timeout), CancellationToken.None).GetAwaiter().GetResult();
     }
 
     /// <summary>Asynchronously saves the value in the state store, without expiration.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
-    /// <param name="value">The value to save.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
     /// <param name="cancellation">A token to cancel the operation.</param>
     /// <returns>A task that completes when the value is saved.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="DataCacheException">The Dapr client failed; the original exception is the inner exception.</exception>
     public async Task PutAsync<T>(string key, T value, CancellationToken cancellation = default)
     {
         CheckIfInitialized();
+        ArgumentNullException.ThrowIfNull(value);
 
-        await _daprClient!.SaveStateAsync(_storeName, key, value, cancellationToken: cancellation).ConfigureAwait(false);
+        await SaveAsync(key, value, null, cancellation).ConfigureAwait(false);
     }
 
     /// <summary>Asynchronously saves the value in the state store with a time to live (the <c>ttlInSeconds</c> metadata). A sliding expiration is not supported.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
     /// <param name="timeout">The time to live of the value.</param>
-    /// <param name="value">The value to save.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
     /// <param name="isSlided">Must be <see langword="false"/>.</param>
     /// <param name="cancellation">A token to cancel the operation.</param>
     /// <returns>A task that completes when the value is saved.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="NotSupportedException"><paramref name="isSlided"/> is <see langword="true"/>.</exception>
+    /// <exception cref="DataCacheException">The Dapr client failed; the original exception is the inner exception.</exception>
     public async Task PutAsync<T>(string key, TimeSpan timeout, T value, bool isSlided = false, CancellationToken cancellation = default)
     {
         CheckIfInitialized();
+        ArgumentNullException.ThrowIfNull(value);
 
         if (isSlided)
         {
             throw new NotSupportedException("Sliding is not supported in Dapr State.");
         }
 
-        await _daprClient!.SaveStateAsync(_storeName, key, value, metadata: new Dictionary<string, string> { { "ttlInSeconds", timeout.TotalSeconds.ToString(CultureInfo.InvariantCulture) } }, cancellationToken: cancellation).ConfigureAwait(false);
+        await SaveAsync(key, value, TimeToLive(timeout), cancellation).ConfigureAwait(false);
     }
 
     /// <summary>Deletes the value from the state store. Errors are logged and reported by the return value.</summary>
@@ -219,8 +262,8 @@ public sealed class DaprCache : ICache
     /// <summary>Tries to read the value for the key. Errors raised while reading are swallowed.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
-    /// <param name="value">The value, or the default of <typeparamref name="TValue"/> when an error occurred.</param>
-    /// <returns><see langword="true"/> when the read succeeded (the value can be the default if the key does not exist); <see langword="false"/> when an error occurred.</returns>
+    /// <param name="value">The value, or the default of <typeparamref name="TValue"/> when it is not found or an error occurred.</param>
+    /// <returns><see langword="true"/> when the key exists and a non-null value was read; otherwise <see langword="false"/>.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     public bool TryGetValue<TValue>(string key, out TValue? value)
     {
@@ -228,8 +271,8 @@ public sealed class DaprCache : ICache
 
         try
         {
-            value = Get<TValue>(key);
-            return true;
+            (var found, value) = ReadAsync<TValue>(key, CancellationToken.None).GetAwaiter().GetResult();
+            return found && value is not null;
         }
         catch (Exception)
         {

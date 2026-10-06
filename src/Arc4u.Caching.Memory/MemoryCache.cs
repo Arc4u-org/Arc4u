@@ -77,7 +77,7 @@ public class MemoryCache : BaseDistributeCache<MemoryCache>, ICache
                     SizeLimit = config.SizeLimitInBytes
                 });
 
-                DistributeCache = new MemoryDistributedCache(option);
+                DistributeCache = new CapacityCheckedDistributedCache(new MemoryDistributedCache(option), store);
 
                 if (!string.IsNullOrWhiteSpace(config.SerializerName))
                 {
