@@ -1336,7 +1336,7 @@ public static class ResultExtension
     /// <summary>
     /// Awaits the task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c> (see <c>AddResultLogger</c>); nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at <paramref name="logLevel"/>, except a <c>ValidationError</c> (logged at the level of its severity) and an exceptional error (logged as an exception). The original result is returned unchanged.</remarks>
     /// <param name="result">The task producing the result to inspect.</param>
     /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>
     /// <returns>A task completing with the awaited result, unchanged.</returns>
@@ -1351,7 +1351,7 @@ public static class ResultExtension
     /// <summary>
     /// Awaits the task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c> (see <c>AddResultLogger</c>); nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at <paramref name="logLevel"/>, except a <c>ValidationError</c> (logged at the level of its severity) and an exceptional error (logged as an exception). The original result is returned unchanged.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The task producing the result to inspect.</param>
     /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>
@@ -1368,7 +1368,7 @@ public static class ResultExtension
     /// <summary>
     /// Awaits the value task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c> (see <c>AddResultLogger</c>); nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at <paramref name="logLevel"/>, except a <c>ValidationError</c> (logged at the level of its severity) and an exceptional error (logged as an exception). The original result is returned unchanged.</remarks>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>
     /// <returns>A value task completing with the awaited result, unchanged.</returns>
@@ -1383,7 +1383,7 @@ public static class ResultExtension
     /// <summary>
     /// Awaits the value task, then passes the result and <paramref name="logLevel"/> to the FluentResults logger when the result is failed.
     /// </summary>
-    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c>; nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at its own level (the severity of a <c>ValidationError</c>, error level otherwise), so <paramref name="logLevel"/> is not used by it. The original result is returned unchanged.</remarks>
+    /// <remarks>It calls the instance method <c>LogIfFailed(LogLevel)</c> of the FluentResults result, which hands the failed result and the level to the <c>IResultLogger</c> configured with <c>Result.Setup</c> (see <c>AddResultLogger</c>); nothing is logged when none is configured. Arc4u's <c>FluentLogger</c> logs each error at <paramref name="logLevel"/>, except a <c>ValidationError</c> (logged at the level of its severity) and an exceptional error (logged as an exception). The original result is returned unchanged.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
     /// <param name="logLevel">The level handed to the result logger. Defaults to <see cref="LogLevel.Error"/>.</param>

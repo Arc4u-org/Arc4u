@@ -1,9 +1,11 @@
+using Arc4u.Results;
 using Arc4u.Results.Logging;
 using Arc4u.Results.Validation;
 using Arc4u.Security.Principal;
 using AwesomeAssertions;
 using FluentResults;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -92,6 +94,86 @@ public class FluentLoggerTests
         captured.Should().HaveCount(3);
         captured[0].Message.Should().Be("use case failed");
         captured.Skip(1).Select(entry => entry.Message).Should().BeEquivalentTo("e1", "e2");
+    }
+
+    [Theory]
+    [InlineData(LogLevel.Warning)]
+    [InlineData(LogLevel.Information)]
+    [InlineData(LogLevel.Error)]
+    public void Log_A_ProblemDetailError_Should_Use_The_Requested_Level(LogLevel logLevel)
+    {
+        var result = Result.Fail(ProblemDetailError.Create("not found"));
+
+        var captured = Capture(logger => logger.Log(string.Empty, string.Empty, result, logLevel));
+
+        captured.Should().ContainSingle();
+        captured[0].Level.Should().Be(logLevel);
+        captured[0].Message.Should().Be("not found");
+    }
+
+    [Fact]
+    public void Log_A_ValidationError_Should_Keep_Its_Severity_Whatever_The_Requested_Level()
+    {
+        var result = Result.Fail(ValidationError.Create("name is required"));
+
+        var captured = Capture(logger => logger.Log(string.Empty, string.Empty, result, LogLevel.Warning));
+
+        captured.Should().ContainSingle();
+        captured[0].Level.Should().Be(LogLevel.Error);
+    }
+
+    [Fact]
+    public async Task AddResultLogger_Should_Give_FluentLogger_To_FluentResults_When_The_Host_Starts()
+    {
+        var captured = new List<(LogLevel, string)>();
+
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.SetMinimumLevel(LogLevel.Trace)
+                                              .AddProvider(new CapturingProvider(captured)));
+        services.AddApplicationContext();
+        services.AddResultLogger();
+
+        await using var provider = services.BuildServiceProvider();
+
+        try
+        {
+            foreach (var hostedService in provider.GetServices<IHostedService>())
+            {
+                await hostedService.StartAsync(CancellationToken.None);
+            }
+
+            Result.Fail(ProblemDetailError.Create("boom")).LogIfFailed(LogLevel.Warning);
+
+            captured.Should().ContainSingle(entry => entry.Item1 == LogLevel.Warning && entry.Item2 == "boom");
+        }
+        finally
+        {
+            // Back to the FluentResults defaults (a logger that writes nothing).
+            Result.Setup(_ => { });
+        }
+    }
+
+    [Fact]
+    public void AddResultLogger_Should_Register_Its_Hosted_Service_First_And_Once()
+    {
+        var services = new ServiceCollection();
+        services.AddHostedService<NoOpHostedService>();
+
+        services.AddResultLogger();
+        services.AddResultLogger();
+
+        var hostedServices = services.Where(descriptor => descriptor.ServiceType == typeof(IHostedService)).ToList();
+
+        hostedServices.Should().HaveCount(2);
+        services[0].ServiceType.Should().Be<IHostedService>();
+        services[0].ImplementationType.Should().NotBe<NoOpHostedService>();
+    }
+
+    private sealed class NoOpHostedService : IHostedService
+    {
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class CapturingProvider(List<(LogLevel, string)> sink) : ILoggerProvider

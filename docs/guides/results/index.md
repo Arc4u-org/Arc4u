@@ -76,33 +76,47 @@ None of the three packages reads an `appsettings.json` section. Two things are c
 
 | What | Where | Default |
 |---|---|---|
-| Logger used by `LogIfFailed` and `ToGenericMessage` | `Result.Setup(cfg => cfg.Logger = ...)` (FluentResults) | A logger that writes nothing |
+| Logger used by `LogIfFailed` and `ToGenericMessage` | `AddResultLogger()`, or `Result.Setup(cfg => cfg.Logger = ...)` (FluentResults) | A logger that writes nothing |
 | Function that turns errors into a `ProblemDetails` | `FromResultToProblemDetailExtension.SetFromErrorFactory` | The mapping described in [Results to HTTP responses](http-mapping.md#how-errors-map-to-a-response) |
 
 ### Code
 
-Register `FluentLogger` and give it to FluentResults once, at startup. Without this, `LogIfFailed`
-logs nothing, and the message "A message has been logged" that Arc4u puts in a `500` response is not true.
+Call `AddResultLogger()` at startup. It registers `FluentLogger` and gives it to FluentResults
+(`Result.Setup`) when the host starts. Without this, `LogIfFailed` logs nothing, and the message
+"A message has been logged" that Arc4u puts in a `500` response is not true.
 
 ```csharp
 // Program.cs
 using Arc4u.Results.Logging;
 using Arc4u.Security.Principal;
-using FluentResults;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplicationContext();                        // provides the Arc4u ILogger<T> that FluentLogger needs
-builder.Services.AddSingleton<IResultLogger, FluentLogger>();
+builder.Services.AddApplicationContext();   // provides the Arc4u ILogger<T> that FluentLogger needs
+builder.Services.AddResultLogger();         // FluentLogger, handed to Result.Setup when the host starts
 
 var app = builder.Build();
-
-Result.Setup(cfg => cfg.Logger = app.Services.GetRequiredService<IResultLogger>());
 
 app.Run();
 ```
 
 `AddApplicationContext` is described in the [diagnostics guide](../diagnostics/index.md).
+The logger is set when the host starts, before the server accepts requests and before the other
+hosted services start. Results logged earlier are lost: if code between `Build()` and `Run()` (a
+database migration, a seed) uses `LogIfFailed`, call `app.Services.UseResultLogger()` right after
+`Build()`. Do the same without a generic host (a console tool, a test).
+
+```csharp
+var app = builder.Build();
+
+app.Services.UseResultLogger();   // only needed when results are logged before app.Run()
+await SeedDatabaseAsync(app.Services);
+
+app.Run();
+```
+
+With `HostOptions.ServicesStartConcurrently = true`, hosted services start in parallel: call
+`UseResultLogger()` after `Build()` as well.
 `FluentLogger` writes with the Arc4u business logger, so its output follows your Serilog or
 `ILogger` configuration.
 
@@ -174,7 +188,7 @@ app.MapGet("/orders/{id:int}", (int id, IOrderService orders) => orders.GetAsync
 
 | Service | Default implementation | Replace it to |
 |---|---|---|
-| `FluentResults.IResultLogger` | `FluentLogger` (needs `Result.Setup`) | Send result logs somewhere else than the Arc4u business logger. |
+| `FluentResults.IResultLogger` | `FluentLogger` (registered by `AddResultLogger`) | Send result logs somewhere else than the Arc4u business logger. |
 | `FromResultToProblemDetailExtension.FromError` (set with `SetFromErrorFactory`) | Built-in mapping | Change the status codes, the `type` URIs or the shape of the `ProblemDetails` for the whole application. Call `SetFromErrorFactory` once at startup. |
 
 ```csharp
@@ -207,8 +221,8 @@ the protection that hides exception details: do not put `Exception.Message` in t
 
 ### `LogIfFailed` writes nothing
 
-FluentResults uses a logger that discards everything until you call `Result.Setup`. Follow the
-[Code](#code) section above.
+FluentResults uses a logger that discards everything until `Result.Setup` is called. Call
+`AddResultLogger()` as shown in the [Code](#code) section above (or `UseResultLogger()` without a host).
 
 ### Compile error `CS0104: 'Severity' is an ambiguous reference`
 
@@ -225,8 +239,6 @@ Some older notes use `ToActionResultAsync`. The methods are `ToActionOkResultAsy
 ### Known issues
 
 > [!WARNING]
-> - `LogIfFailed(LogLevel)` accepts a level, but `FluentLogger` logs each error at a level it chooses itself
->   (see [Logging failures](fluent-results.md#logging-failures)). The level you pass has no effect.
 > - `LogIfFailed(context, content, level)` makes the singleton `FluentLogger` add a `Context` property that is never
 >   cleared, so it appears on every later result log in the process. Avoid that overload until it is fixed.
 > - Three of the four `ToGenericMessage` overloads ignore their `unexpectedType` argument

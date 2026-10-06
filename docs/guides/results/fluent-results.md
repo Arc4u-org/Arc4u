@@ -179,7 +179,7 @@ error gives `400`. The rules and the exact JSON are in [Results to HTTP response
 
 `LogIfFailed` comes from FluentResults for a plain `Result`. Arc4u adds the overloads for `Task<Result>`,
 `Task<Result<T>>`, `ValueTask<Result>` and `ValueTask<Result<T>>` so that you can call it in the middle of an
-`await` chain. It logs only when the result failed, through the logger you registered with `Result.Setup`
+`await` chain. It logs only when the result failed, through the logger given to `Result.Setup`, which `AddResultLogger()` does for you
 (see [Configuration](index.md#configuration)).
 
 <xref:Arc4u.Results.Logging.FluentLogger> is the Arc4u implementation of that logger. For a failed result it logs each error on its own:
@@ -188,20 +188,19 @@ error gives `400`. The rules and the exact JSON are in [Results to HTTP response
 |---|---|
 | `ValidationError` | At the level matching its `Severity` (`Error`, `Warning`, `Info`), with its code in a `Code` property (empty when no code was set) |
 | `IExceptionalError` | The exception, with `LogException` |
-| Any other error, including `ProblemDetailError` | Error level |
+| Any other error, including `ProblemDetailError` | The level passed to `LogIfFailed` (`Error` when omitted) |
 
 The informational reasons of the result (not the errors) are then logged once, at information level.
 
+The level passed to `LogIfFailed` is also used for the optional `content` line, logged when you call the FluentResults
+overload `LogIfFailed(context, content, logLevel)` with a non-empty context and content. A `ValidationError` keeps the
+level of its own `Severity`, and an exception is always logged at error level.
+
 > [!WARNING]
-> Known issue: the `LogLevel` argument of `LogIfFailed` does not change how errors are logged.
-> `LogIfFailed(LogLevel.Warning)` on a `ProblemDetailError` still writes at error level. `FluentLogger` uses the
-> level only for an optional `content` line, which is logged when you call the FluentResults overload
-> `LogIfFailed(context, content, logLevel)` with a non-empty context and content.
->
-> Known issue: that overload makes the singleton `FluentLogger` add a `Context` property to its logger, and the
+> Known issue: the overload `LogIfFailed(context, content, logLevel)` makes the singleton `FluentLogger` add a `Context` property to its logger, and the
 > property is never cleared. It then appears on every later result log in the process. Avoid the overload until it is fixed.
 
-`FluentLogger` needs the Arc4u `ILogger<T>`; register it as shown in the [overview](index.md#code).
+`FluentLogger` needs the Arc4u `ILogger<T>`; register it with `AddResultLogger()` as shown in the [overview](index.md#code).
 
 ## Extensibility points
 

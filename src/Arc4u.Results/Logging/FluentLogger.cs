@@ -14,7 +14,9 @@ namespace Arc4u.Results.Logging;
 /// <remarks>
 /// Registered as a shared (singleton) service through the <c>Export</c> attribute. For a failed result each error is logged
 /// on its own: a <see cref="ValidationError"/> at the level matching its <see cref="Severity"/> (with its code as a property when set),
-/// an exceptional error as an exception, any other error at error level. The informational reasons of the result are then logged once.
+/// an exceptional error as an exception, any other error (a <see cref="ProblemDetailError"/> for example) at the level requested by the caller
+/// (the <c>logLevel</c> of <c>LogIfFailed</c>). The informational reasons of the result are then logged once.
+/// Use <see cref="ResultLoggerServiceCollectionExtensions.AddResultLogger"/> to register it and hand it to <c>Result.Setup</c>.
 /// </remarks>
 [Export(typeof(IResultLogger)), Shared]
 public class FluentLogger : IResultLogger
@@ -42,7 +44,7 @@ public class FluentLogger : IResultLogger
             GetBusinessLogger(logger, logLevel)(content);
         }
 
-        LogErrorsAndReasons(result);
+        LogErrorsAndReasons(result, logLevel);
     }
 
     /// <inheritdoc/>
@@ -53,10 +55,10 @@ public class FluentLogger : IResultLogger
 
         GetBusinessLogger(logger, logLevel)(content);
 
-        LogErrorsAndReasons(result);
+        LogErrorsAndReasons(result, logLevel);
     }
 
-    private void LogErrorsAndReasons(ResultBase result)
+    private void LogErrorsAndReasons(ResultBase result, LogLevel logLevel)
     {
         if (result is { IsFailed: true, Errors: not null })
         {
@@ -76,7 +78,7 @@ public class FluentLogger : IResultLogger
                         _logger.LogException(exceptionalError.Exception);
                         break;
                     default:
-                        _logger.Business().LogError(error.Message);
+                        GetBusinessLogger(_logger.Business(), logLevel)(error.Message);
                         break;
                 }
             }
