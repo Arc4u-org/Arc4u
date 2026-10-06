@@ -144,14 +144,14 @@ public static class FromResultToProblemDetailExtension
         if (activityId is not null)
         {
             return new ProblemDetails()
-                .WithTitle("A technical error occured!")
+                .WithTitle("A technical error occurred!")
                 .WithDetail($"Contact the application owner. A message has been logged with id: {activityId}.")
                 .WithType(type)
                 .WithStatusCode(unexpectedType ? StatusCodes.Status500InternalServerError : StatusCodes.Status400BadRequest);
         }
 
         return new ProblemDetails()
-                .WithTitle("A technical error occured!")
+                .WithTitle("A technical error occurred!")
                 .WithDetail("Contact the application owner. A message has been logged.")
                 .WithType(type)
                 .WithStatusCode(unexpectedType ? StatusCodes.Status500InternalServerError : StatusCodes.Status400BadRequest);
@@ -162,18 +162,18 @@ public static class FromResultToProblemDetailExtension
     /// Translates the errors of a failed result into a <see cref="ProblemDetails"/> using <see cref="FromError"/>.
     /// </summary>
     /// <remarks>
-    /// Calling it on a successful result is a programming error: an <see cref="UnreachableException"/> is then added to the result as an exceptional error,
-    /// which is translated to the generic technical error.
+    /// Calling it on a successful result is a programming error: the problem details are then built from an exceptional error wrapping an <see cref="UnreachableException"/>,
+    /// which is translated to the generic technical error. The result itself is not modified.
     /// </remarks>
     /// <typeparam name="TResult">The type of the value carried by the result.</typeparam>
     /// <param name="result">The failed result.</param>
     /// <returns>The <see cref="ProblemDetails"/> describing the errors of the result.</returns>
     public static ProblemDetails ToProblemDetails<TResult>(this Result<TResult> result)
     {
-        // Could not be a valid scenario to call this method! An Exceptional error will be created so the developer is aware of
+        // Could not be a valid scenario to call this method! An exceptional error is reported so the developer is aware of it, without altering the result.
         if (result.IsSuccess)
         {
-            result.WithError(new ExceptionalError(new UnreachableException("Creating a ProblemDetails on a success Result does not make any sense!")));
+            return FromResultToProblemDetailExtension.FromError([new ExceptionalError(new UnreachableException("Creating a ProblemDetails on a success Result does not make any sense!"))]);
         }
 
         return FromResultToProblemDetailExtension.FromError(result.Errors);
@@ -183,17 +183,17 @@ public static class FromResultToProblemDetailExtension
     /// Translates the errors of a failed result into a <see cref="ProblemDetails"/> using <see cref="FromError"/>.
     /// </summary>
     /// <remarks>
-    /// Calling it on a successful result is a programming error: an <see cref="UnreachableException"/> is then added to the result as an exceptional error,
-    /// which is translated to the generic technical error.
+    /// Calling it on a successful result is a programming error: the problem details are then built from an exceptional error wrapping an <see cref="UnreachableException"/>,
+    /// which is translated to the generic technical error. The result itself is not modified.
     /// </remarks>
     /// <param name="result">The failed result.</param>
     /// <returns>The <see cref="ProblemDetails"/> describing the errors of the result.</returns>
     public static ProblemDetails ToProblemDetails(this Result result)
     {
-        // Could not be a valid scenario to call this method! An Exceptional error will be created so the developer is aware of
+        // Could not be a valid scenario to call this method! An exceptional error is reported so the developer is aware of it, without altering the result.
         if (result.IsSuccess)
         {
-            result.WithError(new ExceptionalError(new UnreachableException("Creating a ProblemDetails on a success Result does not make any sense!")));
+            return FromResultToProblemDetailExtension.FromError([new ExceptionalError(new UnreachableException("Creating a ProblemDetails on a success Result does not make any sense!"))]);
         }
 
         return FromResultToProblemDetailExtension.FromError(result.Errors);

@@ -42,7 +42,7 @@ public class ManageExceptionsFilter(ILogger<ManageExceptionsFilter> logger, IApp
             default:
                 context.Result = new ObjectResult(new ProblemDetails()
                                                         .WithTitle("Unexpected error.")
-                                                        .WithDetail($"A technical error occured, contact the application owner. A message has been logged with id: {activityId}")
+                                                        .WithDetail($"A technical error occurred, contact the application owner. A message has been logged with id: {activityId}")
                                                         .WithStatusCode(StatusCodes.Status500InternalServerError)
                                                         .WithSeverity("Error")
                                                         .WithType(new Uri("https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes#unexpected-error")));

@@ -23,4 +23,9 @@ internal sealed class IsUtcDateTimeRuleValidator<T, TProperty> : PropertyValidat
         return dt.HasValue && dt.Value.Kind == DateTimeKind.Utc;
 
     }
+
+    protected override string GetDefaultMessageTemplate(string errorCode)
+    {
+        return Localized(errorCode, Name);
+    }
 }

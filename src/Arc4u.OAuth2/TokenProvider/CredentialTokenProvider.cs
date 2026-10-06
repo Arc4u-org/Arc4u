@@ -266,7 +266,7 @@ public class CredentialTokenProvider(ILogger<CredentialTokenProvider> logger, IO
                     }
                 }
                 // if we can't write a better exception, issue a more general one
-                return ValidationError.Create($"{response.StatusCode} occured while requesting a token for {upn}").WithCode("TokenError");
+                return ValidationError.Create($"{response.StatusCode} occurred while requesting a token for {upn}").WithCode("TokenError");
             }
 
             // at this point, we *must* have a valid Json response. The values are a mixture of strings and numbers, so we deserialize the JsonElements

@@ -1216,6 +1216,18 @@ The FluentValidation helpers moved as well: `ValidateWithResult` and `ValidateWi
 now in `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), next to the rules `IsInsert`,
 `IsUpdate`, `IsDelete`, `IsNone`, `IsDateOnly` and `IsUtcDateTime`. `ToFluentResultErrors` is
 renamed `ToResultErrors`, and `ToMessages` and `ToMessageType` (which produced `Messages`) are removed.
+The predicate `ValidatorPredicates.IsNonet` is renamed `IsNone`.
+
+A few smaller changes may also need attention:
+
+- `ToActionCreatedResultAsync`, `ToHttpCreatedResultAsync` and `ToTypedCreatedResultAsync` on a `Result` without a
+  value (or a task of it) lost their unused type parameter: write `result.ToActionCreatedResultAsync(location)`
+  instead of `result.ToActionCreatedResultAsync<Order>(location)`.
+- `ValidationError.WithMetadata` no longer throws on a duplicate key: the first value is kept, as with
+  `ProblemDetailError.WithMetadata`.
+- The title of the generic `500` problem details is now "A technical error occurred!" (the typo "occured" is fixed).
+  Update any client or test that matches on that text.
+- `ToProblemDetails` called on a successful result no longer adds an error to that result: it stays successful.
 
 ## Other API changes
 

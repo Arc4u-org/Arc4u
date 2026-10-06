@@ -18,7 +18,7 @@ Input validation is a failure the caller can fix, so it is not an exception. `Ar
 | `Create(errorMessage)` | `string` | none (required) | The message returned to the client. |
 | `WithSeverity` / `Severity` | <xref:Arc4u.Results.Validation.Severity> | `Error` | `Error`, `Warning` or `Info`. |
 | `WithCode` / `Code` | `string` | Empty string | A code for your logs. It is not part of the HTTP response. |
-| `WithMetadata(key, value)` | `string`, `object` | none | Adds metadata. Throws if the key already exists. |
+| `WithMetadata(key, value)` | `string`, `object` | none | Adds metadata. An existing key is kept: the call is then ignored. |
 
 `ValidationError` converts implicitly to a failed `Result`. The `WithValidationError` extensions add one to an
 existing `Result` or `Result<T>`, with an optional code and severity:
@@ -162,11 +162,8 @@ public class Customer : PersistEntity
 }
 ```
 
-`IsUtcDateTime()` and `IsDateOnly()` have no default message: add `WithMessage(...)`, otherwise the failure message is
-"No default error message has been specified".
-
 `ValidatorPredicates` in the namespace `Arc4u.FluentValidation` offers the same tests as predicates for
-`When(...)`: `IsInsert`, `IsUpdate`, `IsDelete` and `IsNonet` (the name of the last one is a misspelling of "IsNone").
+`When(...)`: `IsInsert`, `IsUpdate`, `IsDelete` and `IsNone`.
 
 ## Troubleshooting
 
@@ -178,10 +175,6 @@ That is the current format, see [The HTTP response](#the-http-response).
 
 Every `ValidationError` fails the result, including warnings and `Info`. If a rule is only advisory, do not report
 it through the result.
-
-### `WithMetadata` throws `ArgumentException`
-
-`ValidationError.WithMetadata` uses `Dictionary.Add`. Use each key once per error.
 
 ## See also
 

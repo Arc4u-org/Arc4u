@@ -113,9 +113,6 @@ a `ProblemHttpResult`; `ValidationProblem` is part of the type but is never the 
 | `Result<T>` succeeded with a value | `To...CreatedResult(location)` | `201 Created`, `Location` header | The value, or the value returned by the mapper |
 | `Result<T>` succeeded with `null` | `To...CreatedResult(location)` | `201 Created`, no `Location` header | Empty |
 
-For a `Result` (without a value), the `To...CreatedResultAsync` methods (not the synchronous ones) have a type parameter
-that the compiler cannot infer and that is not used. Write `result.ToActionCreatedResultAsync<Order>(location)` with any type.
-
 ### Map the value
 
 Every method with a value has an overload taking a mapper, so that the business type does not leave the API.
@@ -222,11 +219,10 @@ that the support team searches in the logs:
 HTTP/1.1 500 Internal Server Error
 Content-Type: application/problem+json; charset=utf-8
 
-{"type":"https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes#unexpected-error","title":"A technical error occured!","status":500,"detail":"Contact the application owner. A message has been logged with id: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00."}
+{"type":"https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes#unexpected-error","title":"A technical error occurred!","status":500,"detail":"Contact the application owner. A message has been logged with id: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00."}
 ```
 
 The exception is written to the log only if you registered the result logger (see [Configuration](index.md#configuration)).
-The typo "occured" is part of the current message.
 
 ### Business problem: ProblemDetailError
 
@@ -291,8 +287,8 @@ calls `LogIfFailed` on the result.
 > overloads you always get the "unexpected" `500` message, whatever value you pass. With `unexpectedType: false`
 > the honored overload returns `400` and the `expected-error` type.
 
-Calling `ToProblemDetails` on a result that succeeded does not make sense. The library adds an `ExceptionalError`
-to that result, which is then failed, and returns the generic `500`, so that the mistake is visible.
+Calling `ToProblemDetails` on a result that succeeded does not make sense. The library returns the generic `500`, built from an
+`ExceptionalError`, so that the mistake is visible. The result itself is not modified and stays successful.
 
 ## Change the mapping
 

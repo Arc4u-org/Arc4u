@@ -60,14 +60,13 @@ public class ValidationError : Error
     /// <summary>
     /// Adds a metadata entry to the error and returns this error.
     /// </summary>
-    /// <remarks>Unlike <see cref="Error.WithMetadata(string, object)"/> this returns a <see cref="ValidationError"/>.</remarks>
+    /// <remarks>Unlike <see cref="Error.WithMetadata(string, object)"/> this returns a <see cref="ValidationError"/>. An existing key is kept: the call is then ignored.</remarks>
     /// <param name="key">The metadata key.</param>
     /// <param name="value">The metadata value.</param>
     /// <returns>This error, to chain calls.</returns>
-    /// <exception cref="ArgumentException">An entry with the same <paramref name="key"/> already exists.</exception>
     public new ValidationError WithMetadata(string key, object value)
     {
-        Metadata.Add(key, value);
+        Metadata.TryAdd(key, value);
         return this;
     }
 

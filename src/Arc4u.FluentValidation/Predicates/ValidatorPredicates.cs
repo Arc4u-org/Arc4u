@@ -47,11 +47,10 @@ public static class ValidatorPredicates
     /// <summary>
     /// Determines whether the entity has no pending change.
     /// </summary>
-    /// <remarks>The name is a historical misspelling of "IsNone".</remarks>
     /// <typeparam name="TElement">The entity type.</typeparam>
     /// <param name="element">The entity to test.</param>
     /// <returns><see langword="true"/> when its <see cref="IPersistEntity.PersistChange"/> is <see cref="PersistChange.None"/>.</returns>
-    public static bool IsNonet<TElement>(TElement element) where TElement : IPersistEntity
+    public static bool IsNone<TElement>(TElement element) where TElement : IPersistEntity
     {
         return element.PersistChange.Equals(PersistChange.None);
     }

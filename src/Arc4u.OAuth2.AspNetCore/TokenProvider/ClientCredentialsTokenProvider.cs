@@ -202,7 +202,7 @@ public class ClientCredentialsTokenProvider(
         if (dictionary is null)
         {
             logger.Technical().LogClientCredentialsTokenError(statusCode, loggedResponseBody ?? string.Empty);
-            return ValidationError.Create($"{statusCode} occured while requesting a client_credentials token.").WithCode("TokenError");
+            return ValidationError.Create($"{statusCode} occurred while requesting a client_credentials token.").WithCode("TokenError");
         }
 
         var technical = logger.Technical();
@@ -221,6 +221,6 @@ public class ClientCredentialsTokenProvider(
             return ValidationError.Create(error_description).WithCode(tokenErrorCode ?? string.Empty);
         }
 
-        return ValidationError.Create($"{statusCode} occured while requesting a client_credentials token.").WithCode("TokenError");
+        return ValidationError.Create($"{statusCode} occurred while requesting a client_credentials token.").WithCode("TokenError");
     }
 }
