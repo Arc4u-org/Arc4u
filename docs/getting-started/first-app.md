@@ -381,7 +381,7 @@ for your API: add one on the provider side rather than turning audience validati
 | `MissingFieldException: DefaultAuthority must be filled!` | `Authentication:DefaultAuthority` is missing. |
 | `InvalidOperationException: No section exists with name Authentication ...` | The `Authentication` section is missing. |
 | `ConfigurationException: Application environment time zone is not defined ...` (or name, logging name) | A value of `Application.Configuration` is missing. |
-| `NullReferenceException: section exists with name Application.Configuration but it is not an ApplicationConfig object.` | The `Application.Configuration` section is missing. |
+| `ConfigurationException: The section 'Application.Configuration' does not exist or is empty.` | The `Application.Configuration` section is missing or misspelled. |
 
 ## Next steps
 

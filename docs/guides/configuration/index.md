@@ -210,17 +210,17 @@ the sub-pages:
 `ConfigureSettings` throws a `ConfigurationException` when the section is missing. Check the
 section path (`:` between levels) and that the provider holding it is registered.
 
-### section exists with name Application.Configuration but it is not an ApplicationConfig object
+### The section 'Application.Configuration' does not exist or is empty
 
-`AddApplicationConfig(IConfiguration)` throws a `NullReferenceException` with this text when the
-section has no values at all: the section is missing, or misspelled. The message is misleading; check the
-spelling of the section name and that the file that holds it is loaded.
+`AddApplicationConfig(IConfiguration)` throws a `ConfigurationException` with this text when the
+section has no values at all: the section is missing, or misspelled. Check the spelling of the section
+name and that the file that holds it is loaded.
 
 ### Application name is not defined
 
 The `ConfigurationException` message starts with "Application name is not defined in the
-intialization of the application config settings" (the typo is in the message) and lists every
-required value of `Application.Configuration` that is empty.
+initialization of the application config settings" and lists every required value of
+`Application.Configuration` that is empty.
 
 ## See also
 

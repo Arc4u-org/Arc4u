@@ -113,22 +113,22 @@ public static class ConfigurationHelper
         string? configErrors = null;
         if (string.IsNullOrEmpty(validate.ApplicationName))
         {
-            configErrors += "Application name is not defined in the intialization of the application config settings" + System.Environment.NewLine;
+            configErrors += "Application name is not defined in the initialization of the application config settings" + System.Environment.NewLine;
         }
 
         if (string.IsNullOrEmpty(validate.Environment.Name))
         {
-            configErrors += "Application environment name is not defined in the intialization of the application config settings" + System.Environment.NewLine;
+            configErrors += "Application environment name is not defined in the initialization of the application config settings" + System.Environment.NewLine;
         }
 
         if (string.IsNullOrEmpty(validate.Environment.LoggingName))
         {
-            configErrors += "Application environment logging name is not defined in the intialization of the application config settings" + System.Environment.NewLine;
+            configErrors += "Application environment logging name is not defined in the initialization of the application config settings" + System.Environment.NewLine;
         }
 
         if (string.IsNullOrEmpty(validate.Environment.TimeZone))
         {
-            configErrors += "Application environment time zone is not defined in the intialization of the application config settings" + System.Environment.NewLine;
+            configErrors += "Application environment time zone is not defined in the initialization of the application config settings" + System.Environment.NewLine;
         }
 
         if (configErrors is not null)
@@ -148,8 +148,7 @@ public static class ConfigurationHelper
     /// <param name="sectionName">The name of the section. The default is <c>Application.Configuration</c>.</param>
     /// <exception cref="ArgumentNullException"><paramref name="configuration"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException"><paramref name="sectionName"/> is empty.</exception>
-    /// <exception cref="NullReferenceException">The section is missing or empty, so it cannot be bound to an <see cref="ApplicationConfig"/>.</exception>
-    /// <exception cref="ConfigurationException">One or more of the required values are missing.</exception>
+    /// <exception cref="ConfigurationException">The section is missing or empty, or one or more of the required values are missing.</exception>
     /// <example>
     /// <code language="csharp">
     /// // appsettings.json:
@@ -165,8 +164,14 @@ public static class ConfigurationHelper
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNullOrEmpty(sectionName);
 
-        var section = configuration.GetSection(sectionName) ?? throw new NullReferenceException($"No section exists with name {sectionName}");
-        var config = section.Get<ApplicationConfig>() ?? throw new NullReferenceException($"section exists with name {sectionName} but it is not an ApplicationConfig object.");
+        // GetSection never returns null: a missing section is an empty one.
+        var section = configuration.GetSection(sectionName);
+        if (!section.Exists())
+        {
+            throw new ConfigurationException($"The section '{sectionName}' does not exist or is empty. Check the section name and that the file that holds it is loaded.");
+        }
+
+        var config = section.Get<ApplicationConfig>() ?? throw new ConfigurationException($"The section '{sectionName}' cannot be bound to an ApplicationConfig.");
 
         void OptionFiller(ApplicationConfig option)
         {
