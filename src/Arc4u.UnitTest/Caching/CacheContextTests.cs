@@ -76,7 +76,7 @@ public class CacheContextTests
 
         // assert
         sut.CompactionPercentage.Should().Be(memorySettings.CompactionPercentage);
-        sut.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB * 1024 * 1024);
+        sut.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB);
         sut.SerializerName.Should().Be(memorySettings.SerializerName);
     }
 
@@ -157,7 +157,7 @@ public class CacheContextTests
         // memory
         sutMemory.Should().NotBeNull();
         sutMemory!.SerializerName.Should().Be(memorySettings.SerializerName);
-        sutMemory.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB * 1024 * 1024);
+        sutMemory.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB);
         sutMemory.CompactionPercentage.Should().Be(memorySettings.CompactionPercentage);
         // dapr
         sutDapr.Should().NotBeNull();

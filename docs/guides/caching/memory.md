@@ -63,13 +63,9 @@ The settings bind to <xref:Arc4u.Configuration.Memory.MemoryCacheOption>:
 | `Caching:Caches:n:Settings:SerializerName` | `string` | none | Key of the `IObjectSerialization` to use. When empty or not registered, the unkeyed `IObjectSerialization` is used. |
 
 > [!NOTE]
-> The registered `MemoryCacheOption.SizeLimitInMB` holds a number of bytes (the megabytes of the configuration times
-> 1,048,576). Read the option back with care if you inspect it.
-
-> [!WARNING]
-> Known issue, reproduced on `develop/9.0.0`: a `Memory` cache declared without a `Settings` section is created with a
-> limit of 100 bytes instead of 100 MB, because the default value is not converted to bytes. `Put` succeeds but
-> the value is not kept, and `Get` returns `null`. Declare `Settings` (even `{ "SizeLimitInMB": 100 }`) on every memory cache.
+> `MemoryCacheOption.SizeLimitInMB` keeps the value in megabytes, as configured. The limit given to the underlying
+> cache is `MemoryCacheOption.SizeLimitInBytes` (`SizeLimitInMB` times 1,048,576). A `Memory` cache declared without
+> a `Settings` section uses the default of 100 MB.
 
 ### Code
 
@@ -130,7 +126,7 @@ another key for a new kind (see [Caching](index.md#extensibility-points)).
 
 ### `Get` returns `null` right after `Put`
 
-Check, in this order: the cache declares a `Settings` section (the known issue above), the value fits in `SizeLimitInMB`,
+Check, in this order: the value fits in `SizeLimitInMB`,
 and the timeout passed to `Put` is not already over.
 
 ### `CacheNotInitializedException` mentioning `IObjectSerialization`
