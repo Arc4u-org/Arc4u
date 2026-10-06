@@ -49,7 +49,7 @@ openssl req -x509 -newkey rsa:2048 -nodes \
 ```
 
 The certificate must have an RSA key: the encryption uses the RSA public key, so an ECDSA
-certificate cannot be used (see [Troubleshooting](#ecdsa-certificate-fails-or-gives-empty-values)). To check that a certificate and a key belong together, both commands
+certificate cannot be used (see [Troubleshooting](#notsupportedexception-only-certificates-with-an-rsa-key)). To check that a certificate and a key belong together, both commands
 print the same public key:
 
 ```bash
@@ -402,10 +402,9 @@ configuration built from the earlier providers and `SecretSectionName`. Returnin
   `IConfiguration`. Do not log the configuration.
 - **One key per environment.** Use a different certificate per environment so that a leak in a
   test environment does not expose production secrets. A secret is only as private as the private key that decrypts it.
-- **Start-up fails on purpose, with one exception.** The decryptor does not catch exceptions: a missing
-  certificate or a value that cannot be decrypted stops the application at startup, so the error is
-  visible. The exception is a short value decrypted with an ECDSA key pair, which silently becomes empty
-  (see [Troubleshooting](#ecdsa-certificate-fails-or-gives-empty-values)).
+- **Start-up fails on purpose.** The decryptor does not catch exceptions: a missing certificate, a
+  certificate without an RSA key or a value that cannot be decrypted stops the application at startup,
+  so the error is visible.
 - **Not a secret manager.** The encrypted values are public data. Rotating or revoking a secret means
   re-encrypting and redeploying. For secrets that change often, use a dedicated secret store and a
   configuration provider for it.
@@ -450,19 +449,13 @@ The value was encrypted with another certificate, or the certificate has no priv
 (`The certificate ... has no private key!`). The exact type and message depend on the operating
 system. Encrypt the value again with the public certificate that matches `key.pem`.
 
-### ECDSA certificate fails or gives empty values
+### NotSupportedException: only certificates with an RSA key
 
-Encryption and decryption use the RSA key of the certificate. With an ECDSA certificate:
-
-- Values encrypted with an ECDSA certificate are not valid: the application stops at startup with an
-  `ArgumentNullException` (parameter `base64Cypherstring`).
-- A short value encrypted with an RSA certificate and decrypted with an ECDSA pair silently becomes an
-  empty string, with no exception.
-- A long value in the same situation throws an `ArgumentException` (parameter `rgbKey`).
-
-If a decrypted value is empty or one of these exceptions appears, check that the certificate has an RSA
-key (`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption`) and encrypt
-the values again.
+Encryption and decryption use the RSA key of the certificate. `Encrypt` and `Decrypt` throw a
+`NotSupportedException` naming the certificate and its key algorithm when the certificate has another
+key type, such as ECDSA. Use a certificate with an RSA key
+(`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption`) and encrypt the
+values again.
 
 ### The decryptor reads my earlier sources a second time
 

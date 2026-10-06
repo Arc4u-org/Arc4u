@@ -81,6 +81,47 @@ public class CertificateTests
         cypherText.Should().Contain(".");
         sut.Should().Be(plainText);
     }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(600)]
+    public void Encrypt_With_Ecdsa_Certificate_Should_Throw_NotSupportedException(int length)
+    {
+        // arrange
+        using var certificate = CreateEcdsaCertificate();
+        var plainText = new string('A', length);
+
+        // act
+        var exception = Record.Exception(() => certificate.Encrypt(plainText));
+
+        // assert
+        exception.Should().BeOfType<NotSupportedException>();
+        exception!.Message.Should().Contain("RSA");
+    }
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(600)]
+    public void Decrypt_With_Ecdsa_Certificate_Should_Throw_NotSupportedException(int length)
+    {
+        // arrange
+        var cypherText = CertificateDecryptor.GetX509Certificate2().Encrypt(new string('A', length));
+        using var certificate = CreateEcdsaCertificate();
+
+        // act
+        var exception = Record.Exception(() => certificate.Decrypt(cypherText));
+
+        // assert
+        exception.Should().BeOfType<NotSupportedException>();
+        exception!.Message.Should().Contain("RSA");
+    }
+
+    private static X509Certificate2 CreateEcdsaCertificate()
+    {
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var request = new CertificateRequest("CN=Arc4u ECDSA", ecdsa, HashAlgorithmName.SHA256);
+        return request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1));
+    }
     #if NET10_0
     [Fact]
     public void Custom_Root_CA_With_One_Certificate_Should_Be_Registered()
