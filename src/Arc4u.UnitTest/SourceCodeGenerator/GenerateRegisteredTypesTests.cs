@@ -188,6 +188,22 @@ public class GenerateRegisteredTypesTests
 
     [Fact]
     [Trait("Category", "CI")]
+    public void EveryExportOfATypeIsRegistered()
+    {
+        var (generatedFile, diagnostics) = RunGenerator(Settings("Arc4u.UnitTest.Dependency.MultiExport, Arc4u.UnitTest"),
+                                                        Path.Combine(ProjectDir, "Configs", "appsettings.json"),
+                                                        ProjectDir,
+                                                        Path.Combine(ProjectDir, "Program.cs"));
+
+        diagnostics.Should().BeEmpty();
+        generatedFile.Should().NotBeNull();
+        var generated = generatedFile!.ToString();
+        generated.Should().Contain("services.AddSingleton<Arc4u.UnitTest.Dependency.ISingletonObject, Arc4u.UnitTest.Dependency.MultiExport>();");
+        generated.Should().Contain("services.AddKeyedSingleton<Arc4u.UnitTest.Dependency.ITuple<System.Int32, System.String>, Arc4u.UnitTest.Dependency.MultiExport>(\"Multi\");");
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
     public void FourPartAssemblyVersionMatchesTheReferencedAssembly()
     {
         var version = typeof(Arc4u.AppSettings).Assembly.GetName().Version!;

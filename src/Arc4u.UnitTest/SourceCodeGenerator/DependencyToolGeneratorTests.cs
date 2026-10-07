@@ -105,5 +105,74 @@ public class DependencyToolGeneratorTests
         errors.Should().BeEmpty();
         generated.Should().Contain("services.AddTransient<global::Contoso.Business.Other>();");
     }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void ExportIsRecognisedWhateverItsSpelling()
+    {
+        var (generated, diagnostics, errors) = RunGenerator("""
+            using Arc4u.Dependency.Attribute;
+            using Exp = Arc4u.Dependency.Attribute.ExportAttribute;
+            namespace Contoso.Business;
+            [Export] public class Short { }
+            [ExportAttribute] public class Long { }
+            [Arc4u.Dependency.Attribute.Export] public class Qualified { }
+            [global::Arc4u.Dependency.Attribute.ExportAttribute] public class Global { }
+            [Exp] public class Aliased { }
+            """);
+
+        diagnostics.Should().BeEmpty();
+        errors.Should().BeEmpty();
+        foreach (var name in new[] { "Short", "Long", "Qualified", "Global", "Aliased" })
+        {
+            generated.Should().Contain($"services.AddTransient<global::Contoso.Business.{name}>();");
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void EveryExportOfAClassIsRegistered()
+    {
+        var (generated, diagnostics, errors) = RunGenerator("""
+            using Arc4u.Dependency.Attribute;
+            namespace Contoso.Business;
+            public interface IReader { }
+            public interface IWriter { }
+            [Export(typeof(IReader)), Export(typeof(IWriter))]
+            [Export("Store"), Shared, Scoped]
+            public partial class Store : IReader, IWriter { }
+            [Export]
+            public partial class Store { }
+            """);
+
+        // The lifetime conflict is reported once for the class, not once per export.
+        diagnostics.Should().ContainSingle().Which.Id.Should().Be("ARC4UDEP005");
+        errors.Should().BeEmpty();
+        generated.Should().Contain("services.AddScoped<Contoso.Business.IReader, global::Contoso.Business.Store>();");
+        generated.Should().Contain("services.AddScoped<Contoso.Business.IWriter, global::Contoso.Business.Store>();");
+        generated.Should().Contain("services.AddKeyedScoped<global::Contoso.Business.Store>(\"Store\");");
+        generated.Should().Contain("services.AddScoped<global::Contoso.Business.Store>();");
+        generated.Split('\n').Count(l => l.Contains("global::Contoso.Business.Store>")).Should().Be(4);
+    }
+
+    [Fact]
+    [Trait("Category", "CI")]
+    public void ExportOnARecordIsRegistered()
+    {
+        var (generated, diagnostics, errors) = RunGenerator("""
+            using Arc4u.Dependency.Attribute;
+            namespace Contoso.Business;
+            public interface IOptionsHolder { }
+            [Export(typeof(IOptionsHolder)), Shared]
+            public record OptionsHolder : IOptionsHolder;
+            [Export]
+            public record class Settings(string Name = "");
+            """);
+
+        diagnostics.Should().BeEmpty();
+        errors.Should().BeEmpty();
+        generated.Should().Contain("services.AddSingleton<Contoso.Business.IOptionsHolder, global::Contoso.Business.OptionsHolder>();");
+        generated.Should().Contain("services.AddTransient<global::Contoso.Business.Settings>();");
+    }
 }
 #endif

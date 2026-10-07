@@ -36,12 +36,10 @@ static class TypeExportAttributeScanner
 
             if (types is null || types.Contains(typeInfo))
             {
-                var serviceTypeInfo = typeInfo;
-                var implementationTypeInfo = typeInfo;
-                string? contractName = null;
+                // Every Export attribute is a registration, as in 8.x: the attribute allows several.
+                var exports = new List<(TypeInfo Service, string? ContractName)>();
                 var isScoped = false;
                 var isShared = false;
-                var exported = false;
 
                 foreach (var handle in type.GetCustomAttributes())
                 {
@@ -50,7 +48,8 @@ static class TypeExportAttributeScanner
 
                     if (ExportAttribute.Equals(attributeTypeInfo))
                     {
-                        exported = true;
+                        var serviceTypeInfo = typeInfo;
+                        string? contractName = null;
                         var arguments = attribute.DecodeValue(DummyCustomAttributeProvider.Instance);
                         foreach (var argument in arguments.FixedArguments)
                         {
@@ -63,6 +62,7 @@ static class TypeExportAttributeScanner
                                 contractName = contractNameArgument;
                             }
                         }
+                        exports.Add((serviceTypeInfo, contractName));
                     }
                     else if (ScopedAttribute.Equals(attributeTypeInfo))
                     {
@@ -74,9 +74,9 @@ static class TypeExportAttributeScanner
                     }
                 }
 
-                if (exported)
+                foreach (var (service, contractName) in exports)
                 {
-                    yield return new ExportDescription(serviceTypeInfo, implementationTypeInfo, isScoped, isShared, contractName);
+                    yield return new ExportDescription(service, typeInfo, isScoped, isShared, contractName);
                 }
             }
         }

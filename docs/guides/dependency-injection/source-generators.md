@@ -70,11 +70,15 @@ The method is generated even when the project has no `[Export]` class; it is the
 
 ### What is registered
 
-The generator visits every class declared in the project, public or not, including nested classes.
-Records are not visited. For each class with an `[Export]` attribute it writes one registration. The lifetime is
+The generator visits every class and record class declared in the project, public or not, including
+nested classes. The attribute is resolved by its type, so `[Export]`, `[ExportAttribute]`,
+`[Arc4u.Dependency.Attribute.Export]` and a `using` alias are all recognised. It writes one
+registration for each `[Export]` attribute of a class, so a class exported for two contracts is
+registered twice; `[Scoped]` and `[Shared]` apply to all of them. The lifetime is
 `Scoped` when the class has `[Scoped]`, otherwise `Singleton` when it has `[Shared]`, otherwise
 `Transient`. A class with both `[Scoped]` and `[Shared]` is registered as scoped, with warning
-`ARC4UDEP005`.
+`ARC4UDEP005`. The registrations are independent: a `[Shared]` class exported for two contracts
+has one instance per contract, not one shared instance.
 
 | `[Export]` arguments | Generated call |
 |---|---|
@@ -143,16 +147,6 @@ public static partial class RegisterExtensions
     }
 }
 ```
-
-### Limits
-
-> [!WARNING]
-> Known issues on `develop/9.0.0`:
->
-> - The attribute is detected by its exact spelling `Export`. `[ExportAttribute(...)]` and
->   `[Arc4u.Dependency.Attribute.Export(...)]` are ignored without a warning.
-> - Only the first `[Export]` of a class is used, although the attribute allows several.
-> - `[Export]` on a `record` is ignored without a warning.
 
 ## GenerateRegisteredTypes
 

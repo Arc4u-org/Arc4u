@@ -95,3 +95,11 @@ public class ImpTuple : ITuple<int, string>
 public interface ITuple<T1, T2>
 {
 }
+
+// Exported several times, to check that GenerateRegisteredTypes registers every Export.
+[Export(typeof(ISingletonObject))]
+[Export("Multi", typeof(ITuple<int, string>))]
+[Shared]
+public class MultiExport : ISingletonObject, ITuple<int, string>
+{
+}

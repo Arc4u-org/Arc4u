@@ -14,6 +14,7 @@ namespace Arc4u.Dependency.Tool;
 [Generator]
 public class DependencyToolGenerator : IIncrementalGenerator
 {
+    private const string ExportAttributeMetadataName = "Arc4u.Dependency.Attribute.ExportAttribute";
 
     /// <summary>
     /// Registers the generation of the <c>Dependencies.g.cs</c> file.
@@ -28,10 +29,12 @@ public class DependencyToolGenerator : IIncrementalGenerator
         }
 #endif
 
-        // Get class declarations having the Export attribute.
+        // Get the types having the Export attribute, resolved through the semantic model so that every spelling
+        // ([Export], [ExportAttribute], [Arc4u.Dependency.Attribute.Export], an alias) and records are found.
         var exportClasses = context.SyntaxProvider
-                                    .CreateSyntaxProvider(
-                                        predicate: static (s, _) => s is ClassDeclarationSyntax c,
+                                    .ForAttributeWithMetadataName(
+                                        ExportAttributeMetadataName,
+                                        predicate: static (s, _) => s is ClassDeclarationSyntax or RecordDeclarationSyntax,
                                         transform: static (ctx, _) => GetClassInfo(ctx))
                                     .Where(m => m is not null);
 
@@ -65,13 +68,19 @@ public class DependencyToolGenerator : IIncrementalGenerator
         {
             sb.AppendLine($"    public static void Register{ExtractName(assemblyName)}Types(this IServiceCollection services)");
             sb.AppendLine("    {");
+            // A partial type with [Export] on several of its declarations is seen once per declaration.
+            var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
             foreach (var _class in classes)
             {
                 var (type, location) = _class!.Value;
+                if (!visited.Add(type))
+                {
+                    continue;
+                }
 
-                // Read the Export attribute information.
-                var exportAttribute = type.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Arc4u.Dependency.Attribute.ExportAttribute");
-                if (exportAttribute is null)
+                // Every Export attribute is a registration, as in 8.x: the attribute allows several.
+                var exportAttributes = type.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::" + ExportAttributeMetadataName).ToList();
+                if (exportAttributes.Count == 0)
                 {
                     continue;
                 }
@@ -85,56 +94,64 @@ public class DependencyToolGenerator : IIncrementalGenerator
                     reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.ConflictingLifetimes, location, type.ToDisplayString()));
                 }
 
-                var (contractName, contractType) = GetExportAttribute(exportAttribute);
                 var action = isScoped ? "Scoped" : isShared ? "Singleton" : "Transient";
 
-                if (GetGenericError(type, contractType) is { } error)
+                foreach (var exportAttribute in exportAttributes)
                 {
-                    reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.GenericExportNotSupported, location, type.ToDisplayString(), error));
-                    continue;
-                }
-
-                if (type.Arity > 0)
-                {
-                    // An open generic is registered with the non-generic overloads: typeof(IService<>), typeof(TClass<>).
-                    var implementation = $"typeof({type.ConstructUnboundGenericType().ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
-                    var service = contractType is null ? implementation : $"typeof({contractType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
-                    var key = null != contractName ? $"\"{contractName}\", " : "";
-                    var keyed = null != contractName ? "Keyed" : "";
-                    sb.AppendLine(contractType is null && null == contractName
-                        ? $"        services.Add{action}({implementation});"
-                        : $"        services.Add{keyed}{action}({service}, {key}{implementation});");
-                    continue;
-                }
-
-                var typeName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                if (contractType is null)
-                {
-                    if (null != contractName)
-                    {
-                        sb.AppendLine($"        services.AddKeyed{action}<{typeName}>(\"{contractName}\");");
-                    }
-                    else
-                    {
-                        sb.AppendLine($"        services.Add{action}<{typeName}>();");
-                    }
-                }
-                else
-                {
-                    if (null != contractName)
-                    {
-                        sb.AppendLine($"        services.AddKeyed{action}<{contractType}, {typeName}>(\"{contractName}\");");
-                    }
-                    else
-                    {
-                        sb.AppendLine($"        services.Add{action}<{contractType}, {typeName}>();");
-                    }
+                    AppendRegistration(sb, type, location, exportAttribute, action, reportDiagnostic);
                 }
             }
             sb.AppendLine("    }");
         }
         sb.AppendLine("}");
         return sb.ToString();
+    }
+
+    private static void AppendRegistration(StringBuilder sb, INamedTypeSymbol type, Location location, AttributeData exportAttribute, string action, Action<Diagnostic> reportDiagnostic)
+    {
+        var (contractName, contractType) = GetExportAttribute(exportAttribute);
+        if (GetGenericError(type, contractType) is { } error)
+        {
+            reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.GenericExportNotSupported, location, type.ToDisplayString(), error));
+            return;
+        }
+
+        if (type.Arity > 0)
+        {
+            // An open generic is registered with the non-generic overloads: typeof(IService<>), typeof(TClass<>).
+            var implementation = $"typeof({type.ConstructUnboundGenericType().ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
+            var service = contractType is null ? implementation : $"typeof({contractType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
+            var key = null != contractName ? $"\"{contractName}\", " : "";
+            var keyed = null != contractName ? "Keyed" : "";
+            sb.AppendLine(contractType is null && null == contractName
+                ? $"        services.Add{action}({implementation});"
+                : $"        services.Add{keyed}{action}({service}, {key}{implementation});");
+            return;
+        }
+
+        var typeName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (contractType is null)
+        {
+            if (null != contractName)
+            {
+                sb.AppendLine($"        services.AddKeyed{action}<{typeName}>(\"{contractName}\");");
+            }
+            else
+            {
+                sb.AppendLine($"        services.Add{action}<{typeName}>();");
+            }
+        }
+        else
+        {
+            if (null != contractName)
+            {
+                sb.AppendLine($"        services.AddKeyed{action}<{contractType}, {typeName}>(\"{contractName}\");");
+            }
+            else
+            {
+                sb.AppendLine($"        services.Add{action}<{contractType}, {typeName}>();");
+            }
+        }
     }
 
     // Returns why a class involving generics cannot be registered, or null when it can.
@@ -222,29 +239,13 @@ public class DependencyToolGenerator : IIncrementalGenerator
         return _class?.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::Arc4u.Dependency.Attribute.SharedAttribute") is not null;
     }
 
-    private static (INamedTypeSymbol Type, Location Location)? GetClassInfo(GeneratorSyntaxContext context)
+    private static (INamedTypeSymbol Type, Location Location)? GetClassInfo(GeneratorAttributeSyntaxContext context)
     {
-        if (context.Node is not ClassDeclarationSyntax classDeclaration)
+        if (context.TargetSymbol is not INamedTypeSymbol symbol || context.TargetNode is not TypeDeclarationSyntax declaration)
         {
             return null;
         }
 
-        foreach (var attributeList in classDeclaration.AttributeLists)
-        {
-            foreach (var attribute in attributeList.Attributes)
-            {
-                var name = attribute.Name.ToString();
-                if (name is "Export")
-                {
-                    var symbol = (INamedTypeSymbol?)context.SemanticModel.GetDeclaredSymbol(classDeclaration);
-                    if (symbol != null)
-                    {
-                        return (symbol, classDeclaration.Identifier.GetLocation());
-                    }
-                }
-            }
-        }
-
-        return null;
+        return (symbol, declaration.Identifier.GetLocation());
     }
 }

@@ -297,18 +297,22 @@ public class GenerateRegisteredTypes : IIncrementalGenerator
             {
                 if (requestedTypes.Contains(exportInfo.Implementation))
                 {
-                    registeredTypes.Add(exportInfo.Implementation);
+                    // A type exported several times yields one description per Export: its diagnostics are reported once.
+                    var firstExport = registeredTypes.Add(exportInfo.Implementation);
                     var entry = typesByAssembly.Value.First(t => t.Type.Equals(exportInfo.Implementation)).Entry;
 
                     // A generic type definition is named Type`N in metadata, which is not a valid C# type name.
                     if (exportInfo.Implementation.Name.Contains('`'))
                     {
-                        reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.GenericExportNotSupported, settings.Locate(entry), exportInfo.Implementation.FullName, "a generic type cannot be registered from appsettings.json; register it in code with typeof(...)"));
+                        if (firstExport)
+                        {
+                            reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.GenericExportNotSupported, settings.Locate(entry), exportInfo.Implementation.FullName, "a generic type cannot be registered from appsettings.json; register it in code with typeof(...)"));
+                        }
                         continue;
                     }
 
                     // Scoped wins, as in DependencyToolGenerator: the shorter lifetime cannot capture a scoped dependency in a singleton.
-                    if (exportInfo.IsScoped && exportInfo.IsShared)
+                    if (firstExport && exportInfo.IsScoped && exportInfo.IsShared)
                     {
                         reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.ConflictingLifetimes, settings.Locate(entry), exportInfo.Implementation.FullName));
                     }
