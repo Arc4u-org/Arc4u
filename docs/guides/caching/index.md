@@ -107,7 +107,7 @@ The examples below use the default name `Caching`.
 | `Caching:Caches` | array | empty | The declared caches. |
 | `Caching:Caches:n:Name` | `string` | empty | Name used to get the cache from `ICacheContext`. Also the name of its options. |
 | `Caching:Caches:n:Kind` | `string` | empty | `Memory`, `Redis`, `RedisSentinel`, `Sql` or `Dapr`, case-insensitive. Any other value is a custom kind and must match, with the same casing, the key of the keyed `ICache` service that implements it. |
-| `Caching:Caches:n:IsAutoStart` | `bool` | `false` | `true` creates and initializes the cache when the `ICacheContext` is first resolved. See [the known issue](#the-first-access-to-a-cache-with-isautostart-false-throws) with `false`. |
+| `Caching:Caches:n:IsAutoStart` | `bool` | `false` | `true` creates and initializes the cache when the `ICacheContext` is first resolved; `false` does it on the first access to the cache. |
 | `Caching:Caches:n:Settings` | object | none | Settings of the kind. The keys are in the page of each kind. |
 
 The section replaces the format of the 8.x documentation: `Memory.Settings`, `SizeLimit`, `SizeLimitInMegaBytes` and a
@@ -292,15 +292,6 @@ that `Kind`. `Default` fails the same way when `Caching:Default` is empty or is 
 
 The cache exists but could not finish its initialization. For the Memory, Redis and Sql kinds, the message says that an
 `IObjectSerialization` cannot be resolved: register one (see [Serialization](serialization.md)).
-
-### The first access to a cache with `IsAutoStart` false throws
-
-> [!WARNING]
-> Known issue, reproduced on `develop/9.0.0`. The first use of a cache declared with `"IsAutoStart": false` through the
-> `ICacheContext` indexer logs `An item with the same key has already been added` and throws
-> `InvalidOperationException: There is no cache configured with the name ...`. The cache is initialized anyway and the
-> next access works. Until it is fixed, set `"IsAutoStart": true` (the recommended setting for now), or catch the first
-> exception. `Caching:Caches:n:IsAutoStart` defaults to `false`, so set it explicitly.
 
 ### A memory cache silently stores nothing
 

@@ -177,6 +177,12 @@ public class CacheContext : ICacheContext
             // look if the cache is not yet started and start it.
             lock (_lock)
             {
+                // another thread may have initialized the cache while this one was waiting for the lock.
+                if (_caches.TryGetValue(cacheName, out value))
+                {
+                    return value;
+                }
+
                 if (_uninitializedCaches.TryGetValue(cacheName, out var cacheKind))
                 {
                     try
@@ -184,8 +190,6 @@ public class CacheContext : ICacheContext
                         if (_dependency.TryGetService<ICache>(cacheKind, out var cache))
                         {
                             cache!.Initialize(cacheName);
-
-                            _caches.Add(cacheName, cache);
 
                             // thread-safe update of the _cache and _uninitializedCaches is required because they can be accessed by other threads outside the lock
                             // (both in calls to this[string] as in Exists(string))

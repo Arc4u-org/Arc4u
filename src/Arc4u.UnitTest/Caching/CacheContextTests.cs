@@ -242,23 +242,73 @@ public class CacheContextTests
     public void AddCacheContextWithCustomSectionAndLowerCaseKindShould()
     {
         // arrange
+        var services = BuildMemoryCacheServices("MyCaching", "memory", isAutoStart: true);
+        services.AddMemoryCacheKind();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        // act
+        var sut = serviceProvider.GetRequiredService<ICacheContext>();
+
+        // assert
+        services.Count(s => s.ServiceType == typeof(ICache)).Should().Be(1);
+        sut.Exist("Volatile").Should().BeTrue();
+
+        sut.Default.Put("key", "value");
+        sut.Default.Get<string>("key").Should().Be("value");
+    }
+
+    [Fact]
+    public void FirstAccessToANotAutoStartedCacheShould()
+    {
+        // arrange
+        var serviceProvider = BuildMemoryCacheServices("Caching", CacheContext.Memory, isAutoStart: false).BuildServiceProvider();
+        var sut = serviceProvider.GetRequiredService<ICacheContext>();
+
+        // act
+        var first = sut["Volatile"];
+        var second = sut["Volatile"];
+
+        // assert
+        sut.Exist("Volatile").Should().BeTrue();
+        second.Should().BeSameAs(first);
+
+        first.Put("key", "value");
+        second.Get<string>("key").Should().Be("value");
+    }
+
+    [Fact]
+    public async Task ConcurrentFirstAccessToANotAutoStartedCacheShould()
+    {
+        // arrange
+        var serviceProvider = BuildMemoryCacheServices("Caching", CacheContext.Memory, isAutoStart: false).BuildServiceProvider();
+        var sut = serviceProvider.GetRequiredService<ICacheContext>();
+
+        // act
+        var caches = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => Task.Run(() => sut["Volatile"])));
+
+        // assert
+        caches.Should().AllSatisfy(c => c.Should().BeSameAs(caches[0]));
+    }
+
+    private static IServiceCollection BuildMemoryCacheServices(string sectionName, string kind, bool isAutoStart)
+    {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(
                 new Dictionary<string, string?>
                 {
-                    ["MyCaching:Default"] = "Volatile",
-                    ["MyCaching:Caches:0:Name"] = "Volatile",
-                    ["MyCaching:Caches:0:Kind"] = "memory",
-                    ["MyCaching:Caches:0:IsAutoStart"] = "true",
-                    ["MyCaching:Caches:0:Settings:SizeLimitInMB"] = "10"
+                    [$"{sectionName}:Default"] = "Volatile",
+                    [$"{sectionName}:Caches:0:Name"] = "Volatile",
+                    [$"{sectionName}:Caches:0:Kind"] = kind,
+                    [$"{sectionName}:Caches:0:IsAutoStart"] = isAutoStart.ToString(),
+                    [$"{sectionName}:Caches:0:Settings:SizeLimitInMB"] = "10"
                 }).Build();
 
         IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(configuration);
-        services.AddCacheContext(configuration, "MyCaching");
-        services.AddMemoryCacheKind();
+        services.AddCacheContext(configuration, sectionName);
         services.AddMemoryCacheKind();
         services.AddTransient<IObjectSerialization, JsonSerialization>();
 
@@ -272,16 +322,6 @@ public class CacheContextTests
             .Returns(mockLoggerWrapperMemoryCache.Object);
         services.AddTransient<ILogger<MemoryCache>>(_ => mockLoggerWrapperMemoryCache.Object);
 
-        var serviceProvider = services.BuildServiceProvider();
-
-        // act
-        var sut = serviceProvider.GetRequiredService<ICacheContext>();
-
-        // assert
-        services.Count(s => s.ServiceType == typeof(ICache)).Should().Be(1);
-        sut.Exist("Volatile").Should().BeTrue();
-
-        sut.Default.Put("key", "value");
-        sut.Default.Get<string>("key").Should().Be("value");
+        return services;
     }
 }
