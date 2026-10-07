@@ -195,6 +195,7 @@ public static class GraphSamples
 |---|---|
 | `ApplySetReferences(query)` | Every path of the graph, with `Include` and `ThenInclude`. Collections are included. |
 | `ApplySingleReferences(query)` | Only the paths made of single-valued references. A path is cut at the first collection. `Graph<Order>` with `Lines` produces no `Include`. |
+| `ApplyReferences(query, o => o.Lines)` | Only the paths that start with the given first-level property (`Lines`, `Lines.Product`, ...), with `Include` and `ThenInclude`. A deeper expression such as `o => o.Customer.Address` throws `InvalidOperationException`. |
 
 ## Pitfalls
 
@@ -220,8 +221,7 @@ The model does not ignore it. Add `entity.Ignore(e => e.PersistChange)` for ever
 
 ### `InvalidOperationException: It is not allowed to check more than one level!` from `ApplyReferences`
 
-> [!WARNING]
-> Known issue: `GraphExtension.ApplyReferences(graph, query, path)` throws this exception for every path expression, including a first-level one such as `o => o.Lines`, so it cannot be used. Use `ApplySetReferences` or `ApplySingleReferences`.
+The path expression goes deeper than one property, for example `o => o.Customer.Address`. Pass the first-level property (`o => o.Customer`): every path of the graph under it is included.
 
 ## See also
 

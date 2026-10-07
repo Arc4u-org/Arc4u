@@ -98,14 +98,17 @@ public static class GraphExtension
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var stringPath = Graph<T>.EvaluateExpression(path);
+        // EvaluateExpression returns the path with a leading dot (".Lines").
+        var stringPath = Graph<T>.EvaluateExpression(path).TrimStart('.');
 
         if (stringPath.Contains('.'))
         {
             throw new InvalidOperationException(OnlyLevelOneIsAllowed);
         }
 
-        return graph.Includes.Where(i => i.StartsWith(stringPath)).Aggregate<string, IQueryable<T>>(query, (queryable, i) => queryable.BuildInclude(i) ?? queryable);
+        // Match whole segments only: "Lines" must not select "LinesHistory".
+        return graph.Includes.Where(i => i.Equals(stringPath, StringComparison.Ordinal) || i.StartsWith(stringPath + ".", StringComparison.Ordinal))
+                             .Aggregate<string, IQueryable<T>>(query, (queryable, i) => queryable.BuildInclude(i) ?? queryable);
     }
 
     /// <summary>
