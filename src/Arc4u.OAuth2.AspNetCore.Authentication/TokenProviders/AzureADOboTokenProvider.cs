@@ -74,7 +74,8 @@ namespace Arc4u.OAuth2.TokenProviders
             var cache = cacheHelper.GetCache();
 
             // the key is defined by user!
-            var cacheKey = $"_Obo_{settings.Values[TokenKeys.ClientIdKey]}_{currentToken.GetHashCode()}_{settings.Values[TokenKeys.Scope]}";
+            // The hash must be stable across processes (the cache can be distributed): string.GetHashCode is not.
+            var cacheKey = $"_Obo_{settings.Values[TokenKeys.ClientIdKey]}_{TokenCacheKey.Hash(_defaultAuthority.Url.ToString(), currentToken, settings.Values[TokenKeys.Scope])}";
 
             var tokenFromCache = await cache.GetAsync<TokenInfo>(cacheKey).ConfigureAwait(false);
 

@@ -1,4 +1,3 @@
-using System.Globalization;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Diagnostics;
 using Arc4u.OAuth2.AspNetCore;
@@ -163,7 +162,9 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
         {
             throw new InvalidOperationException("The password cannot be null.");
         }
-        return authority.Url + "_" + audience + "_Password_" + credential.Upn + "_" + credential.Password.GetHashCode().ToString(CultureInfo.InvariantCulture);
+        // The password is part of the hash so a second call with the same upn but a wrong password does not get the cached token.
+        // The upn and the authority are hashed with it so the same password gives a different key for each user.
+        return "Credential_" + credential.Upn + "_" + TokenCacheKey.Hash(authority.Url.ToString(), audience, credential.Upn, credential.Password);
     }
 
     private Result GetContext(IKeyValueSettings settings, out AuthorityOptions? authority, out string scope)

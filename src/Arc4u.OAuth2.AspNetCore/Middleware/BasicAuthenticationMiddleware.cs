@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using Arc4u.Configuration;
@@ -158,7 +157,7 @@ public class BasicAuthenticationMiddleware
     {
         ArgumentNullException.ThrowIfNull(credentialsResult);
 
-        return "Basic-" + $"{credentialsResult.Upn}-{credentialsResult.Password}".GetHashCode().ToString(CultureInfo.InvariantCulture);
+        return "Basic-" + TokenCacheKey.Hash(credentialsResult.Upn, credentialsResult.Password);
     }
 
     private CredentialsResult GetSecretCredential([DisallowNull] HttpContext context)

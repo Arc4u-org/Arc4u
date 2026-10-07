@@ -105,6 +105,35 @@ public class ClientCredentialsTokenProviderTests
     }
 
     [Fact]
+    public async Task GetToken_Cache_Key_Depends_On_Extra_Parameters_Should()
+    {
+        // arrange
+        var clientId = _fixture.Create<string>();
+        var clientSecret = _fixture.Create<string>();
+
+        async Task<string> CacheKeyFor(params KeyValuePair<string, string>[] extra)
+        {
+            var (cache, mockCache) = MockCache(cached: null);
+            var sut = BuildSut(new StubHandler(Ok(_fixture.Create<string>(), 3600)), cache);
+            await sut.GetTokenAsync(BuildSettings(clientId, clientSecret, Constants.OpenIdScope, extra), null);
+            return (string)mockCache.Invocations.Single(i => i.Method.Name == nameof(ITokenCache.Put)).Arguments[0];
+        }
+
+        // act
+        var keyApi1 = await CacheKeyFor(KeyValuePair.Create("resource", "http://api1"));
+        var keyApi1Again = await CacheKeyFor(KeyValuePair.Create("resource", "http://api1"));
+        var keyApi2 = await CacheKeyFor(KeyValuePair.Create("resource", "http://api2"));
+        var keyOrderA = await CacheKeyFor(KeyValuePair.Create("resource", "http://api1"), KeyValuePair.Create("audience", "x"));
+        var keyOrderB = await CacheKeyFor(KeyValuePair.Create("audience", "x"), KeyValuePair.Create("resource", "http://api1"));
+
+        // assert
+        keyApi1.Should().Be(keyApi1Again);
+        keyApi1.Should().NotBe(keyApi2);
+        keyOrderA.Should().Be(keyOrderB);
+        keyApi1.Should().NotContain(clientSecret);
+    }
+
+    [Fact]
     public async Task GetToken_With_Missing_ClientSecret_Should_Fail()
     {
         // arrange

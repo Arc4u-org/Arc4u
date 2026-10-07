@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -84,7 +83,7 @@ public class ClientCredentialsTokenProvider(
             ? ExtraParametersEncoder.Decode(extra).ToList()
             : [];
 
-        var cacheKey = BuildKey(authority, clientId!, scope!, clientSecret!);
+        var cacheKey = BuildKey(authority, clientId!, scope!, clientSecret!, extraParameters);
 
         // Serve a still-valid token from the cache; refresh when missing or close to expiry.
         var cached = tokenCache.Get<TokenInfo>(cacheKey);
@@ -124,13 +123,18 @@ public class ClientCredentialsTokenProvider(
         throw new NotImplementedException();
     }
 
-    private static string BuildKey(AuthorityOptions authority, string clientId, string scope, string clientSecret)
+    private static string BuildKey(AuthorityOptions authority, string clientId, string scope, string clientSecret, IEnumerable<KeyValuePair<string, string>> extraParameters)
     {
-        // The cache is distributed/persistent, so the key must be stable across processes and
-        // restarts. Sort the extra parameters for order-independence and hash them with SHA-256
-        // (string.GetHashCode is randomized per process and must not be used here).
-        var extraHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(authority.Url.AbsolutePath + scope + clientSecret)));
-        return $"ClientCredentials_{clientId}_{extraHash}";
+        // Every value sent to the token endpoint changes the token, so all of them are part of the key.
+        // The extra parameters (e.g. resource) are sorted so their order in the settings does not matter.
+        var parts = new List<string?> { authority.Url.ToString(), scope, clientSecret };
+        foreach (var extra in extraParameters.OrderBy(p => p.Key, StringComparer.Ordinal).ThenBy(p => p.Value, StringComparer.Ordinal))
+        {
+            parts.Add(extra.Key);
+            parts.Add(extra.Value);
+        }
+
+        return $"ClientCredentials_{clientId}_{TokenCacheKey.Hash([.. parts])}";
     }
 
     private async Task<Result<TokenInfo>> GetTokenInfoAsync(Uri tokenEndpoint, string clientId, string clientSecret, string scope, IEnumerable<KeyValuePair<string, string>> extraParameters)

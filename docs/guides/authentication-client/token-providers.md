@@ -327,17 +327,20 @@ another section). The configuration based `AddJwtAuthentication` already calls i
 
 ## Cache keys
 
-The providers cache the tokens they obtain, and some cache keys are not built as expected (known
-issues):
+The providers cache the tokens they obtain. A cache key contains every value that changes the
+token, and the secret parts (user token, password, client secret) are hashed with SHA-256 through
+<xref:Arc4u.OAuth2.Token.TokenCacheKey>. The hash is the same in every process, so with a
+distributed cache (Redis, SQL Server) the entries are shared between instances and survive a
+restart:
 
-- The `Obo` and `Credential` providers include `string.GetHashCode()` of the user's token or of the
-  password in the key. This value changes from one process to the next, so with a distributed
-  cache (Redis, SQL Server) the entries are never shared between instances or after a restart: each
-  process requests its own tokens.
-- The `ClientCredentials` provider builds the key from the client ID, the client secret, the scope
-  and the path of the authority, but not from the extra parameters. Two `ClientTokens` entries that
-  differ only by an extra parameter such as `resource` share the same cached token: give them
-  different scopes or client IDs.
+| Provider | Key |
+|---|---|
+| `ClientCredentials` | `ClientCredentials_<client-id>_<hash>`, the hash covers the authority URL, the scope, the client secret and the extra parameters (for example `resource`, in any order). |
+| `Credential` | `Credential_<user>_<hash>`, the hash covers the authority URL, the scope, the user and the password. |
+| `Obo` | `_Obo_<client-id>_<hash>`, the hash covers the authority URL, the user's token and the scope. |
+
+Two `ClientTokens` entries that differ only by an extra parameter such as `resource` get their
+own cached token.
 
 ## Write your own token provider
 
