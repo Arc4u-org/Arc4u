@@ -225,4 +225,63 @@ public class CacheContextTests
 
         cacheInstance.Get<string>("key").Should().Be("value");
     }
+
+    [Theory]
+    [InlineData("memory", CacheContext.Memory)]
+    [InlineData("REDIS", CacheContext.Redis)]
+    [InlineData("redissentinel", CacheContext.RedisSentinel)]
+    [InlineData("sql", CacheContext.Sql)]
+    [InlineData("DaPr", CacheContext.Dapr)]
+    [InlineData("MyKind", "MyKind")]
+    public void NormalizeKindShould(string kind, string expected)
+    {
+        CacheContext.NormalizeKind(kind).Should().Be(expected);
+    }
+
+    [Fact]
+    public void AddCacheContextWithCustomSectionAndLowerCaseKindShould()
+    {
+        // arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["MyCaching:Default"] = "Volatile",
+                    ["MyCaching:Caches:0:Name"] = "Volatile",
+                    ["MyCaching:Caches:0:Kind"] = "memory",
+                    ["MyCaching:Caches:0:IsAutoStart"] = "true",
+                    ["MyCaching:Caches:0:Settings:SizeLimitInMB"] = "10"
+                }).Build();
+
+        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton(configuration);
+        services.AddCacheContext(configuration, "MyCaching");
+        services.AddMemoryCacheKind();
+        services.AddMemoryCacheKind();
+        services.AddTransient<IObjectSerialization, JsonSerialization>();
+
+        var mockLoggerWrapper = new Mock<ILoggerWrapper<CacheContext>>();
+        mockLoggerWrapper.Setup(m => m.SetContext(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Type?>()))
+            .Returns(mockLoggerWrapper.Object);
+        services.AddTransient<ILogger<CacheContext>>(_ => mockLoggerWrapper.Object);
+
+        var mockLoggerWrapperMemoryCache = new Mock<ILoggerWrapper<MemoryCache>>();
+        mockLoggerWrapperMemoryCache.Setup(m => m.SetContext(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Type?>()))
+            .Returns(mockLoggerWrapperMemoryCache.Object);
+        services.AddTransient<ILogger<MemoryCache>>(_ => mockLoggerWrapperMemoryCache.Object);
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        // act
+        var sut = serviceProvider.GetRequiredService<ICacheContext>();
+
+        // assert
+        services.Count(s => s.ServiceType == typeof(ICache)).Should().Be(1);
+        sut.Exist("Volatile").Should().BeTrue();
+
+        sut.Default.Put("key", "value");
+        sut.Default.Get<string>("key").Should().Be("value");
+    }
 }

@@ -49,11 +49,50 @@ public class CacheContext : ICacheContext
     /// <param name="logger">The logger.</param>
     /// <param name="dependency">The service provider used to resolve the <see cref="ICache"/> implementations by kind.</param>
     public CacheContext(IConfiguration configuration, ILogger<CacheContext> logger, IServiceProvider dependency)
+        : this(configuration, logger, dependency, DefaultSectionName)
     {
+    }
+
+    /// <summary>
+    /// Initialise the cache following the given caching config section.
+    /// The caches flagged <c>IsAutoStart</c> are created and initialized immediately; the others are registered and initialized on their first use.
+    /// </summary>
+    /// <param name="configuration">The configuration that contains the caching section.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="dependency">The service provider used to resolve the <see cref="ICache"/> implementations by kind.</param>
+    /// <param name="sectionName">The name of the caching configuration section.</param>
+    public CacheContext(IConfiguration configuration, ILogger<CacheContext> logger, IServiceProvider dependency, string sectionName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sectionName);
+
         _logger = logger;
         _dependency = dependency;
-        InitializeFromConfig(configuration);
+        InitializeFromConfig(configuration, sectionName);
     }
+
+    /// <summary>The default name of the caching configuration section.</summary>
+    public const string DefaultSectionName = "Caching";
+
+    /// <summary>
+    /// Returns the canonical kind (<see cref="Memory"/>, <see cref="Redis"/>, <see cref="RedisSentinel"/>, <see cref="Sql"/> or <see cref="Dapr"/>) matching <paramref name="kind"/> case-insensitively.
+    /// Any other kind is returned unchanged, so custom kinds are resolved with the exact key they are registered with.
+    /// </summary>
+    /// <param name="kind">The kind read from the configuration.</param>
+    /// <returns>The key used to resolve the keyed <see cref="ICache"/> service.</returns>
+    public static string NormalizeKind(string kind)
+    {
+        foreach (var known in KnownKinds)
+        {
+            if (string.Equals(known, kind, StringComparison.OrdinalIgnoreCase))
+            {
+                return known;
+            }
+        }
+
+        return kind;
+    }
+
+    private static readonly string[] KnownKinds = [Memory, Redis, RedisSentinel, Sql, Dapr];
 
     /// <summary>
     /// Accessor to retrieve the default cache defined in the caching config section of the config file.
@@ -64,7 +103,7 @@ public class CacheContext : ICacheContext
         get { return this[_cacheConfigName]; }
     }
 
-    private void InitializeFromConfig(IConfiguration configuration)
+    private void InitializeFromConfig(IConfiguration configuration, string sectionName)
     {
         lock (_lock)
         {
@@ -74,7 +113,7 @@ public class CacheContext : ICacheContext
             }
 
             var config = new Configuration.Caching();
-            configuration.GetSection("Caching").Bind(config);
+            configuration.GetSection(sectionName).Bind(config);
 
             if (null != config.Default && !string.IsNullOrWhiteSpace(config.Default))
             {
@@ -85,25 +124,27 @@ public class CacheContext : ICacheContext
                     // retrieve the caches and start if asked!
                     foreach (var cacheConfig in config.Caches)
                     {
+                        var kind = NormalizeKind(cacheConfig.Kind);
+
                         if (cacheConfig.IsAutoStart)
                         {
-                            if (_dependency.TryGetService<ICache>(cacheConfig.Kind, out var cache))
+                            if (_dependency.TryGetService<ICache>(kind, out var cache))
                             {
                                 cache!.Initialize(cacheConfig.Name);
 
                                 _caches.Add(cacheConfig.Name, cache);
 
-                                _logger.Technical().LogNewCache(cacheConfig.Kind, cacheConfig.Name);
+                                _logger.Technical().LogNewCache(kind, cacheConfig.Name);
                             }
                             else
                             {
-                                _logger.Technical().LogCacheKindIssue(cacheConfig.Kind);
+                                _logger.Technical().LogCacheKindIssue(kind);
                             }
                         }
                         else
                         {
-                            _uninitializedCaches.Add(cacheConfig.Name, cacheConfig.Kind);
-                            _logger.Technical().LogRegisterNewCache(cacheConfig.Kind, cacheConfig.Name);
+                            _uninitializedCaches.Add(cacheConfig.Name, kind);
+                            _logger.Technical().LogRegisterNewCache(kind, cacheConfig.Name);
                         }
                     }
                 }

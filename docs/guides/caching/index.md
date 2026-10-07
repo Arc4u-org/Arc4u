@@ -68,9 +68,9 @@ without it the first cache created fails with `InvalidOperationException: Bad Ar
 
 ## Configuration
 
-`AddCacheContext(configuration, sectionName = "Caching")` reads the `Caching` section to register the options of each cache.
-<xref:Arc4u.Caching.CacheContext>, the `ICacheContext` implementation, always reads the section named `Caching`
-to create the caches, whatever the `sectionName` argument. Keep the default name.
+`AddCacheContext(configuration, sectionName = "Caching")` reads the section to register the options of each cache, and
+<xref:Arc4u.Caching.CacheContext>, the `ICacheContext` implementation, reads the same section to create the caches.
+The examples below use the default name `Caching`.
 
 ### appsettings.json
 
@@ -106,7 +106,7 @@ to create the caches, whatever the `sectionName` argument. Keep the default name
 | `Caching:Default` | `string` | empty | Name of the cache returned by `ICacheContext.Default`. When it is empty, no cache is created at all. |
 | `Caching:Caches` | array | empty | The declared caches. |
 | `Caching:Caches:n:Name` | `string` | empty | Name used to get the cache from `ICacheContext`. Also the name of its options. |
-| `Caching:Caches:n:Kind` | `string` | empty | `Memory`, `Redis`, `RedisSentinel`, `Sql` or `Dapr`. Must match, with the same casing, the key of the keyed `ICache` service that implements it. |
+| `Caching:Caches:n:Kind` | `string` | empty | `Memory`, `Redis`, `RedisSentinel`, `Sql` or `Dapr`, case-insensitive. Any other value is a custom kind and must match, with the same casing, the key of the keyed `ICache` service that implements it. |
 | `Caching:Caches:n:IsAutoStart` | `bool` | `false` | `true` creates and initializes the cache when the `ICacheContext` is first resolved. See [the known issue](#the-first-access-to-a-cache-with-isautostart-false-throws) with `false`. |
 | `Caching:Caches:n:Settings` | object | none | Settings of the kind. The keys are in the page of each kind. |
 
@@ -115,8 +115,9 @@ The section replaces the format of the 8.x documentation: `Memory.Settings`, `Si
 
 ### Code
 
-`AddCacheContext` registers `ICacheContext` and the options of each declared cache. It does not register the cache
-implementations nor the serializer: register them yourself, as keyed services whose key is the `Kind`.
+`AddCacheContext` registers `ICacheContext` and the options of each declared cache. Each `Arc4u.Caching.*` package
+registers its cache implementations with its own extension: `AddMemoryCacheKind()`, `AddRedisCacheKinds()` (`Redis` and
+`RedisSentinel`), `AddSqlCacheKind()` and `AddDaprCacheKind()`. Register the serializer yourself.
 
 ```csharp
 // Program.cs
@@ -134,15 +135,15 @@ builder.Services.AddCacheContext(builder.Configuration);
 // The serializer used by the caches (the Memory, Redis and Sql kinds).
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
 
-// One keyed ICache per Kind you use.
-builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
-builder.Services.AddKeyedTransient<ICache, RedisCache>(CacheContext.Redis);
+// The ICache implementations of the kinds you use.
+builder.Services.AddMemoryCacheKind();
+builder.Services.AddRedisCacheKinds();
 
 var app = builder.Build();
 app.Run();
 ```
 
-The constants `CacheContext.Memory`, `Redis`, `RedisSentinel`, `Sql` and `Dapr` hold the kind names. The
+The constants `CacheContext.Memory`, `Redis`, `RedisSentinel`, `Sql` and `Dapr` hold the kind names; the extensions register each implementation as a keyed `ICache` service with that key. The
 `[Export]` attributes on the cache classes let the Arc4u code generator write the same registrations
 (see [Dependency injection](../dependency-injection/index.md)).
 
