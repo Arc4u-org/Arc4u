@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Arc4u.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -160,6 +161,10 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
             properties.AddIfNotExist(LoggingConstants.Application, _applicationConfig.Environment.LoggingName);
             properties.AddIfNotExist(LoggingConstants.ThreadId, System.Environment.CurrentManagedThreadId);
             properties.AddIfNotExist(LoggingConstants.ProcessId, ProcessId);
+            if (Activity.Current is { } activity)
+            {
+                properties.AddIfNotExist(LoggingConstants.ActivityId, activity.TraceId.ToString());
+            }
 
             _logger.Log(level, 0, properties, exception, (state, ex) => message ?? "");
 

@@ -218,11 +218,11 @@ app.MapPost("/orders", async (IApplicationAuthorizationPolicy policy) =>
 }).RequireAuthorization();
 ```
 
-> [!WARNING]
-> Known issue: `ManageExceptionsFilter` of `Arc4u.OAuth2.AspNetCore` is meant to turn this exception into a 403
-> `ProblemDetails` in MVC controllers, but in an HTTP application it throws `ReservedLoggingKeyException:
-> ActivityId` while logging (`IApplicationContext.ActivityID` is only set by the gRPC authorization interceptor),
-> and the request ends with a 500. Do not rely on it; handle `UnauthorizedAccessException` yourself.
+> [!NOTE]
+> In MVC controllers, `ManageExceptionsFilter` of `Arc4u.OAuth2.AspNetCore`
+> (`AddControllers(o => o.Filters.Add<ManageExceptionsFilter>())`) turns this exception into a 403
+> `ProblemDetails`. It logs the exception with the trace id of the current activity as `ActivityId`; for any
+> other exception it answers a 500 whose detail gives that id.
 
 ### Protect resource paths from configuration
 

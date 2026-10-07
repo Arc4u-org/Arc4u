@@ -145,8 +145,8 @@ the `ISecureCache`.
 
 The handler (<xref:Arc4u.OAuth2.Client.Authentication.Token.JwtHttpHandler`1>) needs the
 `IApplicationContext` when it is created, and throws `ConfigurationException` without it. It uses
-the token type as the scheme and, when there is a principal, adds a `culture` header and an
-`activityid` header (when the context has an activity ID). Its constructor that takes a settings
+the token type as the scheme and, when there is a principal, adds a `culture` header. The trace
+context travels in the standard W3C `traceparent` header that `HttpClient` adds. Its constructor that takes a settings
 name (for example `OidcClient`) resolves the named `SimpleKeyValueSettings` options registered by
 `AddOidcClientAuthentication` (or any `services.Configure<SimpleKeyValueSettings>(name, ...)`).
 

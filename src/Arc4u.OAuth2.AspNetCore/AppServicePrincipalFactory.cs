@@ -89,7 +89,6 @@ public class AppServicePrincipalFactory : IAppPrincipalFactory
             return Result.Fail("No principal can be created: the claims transformation did not produce an AppPrincipal.");
         }
 
-        activity?.SetTag(LoggingConstants.ActivityId, Activity.Current?.Id ?? Guid.NewGuid().ToString());
         return appPrincipal;
     }
 

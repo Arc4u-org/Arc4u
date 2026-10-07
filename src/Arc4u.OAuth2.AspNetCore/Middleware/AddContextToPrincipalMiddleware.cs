@@ -46,8 +46,6 @@ public class AddContextToPrincipalMiddleware
                 context.Request.Headers.Append("traceparent", Activity.Current!.Id);
             }
 
-            activity?.SetTag(LoggingConstants.ActivityId, Activity.Current!.Id);
-
             // Check for a culture.
             var cultureHeader = context.Request?.Headers?.FirstOrDefault(h => h.Key.Equals("culture", StringComparison.InvariantCultureIgnoreCase));
             if (cultureHeader.HasValue && StringValues.Empty != cultureHeader.Value.Value && cultureHeader.Value.Value.Any())

@@ -93,14 +93,6 @@ public static partial class LoggerMessages
          Message = "Add the {scheme} token to provide authentication evidence.")]
      public static partial void LogSchemeInfo(this ILogger logger, string scheme);
 
-     /// <summary>
-     /// Logs a Debug message (event id 9190): <c>Add the activity id to the request for tracing purpose: {activityId}.</c>
-     /// </summary>
-     /// <param name="logger">The logger to write to.</param>
-     /// <param name="activityId">The value substituted in the message.</param>
-     [LoggerMessage(EventId = 9190, Level = LogLevel.Debug,
-         Message = "Add the activity id to the request for tracing purpose: {activityId}.")]
-     public static partial void LogPrincipalActivityId(this ILogger logger, string activityId);
 
      /// <summary>
      /// Logs a Debug message (event id 9191): <c>Add the current culture to the request: {culture}.</c>

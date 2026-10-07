@@ -133,15 +133,9 @@ public class JwtHttpHandler : DelegatingHandler
             request.Headers.Add(scheme, tokenInfo.Token);
         }
 
-        // Add ActivityId if founded!
+        // Add the culture of the user if any.
         if (null != _applicationContext?.Principal)
         {
-            if (null != _applicationContext?.ActivityID)
-            {
-                _logger.Technical().LogAddActivityId(_applicationContext.ActivityID);
-                request.Headers.Add("activityid", _applicationContext.ActivityID);
-            }
-
             _logger.Technical().LogAddCulture(_applicationContext!.Principal.Profile?.CurrentCulture?.TwoLetterISOLanguageName ?? "No Culture exists.");
             var culture = _applicationContext.Principal.Profile?.CurrentCulture?.TwoLetterISOLanguageName;
             if (null != culture)

@@ -187,7 +187,7 @@ namespace Arc4u.OAuth2.Token
                 request.Headers.Add(scheme, tokenInfoResult.Value.Token);
             }
 
-            // Add ActivityId if founded!
+            // Add the culture of the user if any.
             if (applicationContext?.Principal is not null)
             {
                 var culture = applicationContext!.Principal?.Profile?.CurrentCulture?.TwoLetterISOLanguageName;

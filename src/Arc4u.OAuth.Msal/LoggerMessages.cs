@@ -68,10 +68,6 @@ public static partial class LoggerMessages
         Message = "Add the {Scheme} token to provide authentication evidence.")]
     public static partial void LogAddSchemeToToken(this ILogger logger, string scheme);
 
-    [LoggerMessage(EventId = 9136, Level = LogLevel.Trace,
-       Message = "Add the activity id to the request for tracing purpose: {ActivityID}.")]
-    public static partial void LogAddActivityId(this ILogger logger, string activityID);
-
     [LoggerMessage(EventId = 9137, Level = LogLevel.Trace,
        Message = "Add the current culture to the request: {CurrentCulture}.")]
     public static partial void LogAddCulture(this ILogger logger, string currentCulture);

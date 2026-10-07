@@ -16,12 +16,6 @@ public class ApplicationClaimsPrincipalSelectorContext : IApplicationContext
     public AppPrincipal? Principal => ClaimsPrincipal.Current as AppPrincipal;
 
     /// <summary>
-    /// Gets or sets the activity ID.
-    /// </summary>
-    /// <value>The activity ID.</value>
-    public string ActivityID { get; set; } = string.Empty;
-
-    /// <summary>
     /// Sets <see cref="Thread.CurrentPrincipal"/>.
     /// </summary>
     /// <param name="principal">The principal, or <see langword="null"/>.</param>

@@ -95,7 +95,7 @@ app.Run();
 | Call | What it does |
 |---|---|
 | `AddApplicationContext()` | Registers the scoped <xref:Arc4u.Security.Principal.IApplicationContext> and the Arc4u logger. `AuthorizationInterceptor` needs both; the timing middleware only needs the Arc4u logger. |
-| `Interceptors.Add<AuthorizationInterceptor>()` | Applies the `culture` request header to the current thread and to the principal profile, only when the application context already has a principal (for example after JWT bearer authentication), sets `ApplicationContext.ActivityID` to `Activity.Current?.Id` (or a new GUID), logs every exception, `RpcException` included, at error level (expected `NotFound` or validation failures too), and turns any exception that is not an `RpcException` into `StatusCode.Internal` with the message "An error occurs.". |
+| `Interceptors.Add<AuthorizationInterceptor>()` | Applies the `culture` request header to the current thread and to the principal profile, only when the application context already has a principal (for example after JWT bearer authentication), logs every exception, `RpcException` included, at error level (expected `NotFound` or validation failures too), and turns any exception that is not an `RpcException` into `StatusCode.Internal` with the message "An error occurs.". |
 | `AddGrpcAuthenticationControl()` | A gRPC request (content type containing `grpc`) that ends with a `302` is answered with `401` and its headers are cleared. Add it before `UseAuthentication()`. |
 | `AddGrpcMonitoringTimeElapsed()` | Writes the service type, method name, elapsed milliseconds and response status to the technical log of every gRPC endpoint. Pass an `Action<Type, TimeSpan>` to also feed a metric. |
 

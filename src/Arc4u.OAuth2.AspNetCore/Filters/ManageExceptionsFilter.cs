@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Arc4u.AspNetCore.Results;
 using Arc4u.Diagnostics;
-using Arc4u.Security.Principal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -15,19 +14,17 @@ namespace Arc4u.OAuth2.AspNetCore.Filters;
 /// The result is a 403 for an <see cref="UnauthorizedAccessException"/> and a generic 500 (mentioning the ActivityId) for any other exception.
 /// </summary>
 /// <param name="logger">The logger.</param>
-/// <param name="application">The application context giving the activity id of the current request.</param>
-public class ManageExceptionsFilter(ILogger<ManageExceptionsFilter> logger, IApplicationContext application) : IAsyncExceptionFilter
+public class ManageExceptionsFilter(ILogger<ManageExceptionsFilter> logger) : IAsyncExceptionFilter
 {
     /// <inheritdoc/>
     public Task OnExceptionAsync(ExceptionContext context)
     {
-        // If the activity id is not set, create one. This is the case for anonymous users.
-        var activityId = string.IsNullOrEmpty(application?.ActivityID) ? Activity.Current?.Id ?? Guid.NewGuid().ToString() : application?.ActivityID;
+        // The logger writes the trace id of the current activity as ActivityId; start one if there is none so the id returned is in the log.
+        using var activity = Activity.Current is null ? new Activity(nameof(ManageExceptionsFilter)).Start() : null;
+        var activityId = Activity.Current!.TraceId.ToString();
 
         // First log the exception.
-        logger.Technical()
-              .AddIf(string.IsNullOrEmpty(application?.ActivityID), LoggingConstants.ActivityId, () => activityId!)
-              .LogException(context.Exception);
+        logger.Technical().LogException(context.Exception);
 
         switch (context.Exception)
         {

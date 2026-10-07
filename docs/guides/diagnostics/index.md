@@ -122,7 +122,8 @@ The logger adds these properties to each entry (the names are constants of <xref
 | `SourceContext` | Full name of the class that logs (the `T` of `ILogger<T>`, or the type you pass for a non-generic `ILogger`). |
 | `Method` | Name of the calling member, filled in by the compiler (`[CallerMemberName]`). |
 | `Pid`, `Tid` | Id of the process and of the managed thread. |
-| `Identity`, `ActivityId` | Only when an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> provider supplies them. |
+| `ActivityId` | The `TraceId` of `System.Diagnostics.Activity.Current`, the same in every service of a distributed trace. Missing when there is no current activity. |
+| `Identity` | Only when an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> provider supplies it. |
 | `Stacktrace` | Only after `AddStackTrace()`. |
 
 ## Common scenarios
@@ -244,7 +245,7 @@ The wrapper asks an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> for extra prope
 | `ILogger<T>` (transient wrapper) | `"Transient"` |
 | `IScopedLogger<T>` (scoped wrapper) | `"Scoped"` |
 
-`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` and no `ActivityId` until you register a provider**. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user name and `ActivityID` from the scoped `IApplicationContext`. It is exported with the key `"Scoped"`; `AddApplicationContext()` registers it without a key, which the wrappers do not use. Register it with the key yourself (or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes` when you use the [Arc4u source generators](../dependency-injection/index.md)), and inject `IScopedLogger<T>`. Call `AddApplicationContext()` (namespace `Arc4u.Security.Principal`, package `Arc4u`), which registers `IApplicationContext` and calls `AddILogger()` for you; with `AddILogger()` alone the provider cannot be created and the first resolve of the logger throws an `InvalidOperationException`.
+`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` until you register a provider**. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user name from the scoped `IApplicationContext`. It is exported with the key `"Scoped"`; `AddApplicationContext()` registers it without a key, which the wrappers do not use. Register it with the key yourself (or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes` when you use the [Arc4u source generators](../dependency-injection/index.md)), and inject `IScopedLogger<T>`. Call `AddApplicationContext()` (namespace `Arc4u.Security.Principal`, package `Arc4u`), which registers `IApplicationContext` and calls `AddILogger()` for you; with `AddILogger()` alone the provider cannot be created and the first resolve of the logger throws an `InvalidOperationException`.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -268,7 +269,8 @@ public class Handler(IScopedLogger<Handler> logger)
 `DefaultLoggingProperties` only returns properties when the application context has data:
 
 - `Identity` is the user name of the `IApplicationContext.Principal` (its profile name, or the identity name when there is no profile). The principal is set by Arc4u authentication (see the [server authentication guide](../authentication-server/index.md)); without one, the provider returns nothing.
-- `ActivityId` is the `IApplicationContext.ActivityID`, an empty string unless something sets it. In the Arc4u packages only the `AuthorizationInterceptor` of `Arc4u.gRPC` does; set it yourself if you want it in the logs.
+
+`ActivityId` does not come from a provider: the wrapper writes the `TraceId` of the current `System.Diagnostics.Activity` itself. ASP.NET Core and gRPC start an activity for each request and propagate it to the services you call through the W3C `traceparent` header.
 
 To add your own properties, implement `IAddPropertiesToLog`. Values that are `null` are ignored, and the keys of `LoggingConstants` such as `Identity` and `ActivityId` are the ones the Arc4u formatters read.
 
@@ -336,7 +338,7 @@ Arc4u.Diagnostics has no dependency on OpenTelemetry. The two work side by side 
 
 - **Logs.** The wrapper hands the properties to the `ILoggerFactory` as the log state. An OpenTelemetry logging provider (`builder.Logging.AddOpenTelemetry(...)`) therefore receives `Category`, `Application`, `SourceContext`, `Method`, `Pid`, `Tid` and your `Add` properties as log record attributes, and OpenTelemetry adds the `TraceId` and `SpanId` of the current activity itself.
 - **Traces.** Arc4u components that trace their work (token providers, principal creation, middleware) start activities on an `ActivitySource` named `Arc4u`. <xref:Arc4u.Diagnostics.IActivitySourceFactory> returns that source (and any other you ask for by name and version) as a singleton, and `AddApplicationContext()` registers it. Subscribe to the source with the OpenTelemetry SDK: `WithTracing(t => t.AddSource("Arc4u"))`.
-- **Ids.** The Arc4u `ActivityId` property is the `ActivityID` of the Arc4u `IApplicationContext`, not `System.Diagnostics.Activity.Current.Id`. Use the `TraceId` of the log record to correlate with traces.
+- **Ids.** The Arc4u `ActivityId` property is the `TraceId` of the current activity, the same value as the `TraceId` OpenTelemetry adds to the log record.
 
 A log record written with this setup, as printed by the OpenTelemetry console exporter (the `OrderId` and the Arc4u properties are the attributes):
 
@@ -397,7 +399,7 @@ The key you passed to `Add` is one of `Application`, `Pid`, `Tid`, `Method`, `So
 
 ### Entries have no Identity or ActivityId
 
-Check, in this order: an `IAddPropertiesToLog` provider is registered under the key of the logger you use (`"Scoped"` for `IScopedLogger<T>`, `"Transient"` for `ILogger<T>`); `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal); something sets `IApplicationContext.ActivityID` (`ActivityId` is empty otherwise). See [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry).
+Check, in this order: an `IAddPropertiesToLog` provider is registered under the key of the logger you use (`"Scoped"` for `IScopedLogger<T>`, `"Transient"` for `ILogger<T>`); `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal). `ActivityId` is missing when the entry is written outside a `System.Diagnostics.Activity` (for example in a background service that starts none). See [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry).
 
 ### Properties added with Add stay on later entries
 

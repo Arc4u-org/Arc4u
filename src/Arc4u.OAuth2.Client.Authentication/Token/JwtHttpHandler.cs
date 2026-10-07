@@ -12,7 +12,7 @@ namespace Arc4u.OAuth2.Client.Authentication.Token;
 
 /// <summary>
 /// A <see cref="DelegatingHandler"/> that adds the token of the client user to the requests of an <see cref="HttpClient"/>. The token provider is selected by the <c>ProviderId</c> of the settings.
-/// Nothing is added when the request already has an <c>Authorization</c> header or when no valid token is obtained. The activity id and the culture of the user are added in the <c>activityid</c> and <c>culture</c> headers.
+/// Nothing is added when the request already has an <c>Authorization</c> header or when no valid token is obtained. The culture of the user is added in the <c>culture</c> header.
 /// </summary>
 /// <typeparam name="T">The type used as category of the logger.</typeparam>
 public class JwtHttpHandler<T> : DelegatingHandler
@@ -141,16 +141,10 @@ public class JwtHttpHandler<T> : DelegatingHandler
             request.Headers.Add(scheme, tokenInfo.Token);
         }
 
-        // Add ActivityId if founded!
+        // Add the culture of the user if any.
         if (null == _applicationContext?.Principal)
         {
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        }
-
-        if (! string.IsNullOrWhiteSpace(_applicationContext.ActivityID))
-        {
-            _logger.Technical().LogPrincipalActivityId(_applicationContext.ActivityID);
-            request.Headers.Add("activityid", _applicationContext.ActivityID);
         }
 
         _logger.Technical().LogCultureRequested(_applicationContext.Principal.Profile.CurrentCulture.TwoLetterISOLanguageName);
