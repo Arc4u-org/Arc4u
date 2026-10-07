@@ -15,7 +15,8 @@ namespace Arc4u.AspNetCore.Results;
 /// The default translation is, in this order: an exceptional error is logged and hidden behind a generic technical error (status 500);
 /// <see cref="ValidationError"/>s become a <see cref="ValidationProblemDetails"/> grouped by severity (status 422);
 /// a <see cref="ProblemDetailError"/> is copied field by field (status 500 when none is set); any other error gives a 400 with the error message.
-/// Replace the translation with <see cref="SetFromErrorFactory"/>.
+/// Replace the translation with <see cref="SetFromErrorFactory(Func{IEnumerable{IError}, ProblemDetails})"/>, or customize it while keeping the default rules for the other errors
+/// with <see cref="SetFromErrorFactory(Func{IEnumerable{IError}, Func{IEnumerable{IError}, ProblemDetails}, ProblemDetails})"/>.
 /// </remarks>
 public static class FromResultToProblemDetailExtension
 {
@@ -24,23 +25,62 @@ public static class FromResultToProblemDetailExtension
     private static readonly Uri ValidationErrorType = new("https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes#validation-error");
     private static readonly Uri AboutBlankType = new("about:blank");
     /// <summary>
-    /// Gets the function used to translate a set of errors into a <see cref="ProblemDetails"/>: the default translation, or the one set by <see cref="SetFromErrorFactory"/>.
+    /// Gets the function used to translate a set of errors into a <see cref="ProblemDetails"/>: the default translation, or the one set by <c>SetFromErrorFactory</c>.
     /// </summary>
+    /// <remarks>
+    /// The function always calls the translation registered when it runs. Do not call it from a custom translation, which would call itself
+    /// until the process dies with a stack overflow: use <see cref="SetFromErrorFactory(Func{IEnumerable{IError}, Func{IEnumerable{IError}, ProblemDetails}, ProblemDetails})"/>, which gives the default translation to your function.
+    /// </remarks>
     public static Func<IEnumerable<IError>, ProblemDetails> FromError => errors => _fromErrors(errors);
 
     /// <summary>
     /// Replaces the function translating errors into a <see cref="ProblemDetails"/> for the whole process.
     /// </summary>
-    /// <remarks>The setting is static and not synchronized: call it once at startup, before requests are served.</remarks>
+    /// <remarks>
+    /// The setting is static and not synchronized: call it once at startup, before requests are served.
+    /// To keep the default translation for the errors your function does not handle, use <see cref="SetFromErrorFactory(Func{IEnumerable{IError}, Func{IEnumerable{IError}, ProblemDetails}, ProblemDetails})"/>.
+    /// </remarks>
     /// <param name="fromErrors">The function that builds the <see cref="ProblemDetails"/> from the errors of a failed result.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="fromErrors"/> is <see langword="null"/>.</exception>
     public static void SetFromErrorFactory(Func<IEnumerable<IError>, ProblemDetails> fromErrors)
     {
+        ArgumentNullException.ThrowIfNull(fromErrors);
+
         _fromErrors = fromErrors;
+    }
+
+    /// <summary>
+    /// Replaces the function translating errors into a <see cref="ProblemDetails"/> for the whole process, giving it the default translation
+    /// to call for the errors it does not handle.
+    /// </summary>
+    /// <remarks>
+    /// The setting is static and not synchronized: call it once at startup, before requests are served.
+    /// The second argument of <paramref name="fromErrors"/> is always the default Arc4u translation, so calling it never recurses.
+    /// To restore the default translation, pass <c>(errors, defaultFromError) =&gt; defaultFromError(errors)</c>.
+    /// </remarks>
+    /// <param name="fromErrors">
+    /// The function that builds the <see cref="ProblemDetails"/> from the errors of a failed result; its second argument is the default translation.
+    /// </param>
+    /// <exception cref="ArgumentNullException"><paramref name="fromErrors"/> is <see langword="null"/>.</exception>
+    public static void SetFromErrorFactory(Func<IEnumerable<IError>, Func<IEnumerable<IError>, ProblemDetails>, ProblemDetails> fromErrors)
+    {
+        ArgumentNullException.ThrowIfNull(fromErrors);
+
+        _fromErrors = errors => fromErrors(errors, From);
     }
     private static Func<IEnumerable<IError>, ProblemDetails> _fromErrors = From;
 
     private static ProblemDetails From(IEnumerable<IError> errors)
     {
+        // A custom factory can call the default translation with any value: fail with a clear message instead of in First().
+        ArgumentNullException.ThrowIfNull(errors);
+
+        errors = errors as IReadOnlyCollection<IError> ?? errors.ToList();
+        if (!errors.Any())
+        {
+            throw new ArgumentException("At least one error is needed to build a ProblemDetails.", nameof(errors));
+        }
+
         if (errors.OfType<IExceptionalError>().Any())
         {
             var exceptionalError = errors.OfType<IExceptionalError>().First();

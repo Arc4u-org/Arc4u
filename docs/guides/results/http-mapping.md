@@ -297,36 +297,40 @@ Calling `ToProblemDetails` on a result that succeeded does not make sense. The l
 errors of the failed result and returns the `ProblemDetails`; set its `Status`, because the response status code is
 read from `ProblemDetails.Status`.
 
-The default rules are not reusable from inside your function. This sample keeps the exception protection by calling
-`ToGenericMessage`, and maps a `ProblemDetailError` itself:
+To change the mapping of some errors only, use the overload whose function receives a second argument: the default
+mapping described above. Call it for the errors you do not handle yourself. This sample maps its own `NotFoundError` to
+a `404` and keeps the default mapping, including the exception protection, for every other error:
 
 ```csharp
-using System.Diagnostics;
 using Arc4u.AspNetCore.Results;
-using Arc4u.Results;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-FromResultToProblemDetailExtension.SetFromErrorFactory(errors =>
+FromResultToProblemDetailExtension.SetFromErrorFactory((errors, defaultFromError) =>
 {
-    if (errors.OfType<IExceptionalError>().Any())
+    if (errors.OfType<NotFoundError>().FirstOrDefault() is { } notFound)
     {
-        return Result.Fail(errors).ToGenericMessage(Activity.Current?.Id, true);
+        return new ProblemDetails()
+            .WithTitle("Not found.")
+            .WithDetail(notFound.Message)
+            .WithStatusCode(StatusCodes.Status404NotFound);
     }
 
-    var error = errors.First();
-    return new ProblemDetails()
-        .WithTitle(error is ProblemDetailError { Title: not null } p ? p.Title : "Request failed")
-        .WithDetail(error.Message)
-        .WithStatusCode(error is ProblemDetailError { StatusCode: not null } s ? s.StatusCode.Value : StatusCodes.Status400BadRequest);
+    return defaultFromError(errors);
 });
 ```
 
+To add information to every response instead, decorate the default result:
+`(errors, defaultFromError) => defaultFromError(errors).WithMetadata("application", "billing")`.
+To restore the default mapping, pass `(errors, defaultFromError) => defaultFromError(errors)`.
+
+To replace the whole mapping, pass a function that takes only the errors: `SetFromErrorFactory(errors => ...)`.
+
 > [!CAUTION]
 > Do not call `FromError` from inside your factory to reuse the default mapping. `FromError` calls the factory that is
-> currently registered, which is yours, so the call recurses until the process dies with a stack overflow. Capturing
-> `FromError` in a variable before calling `SetFromErrorFactory` does not help: the value is a delegate that reads the
-> current factory when it runs.
+> currently registered, which is yours, so the call recurses until the process dies with a stack overflow. Use the
+> `defaultFromError` argument instead.
 
 ### Build a ProblemDetails by hand
 
