@@ -457,17 +457,17 @@ key type, such as ECDSA. Use a certificate with an RSA key
 (`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption`) and encrypt the
 values again.
 
-### The decryptor reads my earlier sources a second time
+### Which earlier sources does the decryptor read?
 
-To find the values to decrypt, the decryptor builds a temporary configuration from all the sources
-registered before it. Those sources are therefore loaded twice.
+The decryptor reads the values of the providers registered before it, as they were already loaded: an
+earlier source is not built or loaded a second time. A stream source (`AddJsonStream`) or a remote
+provider such as Azure Key Vault can therefore be placed before the decryptor.
 
-> [!WARNING]
-> Known issue: a source that cannot be read twice fails. `AddJsonStream` before the decryptor throws
-> "Stream was not readable" (the stream was consumed by the first build), and a remote provider such as
-> Azure Key Vault loads twice, doubling its calls. Files, environment variables and command-line
-> sources are not affected. Prefer file-based sources before the decryptor, and add stream or remote
-> sources after it (their values are then not decrypted).
+This needs the decryptor to be added with `AddCertificateDecryptorConfiguration` or
+`AddRijndaelDecryptorConfiguration`. On a plain `ConfigurationBuilder` (for example in
+`ConfigureAppConfiguration`), these methods wrap the earlier sources so the decryptor can reach the providers
+built from them. On a `ConfigurationManager` (`WebApplication.CreateBuilder`, `Host.CreateApplicationBuilder`),
+nothing is wrapped. A decryptor source added directly with `Add(...)` still builds the earlier sources again.
 
 ### The input is not a valid Base-64 string
 

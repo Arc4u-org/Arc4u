@@ -18,11 +18,17 @@ public class SecretConfigurationCertificateProvider : ConfigurationProvider
         ArgumentNullException.ThrowIfNull(options);
 
         _options = options;
-        _sources = sources;
+        _previousProviders = PreviousProviders.Build(sources);
+    }
+
+    internal SecretConfigurationCertificateProvider(SecretCertificateOptions options, PreviousProviders previousProviders)
+    {
+        _options = options;
+        _previousProviders = previousProviders;
     }
 
     private readonly SecretCertificateOptions _options;
-    private readonly IList<IConfigurationSource> _sources;
+    private readonly PreviousProviders _previousProviders;
 
     /// <summary>
     /// The Load method does the different steps.
@@ -36,12 +42,7 @@ public class SecretConfigurationCertificateProvider : ConfigurationProvider
     {
         Dictionary<string, string?> data = new(StringComparer.OrdinalIgnoreCase);
 
-        var tempBuilder = new ConfigurationBuilder();
-        foreach (var source in _sources)
-        {
-            tempBuilder.Add(source);
-        }
-        var tempRoot = tempBuilder.Build();
+        var tempRoot = _previousProviders.ToConfiguration();
 
         _options.Certificate ??= _options.CertificateLoader?.FindCertificate(tempRoot, _options.SecretSectionName);
 

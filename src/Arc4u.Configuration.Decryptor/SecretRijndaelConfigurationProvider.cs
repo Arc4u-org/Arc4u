@@ -20,10 +20,16 @@ public class SecretRijndaelConfigurationProvider : ConfigurationProvider
         ArgumentNullException.ThrowIfNull(options);
 
         _rijndaelOptions = options;
-        _sources = sources;
+        _previousProviders = PreviousProviders.Build(sources);
     }
 
-    private readonly IList<IConfigurationSource> _sources;
+    internal SecretRijndaelConfigurationProvider(SecretRijndaelOptions options, PreviousProviders previousProviders)
+    {
+        _rijndaelOptions = options;
+        _previousProviders = previousProviders;
+    }
+
+    private readonly PreviousProviders _previousProviders;
     private readonly SecretRijndaelOptions _rijndaelOptions;
 
     /// <summary>
@@ -38,12 +44,7 @@ public class SecretRijndaelConfigurationProvider : ConfigurationProvider
     {
         Dictionary<string, string?> data = new(StringComparer.OrdinalIgnoreCase);
 
-        var tempBuilder = new ConfigurationBuilder();
-        foreach (var source in _sources)
-        {
-            tempBuilder.Add(source);
-        }
-        var tempRoot = tempBuilder.Build();
+        var tempRoot = _previousProviders.ToConfiguration();
 
         if (_rijndaelOptions.RijnDael is null)
         {
