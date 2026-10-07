@@ -31,7 +31,7 @@ using Arc4u.Security.Principal;
 app.MapGet("/orders", (IApplicationContext context) =>
 {
     var principal = context.Principal!;
-    return principal.IsAuthorized(string.Empty, "ReadOrders")
+    return principal.IsAuthorized("ReadOrders")
         ? Results.Ok($"Orders of {principal.Profile.DisplayName}")
         : Results.Forbid();
 }).RequireAuthorization();
@@ -136,9 +136,10 @@ scope): an entry without scope makes the creation of the principal fail. The cla
 
 Only the operations listed in `AllOperations` are granted. In code, `AppPrincipal.IsAuthorized` accepts
 operation identifiers or names, with or without a scope, and enum values (default scope);
-`IsInRole(scope, role)` checks a role in a scope. To check a single operation name, pass the scope
-(`IsAuthorized(string.Empty, "ReadOrders")`): `IsAuthorized("ReadOrders")` does not compile, because it matches
-two overloads.
+`IsInRole(scope, role)` checks a role in a scope. `IsAuthorized("ReadOrders")` checks a single operation name
+in the default scope. When you pass two or more names, the first one is the scope:
+`IsAuthorized("ReadOrders", "WriteOrders")` checks `WriteOrders` in the scope `ReadOrders`, so pass the scope
+explicitly (`IsAuthorized(string.Empty, "ReadOrders", "WriteOrders")`).
 
 ### Roles and IsInRole
 

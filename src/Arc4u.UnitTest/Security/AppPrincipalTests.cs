@@ -52,6 +52,33 @@ public class AppPrincipalTests
             .BeTrue();
     }
 
+    [Fact]
+    public void Test_IsAuthorise_By_Single_Name_Should()
+    {
+        var appAuthorization = new AppAuthorization(GetAuthorization());
+
+        appAuthorization.IsAuthorized(Access.AccessApplication.GetValue()).Should().BeTrue();
+        appAuthorization.IsAuthorized(Access.CanSeeSwaggerFacadeApi.GetValue()).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Test_IsAuthorise_By_Single_Name_On_Interface_Should()
+    {
+        IAuthorization appAuthorization = new AppAuthorization(GetAuthorization());
+
+        appAuthorization.IsAuthorized(Access.AccessApplication.GetValue()).Should().BeTrue();
+        appAuthorization.IsAuthorized(Access.CanSeeSwaggerFacadeApi.GetValue()).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Test_IsAuthorise_By_Single_Name_On_Principal_Should()
+    {
+        var principal = new AppPrincipal(GetAuthorization(), new System.Security.Claims.ClaimsIdentity(), "S-1-0-0");
+
+        principal.IsAuthorized(Access.AccessApplication.GetValue()).Should().BeTrue();
+        principal.IsAuthorized(Access.CanSeeSwaggerFacadeApi.GetValue()).Should().BeFalse();
+    }
+
     private static Arc4u.Security.Principal.Authorization GetAuthorization()
     {
         var defaultScopedOperations = new ScopedOperations { Operations = [(int)Access.AccessApplication], Scope = "" };

@@ -142,6 +142,12 @@ public class AppPrincipal : ClaimsPrincipal, IAuthorization
         return _authorization.IsAuthorized(operations);
     }
 
+    /// <inheritdoc cref="IAuthorization.IsAuthorized(string)"/>
+    public bool IsAuthorized(string operation)
+    {
+        return _authorization.IsAuthorized(operation);
+    }
+
     /// <exclude/>
     public bool IsAuthorized(string scope, params string[] operations)
     {

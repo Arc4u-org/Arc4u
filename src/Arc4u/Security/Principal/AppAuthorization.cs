@@ -106,6 +106,12 @@ public class AppAuthorization : IAuthorization
     }
 
     /// <inheritdoc/>
+    public bool IsAuthorized(string operation)
+    {
+        return IsAuthorized(string.Empty, new[] { operation });
+    }
+
+    /// <inheritdoc/>
     public bool IsAuthorized(string scope, params int[] operations)
     {
         if (_operations.ContainsKey(scope))

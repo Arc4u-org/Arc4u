@@ -61,6 +61,20 @@ public interface IAuthorization
     bool IsAuthorized(params string[] operations);
 
     /// <summary>
+    /// Determines whether the specified operation is authorized in the default (empty) scope.
+    /// </summary>
+    /// <remarks>
+    /// This overload exists so that <c>IsAuthorized("Name")</c> compiles: without it, a single string argument
+    /// matches both <see cref="IsAuthorized(string, int[])"/> and <see cref="IsAuthorized(string, string[])"/>
+    /// with an empty <c>operations</c> array, which is ambiguous.
+    /// </remarks>
+    /// <param name="operation">The operation name.</param>
+    /// <returns>
+    /// 	<c>true</c> if the specified operation is authorized; otherwise, <c>false</c>.
+    /// </returns>
+    bool IsAuthorized(string operation) => IsAuthorized(string.Empty, new[] { operation });
+
+    /// <summary>
     /// Determines whether the specified operations are authorized in the specified scope.
     /// </summary>
     /// <param name="scope">The scope.</param>
