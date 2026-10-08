@@ -16,8 +16,8 @@ using Microsoft.EntityFrameworkCore;
 
 static async Task SaveAsync(DbContext db, object root)   // root: an entity implementing IPersistEntity
 {
-    db.ChangeTracker.TrackGraph(root, ChangeGraphTracker.Tracker);
-    await db.SaveChangesAsync();
+    db.ChangeTracker.TrackPersistGraph(root);   // also visits the entities the context already tracks
+    await db.SavePersistChangesAsync();         // resets PersistChange to None after a successful save
 }
 ```
 

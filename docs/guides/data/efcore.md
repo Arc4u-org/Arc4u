@@ -10,8 +10,8 @@ description: "Save an entity graph with one call: ChangeGraphTracker turns Persi
 A detached graph (an order with its lines) comes back from a client. Some lines are new, some edited, some removed. Plain EF Core needs code that walks the graph and sets `EntityState.Added`, `Modified` or `Deleted` on each node, or a full reload and compare. With Arc4u each entity already says what to do, and the data layer becomes:
 
 ```csharp
-db.ChangeTracker.TrackGraph(order, ChangeGraphTracker.Tracker);
-await db.SaveChangesAsync(cancellationToken);
+db.ChangeTracker.TrackPersistGraph(order);
+await db.SavePersistChangesAsync(cancellationToken);
 ```
 
 ## Install
@@ -69,19 +69,19 @@ public class OrderRepository(ShopContext db)
 {
     public async Task SaveAsync(Order order, CancellationToken cancellationToken)
     {
-        db.ChangeTracker.TrackGraph(order, ChangeGraphTracker.Tracker);
+        db.ChangeTracker.TrackPersistGraph(order);
 
-        await db.SaveChangesAsync(cancellationToken);
+        await db.SavePersistChangesAsync(cancellationToken);
     }
 
     public async Task SaveAsync(IEnumerable<Order> orders, CancellationToken cancellationToken)
     {
         foreach (var order in orders)
         {
-            db.ChangeTracker.TrackGraph(order, ChangeGraphTracker.Tracker);
+            db.ChangeTracker.TrackPersistGraph(order);
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        await db.SavePersistChangesAsync(cancellationToken);
     }
 }
 ```
@@ -104,12 +104,20 @@ app.Run();
 
 ## How the states are set
 
-`TrackGraph` visits every entity reachable from the root that the context does not track yet and calls your callback for each one. <xref:Arc4u.EfCore.ChangeGraphTracker> provides two callbacks:
+<xref:Arc4u.EfCore.ChangeGraphTracker> provides an extension method that walks the whole graph, and two callbacks for `ChangeTracker.TrackGraph`:
+
+| Method | Use it for |
+|---|---|
+| `ChangeTracker.TrackPersistGraph(root)` | Each entity gets the state of its own `PersistChange`, including the entities the context already tracks: a new child (`Insert`) under a tracked root becomes `Added`. A tracked entity on `None` keeps its current state; an untracked entity that does not implement `IPersistEntity` becomes `Unchanged`. Prefer it. |
+
+`TrackGraph(root, callback)` only visits the entities that the context does not track yet, and does not go through a tracked entity to reach its children (see [Pitfalls](#pitfalls)). Use the callbacks with detached graphs:
 
 | Callback | Use it for |
 |---|---|
 | `ChangeGraphTracker.Tracker(EntityEntryGraphNode)` | Each entity gets the state of its own `PersistChange`. An entity that does not implement `IPersistEntity` becomes `Unchanged`. Pass it as a method group: `TrackGraph(order, ChangeGraphTracker.Tracker)`. |
 | `ChangeGraphTracker.Tracker(IPersistEntity, EntityEntryGraphNode)` | Every entity of the graph gets the state of the root's `PersistChange`. Use it to delete or insert a whole aggregate: `TrackGraph(order, node => ChangeGraphTracker.Tracker(order, node))`. |
+
+<xref:Arc4u.EfCore.ChangeGraphTracker.SavePersistChangesAsync*> (and `SavePersistChanges`) calls `SaveChanges` and, when it succeeds, sets the `PersistChange` of the saved entities back to `None`, so the objects can be edited and saved again. When the save throws, `PersistChange` is left as it was.
 
 The conversion is done by <xref:Arc4u.EfCore.PersisteChangeExtension.Convert*> (the class name is spelled that way), also available on its own:
 
@@ -144,8 +152,8 @@ public static class EditSamples
         order.Lines[1].PersistChange = PersistChange.Delete;          // Deleted
         order.Lines.Add(new OrderLine { Label = "new", PersistChange = PersistChange.Insert });   // Added
 
-        db.ChangeTracker.TrackGraph(order, ChangeGraphTracker.Tracker);   // root is None: Unchanged
-        await db.SaveChangesAsync();
+        db.ChangeTracker.TrackPersistGraph(order);   // root is None: Unchanged
+        await db.SavePersistChangesAsync();
     }
 }
 ```
@@ -199,9 +207,8 @@ public static class GraphSamples
 
 ## Pitfalls
 
-- **`PersistChange` is not reset after a save.** After `SaveChangesAsync` the entities still say `Insert`, `Update` or `Delete`. Set them back to `None` (or discard the objects) before reusing them; an entity still on `Insert` also refuses to become `Delete`.
-- **Entities already tracked by the context are not visited.** `TrackGraph` skips them, so their state is not changed by `ChangeGraphTracker`. Load with `AsNoTracking`, or use a fresh context, for graphs you track this way.
-- **`TrackGraph` does not go through an entity that is already tracked.** A new child (`PersistChange.Insert`) added under a root the context already tracks is never passed to the callback. `DetectChanges` then sees an entity with a non-default `Guid` key (`IdEntity` generates it in the constructor) and marks it `Modified`, so `SaveChanges` throws `DbUpdateConcurrencyException`. Track detached graphs with a fresh context.
+- **Plain `SaveChangesAsync` does not reset `PersistChange`.** After it the entities still say `Insert`, `Update` or `Delete`, and an entity still on `Insert` refuses to become `Delete`. Use `SavePersistChangesAsync`, or set them back to `None` yourself.
+- **`TrackGraph(root, ChangeGraphTracker.Tracker)` skips tracked entities and does not go through them.** A new child (`PersistChange.Insert`) added under a root the context already tracks is never passed to the callback. `DetectChanges` then sees an entity with a non-default `Guid` key (`IdEntity` generates it in the constructor) and marks it `Modified`, so `SaveChanges` throws `DbUpdateConcurrencyException`. Use `TrackPersistGraph`, which visits tracked entities too.
 - **Nothing sets `Update` for you.** Changing a property does not change `PersistChange`. The caller that edits the entity sets it.
 - **The graph helpers use reflection** (`GraphExtension` builds `Include` and `ThenInclude` calls at run time), so they are not trim-safe or native AOT-safe.
 
@@ -217,7 +224,7 @@ The model does not ignore it. Add `entity.Ignore(e => e.PersistChange)` for ever
 
 ### The entities are saved as `Unchanged` and nothing is written
 
-`PersistChange` is `None` on the nodes you edited, or the context already tracked them (see [Pitfalls](#pitfalls)). Set `PersistChange` on the edited entities and track detached instances.
+`PersistChange` is `None` on the nodes you edited, or you used `TrackGraph` on entities the context already tracked (see [Pitfalls](#pitfalls)). Set `PersistChange` on the edited entities and use `TrackPersistGraph`.
 
 ### `InvalidOperationException: It is not allowed to check more than one level!` from `ApplyReferences`
 

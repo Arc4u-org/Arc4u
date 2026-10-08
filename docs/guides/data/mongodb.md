@@ -139,7 +139,7 @@ public static class MongoSamples
 The first argument is the database name; `DbContext.DatabaseName` keeps its casing, while the options are registered under its lower-case form.
 
 > [!NOTE]
-> The connection-string overload copies a fixed list of properties from the parsed `MongoClientSettings` (servers, credentials, TLS, timeouts, pool sizes, read and write concerns, `ReplicaSetName`, `RetryReads`, `RetryWrites` and a few more). Options of the connection string that map to other properties, such as `directConnection`, `compressors`, `loadBalanced` or `maxConnecting`, are parsed by the driver but not applied to the client. Set them through the delegate overload.
+> The connection-string overload applies every option of the connection string that the driver parses, including `directConnection`, `compressors`, `loadBalanced` and `maxConnecting`.
 
 ### Store several entity types in one collection
 
@@ -216,12 +216,9 @@ The same entity type is mapped twice to the same collection in `OnConfiguring`. 
 
 The connection string has no database name (`mongodb://host:27017` instead of `mongodb://host:27017/shop`). Add the name. A missing `ConnectionStrings` entry throws an `ArgumentNullException` for `connectionString`.
 
-### The client connects to `localhost:27017` instead of my server
+### `MongoClientException: No mongo client settings defined for key ...` on the first database call
 
-> [!WARNING]
-> Known issue: `DefaultMongoClientFactory<TContext>.CreateClient` looks up the named `MongoClientSettings` of the database with `IOptionsMonitor.Get`. The options system returns default settings for a name that has no registration, so the check for missing settings never fires and the client silently targets `localhost:27017`. `AddMongoDatabase` registers the settings under the name the factory uses, so this only happens when you register the context or the settings yourself under a different name.
-
-Check the name you registered the settings with: it must be the lower-case database name of the context.
+`DefaultMongoClientFactory<TContext>.CreateClient` found no `MongoClientSettings` registered under the lower-case database name of the context. This happens when you register the context or the settings yourself under a different name. Register the settings with the lower-case database name of the context, or use `AddMongoDatabase`, which does it for you.
 
 ## See also
 

@@ -49,6 +49,11 @@ packages. It contains breaking changes: follow the
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
   `JsonSerialization` accepts a `JsonSerializerContext`.
+- `Arc4u.EfCore`: `ChangeTracker.TrackPersistGraph`, which sets the state of every entity of a graph
+  from its `PersistChange`, including the entities the context already tracks, and
+  `SavePersistChangesAsync` / `SavePersistChanges`, which reset `PersistChange` to `None` after a
+  successful save ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)). See
+  [Entity Framework Core and entity validation](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#entity-framework-core-and-entity-validation).
 
 ### Changed
 
@@ -91,6 +96,9 @@ packages. It contains breaking changes: follow the
 - The authentication cookie expires after the shorter of `AuthenticationTicketTtl` and
   `RefreshTokenLifetime`, and its maximum age is `RefreshTokenLifetime`.
 - Dapr packages updated to 1.18.
+- `PersistEntity.Validate<T>(logger)` and `ValidateAll(logger)` write the validation errors to the
+  logger you pass, instead of the FluentResults logger (`Validate<T>`) or nothing (`ValidateAll`)
+  ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)).
 
 ### Deprecated
 
@@ -118,6 +126,7 @@ packages. It contains breaking changes: follow the
 - The `DataContractSerializer`, `DataContractJsonSerializer` and `XmlSerializer` string helpers, and
   `Arc4u.Utils.Enum<T>` / `EnumUtil`.
 - The AutoMapper dependency of `Arc4u.Diagnostics.Serilog.Sinks.RealmDb`.
+- `Arc4u.Data.RelationAttribute`, which nothing in Arc4u read.
 
 ### Fixed
 
@@ -128,6 +137,9 @@ packages. It contains breaking changes: follow the
 - `FlagsEnum.TryPowerOfTwo` and `TryPowerOfTwoExponent` accepted values that are not powers of two,
   so `FlagValues<T>()` also returned `None` and composite values
   ([#261](https://github.com/Arc4u-org/Arc4u/issues/261)).
+- A new child added under an entity the EF Core context already tracks was marked `Modified` and
+  `SaveChanges` threw `DbUpdateConcurrencyException`; use `TrackPersistGraph`
+  ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)).
 
 ### Security
 

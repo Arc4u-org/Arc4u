@@ -2,6 +2,7 @@ using Arc4u.MongoDB;
 using Arc4u.MongoDB.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -21,50 +22,22 @@ public static class MongoDbConnection
     /// <typeparam name="TContext">The type of the database context.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration holding the connection string.</param>
-    /// <param name="ConnectionStringKey">The name of the connection string in the <c>ConnectionStrings</c> section.</param>
+    /// <param name="connectionStringKey">The name of the connection string in the <c>ConnectionStrings</c> section.</param>
     /// <example>
     /// <code>
     /// services.AddMongoDatabase&lt;ShopContext&gt;(configuration, "ShopDb");
     /// </code>
     /// </example>
-    public static void AddMongoDatabase<TContext>(this IServiceCollection services, IConfiguration configuration, string ConnectionStringKey) where TContext : DbContext, new()
+    public static void AddMongoDatabase<TContext>(this IServiceCollection services, IConfiguration configuration, string connectionStringKey) where TContext : DbContext, new()
     {
-        var ConnectionString = configuration.GetConnectionString(ConnectionStringKey);
+        var connectionString = configuration.GetConnectionString(connectionStringKey);
 
-        var mongoUrl = new MongoUrl(ConnectionString);
+        var mongoUrl = new MongoUrl(connectionString);
 
-        services.Configure<MongoClientSettings>(mongoUrl.DatabaseName.ToLowerInvariant(), options =>
-        {
-            var c = MongoClientSettings.FromConnectionString(configuration.GetConnectionString(ConnectionStringKey));
-            options.AllowInsecureTls = c.AllowInsecureTls;
-            options.ApplicationName = c.ApplicationName;
-            options.AutoEncryptionOptions = c.AutoEncryptionOptions;
-            options.ClusterConfigurator = c.ClusterConfigurator;
-            options.ConnectTimeout = c.ConnectTimeout;
-            options.Credential = c.Credential;
-            options.HeartbeatInterval = c.HeartbeatInterval;
-            options.IPv6 = c.IPv6;
-            options.LocalThreshold = c.LocalThreshold;
-            options.MaxConnectionIdleTime = c.MaxConnectionIdleTime;
-            options.MaxConnectionLifeTime = c.MaxConnectionLifeTime;
-            options.MaxConnectionPoolSize = c.MaxConnectionPoolSize;
-            options.MinConnectionPoolSize = c.MinConnectionPoolSize;
-            options.ReadConcern = c.ReadConcern;
-            options.ReadEncoding = c.ReadEncoding;
-            options.ReadPreference = c.ReadPreference;
-            options.ReplicaSetName = c.ReplicaSetName;
-            options.RetryReads = c.RetryReads;
-            options.RetryWrites = c.RetryWrites;
-            options.Scheme = c.Scheme;
-            options.Servers = c.Servers;
-            options.ServerSelectionTimeout = c.ServerSelectionTimeout;
-            options.SocketTimeout = c.SocketTimeout;
-            options.SslSettings = c.SslSettings;
-            options.UseTls = c.UseTls;
-            options.WaitQueueTimeout = c.WaitQueueTimeout;
-            options.WriteConcern = c.WriteConcern;
-            options.WriteEncoding = c.WriteEncoding;
-        });
+        // The settings are created from the connection string by MongoClientSettingsFactory, so every option the driver parses is kept.
+        GetConnectionStrings(services)[mongoUrl.DatabaseName.ToLowerInvariant()] = connectionString!;
+        services.AddOptions();
+        services.TryAddSingleton<IOptionsFactory<MongoClientSettings>, MongoClientSettingsFactory>();
 
         var contextBuilder = new DbContextBuilder(services, mongoUrl.DatabaseName);
 
@@ -101,5 +74,17 @@ public static class MongoDbConnection
         services.TryAddSingleton(typeof(IMongoClientFactory<TContext>), typeof(DefaultMongoClientFactory<TContext>));
 
         dbContext.Configure(contextBuilder);
+    }
+
+    private static MongoConnectionStrings GetConnectionStrings(IServiceCollection services)
+    {
+        if (services.FirstOrDefault(d => d.ServiceType == typeof(MongoConnectionStrings))?.ImplementationInstance is MongoConnectionStrings connectionStrings)
+        {
+            return connectionStrings;
+        }
+
+        connectionStrings = new MongoConnectionStrings();
+        services.AddSingleton(connectionStrings);
+        return connectionStrings;
     }
 }

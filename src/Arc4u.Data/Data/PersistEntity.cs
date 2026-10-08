@@ -168,11 +168,13 @@ public abstract class PersistEntity : NotifyEntity, IPersistEntity
     /// <summary>
     /// Validates the entity with <see cref="TryValidate"/> and logs the errors, if any.
     /// </summary>
-    /// <remarks>The <paramref name="logger"/> is currently not used: the errors are logged through the logging configured for FluentResults.</remarks>
     /// <typeparam name="T">The category type of the logger.</typeparam>
-    /// <param name="logger">A logger, kept for signature compatibility.</param>
+    /// <param name="logger">The logger receiving one error per validation message.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="logger"/> is null.</exception>
     public void Validate<T>(ILogger<T> logger)
     {
-        TryValidate().LogIfFailed();
+        ArgumentNullException.ThrowIfNull(logger);
+
+        TryValidate().LogErrors(logger, GetType());
     }
 }

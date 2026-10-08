@@ -129,8 +129,7 @@ public static class ValidationSamples
 }
 ```
 
-> [!NOTE]
-> The `logger` argument of `PersistEntity.Validate<T>(ILogger<T>)` and of `ValidateAll` is not used. `Validate<T>` calls the FluentResults `LogIfFailed()` method on the outcome of `TryValidate()`. It writes to the logger configured with `Result.Setup` (`AddResultLogger()` from `Arc4u.Results` sets `FluentLogger` for this) and not to the logger you pass; without that setup nothing is logged. `ValidateAll` does not log at all: log the returned `Result` yourself (for example with `LogIfFailed`).
+`Validate<T>(logger)` and `ValidateAll(logger)` write one error to the logger you pass for each validation message (`Validation of {EntityType} failed: {Message}`). `ValidateAll` also returns the merged `Result`.
 
 ## Extensibility points
 

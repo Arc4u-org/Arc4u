@@ -6,6 +6,10 @@ using AutoFixture.AutoMoq;
 using AwesomeAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using MongoDB.Driver.Core.Compression;
 using Xunit;
 
 namespace Arc4u.UnitTest.Database;
@@ -134,6 +138,92 @@ public class MongoDBTests
         var exception = Record.Exception(() => factory!.GetCollection<NotMapped>());
 
         exception.Should().BeOfType<TypeNotMappedToCollectionException>();
+    }
+
+    [Fact]
+    public void Test_MongoDB_ConnectionString_Options_Should_Be_Applied()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["ConnectionStrings:mongo"] = "mongodb://localhost:27017/DB1?directConnection=true&compressors=zlib&maxConnecting=5&appName=Arc4u" })
+            .Build();
+
+        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddMongoDatabase<DatabaseDbContext>(configuration, "mongo");
+
+        var app = services.BuildServiceProvider();
+
+        var factory = app.GetService<IMongoClientFactory<DatabaseDbContext>>();
+        var client = factory!.CreateClient();
+
+        client.Settings.DirectConnection.Should().BeTrue();
+        client.Settings.Compressors.Should().ContainSingle(c => c.Type == CompressorType.Zlib);
+        client.Settings.MaxConnecting.Should().Be(5);
+        client.Settings.ApplicationName.Should().Be("Arc4u");
+    }
+
+    [Fact]
+    public void Test_MongoDB_LoadBalanced_Option_Should_Be_Applied()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["ConnectionStrings:mongo"] = "mongodb://localhost:27017/DB1?loadBalanced=true" })
+            .Build();
+
+        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddMongoDatabase<DatabaseDbContext>(configuration, "mongo");
+
+        var app = services.BuildServiceProvider();
+
+        var factory = app.GetService<IMongoClientFactory<DatabaseDbContext>>();
+        var client = factory!.CreateClient();
+
+        client.Settings.LoadBalanced.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Test_MongoDB_ConnectionString_With_Configure_Should_Apply_Both()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["ConnectionStrings:mongo"] = "mongodb://myserver:27017/DB1?maxConnecting=5" })
+            .Build();
+
+        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddMongoDatabase<DatabaseDbContext>(configuration, "mongo");
+        services.Configure<MongoClientSettings>("db1", settings => settings.ApplicationName = "Arc4u");
+
+        var app = services.BuildServiceProvider();
+
+        var factory = app.GetService<IMongoClientFactory<DatabaseDbContext>>();
+        var client = factory!.CreateClient();
+
+        client.Settings.Server.Host.Should().Be("myserver");
+        client.Settings.MaxConnecting.Should().Be(5);
+        client.Settings.ApplicationName.Should().Be("Arc4u");
+    }
+
+    [Fact]
+    public void Test_MongoDB_Without_Settings_Should_Fail()
+    {
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddMongoDatabase<DatabaseDbContext>("DB1", settings => settings.Server = new MongoServerAddress("myserver", 27017));
+        services.RemoveAll<IConfigureOptions<MongoClientSettings>>();
+
+        var app = services.BuildServiceProvider();
+
+        var factory = app.GetService<IMongoClientFactory<DatabaseDbContext>>();
+
+        var exception = Record.Exception(() => factory!.CreateClient());
+
+        exception.Should().BeOfType<MongoClientException>();
     }
 
     private sealed class Contract

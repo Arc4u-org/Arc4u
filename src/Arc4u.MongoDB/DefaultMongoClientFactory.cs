@@ -1,4 +1,6 @@
+using Arc4u.MongoDB.Configuration;
 using Arc4u.MongoDB.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
@@ -20,6 +22,8 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
     {
         _clientSettings = clientSettings;
         _mongoContext = (TContext?)serviceProvider.GetService(typeof(TContext)) ?? throw new InvalidOperationException($"No registration exist for type {typeof(TContext).Name}");
+        _settingsConfigurations = serviceProvider.GetServices<IConfigureOptions<MongoClientSettings>>();
+        _connectionStrings = serviceProvider.GetService<MongoConnectionStrings>();
     }
 
     IMongoDatabase? _database;
@@ -27,9 +31,12 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
     private static readonly object _locker = new object();
     readonly IOptionsMonitor<MongoClientSettings> _clientSettings;
     readonly TContext _mongoContext;
+    readonly IEnumerable<IConfigureOptions<MongoClientSettings>> _settingsConfigurations;
+    readonly MongoConnectionStrings? _connectionStrings;
 
     /// <inheritdoc/>
-    /// <remarks>The client is created once from the named <see cref="MongoClientSettings"/> of the database. When no settings were registered under that name, the options system returns default settings, so the client silently targets <c>localhost:27017</c>.</remarks>
+    /// <remarks>The client is created once from the named <see cref="MongoClientSettings"/> of the database.</remarks>
+    /// <exception cref="MongoClientException">No <see cref="MongoClientSettings"/> are registered under the database name in lower case.</exception>
     public IMongoClient CreateClient()
     {
         if (null != _client)
@@ -45,16 +52,34 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
                 return _client;
             }
 
-            var settings = _clientSettings.Get(_mongoContext.DatabaseName.ToLowerInvariant());
-            if (null != settings)
-            {
-                _client = new MongoClient(settings);
-                return _client;
+            var name = _mongoContext.DatabaseName.ToLowerInvariant();
 
+            // The options system returns default settings (localhost:27017) for a name that has no registration: refuse it instead.
+            if (!IsConfigured(name))
+            {
+                throw new MongoClientException($"No mongo client settings defined for key {name}");
             }
-            throw new MongoClientException($"No mongo client settings defined for key {_mongoContext.DatabaseName}");
+
+            _client = new MongoClient(_clientSettings.Get(name));
+            return _client;
         }
 
+    }
+
+    private bool IsConfigured(string name)
+    {
+        if (_connectionStrings?.ContainsKey(name) == true)
+        {
+            return true;
+        }
+
+        return _settingsConfigurations.Any(configuration => configuration switch
+        {
+            ConfigureNamedOptions<MongoClientSettings> named => named.Name is null || named.Name == name,
+            // A custom named configuration does not expose its name: assume it can configure this one.
+            IConfigureNamedOptions<MongoClientSettings> => true,
+            _ => name == Options.DefaultName,
+        });
     }
 
     private IMongoDatabase GetDatabase()

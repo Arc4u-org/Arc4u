@@ -104,10 +104,9 @@ See [OData](odata.md#configure-the-base-address).
 
 You set `PersistChange` to `Delete` on an entity that is still `Insert`, or the reverse. An entity that was never saved has nothing to delete: remove it from its collection instead (`EntitySet<TEntity>.Remove` does this for you). See [Data primitives](data-primitives.md#persistchange).
 
-### The MongoDB client points to `localhost:27017`
+### `MongoClientException: No mongo client settings defined for key ...`
 
-> [!WARNING]
-> Known issue: `DefaultMongoClientFactory<TContext>.CreateClient` does not fail when no `MongoClientSettings` were registered for the database name. The options system returns default settings and the client silently targets `localhost:27017`. `AddMongoDatabase` registers the settings under the name the context uses, so this can only happen when you register the context or the settings yourself. See [MongoDB troubleshooting](mongodb.md#troubleshooting).
+`DefaultMongoClientFactory<TContext>.CreateClient` found no `MongoClientSettings` registered for the lower-case database name of the context. `AddMongoDatabase` registers them under that name, so this only happens when you register the context or the settings yourself. See [MongoDB troubleshooting](mongodb.md#troubleshooting).
 
 ### More symptoms
 
