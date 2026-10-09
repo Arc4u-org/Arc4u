@@ -132,40 +132,37 @@ public static class FromResultToProblemDetailExtension
     /// <summary>
     /// Logs the failed result and returns a generic technical error, using the id of the current <see cref="System.Diagnostics.Activity"/> (when any) as correlation id.
     /// </summary>
-    /// <remarks>The <paramref name="unexpectedType"/> argument is not taken into account by this overload: the result is always the unexpected-error (status 500) variant.</remarks>
     /// <typeparam name="TResult">The type of the value carried by the result.</typeparam>
     /// <param name="result">The result to log.</param>
-    /// <param name="unexpectedType">Kept for compatibility; ignored by this overload.</param>
+    /// <param name="unexpectedType">When <see langword="true"/> (default) the problem is typed as an unexpected error with status 500; otherwise as an expected error with status 400.</param>
     /// <returns>A <see cref="ProblemDetails"/> with a generic message that does not disclose the errors.</returns>
     public static ProblemDetails ToGenericMessage<TResult>(this Result<TResult> result, bool unexpectedType = true)
     {
-        return ToGenericMessage(result, Activity.Current?.Id);
+        return result.ToGenericMessage(Activity.Current?.Id, unexpectedType);
     }
 
     /// <summary>
     /// Logs the failed result and returns a generic technical error mentioning <paramref name="activityId"/> as correlation id.
     /// </summary>
-    /// <remarks>The <paramref name="unexpectedType"/> argument is not taken into account by this overload: the result is always the unexpected-error (status 500) variant.</remarks>
     /// <typeparam name="TResult">The type of the value carried by the result.</typeparam>
     /// <param name="result">The result to log.</param>
     /// <param name="activityId">The correlation id written in the detail; when <see langword="null"/> a message without id is returned.</param>
-    /// <param name="unexpectedType">Kept for compatibility; ignored by this overload.</param>
+    /// <param name="unexpectedType">When <see langword="true"/> (default) the problem is typed as an unexpected error with status 500; otherwise as an expected error with status 400.</param>
     /// <returns>A <see cref="ProblemDetails"/> with a generic message that does not disclose the errors.</returns>
     public static ProblemDetails ToGenericMessage<TResult>(this Result<TResult> result, string? activityId, bool unexpectedType = true)
     {
-        return result.ToResult().ToGenericMessage(activityId);
+        return result.ToResult().ToGenericMessage(activityId, unexpectedType);
     }
 
     /// <summary>
     /// Logs the failed result and returns a generic technical error, using the id of the current <see cref="System.Diagnostics.Activity"/> (when any) as correlation id.
     /// </summary>
-    /// <remarks>The <paramref name="unexpectedType"/> argument is not taken into account by this overload: the result is always the unexpected-error (status 500) variant.</remarks>
     /// <param name="result">The result to log.</param>
-    /// <param name="unexpectedType">Kept for compatibility; ignored by this overload.</param>
+    /// <param name="unexpectedType">When <see langword="true"/> (default) the problem is typed as an unexpected error with status 500; otherwise as an expected error with status 400.</param>
     /// <returns>A <see cref="ProblemDetails"/> with a generic message that does not disclose the errors.</returns>
     public static ProblemDetails ToGenericMessage(this Result result, bool unexpectedType = true)
     {
-        return result.ToGenericMessage(Activity.Current?.Id);
+        return result.ToGenericMessage(Activity.Current?.Id, unexpectedType);
     }
 
     /// <summary>

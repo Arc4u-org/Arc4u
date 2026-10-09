@@ -207,7 +207,7 @@ the controller headers). Requests with a successful result never go through
 this mapping.
 
 The `type` URIs of rows 1 and 2 are constants in the library that point to the page
-`https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes` of the Arc4u wiki. Treat them as identifiers. The `expected-error` URI is used only by the `ToGenericMessage` overload that honors
+`https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes` of the Arc4u wiki. Treat them as identifiers. The `expected-error` URI is used only when `ToGenericMessage` is called with
 `unexpectedType: false`. Keep the wiki page (or at least its headings) available while responses carry these URIs.
 
 ### Unexpected error: an exception
@@ -275,17 +275,9 @@ To report a denied action from the business layer, return a `ProblemDetailError`
 `ToGenericMessage` builds the `500` (or `400`) generic body. `ToProblemDetails` calls it for exceptions. It also
 calls `LogIfFailed` on the result.
 
-| Overload | Honors `unexpectedType` |
-|---|---|
-| `ToGenericMessage(Result, bool)` | No |
-| `ToGenericMessage(Result, string? activityId, bool)` | Yes |
-| `ToGenericMessage<T>(Result<T>, bool)` | No |
-| `ToGenericMessage<T>(Result<T>, string? activityId, bool)` | No |
-
-> [!WARNING]
-> Known issue: only `ToGenericMessage(Result, string?, bool)` uses `unexpectedType`. With the other three
-> overloads you always get the "unexpected" `500` message, whatever value you pass. With `unexpectedType: false`
-> the honored overload returns `400` and the `expected-error` type.
+All four overloads (`Result` or `Result<T>`, with or without an explicit `activityId`) honor `unexpectedType`.
+With the default `true` you get the "unexpected" `500` message; with `unexpectedType: false` you get `400` and
+the `expected-error` type.
 
 Calling `ToProblemDetails` on a result that succeeded does not make sense. The library returns the generic `500`, built from an
 `ExceptionalError`, so that the mistake is visible. The result itself is not modified and stays successful.
