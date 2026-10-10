@@ -59,6 +59,7 @@
     <ProjectReference Include="..\Arc4u.Configuration.Decryptor\Arc4u.Configuration.Decryptor.csproj" />
     <ProjectReference Include="..\Arc4u.Dependency\Arc4u.Dependency.csproj" />
     <ProjectReference Include="..\Arc4u.Diagnostics.Serilog\Arc4u.Diagnostics.Serilog.csproj" />
+    <ProjectReference Include="..\Arc4u.Diagnostics.Serilog.Sinks.RealmDb\Arc4u.Diagnostics.Serilog.Sinks.RealmDb.csproj" />
     <ProjectReference Include="..\Arc4u.EfCore\Arc4u.EfCore.csproj" />
     <ProjectReference Include="..\Arc4u.FluentValidation\Arc4u.FluentValidation.csproj" />
     <ProjectReference Include="..\Arc4u.gRPC\Arc4u.gRPC.csproj" />

@@ -30,7 +30,7 @@ Both sinks batch the entries: at most 50 entries per batch, a batch every 500 ms
 
 ### Keep the entries in memory
 
-`WriteTo.MemoryLogDB()` (namespace `Arc4u.Diagnostics.Serilog.Sinks.Memory`) stores each entry as a `LogMessage` in the static list `MemoryLogDbSink.LogMessages`. `AddMemoryLogDB()` registers that list and an `ILogStore` over it as singletons.
+`WriteTo.MemoryLogDB()` (namespace `Arc4u.Diagnostics.Serilog.Sinks.Memory`) stores each entry as a `LogMessage` in the static collection `MemoryLogDbSink.LogMessages`, a thread-safe `MemoryLogMessages`: the sink adds entries on a background thread while you read them, and enumerating the collection walks a snapshot. `AddMemoryLogDB()` registers that collection and an `ILogStore` over it as singletons.
 
 ```csharp
 // Program.cs
@@ -64,7 +64,7 @@ Logging `Technical().Add("OrderId", 42).LogInformation("Order Shipped")` and rea
 The columns are `Timestamp`, `MessageType`, `MessageCategory`, `Message` and `Properties`.
 
 > [!WARNING]
-> The list has no size limit and no eviction. It grows for the life of the process until you call `ILogStore.RemoveAll()`. It is also a plain `List<T>`: the batching sink adds entries on a background thread, so a `GetLogs` call that enumerates the list at the same time can throw `Collection was modified`. Catch the exception and retry, or read the store at moments when little is logged.
+> The collection has no size limit and no eviction. It grows for the life of the process until you call `ILogStore.RemoveAll()`.
 
 ### Store the entries in a Realm database
 
@@ -103,7 +103,7 @@ Inject `ILogStore` (namespace `Arc4u.Diagnostics.Serilog.Sinks`).
 
 | Member | Description |
 |---|---|
-| `GetLogs(criteria, skip, take)` | Returns a page of `LogMessage`. `criteria` is text that the message must contain; an empty value applies no filter. |
+| `GetLogs(criteria, skip, take)` | Returns a page of `LogMessage`. `criteria` is text that the message must contain, compared without regard to case; an empty value applies no filter. |
 | `RemoveAll()` | Deletes all the stored entries. |
 
 The memory store returns the entries in the order they were written. The Realm store returns the most recent first. A `LogMessage` has the properties `Timestamp`, `MessageCategory`, `Message`, `MessageType` (the `LogLevel` name), `ClassType`, `MethodName`, `ThreadId`, `ProcessId`, `Application`, `Identity`, `ActivityId`, `Stacktrace` and `Properties` (the non-standard properties as a JSON object).
@@ -128,10 +128,6 @@ public class LogPage(ILogStore store)
 ### The category of every stored entry is Technical
 
 Known issue. `MemoryLogDB` and `RealmDB` read the category with the same helper as `SimpleTextFormatter`, which falls back to `Technical` because the logger writes the category as a string. See [The category is always Technical](index.md#the-category-is-always-technical).
-
-### GetLogs with a criteria returns nothing on the memory store
-
-Known issue. `MemoryLogStore` lower-cases the criteria and then searches the message with a case-sensitive comparison, so a message that contains a capital letter in the searched text never matches: with the message `Order Shipped`, the criteria `order`, `shipped` and `Shipped` all return no entry. Leave the criteria empty and filter the result yourself. The Realm store compares in lower case on both sides.
 
 ### Realm accessed from incorrect thread
 

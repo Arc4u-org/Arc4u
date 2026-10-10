@@ -99,6 +99,9 @@ packages. It contains breaking changes: follow the
 - `PersistEntity.Validate<T>(logger)` and `ValidateAll(logger)` write the validation errors to the
   logger you pass, instead of the FluentResults logger (`Validate<T>`) or nothing (`ValidateAll`)
   ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)).
+- `MemoryLogMessages` (`MemoryLogDbSink.LogMessages`) is a thread-safe `IReadOnlyCollection<LogMessage>`
+  instead of a `List<LogMessage>`: use `Add`, `Clear`, `Count` and `GetPage`, and enumerate it to
+  read a snapshot ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).
 
 ### Deprecated
 
@@ -140,6 +143,9 @@ packages. It contains breaking changes: follow the
 - A new child added under an entity the EF Core context already tracks was marked `Modified` and
   `SaveChanges` threw `DbUpdateConcurrencyException`; use `TrackPersistGraph`
   ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)).
+- `MemoryLogStore.GetLogs` never matched a criteria against a message with capital letters; the
+  comparison now ignores case. Reading the memory log store while the sink wrote to it could throw
+  `Collection was modified` ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).
 
 ### Security
 

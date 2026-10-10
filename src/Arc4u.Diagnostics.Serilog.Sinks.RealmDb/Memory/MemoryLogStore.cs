@@ -12,22 +12,19 @@ public class MemoryLogStore : ILogStore
 
     private readonly MemoryLogMessages _logMessages;
 
-    /// <summary>Gets a page of the messages, in the order in which they were stored. When a criteria is given, only the messages whose text contains the lower-cased criteria are returned (case-sensitive comparison).</summary>
+    /// <summary>Gets a page of the messages, in the order in which they were stored. When a criteria is given, only the messages whose text contains the criteria are returned (case-insensitive comparison).</summary>
     /// <param name="criteria">Text that the message must contain. When empty, no filter is applied.</param>
     /// <param name="skip">The number of messages to skip.</param>
     /// <param name="take">The maximum number of messages to return.</param>
     /// <returns>The matching log messages.</returns>
     public List<LogMessage> GetLogs(string criteria, int skip, int take)
     {
-        var hasCriteria = !string.IsNullOrWhiteSpace(criteria);
-        var searchText = hasCriteria ? criteria.ToLowerInvariant() : "";
-
-        if (hasCriteria)
+        if (string.IsNullOrWhiteSpace(criteria))
         {
-            return _logMessages.Where(m => m.Message.Contains(searchText)).Skip(skip).Take(take).ToList();
+            return _logMessages.GetPage(null, skip, take);
         }
 
-        return _logMessages.Skip(skip).Take(take).ToList();
+        return _logMessages.GetPage(m => m.Message?.Contains(criteria, StringComparison.OrdinalIgnoreCase) == true, skip, take);
     }
 
     /// <inheritdoc/>

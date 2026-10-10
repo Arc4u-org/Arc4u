@@ -1404,6 +1404,7 @@ public static class Security
 | `Arc4u.OAuth2.AspNetCore.Options.ValidateResourceRightMiddlewareOptions` | `Arc4u.OAuth2.Options.ValidateResourceRightMiddlewareOptions` |
 | `Arc4u.OAuth2.Security.Principal.AppServicePrincipalFactory` | `Arc4u.OAuth2.AppServicePrincipalFactory` |
 | `Arc4u.Utils.Enum<T>`, `EnumUtil` | The generic methods of `System.Enum` (`Enum.GetValues<T>()`, `Enum.TryParse<T>()`) |
+| `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
 
 ### Other removed APIs
 
