@@ -33,7 +33,12 @@ namespace Arc4u.OAuth2.Extensions
             option.TokenValidationParameters.RoleClaimType = hybridOptions.RoleClaimType;
             option.TokenValidationParameters.SaveSigninToken = false;
             option.TokenValidationParameters.AuthenticationType = Constants.BearerAuthenticationType;
-            option.TokenValidationParameters.ValidateIssuer = false;
+            // When no issuer is configured, the handler accepts the issuer of the metadata.
+            option.TokenValidationParameters.ValidateIssuer = hybridOptions.ValidateAuthority;
+            if (hybridOptions.ValidateAuthority && hybridOptions.DefaultAuthority.Issuer is not null)
+            {
+                option.TokenValidationParameters.ValidIssuer = hybridOptions.DefaultAuthority.Issuer.ToString();
+            }
             option.TokenValidationParameters.ValidateAudience = oauth2Options.ValidateAudience;
             option.TokenValidationParameters.ValidAudiences = oauth2Options.Audiences;
             if (securityKey is not null)
@@ -110,7 +115,12 @@ namespace Arc4u.OAuth2.Extensions
                         option.MapInboundClaims = false;
                         option.TokenValidationParameters.SaveSigninToken = false;
                         option.TokenValidationParameters.AuthenticationType = Constants.BearerAuthenticationType;
-                        option.TokenValidationParameters.ValidateIssuer = false;
+                        // When no issuer is configured, the handler accepts the issuer of the metadata.
+                        option.TokenValidationParameters.ValidateIssuer = options.ValidateAuthority;
+                        if (options.ValidateAuthority && options.DefaultAuthority.Issuer is not null)
+                        {
+                            option.TokenValidationParameters.ValidIssuer = options.DefaultAuthority.Issuer.ToString();
+                        }
                         option.TokenValidationParameters.ValidateAudience = oauth2Options.ValidateAudience;
                         option.TokenValidationParameters.ValidAudiences = oauth2Options.Audiences;
                         option.EventsType = typeof(JwtBearerEvents);

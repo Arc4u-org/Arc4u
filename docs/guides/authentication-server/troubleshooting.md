@@ -52,6 +52,9 @@ Check, in this order:
 3. The server can download `DefaultAuthority:MetaDataAddress`. Behind a private certificate authority, see
    [Custom root CA](custom-root-ca.md#trust-the-identity-provider).
 4. The token is signed by the keys of that metadata: a token of another identity provider or environment fails.
+5. The `iss` claim is `DefaultAuthority:Issuer`, or the `issuer` of the metadata when it is not set. When it is
+   not, the response detail says that the issuer is invalid. Set `DefaultAuthority:Issuer` to the issuer of your
+   tokens, see [What is validated](jwt-bearer.md#what-is-validated).
 
 ### The 401 body says `"status": 403`
 
@@ -93,12 +96,13 @@ is not initialized. A missing registration used to fail silently in token handle
 ### "There was an issue during the request: Invalid audience." or "... Invalid authority."
 
 The access token returned at sign-in has an audience that is not in `OpenId.Settings:Audiences`, or an issuer
-different from `DefaultAuthority:Url`. See [Token checks](oidc-cookie.md#token-checks).
+different from `DefaultAuthority:Issuer` (or the issuer of the metadata when it is not set). See [Token checks](oidc-cookie.md#token-checks).
 
 ### "You are not authenticated." with a 500
 
 The sign-in threw an exception, logged by `StandardOpenIdConnectEvents`. With
-`OpenId.Settings:ValidateAudience: false`, it is a known issue: see
+`OpenId.Settings:ValidateAudience: false`, older versions failed with a `KeyNotFoundException` for the key
+`Audiences` ([#220](https://github.com/Arc4u-org/Arc4u/issues/220)): upgrade, or see
 [Disable the audience check](oidc-cookie.md#disable-the-audience-check).
 
 ### The identity provider rejects the redirect URI
@@ -139,12 +143,8 @@ when there is one.
 
 | Area | Issue | Workaround |
 |---|---|---|
-| OpenID Connect, hybrid | `ValidateAudience` and `ValidateAuthority` of `OidcAuthenticationOptions` are only applied by `AddOidcAuthentication(Action<OidcAuthenticationOptions>)`. The configuration overloads and both `AddHybridAuthentication` overloads keep them `true`. | `builder.Services.PostConfigure<OidcAuthenticationOptions>(o => o.ValidateAudience = false)` (or `ValidateAuthority`). See [Disable the audience check](oidc-cookie.md#disable-the-audience-check). |
-| OpenID Connect, hybrid | With `OpenId.Settings:ValidateAudience: false` alone, the sign-in fails with `KeyNotFoundException` for the key `Audiences`. | Same `PostConfigure`. |
 | OpenID Connect, hybrid | Security: the audience check of the access token is a substring search in the space-separated list of `OpenId.Settings:Audiences`, so an `aud` that is part of a configured audience (`api://my` for `api://my-api`) is accepted. | Use audiences that no other audience of your provider is a part of, or register the exact check of [Token checks](oidc-cookie.md#token-checks). |
 | JWT bearer | The challenge answers 401 with a `ProblemDetails` whose `Status` is 403. | Replace `JwtBearerEvents`, see [Extensibility points](index.md#extensibility-points). |
-| JWT bearer | The `iss` claim is not validated (`ValidateIssuer = false`): any token signed by the keys of the authority's metadata is accepted. | Keep the audience check enabled; add an issuer check in your own `JwtBearerEvents.TokenValidated` if you need one. |
-| JWT bearer | `Authentication:ValidateAudience` and `Authentication:ValidateAuthority` are bound but never read by `AddJwtAuthentication`. | Use `Authentication:OAuth2.Settings:ValidateAudience`. |
 | JWT bearer | `HttpContext.User.Identity.Name` is `null` with `AddJwtAuthentication`: no name claim type is set and the claims are not mapped. | `PostConfigure<JwtBearerOptions>` with `NameClaimType = "name"`, see [What is validated](jwt-bearer.md#what-is-validated). |
 | All | `Authentication:TokenCache:CacheName` is required, even for an API that makes no outgoing call. | Point it to any configured cache. |
 | Resource rights | `UseResourcesRightValidationFor(sectionName)` adds nothing, without error, when the section does not exist. | Check the section path. |

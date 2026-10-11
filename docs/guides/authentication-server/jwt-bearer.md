@@ -53,6 +53,7 @@ The keys of the `Authentication` section itself:
 |---|---|---|---|
 | `DefaultAuthority` | object | none (required) | The identity provider, see [Configuration](index.md#configuration). |
 | `OAuth2SettingsSectionPath` | string | `Authentication:OAuth2.Settings` | Section holding the OAuth2 settings above. |
+| `ValidateAuthority` | bool | `true` | Validates the issuer (`iss` claim) of the token, see [What is validated](#what-is-validated). |
 | `CertSecurityKeyPath` | string | none | Section describing a certificate (`Store` or `File`, as for the [data protection certificate](oidc-cookie.md#data-protection-certificate)) whose key is used as issuer signing key. |
 | `TokenCacheSectionPath` | string | `Authentication:TokenCache` | Token cache options. The `CacheName` is required. |
 | `ClaimsIdentifierSectionPath` | string | `Authentication:ClaimsIdentifier` | Claim types that identify a user. |
@@ -61,8 +62,7 @@ The keys of the `Authentication` section itself:
 | `ClientTokensSectionPath` | string | `Authentication:ClientTokens` | Tokens for outgoing calls, see [Client authentication](../authentication-client/index.md). Optional. |
 | `RemoteSecretSectionPath` | string | `Authentication:RemoteSecrets` | Secrets for outgoing calls, see [Client authentication](../authentication-client/index.md). Optional. |
 
-`ValidateAuthority` and `ValidateAudience` are also bound on this section, but the JWT registration never reads
-them (known issue): use `OAuth2.Settings:ValidateAudience` instead.
+The audience validation is not set on this section: use `OAuth2.Settings:ValidateAudience`.
 
 `Authentication:TokenCache:CacheName` is required even when the API makes no outgoing call: the cache also
 holds the extra claims of the users.
@@ -90,8 +90,9 @@ The handler is configured with:
 - the metadata of `DefaultAuthority`, from which the signing keys are downloaded;
 - `ValidAudiences` from `OAuth2.Settings:Audiences` when `ValidateAudience` is `true`;
 - the token lifetime (ASP.NET Core default);
-- `ValidateIssuer = false`: the `iss` claim is not compared. A token is accepted when it is signed by one of
-  the keys of the authority's metadata.
+- `ValidateIssuer` from `ValidateAuthority` (`true` by default). When `true`, the `iss` claim must be
+  `DefaultAuthority:Issuer` when it is set, or the `issuer` of the authority's metadata otherwise. When `false`,
+  a token is accepted when it is signed by one of the keys of the authority's metadata, whatever its issuer.
 - `MapInboundClaims = false`: claim types keep the names of the token (`oid`, `name`, `upn`, ...).
 
 The token is kept in the `BootstrapContext` of the identity, whose authentication type is `OAuth2`.
@@ -111,8 +112,8 @@ The token is kept in the `BootstrapContext` of the identity, whose authenticatio
 > `AddHybridAuthentication` sets it from `NameClaimType` (default `name`).
 
 > [!CAUTION]
-> Because the issuer is not validated, the audience check is what ties a token to your API. Keep
-> `ValidateAudience` enabled whenever your identity provider can issue an audience.
+> With `ValidateAuthority: false`, the issuer is not validated and the audience check is what ties a token
+> to your API. Keep `ValidateAuthority` and `ValidateAudience` enabled whenever your identity provider allows it.
 
 ## Responses
 

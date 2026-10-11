@@ -153,7 +153,6 @@ using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.OAuth2.Extensions;
 using GettingStarted.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -173,10 +172,6 @@ builder.Services.RegisterGettingStartedTypes();
 
 // Validates JWT bearer tokens issued by the authority in the Authentication section.
 builder.Services.AddJwtAuthentication(builder.Configuration);
-// Known issue: AddJwtAuthentication turns issuer validation off. Turn it back on so that a token
-// signed by the authority's keys but issued by another issuer (another tenant or realm) is rejected.
-builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
-    options => options.TokenValidationParameters.ValidateIssuer = true);
 builder.Services.AddAuthorization();
 
 // Errors without a body (404, unhandled exceptions, ...) become ProblemDetails responses.
@@ -224,9 +219,7 @@ services.AddScoped<GettingStarted.Services.IGreetingService, global::GettingStar
 **Authentication.** `AddJwtAuthentication` reads the `Authentication` section and registers the
 ASP.NET Core JWT bearer handler as the default scheme, with Arc4u's `StandardBearerEvents`. When a
 request to a protected endpoint has no valid token, `StandardBearerEvents` answers `401` with a
-JSON body, and it logs why a token was rejected. `AddJwtAuthentication` turns off the validation of
-the token issuer (a known issue), so the `PostConfigure<JwtBearerOptions>` line that follows turns
-it back on; see the caution in
+JSON body, and it logs why a token was rejected. It validates the token issuer too; see the caution in
 [Call the protected endpoint with a real token](#call-the-protected-endpoint-with-a-real-token).
 `AddAuthorization` and `RequireAuthorization()` are the standard ASP.NET Core calls that protect
 `/me`.
@@ -351,20 +344,12 @@ the reason:
 | Wrong audience | `401` with `detail` "The audience '...' is invalid" |
 
 > [!CAUTION]
-> Known issue: `AddJwtAuthentication` validates the signature, the lifetime and the audience of
-> a token, but it turns off the validation of its issuer (`iss` claim). Any token signed by one of
-> the authority's keys is then accepted, whatever its issuer. With providers whose tenants or realms
-> share signing keys (Microsoft Entra ID, for example), a token issued by another tenant for the same
-> audience would be accepted. Keep the line of `Program.cs` that turns issuer validation back on,
-> right after `AddJwtAuthentication`:
->
-> ```csharp
-> builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
->     options => options.TokenValidationParameters.ValidateIssuer = true);
-> ```
->
-> The issuer is then checked against the `issuer` of the provider's metadata, and a token from
-> another issuer gets `401` with `detail` "The issuer '...' is invalid".
+> `AddJwtAuthentication` validates the signature, the lifetime, the audience and the issuer (`iss`
+> claim) of a token. The issuer is checked against `DefaultAuthority:Issuer` when it is set, or against
+> the `issuer` of the provider's metadata, and a token from another issuer gets `401` with `detail`
+> "The issuer '...' is invalid". Do not turn it off with `Authentication:ValidateAuthority: false`:
+> with providers whose tenants or realms share signing keys (Microsoft Entra ID, for example), a token
+> issued by another tenant for the same audience would then be accepted.
 
 Some providers, such as Keycloak with its default settings, issue access tokens without an audience
 for your API: add one on the provider side rather than turning audience validation off. The

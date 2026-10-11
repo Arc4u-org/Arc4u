@@ -809,6 +809,7 @@ they have no effect any more. Remove them to avoid confusion.
 | Section | Key | Change in Arc4u 9 |
 |---|---|---|
 | `Authentication` | `OpenIdSettingsKey`, `OAuth2SettingsKey` | No longer used: the settings names are fixed (see [Settings names](#settings-names)). |
+| `Authentication` (JWT bearer) | `ValidateAudience` | Removed: it was never read by `AddJwtAuthentication`. Use `Authentication:OAuth2.Settings:ValidateAudience`. |
 | `Authentication` | `JwtBearerEventsType`, `CookieAuthenticationEventsType`, `OpenIdConnectEventsType` | Removed: register your events class in the service collection (see [Custom events](#custom-events)). |
 | `Authentication` | `CookiesConfigureOptionsType` | Removed: register your own `IPostConfigureOptions<CookieAuthenticationOptions>` before the `Add…Authentication` call; Arc4u registers its own only if none is registered. |
 | `Authentication:AuthenticationCacheTicketStore` | `TicketStore` | Removed: Arc4u registers `CacheTicketStore` as `ITicketStore` only if none is registered, so register your own `ITicketStore` in the service collection. |
@@ -994,11 +995,17 @@ Steps:
 3. Replace the `OpenId` settings name with `Cookies`, and `OAuth2Bearer` with `OAuth2`.
 4. Update your `IClaimsFiller` implementations and your `JwtHttpHandler` subclasses.
 
-> [!WARNING]
-> Known issue: the configuration overloads of `AddOidcAuthentication` and `AddHybridAuthentication`
-> do not apply `ValidateAudience` and `ValidateAuthority` from the `Authentication` section, and
-> setting `ValidateAudience` to `false` in `OpenId.Settings` makes the sign-in fail with a
-> `KeyNotFoundException` on `Audiences`.
+> [!NOTE]
+> The configuration overloads of `AddOidcAuthentication` and `AddHybridAuthentication` apply
+> `ValidateAudience` and `ValidateAuthority` from the `Authentication` section
+> ([#220](https://github.com/Arc4u-org/Arc4u/issues/220)). Check that these keys hold the values you want:
+> they were ignored before.
+>
+> `AddJwtAuthentication` and the bearer scheme of `AddHybridAuthentication` now validate the token issuer
+> (`Authentication:ValidateAuthority`, `true` by default). The OpenID Connect sign-in uses the same rule
+> instead of comparing with `DefaultAuthority:Url`: the `iss` claim must be `DefaultAuthority:Issuer`, or the issuer of the provider's metadata.
+> If your tokens have another issuer (for example Entra ID v1 tokens with a v2 authority), set
+> `DefaultAuthority:Issuer` to it, or `ValidateAuthority` to `false`.
 
 ## Client secrets replaced by client tokens
 

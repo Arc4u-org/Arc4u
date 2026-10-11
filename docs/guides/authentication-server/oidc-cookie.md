@@ -127,8 +127,8 @@ The other keys of the `Authentication` section:
 | `ClaimsFillerSectionPath` | string | `Authentication:ClaimsMiddleWare:ClaimsFiller` | Extra claims options. |
 | `DomainMappingsSectionPath` | string | `Authentication:DomainsMapping` | Domain mapping of the user profile. |
 
-`ValidateAudience` and `ValidateAuthority` are also bound on this section, but the configuration overload does
-not apply them (known issue, see [Disable the audience check](#disable-the-audience-check)).
+`ValidateAudience` and `ValidateAuthority` (both `true` by default) are also read from this section and copied to
+`OidcAuthenticationOptions`, see [Disable the audience check](#disable-the-audience-check).
 
 ### Data protection certificate
 
@@ -198,8 +198,9 @@ On the token response, <xref:Arc4u.OAuth2.Events.StandardOpenIdConnectEvents> ch
 - one of its `aud` values must be found in `OpenId.Settings:Audiences`, otherwise the sign-in fails with
   `Invalid audience`. The comparison is a substring search in the space-separated list of the configured
   audiences (see the warning below);
-- its `iss` claim must be equal (ignoring case) to `DefaultAuthority:Url`, otherwise the sign-in fails with
-  `Invalid authority`.
+- when `ValidateAuthority` is `true` (the default), its `iss` claim must be exactly
+  `DefaultAuthority:Issuer` when it is set, or the `issuer` of the provider's metadata otherwise, otherwise the sign-in fails with `Invalid authority`. Bearer tokens of
+  [hybrid authentication](hybrid.md) follow the same rule.
 
 The access token must be a JWT. The id token is validated by ASP.NET Core: signature, lifetime, nonce, and an
 audience equal to `ClientId` or to one of `OpenId.Settings:Audiences`.
@@ -318,39 +319,28 @@ ASP.NET Core forwarded headers middleware (general ASP.NET Core guidance, see
 
 ### Disable the audience check
 
-Some providers issue access tokens without your audience (Keycloak, by default). With the configuration
-overload, `OpenId.Settings:ValidateAudience: false` alone is not enough.
+Some providers issue access tokens without your audience (Keycloak, by default). Two switches control the
+audience checks:
 
-> [!WARNING]
-> Known issue: `OidcAuthenticationOptions.ValidateAudience` and `ValidateAuthority` are only applied by the
-> code overload `AddOidcAuthentication(Action<OidcAuthenticationOptions>)`. The configuration overloads and
-> `AddHybridAuthentication` ignore them. Moreover, when `OpenId.Settings:ValidateAudience` is `false`, the
-> audience list is not registered, and the sign-in fails with a
-> `KeyNotFoundException` for the `Audiences` key (the browser shows `You are not authenticated.` with a 500).
-
-Set both values, the second one with `PostConfigure`:
+- `OpenId.Settings:ValidateAudience: false` turns off the audience validation of the **id token** by the OpenID
+  Connect handler, and removes the audience list from the settings. Without an audience list, the Arc4u check of
+  the access token is skipped too.
+- `Authentication:ValidateAudience: false` (`OidcAuthenticationOptions.ValidateAudience` in code) disables only
+  the Arc4u check of the access token. With the audiences kept in `OpenId.Settings`, the id token check stays.
 
 ```json
 {
   "Authentication": {
+    "ValidateAudience": false,
     "OpenId.Settings": { "ValidateAudience": false }
   }
 }
 ```
 
-```csharp
-using Arc4u.OAuth2.Extensions;
-using Arc4u.OAuth2.Options;
-
-builder.Services.AddOidcAuthentication(builder.Configuration);
-builder.Services.PostConfigure<OidcAuthenticationOptions>(options => options.ValidateAudience = false);
-```
-
-`OpenId.Settings:ValidateAudience: false` also turns off the audience validation of the **id token** by the
-OpenID Connect handler, and removes the audience list from the settings. The `PostConfigure` alone, with the
-audiences kept in the configuration, disables only the Arc4u check of the access token and keeps the id token
-check. The same `PostConfigure` with `ValidateAuthority = false` disables the issuer check. Prefer configuring an
-audience in the identity provider when it is possible.
+In the same way, `Authentication:ValidateAuthority: false` disables the issuer check of the access token. Both
+values are applied by every overload of `AddOidcAuthentication` and `AddHybridAuthentication`
+([#220](https://github.com/Arc4u-org/Arc4u/issues/220)). Prefer configuring an audience in the identity provider
+when it is possible.
 
 ### Configure from code
 
@@ -407,14 +397,16 @@ status.
 
 ### "There was an issue during the request: Invalid authority."
 
-The `iss` claim of the access token differs from `DefaultAuthority:Url`, for example because of a trailing
-slash or because the provider issues tokens with another issuer (see
-[Identity providers](identity-providers.md)). Make `Url` equal to the issuer.
+The `iss` claim of the access token differs from `DefaultAuthority:Issuer` when it is set, or the `issuer` of the provider's metadata otherwise, for example
+because the provider issues access tokens with another issuer than its metadata (see
+[Identity providers](identity-providers.md)). Set `DefaultAuthority:Issuer` to the `iss` claim of your access
+tokens; the log entry of `StandardOpenIdConnectEvents` gives both values.
 
 ### "You are not authenticated." with a 500 after the sign-in
 
-The sign-in failed with an exception; the log contains it. With `OpenId.Settings:ValidateAudience: false`, it
-is the known `KeyNotFoundException` described in [Disable the audience check](#disable-the-audience-check).
+The sign-in failed with an exception; the log contains it. A `KeyNotFoundException` for the key `Audiences`
+with `OpenId.Settings:ValidateAudience: false` comes from an older version
+([#220](https://github.com/Arc4u-org/Arc4u/issues/220)): upgrade.
 
 ### The user is signed out after the lifetime of the access token
 

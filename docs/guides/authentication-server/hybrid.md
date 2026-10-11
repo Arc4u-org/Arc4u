@@ -100,10 +100,11 @@ app.UseAuthorization();
 The code overload `AddHybridAuthentication(Action<HybridAuthenticationOptions>)` takes the options of the OpenID
 Connect code overload plus `OAuth2SettingsOptions`, which is required.
 
-> [!WARNING]
-> Known issue: both `AddHybridAuthentication` overloads ignore `ValidateAudience` and `ValidateAuthority` of the
-> options; the OpenID Connect checks stay enabled. Use the `PostConfigure<OidcAuthenticationOptions>` workaround
-> of [Disable the audience check](oidc-cookie.md#disable-the-audience-check).
+`ValidateAudience` and `ValidateAuthority` of the options (or of the `Authentication` section) control the
+checks of the OpenID Connect access token, see [Disable the audience check](oidc-cookie.md#disable-the-audience-check).
+`ValidateAuthority` (`true` by default) also validates the issuer of the bearer tokens, as
+[`AddJwtAuthentication` does](jwt-bearer.md#what-is-validated). The audience of the bearer tokens is controlled by
+`OAuth2.Settings:ValidateAudience`.
 
 ## Common scenarios
 

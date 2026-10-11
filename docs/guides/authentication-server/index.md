@@ -109,8 +109,9 @@ all scenarios are:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `Authentication:DefaultAuthority:Url` | URI | none (required) | Base URL of the identity provider. For OpenID Connect it must be equal to the `iss` claim of the access tokens. |
+| `Authentication:DefaultAuthority:Url` | URI | none (required) | Base URL of the identity provider. |
 | `Authentication:DefaultAuthority:MetaDataAddress` | URI | `Url` + `/.well-known/openid-configuration` | Address of the OpenID Connect metadata document. Set it when the provider publishes the document elsewhere. When it starts with `http://`, HTTPS is not required for the metadata. |
+| `Authentication:DefaultAuthority:Issuer` | URI | read from the metadata | Expected `iss` claim of the access tokens, when `ValidateAuthority` is `true`. Set it when your tokens have another issuer than the metadata. |
 | `Authentication:DefaultAuthority:TokenEndpoint` | URI | read from the metadata | Token endpoint, used by the token providers. |
 | `Authentication:TokenCache:CacheName` | string | none (required) | Name of the [named cache](../../concepts/glossary.md#named-cache) that stores tokens and extra claims. When the name is unknown, the default cache is used. |
 | `Authentication:TokenCache:MaxTime` | TimeSpan | `00:50:00` | Lifetime of a cached entry, including the extra claims of a user. |

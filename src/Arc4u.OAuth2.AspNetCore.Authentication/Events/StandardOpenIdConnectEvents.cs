@@ -13,7 +13,8 @@ using Microsoft.Extensions.Options;
 namespace Arc4u.OAuth2.Events
 {
     /// <summary>
-    /// The default <see cref="OpenIdConnectEvents"/>. It validates the audience and the issuer of the access token received from the token endpoint, forces https redirect urls (except for localhost),
+    /// The default <see cref="OpenIdConnectEvents"/>. It validates the audience and the issuer of the access token received from the token endpoint
+    /// (the issuer must be <see cref="AuthorityOptions.Issuer"/> of the default authority when it is set, or the issuer of its metadata otherwise), forces https redirect urls (except for localhost),
     /// adds the extra authorization and token request parameters (see <see cref="ApiExtraContextAuthenticationOption"/>), and answers failures with a simple html message.
     /// </summary>
     public sealed partial class StandardOpenIdConnectEvents : OpenIdConnectEvents
@@ -41,52 +42,68 @@ namespace Arc4u.OAuth2.Events
         private static partial Regex HttpRegex();
 
         /// <inheritdoc/>
-        public override Task TokenResponseReceived(TokenResponseReceivedContext context)
+        public override async Task TokenResponseReceived(TokenResponseReceivedContext context)
         {
             if (string.IsNullOrWhiteSpace(context.TokenEndpointResponse.AccessToken))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var jwtToken = new JwtSecurityToken(context.TokenEndpointResponse.AccessToken);
             var options = _openIdOptions.Get(Constants.CookiesAuthenticationType);
 
-            if (_hybridOptions.ValidateAudience)
+            // The Audiences key is not registered when the OpenId settings disable the audience validation.
+            if (_hybridOptions.ValidateAudience && options.Values.TryGetValue(TokenKeys.Audiences, out var audiences))
             {
-                if (!jwtToken.Audiences.Any(aud => options.Values[TokenKeys.Audiences].Contains(aud)))
+                if (!jwtToken.Audiences.Any(aud => audiences.Contains(aud)))
                 {
                     _logger.Technical()
                         .LogError("Audience(s) {audience} is not in the list of allowed audience(s): {audiences}.",
                             jwtToken.Audiences,
-                            options.Values[TokenKeys.Audiences]);
+                            audiences);
 
                     context.Fail("Invalid audience");
 
-                    return Task.CompletedTask;
+                    return;
                 }
             }
 
-            // when a default authority is not defined...
             if (!_hybridOptions.ValidateAuthority)
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            if (jwtToken.Issuer.Equals(_hybridOptions.DefaultAuthority.Url.AbsoluteUri, StringComparison.OrdinalIgnoreCase))
+            // Same rule as the bearer tokens: the configured issuer, or the issuer of the metadata.
+            var expectedIssuer = await GetExpectedIssuerAsync(context).ConfigureAwait(false);
+
+            if (string.Equals(jwtToken.Issuer, expectedIssuer, StringComparison.Ordinal))
             {
-                return Task.CompletedTask;
+                return;
             }
 
             _logger.Technical()
                 .LogError("Authority {authority} is not in the expected one: {authority_from_config}.",
                     jwtToken.Issuer,
-                    _hybridOptions.DefaultAuthority.Url.AbsoluteUri);
+                    expectedIssuer);
 
-            //context.HandleResponse();
             context.Fail("Invalid authority");
+        }
 
-            return Task.CompletedTask;
+        private async Task<string> GetExpectedIssuerAsync(TokenResponseReceivedContext context)
+        {
+            if (_hybridOptions.DefaultAuthority.Issuer is not null)
+            {
+                return _hybridOptions.DefaultAuthority.Issuer.ToString();
+            }
 
+            var configuration = context.Options.Configuration;
+            if (configuration is null && context.Options.ConfigurationManager is not null)
+            {
+                // Cached by the OpenID Connect handler, which has already read it to start the sign-in.
+                configuration = await context.Options.ConfigurationManager.GetConfigurationAsync(context.HttpContext.RequestAborted).ConfigureAwait(false);
+            }
+
+            return configuration?.Issuer ?? _hybridOptions.DefaultAuthority.Url.AbsoluteUri;
         }
 
         /// <inheritdoc/>

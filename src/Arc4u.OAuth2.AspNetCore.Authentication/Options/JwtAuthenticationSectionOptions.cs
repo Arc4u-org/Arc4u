@@ -12,7 +12,10 @@ namespace Arc4u.OAuth2.Options
         /// <summary>Gets or sets the path of the section holding the <see cref="OAuth2SettingsOption"/>. The default is <c>Authentication:OAuth2.Settings</c>.</summary>
         public string OAuth2SettingsSectionPath { get; set; } = "Authentication:OAuth2.Settings";
 
-        /// <summary>Gets or sets a value indicating whether the authority must be validated. The default is <see langword="true"/>. It is not read by the JWT bearer configuration.</summary>
+        /// <summary>
+        /// Gets or sets a value indicating whether the issuer of the token must be validated. It is copied to <see cref="JwtAuthenticationOptions.ValidateAuthority"/>. The default is <see langword="true"/>.
+        /// When <see langword="true"/>, the issuer must be <see cref="AuthorityOptions.Issuer"/> of the default authority when it is set, or the issuer read from its metadata otherwise.
+        /// </summary>
         public bool ValidateAuthority { get; set; } = true;
 
         /// <summary>Gets or sets the path of the section describing an optional certificate used as issuer signing key to validate tokens.</summary>
@@ -35,12 +38,5 @@ namespace Arc4u.OAuth2.Options
 
         /// <summary>Gets or sets the path of the section holding the domain mappings. The default is <c>Authentication:DomainsMapping</c>.</summary>
         public string DomainMappingsSectionPath { get; set; } = "Authentication:DomainsMapping";
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the audience must be validated. The default is <see langword="true"/>.
-        /// It is not read by the JWT bearer configuration: the audience validation is controlled by <see cref="OAuth2SettingsOption.ValidateAudience"/> of the OAuth2 settings section.
-        /// </summary>
-        public bool ValidateAudience { get; set; } = true;
-
     }
 }

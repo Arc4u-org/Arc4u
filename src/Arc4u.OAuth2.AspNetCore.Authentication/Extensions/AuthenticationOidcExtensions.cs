@@ -280,6 +280,8 @@ namespace Arc4u.OAuth2.Extensions
                 ClaimsidentifierExtension.PrepareAction(configuration, settings.ClaimsIdentifierSectionPath);
             options.NameClaimType = settings.NameClaimType;
             options.RoleClaimType = settings.RoleClaimType;
+            options.ValidateAudience = settings.ValidateAudience;
+            options.ValidateAuthority = settings.ValidateAuthority;
         }
 
         private static string? ValidateOidcConfiguration(OidcAuthenticationSectionOptions settings)
