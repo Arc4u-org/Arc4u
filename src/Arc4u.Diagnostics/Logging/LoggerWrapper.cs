@@ -137,7 +137,7 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
 
     private static string ApplicationName => Assembly.GetEntryAssembly()?.GetName().Name ?? "Unknown App";
 
-    private void Log(LogLevel level, string? message, Exception? exception = null)
+    private void Log(LogLevel level, EventId eventId, string? message, Exception? exception = null)
     {
         ThrowIfDisposed();
 
@@ -166,13 +166,13 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
                 properties.AddIfNotExist(LoggingConstants.ActivityId, activity.TraceId.ToString());
             }
 
-            _logger.Log(level, 0, properties, exception, (state, ex) => message ?? "");
+            _logger.Log(level, eventId, properties, exception, (state, ex) => message ?? "");
 
             if (exception is AggregateException aggregateException)
             {
                 foreach (var innerException in aggregateException.Flatten().InnerExceptions)
                 {
-                    _logger.Log(level, 0, properties, innerException, (state, ex) => message ?? "");
+                    _logger.Log(level, eventId, properties, innerException, (state, ex) => message ?? "");
                 }
             }
         }
@@ -215,7 +215,7 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
         }
         catch (Exception ex)
         {
-            Log(LogLevel.Error, "Error getting property providers. Logging without additional properties.", ex);
+            Log(LogLevel.Error, default, "Error getting property providers. Logging without additional properties.", ex);
             return new Dictionary<string, object?>(AdditionalFields);
         }
     }
@@ -226,7 +226,7 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <param name="logLevel">The severity of the entry.</param>
-    /// <param name="eventId">The event id (not used by the wrapper).</param>
+    /// <param name="eventId">The event id, forwarded to the underlying logger.</param>
     /// <param name="state">The state to log.</param>
     /// <param name="exception">The exception related to the entry, if any.</param>
     /// <param name="formatter">Creates the message from the state and the exception.</param>
@@ -241,7 +241,7 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
             }
         }
 
-        Log(logLevel, formatter(state, exception), exception);
+        Log(logLevel, eventId, formatter(state, exception), exception);
     }
 
     /// <inheritdoc/>

@@ -194,7 +194,7 @@ public static class Helpers
 
 ### Log an exception
 
-`LogException` is an extension of `ILogger` (namespace `Arc4u.Diagnostics`). It writes an Error entry with the message `Exception: {Message}` (see [Event ids are not forwarded](#event-ids-are-not-forwarded)). Use the standard `LogError(exception, ...)` when you need your own message.
+`LogException` is an extension of `ILogger` (namespace `Arc4u.Diagnostics`). It writes an Error entry with the message `Exception: {Message}`. Use the standard `LogError(exception, ...)` when you need your own message.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -219,7 +219,7 @@ When the exception is an `AggregateException`, the wrapper also writes one entry
 
 ### Log with high-performance messages
 
-The [`LoggerMessage`](https://learn.microsoft.com/dotnet/core/extensions/logger-message-generator) source generator works on top of the fluent API: define the message as an extension method of `ILogger` and call it at the end of the chain. Arc4u uses this pattern for its own messages (for example `LogMonitoring`). The `EventId` you declare is not forwarded to the logging providers, see [Event ids are not forwarded](#event-ids-are-not-forwarded).
+The [`LoggerMessage`](https://learn.microsoft.com/dotnet/core/extensions/logger-message-generator) source generator works on top of the fluent API: define the message as an extension method of `ILogger` and call it at the end of the chain. Arc4u uses this pattern for its own messages (for example `LogMonitoring`). The `EventId` you declare is forwarded to the logging providers.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -432,10 +432,6 @@ public class Cleaner(ILogger<Cleaner> logger)
     }
 }
 ```
-
-### Event ids are not forwarded
-
-Known issue. The Arc4u logger writes every entry with event id 0: it ignores the `EventId` it receives, so the `EventId` of a `[LoggerMessage]` method, of `LogException` or of the Arc4u monitoring messages never reaches Serilog, OpenTelemetry or any other provider. Entries written by the framework itself keep their event id. Do not filter, count or alert on the event ids of entries written through the Arc4u logger; use the message template or a property instead.
 
 ### The category is always Technical
 
