@@ -118,13 +118,10 @@ The token is kept in the `BootstrapContext` of the identity, whose authenticatio
 ## Responses
 
 <xref:Arc4u.OAuth2.Events.StandardBearerEvents> answers a failed or missing authentication with a 401 and a
-JSON `ProblemDetails` body. For an expired token, the `x-token-expired` response header holds the expiration
-date and the detail reads `The token expired on <date>`.
-
-> [!NOTE]
-> Known issue: the body of the 401 has `"status": 403`. Clients should use the HTTP status code. To change
-> the response, derive from `StandardBearerEvents` as shown in
-> [Extensibility points](index.md#extensibility-points).
+`ProblemDetails` body (`application/problem+json`, `"status": 401`). For an expired token, the
+`x-token-expired` response header holds the expiration date and the detail reads
+`The token expired on <date>`. To change the response, derive from `StandardBearerEvents` as shown in
+[Extensibility points](index.md#extensibility-points).
 
 A principal that is authenticated but does not satisfy a policy gets a 403 from ASP.NET Core.
 

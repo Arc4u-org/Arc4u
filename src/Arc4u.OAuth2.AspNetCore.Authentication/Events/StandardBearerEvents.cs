@@ -21,14 +21,14 @@ namespace Arc4u.OAuth2.Events
     /// <param name="logger">The logger.</param>
     public class StandardBearerEvents(ILogger<StandardBearerEvents> logger) : JwtBearerEvents
     {
-        /// <summary>Answers the challenge with a 401 status and a JSON <see cref="ProblemDetails"/> body. For an expired token, the <c>x-token-expired</c> header gives the expiration date.</summary>
+        /// <summary>Answers the challenge with a 401 status and a <see cref="ProblemDetails"/> body (<c>application/problem+json</c>). For an expired token, the <c>x-token-expired</c> header gives the expiration date.</summary>
         /// <param name="context">The challenge context.</param>
         /// <returns>A task that completes when the response is written.</returns>
         public override Task Challenge(JwtBearerChallengeContext context)
         {
             context.HandleResponse();
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = "application/problem+json";
 
             // Add some extra context for expired tokens.
             if (context.AuthenticateFailure is not null && context.AuthenticateFailure is SecurityTokenExpiredException authenticationException)
@@ -42,7 +42,7 @@ namespace Arc4u.OAuth2.Events
             {
                 Title = context.Error,
                 Detail = context.ErrorDescription,
-                Status = StatusCodes.Status403Forbidden
+                Status = StatusCodes.Status401Unauthorized
             }, StandardBearerEventsJsonContext.Default.ProblemDetails));
         }
 

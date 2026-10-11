@@ -56,11 +56,6 @@ Check, in this order:
    not, the response detail says that the issuer is invalid. Set `DefaultAuthority:Issuer` to the issuer of your
    tokens, see [What is validated](jwt-bearer.md#what-is-validated).
 
-### The 401 body says `"status": 403`
-
-Known issue of `StandardBearerEvents`: the HTTP status is 401 but the `ProblemDetails.Status` is 403. Use the
-HTTP status, or replace the events as shown in [Extensibility points](index.md#extensibility-points).
-
 ### 500: No distinguish key found for the identity
 
 `NullReferenceException: No distinguish key found for the identity ...`: none of the `Authentication:ClaimsIdentifier`
@@ -144,7 +139,6 @@ when there is one.
 | Area | Issue | Workaround |
 |---|---|---|
 | OpenID Connect, hybrid | Security: the audience check of the access token is a substring search in the space-separated list of `OpenId.Settings:Audiences`, so an `aud` that is part of a configured audience (`api://my` for `api://my-api`) is accepted. | Use audiences that no other audience of your provider is a part of, or register the exact check of [Token checks](oidc-cookie.md#token-checks). |
-| JWT bearer | The challenge answers 401 with a `ProblemDetails` whose `Status` is 403. | Replace `JwtBearerEvents`, see [Extensibility points](index.md#extensibility-points). |
 | JWT bearer | `HttpContext.User.Identity.Name` is `null` with `AddJwtAuthentication`: no name claim type is set and the claims are not mapped. | `PostConfigure<JwtBearerOptions>` with `NameClaimType = "name"`, see [What is validated](jwt-bearer.md#what-is-validated). |
 | All | `Authentication:TokenCache:CacheName` is required, even for an API that makes no outgoing call. | Point it to any configured cache. |
 | Resource rights | `UseResourcesRightValidationFor(sectionName)` adds nothing, without error, when the section does not exist. | Check the section path. |
