@@ -18,7 +18,7 @@ Arc4u replaces the `ILogger<T>` registration with a wrapper that adds these prop
 ```mermaid
 flowchart LR
     App["Your code<br/>ILogger#lt;T#gt;.Technical().Add(...).LogInformation(...)"] --> Wrapper["Arc4u logger wrapper<br/>adds category and standard properties"]
-    Provider["IAddPropertiesToLog<br/>(user, activity id, ...)"] --> Wrapper
+    Provider["IAddPropertiesToLog<br/>(user, tenant, ...)"] --> Wrapper
     Wrapper --> Factory["ILoggerFactory"]
     Factory --> Serilog["Serilog<br/>(console, Seq, file, ...)"]
     Factory --> Otel["OpenTelemetry logging"]
@@ -95,9 +95,8 @@ app.Run();
 `AddILogger` (namespace `Arc4u.Dependency`) removes the existing `ILogger<>` registration and registers:
 
 - `ILogger<T>` as a transient `LoggerWrapper<T>`;
-- `IScopedLogger<T>` as a scoped `ScopedLoggerWrapper<T>`, for code that wants the properties shared during a scope such as an HTTP request;
 - the non-generic `ILogger` as a transient `ILogger<DefaultLogger>`, for [static classes](#log-from-a-static-class);
-- a `NullLoggerProperties` under the keys `"Scoped"` and `"Transient"` (see [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry)), unless you registered your own.
+- a `NullLoggerProperties` under the keys `"Scoped"` and `"Transient"` (see [Add the user to every entry](#add-the-user-to-every-entry)), unless you registered your own.
 
 Calling `GET /orders/7` writes these two lines (the `RequestId`, `RequestPath` and `ConnectionId` come from the ASP.NET Core logging scope; the long padding of the fixed columns is shortened here):
 
@@ -236,16 +235,18 @@ public class Shipper(ILogger<Shipper> logger)
 }
 ```
 
-### Add the user and activity id to every entry
+### Add the user to every entry
 
-The wrapper asks an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> for extra properties each time it writes an entry. It resolves that service by key:
+The wrapper asks an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> for extra properties each time it writes an entry. When the logger is created, it picks the provider by key, depending on where it is resolved:
 
-| Logger | Key |
-|---|---|
-| `ILogger<T>` (transient wrapper) | `"Transient"` |
-| `IScopedLogger<T>` (scoped wrapper) | `"Scoped"` |
+| The logger is resolved | Key | Examples |
+|---|---|---|
+| In a scope | `"Scoped"` | A controller, a minimal API handler, a gRPC service, a scoped or transient service of a request, the timing middlewares, a `CreateScope()` in a background job. |
+| From the root | `"Transient"` | A singleton (a cache, a hosted service such as `SystemResources`) and its dependencies, even when the singleton is first requested during a request. |
 
-`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` until you register a provider**. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user name from the scoped `IApplicationContext`. It is exported with the key `"Scoped"`; `AddApplicationContext()` registers it without a key, which the wrappers do not use. Register it with the key yourself (or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes` when you use the [Arc4u source generators](../dependency-injection/index.md)), and inject `IScopedLogger<T>`. Call `AddApplicationContext()` (namespace `Arc4u.Security.Principal`, package `Arc4u`), which registers `IApplicationContext` and calls `AddILogger()` for you; with `AddILogger()` alone the provider cannot be created and the first resolve of the logger throws an `InvalidOperationException`.
+`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` until you register a provider**.
+
+A `"Scoped"` provider can depend on scoped services. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user from the scoped `IApplicationContext`. Register it under `"Scoped"`, after `AddApplicationContext()` (namespace `Arc4u.Security.Principal`, package `Arc4u`), which registers `IApplicationContext` and calls `AddILogger()`. With the [Arc4u source generators](../dependency-injection/index.md), you can instead list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes`: it is exported with the key `"Scoped"`.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -260,7 +261,7 @@ public static class LoggingRegistration
     }
 }
 
-public class Handler(IScopedLogger<Handler> logger)
+public class Handler(ILogger<Handler> logger)
 {
     public void Handle() => logger.Technical().LogInformation("Handled");
 }
@@ -268,7 +269,7 @@ public class Handler(IScopedLogger<Handler> logger)
 
 `DefaultLoggingProperties` only returns properties when the application context has data:
 
-- `Identity` is the user name of the `IApplicationContext.Principal` (its profile name, or the identity name when there is no profile). The principal is set by Arc4u authentication (see the [server authentication guide](../authentication-server/index.md)); without one, the provider returns nothing.
+- `Identity` is the email of the profile of the `IApplicationContext.Principal` (the `email` claim, see [Claims and authorization](../authentication-server/claims-and-authorization.md)), or the name of its identity when the identity provider gives no email. An email is personal data: remove it from the sinks that do not need it with the [anonymizer](serilog.md#hide-the-user-identity). The principal is set by Arc4u authentication (see the [server authentication guide](../authentication-server/index.md)); without one, the provider returns nothing.
 
 `ActivityId` does not come from a provider: the wrapper writes the `TraceId` of the current `System.Diagnostics.Activity` itself. ASP.NET Core and gRPC start an activity for each request and propagate it to the services you call through the W3C `traceparent` header.
 
@@ -297,14 +298,33 @@ public static class TenantRegistration
 }
 ```
 
-With that provider, an entry written by an `IScopedLogger<T>` looks like this:
+With that provider, an entry written by a logger resolved in a scope looks like this:
 
 ```text
 29/09/2026 14:53:47,920  Information   Technical  alice  28853  1   Program - <Main>$ - hello - {"Tenant":"contoso"}
 ```
 
-> [!NOTE]
-> A transient `ILogger<T>` uses the `"Transient"` key, so it does not get the properties of a `"Scoped"` provider. You can register a keyed transient provider for it, but only one without scoped dependencies (such as `TenantProperties`). `DefaultLoggingProperties` depends on the scoped `IApplicationContext`: registered as `"Transient"`, the host fails to start in the Development environment (`Cannot consume scoped service 'Arc4u.Security.Principal.IApplicationContext' from singleton ...`, also for the `SystemResources` hosted service).
+#### Loggers of singletons in an ASP.NET Core host
+
+A `"Transient"` provider must not depend on scoped services: a singleton's logger is created once from the root, so `DefaultLoggingProperties` registered as `"Transient"` makes the host fail to start in the Development environment (`Cannot consume scoped service 'Arc4u.Security.Principal.IApplicationContext' from singleton ...`), and in Production every singleton would log the principal of the first request.
+
+In an ASP.NET Core host, `AddHttpContextLoggingProperties()` (namespace `Arc4u.OAuth2.AspNetCore.Diagnostics`, package `Arc4u.OAuth2.AspNetCore`) registers `HttpContextLoggingProperties` under `"Transient"`. It has no scoped dependency: each time an entry is written, it asks the `"Scoped"` provider of the current HTTP request (`HttpContext.RequestServices`) for its properties. A singleton's logger then writes the identity of the request it runs in. Outside a request (a background service, startup), it adds nothing.
+
+It only registers `HttpContextLoggingProperties` when no provider is registered under `"Transient"` yet. `AddILogger()`, which `AddApplicationContext()` calls, registers a `NullLoggerProperties` under that key, so **call `AddHttpContextLoggingProperties()` before `AddApplicationContext()` (or `AddILogger()`)**: called after them, it does nothing and the loggers of singletons write no `Identity`.
+
+```csharp
+using Arc4u.Diagnostics;
+using Arc4u.OAuth2.AspNetCore.Diagnostics;
+using Arc4u.Security.Principal;
+
+builder.Services.AddHttpContextLoggingProperties();
+builder.Services.AddApplicationContext();
+builder.Services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped");
+```
+
+`AddJwtAuthentication`, `AddOidcAuthentication` and `AddHybridAuthentication` also call it, so it is registered for you when the authentication is added before `AddApplicationContext()`. When the authentication is added after it, as is usual, call `AddHttpContextLoggingProperties()` yourself before `AddApplicationContext()`.
+
+A provider you registered under `"Transient"` before is kept; it must not have scoped dependencies (such as `TenantProperties` above).
 
 ### Log CPU and memory usage
 
@@ -399,11 +419,11 @@ The key you passed to `Add` is one of `Application`, `Pid`, `Tid`, `Method`, `So
 
 ### Entries have no Identity or ActivityId
 
-Check, in this order: an `IAddPropertiesToLog` provider is registered under the key of the logger you use (`"Scoped"` for `IScopedLogger<T>`, `"Transient"` for `ILogger<T>`); `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal). `ActivityId` is missing when the entry is written outside a `System.Diagnostics.Activity` (for example in a background service that starts none). See [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry).
+Check, in this order: a provider such as `DefaultLoggingProperties` is registered under `"Scoped"` (`AddApplicationContext()` does not register one); for the logger of a singleton, `HttpContextLoggingProperties` is registered under `"Transient"` (`AddHttpContextLoggingProperties()` called before `AddApplicationContext()`, see [Loggers of singletons in an ASP.NET Core host](#loggers-of-singletons-in-an-aspnet-core-host)) and the entry is written during an HTTP or gRPC request; `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal). `ActivityId` is missing when the entry is written outside a `System.Diagnostics.Activity` (for example in a background service that starts none). See [Add the user to every entry](#add-the-user-to-every-entry).
 
 ### Properties added with Add stay on later entries
 
-Known issue. The properties you add (`Add`, `AddIf`, ...), the values of message template arguments (including the `Message` property that `LogException` writes with the exception message, which often contains data) and the `AddStackTrace()` setting are stored in the logger instance and are not cleared once the entry is written. Every later entry written by the same logger instance carries them, even when it uses another category. The lifetime of the instance follows its consumer: a transient `ILogger<T>` injected in a singleton service lives as long as the application, and an `IScopedLogger<T>` lives as long as its scope.
+Known issue. The properties you add (`Add`, `AddIf`, ...), the values of message template arguments (including the `Message` property that `LogException` writes with the exception message, which often contains data) and the `AddStackTrace()` setting are stored in the logger instance and are not cleared once the entry is written. Every later entry written by the same logger instance carries them, even when it uses another category. The lifetime of the instance follows its consumer: an `ILogger<T>` injected in a singleton service lives as long as the application.
 
 This output comes from one `ILogger<Program>` that logs three entries, only the first with `Add("Ssn", ...)` (the fixed columns are shortened):
 

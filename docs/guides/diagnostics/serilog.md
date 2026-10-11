@@ -208,6 +208,9 @@ public static class CategoryRouting
 
 ## Hide the user identity
 
+> [!NOTE]
+> With `DefaultLoggingProperties`, `Identity` is the user's email address (or the name of the identity when the identity provider gives no email). An email identifies a person, also outside your organization, so treat every sink that receives `Identity` as a store of personal data: who can read it, how long it is kept, and whether it leaves your infrastructure (a log service, a support export). Wrap the sinks that do not need to know the user, such as the console, a file shared for support or an external log service, with `WriteTo.Anonymizer`.
+
 `WriteTo.Anonymizer(sink)` wraps a sink and removes the `Identity` property from the events before the sink receives them. It takes a Serilog sink instance (a `Serilog.Core.Logger` is one), so build the target with its own `LoggerConfiguration`:
 
 ```csharp

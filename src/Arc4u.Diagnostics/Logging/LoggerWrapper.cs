@@ -31,49 +31,46 @@ public interface ILoggerWrapper<T> : ILogger<T>, ILoggerCallerMember
 
 }
 
-/// <summary>An <see cref="ILoggerWrapper{T}"/> registered with a scoped lifetime, so the additional properties are shared during the lifetime of the scope (for example an HTTP request).</summary>
-/// <typeparam name="T">The category type of the logger.</typeparam>
-public interface IScopedLogger<T> : ILoggerWrapper<T>
-{
-
-}
-
-/// <summary>Transient implementation of <see cref="ILoggerWrapper{T}"/> that decorates the <see cref="ILogger{TCategoryName}"/> created by the <see cref="ILoggerFactory"/>.</summary>
+/// <summary>
+/// Transient implementation of <see cref="ILoggerWrapper{T}"/> that decorates the <see cref="ILogger{TCategoryName}"/> created by the <see cref="ILoggerFactory"/>.
+/// The <see cref="IAddPropertiesToLog"/> it uses depends on where it is resolved: in a scope (an HTTP or gRPC request, a <c>CreateScope()</c>), the provider
+/// registered under the key <c>"Scoped"</c>, which may depend on scoped services; from the root (a singleton and its dependencies), the provider registered
+/// under the key <c>"Transient"</c>, which must not.
+/// </summary>
 /// <typeparam name="T">The category type of the logger.</typeparam>
 public sealed class LoggerWrapper<T> : LoggerBaseWrapper<T>
 {
     /// <summary>Initializes a new instance of the <see cref="LoggerWrapper{T}"/> class.</summary>
     /// <param name="loggerFactory">The factory used to create the underlying logger.</param>
-    /// <param name="addPropertiesToLog">The provider (keyed <c>"Transient"</c>) of the additional properties.</param>
+    /// <param name="serviceProvider">The provider the logger is resolved from, used to choose the <c>"Scoped"</c> or <c>"Transient"</c> <see cref="IAddPropertiesToLog"/>.</param>
     /// <param name="appConfig">The application configuration, used to obtain the application name.</param>
-    public LoggerWrapper(ILoggerFactory loggerFactory, [FromKeyedServices("Transient")] IAddPropertiesToLog addPropertiesToLog, IOptionsMonitor<ApplicationConfig> appConfig) : base(loggerFactory, addPropertiesToLog, appConfig)   
+    public LoggerWrapper(ILoggerFactory loggerFactory, IServiceProvider serviceProvider, IOptionsMonitor<ApplicationConfig> appConfig)
+        : base(loggerFactory, GetPropertiesToLog(serviceProvider), appConfig)
     {
-        
     }
-}
 
-/// <summary>Scoped implementation of <see cref="IScopedLogger{T}"/> that decorates the <see cref="ILogger{TCategoryName}"/> created by the <see cref="ILoggerFactory"/>.</summary>
-/// <typeparam name="T">The category type of the logger.</typeparam>
-public sealed class ScopedLoggerWrapper<T> : LoggerBaseWrapper<T>
-{
-    /// <summary>Initializes a new instance of the <see cref="ScopedLoggerWrapper{T}"/> class.</summary>
-    /// <param name="loggerFactory">The factory used to create the underlying logger.</param>
-    /// <param name="addPropertiesToLog">The provider (keyed <c>"Scoped"</c>) of the additional properties.</param>
-    /// <param name="appConfig">The application configuration, used to obtain the application name.</param>
-    public ScopedLoggerWrapper(ILoggerFactory loggerFactory, [FromKeyedServices("Scoped")] IAddPropertiesToLog addPropertiesToLog, IOptionsMonitor<ApplicationConfig> appConfig) : base(loggerFactory, addPropertiesToLog, appConfig)
+    private static IAddPropertiesToLog GetPropertiesToLog(IServiceProvider serviceProvider)
     {
+        // Without AddILogger (the wrapper registered by hand), the scope cannot be detected: use the "Transient" provider, as from the root.
+        var inScope = serviceProvider.GetService<RootServiceProvider>()?.IsScope(serviceProvider) == true;
 
+        if (inScope && serviceProvider.GetKeyedService<IAddPropertiesToLog>("Scoped") is { } scopedProperties)
+        {
+            return scopedProperties;
+        }
+
+        return serviceProvider.GetRequiredKeyedService<IAddPropertiesToLog>("Transient");
     }
 }
 
 /// <summary>
-/// Base implementation of <see cref="IScopedLogger{T}"/>. It enriches every log entry with the Arc4u properties (see <see cref="LoggingConstants"/>)
+/// Base implementation of <see cref="ILoggerWrapper{T}"/>. It enriches every log entry with the Arc4u properties (see <see cref="LoggingConstants"/>)
 /// and the properties supplied by <see cref="IAddPropertiesToLog"/> before forwarding it to the underlying logger.
 /// </summary>
 /// <typeparam name="T">The category type of the logger.</typeparam>
-public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
+public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
 {
-    internal readonly ILogger _logger;
+    private readonly ILogger _logger;
     private string _category;
     private readonly Dictionary<string, object?> _additionalFields = [];
     private Type _contextType;
@@ -87,7 +84,7 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
     /// <inheritdoc/>
     public bool IncludeStackTrace { private get; set; }
 
-    internal static int ProcessId
+    private static int ProcessId
     {
         get
         {
@@ -182,7 +179,7 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
         }
     }
 
-    internal void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <summary>Marks the wrapper as disposed; any later attempt to log throws an <see cref="ObjectDisposedException"/>.</summary>
     public void Dispose()
@@ -199,7 +196,7 @@ public abstract class LoggerBaseWrapper<T> : IScopedLogger<T>
     {
         var properties = new Dictionary<string, object?>(AdditionalFields);
         try
-        { 
+        {
             var definedProperties = _addPropertiesToLog?.GetProperties();
             if (definedProperties != null)
             {

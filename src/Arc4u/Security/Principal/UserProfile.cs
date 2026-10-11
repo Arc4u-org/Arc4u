@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 namespace Arc4u.Security.Principal;
 
 /// <summary>
-/// The class contains the main information on a User. The informations are 
+/// The class contains the main information on a User. The informations are
 /// retrieve from the AD but can be constructed from any other sources.
 /// The class is binay and xml serialisable.
 /// </summary>
@@ -339,25 +339,15 @@ public sealed class UserProfile : IXmlSerializable
 
     #endregion
 
-    /// <summary>
-    /// Give the full principal name based on the domain and the sammaccountname.
-    /// </summary>
-    ///
-    [JsonIgnore]
-    public string Name
-    {
-        get { return string.Format(CultureInfo.InvariantCulture, @"{0}\{1}", Domain, SamAccountName); }
-    }
-
     #region IXmlSerializable Members
 
-    /// <exclude/>	
+    /// <exclude/>
     public System.Xml.Schema.XmlSchema? GetSchema()
     {
         return null;
     }
 
-    /// <exclude/>	
+    /// <exclude/>
     public void ReadXml(XmlReader reader)
     {
         reader.ReadStartElement();
@@ -393,7 +383,7 @@ public sealed class UserProfile : IXmlSerializable
         return reader.ReadElementContentAsString(elementName, reader.NamespaceURI);
     }
 
-    /// <exclude/>	
+    /// <exclude/>
     public void WriteXml(XmlWriter writer)
     {
         WriteElement(writer, "displayName", DisplayName);
@@ -420,7 +410,7 @@ public sealed class UserProfile : IXmlSerializable
         WriteElement(writer, "description", Description);
     }
 
-    /// <exclude/>	
+    /// <exclude/>
     private static void WriteElement(XmlWriter writer, string elementName, string value)
     {
         writer.WriteStartElement(elementName);

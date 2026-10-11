@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
+using Arc4u.OAuth2.AspNetCore.Diagnostics;
 using Arc4u.OAuth2.Events;
 using Arc4u.OAuth2.Options;
 using Arc4u.Security.Cryptography;
