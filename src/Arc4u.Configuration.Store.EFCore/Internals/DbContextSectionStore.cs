@@ -24,15 +24,31 @@ sealed class DbContextSectionStore<TDbContext> : ISectionStore
 
     public void Add(IEnumerable<SectionEntity> entities)
     {
+        var list = entities.ToList();
         try
         {
-            SectionEntitySet.AddRange(entities);
+            SectionEntitySet.AddRange(list);
             _dbContext.SaveChanges();
         }
-        catch (Exception ex)
+        catch (DbUpdateException ex) when (AllKeysExist(list))
         {
-            _logger.LogError(ex, "Adding the initial SectionEntities failed");
+            // Another instance inserted the same sections concurrently: the store is in the expected state.
+            _logger.LogWarning(ex, "The initial SectionEntities were inserted concurrently by another instance.");
         }
+        finally
+        {
+            // Leave the context clean whether the insert succeeded or not, so a failed insert is not retried by a later SaveChanges.
+            foreach (var entity in list)
+            {
+                _dbContext.Entry(entity).State = EntityState.Detached;
+            }
+        }
+    }
+
+    private bool AllKeysExist(List<SectionEntity> entities)
+    {
+        var keys = entities.Select(entity => entity.Key).ToList();
+        return SectionEntitySet.AsNoTracking().Count(section => keys.Contains(section.Key)) == keys.Count;
     }
 
     public Task<SectionEntity?> GetAsync(string key, CancellationToken cancellationToken)

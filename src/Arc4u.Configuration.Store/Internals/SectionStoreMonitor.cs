@@ -5,6 +5,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Arc4u.Configuration.Store.Internals;
 
+/// <remarks>
+/// Logs through the plain <see cref="ILogger"/> API on purpose (no <c>Technical()</c>): the service must work whether or not
+/// <c>AddILogger()</c> was called. When it was, the Arc4u logger writes these entries in the Technical category by default.
+/// </remarks>
 sealed class SectionStoreMonitor : BackgroundService
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -20,13 +24,13 @@ sealed class SectionStoreMonitor : BackgroundService
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.Technical().LogServiceStarting(nameof(SectionStoreMonitor));
+        _logger.LogServiceStarting(nameof(SectionStoreMonitor));
         return base.StartAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.Technical().LogServiceStarted(nameof(SectionStoreMonitor));
+        _logger.LogServiceStarted(nameof(SectionStoreMonitor));
         try
         {
             do
@@ -39,7 +43,7 @@ sealed class SectionStoreMonitor : BackgroundService
                 }
                 catch (Exception e) when (e is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
                 {
-                    _logger.Technical().LogException(e);
+                    _logger.LogException(e);
                 }
                 await Task.Delay(_pollingInterval, stoppingToken).ConfigureAwait(false);
             }
@@ -51,14 +55,14 @@ sealed class SectionStoreMonitor : BackgroundService
         }
         catch (Exception e)
         {
-            _logger.Technical().LogException(e);
+            _logger.LogException(e);
         }
-        _logger.Technical().LogServiceStopped(nameof(SectionStoreMonitor));
+        _logger.LogServiceStopped(nameof(SectionStoreMonitor));
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.Technical().LogServiceStopping(nameof(SectionStoreMonitor));
+        _logger.LogServiceStopping(nameof(SectionStoreMonitor));
         return base.StopAsync(cancellationToken);
     }
 }

@@ -8,7 +8,7 @@ namespace Arc4u.Configuration.Store;
 /// <summary>
 /// Extension methods to register the Entity Framework Core implementation of the section store.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class DbContextSectionStoreServiceCollectionExtensions
 {
     /// <summary>
     /// Registers, as a scoped service (if not already registered), an <see cref="ISectionStore"/> that persists the sections in the specified <see cref="DbContext"/>.
