@@ -143,7 +143,7 @@ With that configuration, the console shows the Technical and Business entries an
 
 ```text
 29/09/2026 14:52:23,038  Information   Technical   25688  1   Program - <Main>$ - technical entry -
-29/09/2026 14:52:23,050  Information   Technical   25688  1   Program - <Main>$ - business entry - {"OrderId":42}
+29/09/2026 14:52:23,050  Information   Business    25688  1   Program - <Main>$ - business entry - {"OrderId":42}
 ```
 
 ## Enrichers
@@ -201,10 +201,23 @@ public static class CategoryRouting
 }
 ```
 
-> [!WARNING]
-> Known issue: `WriteTo.CategoryFilter(...)` (the `CategoryFilterSink` of `Arc4u.Diagnostics.Serilog`) forwards nothing. The logger writes `Category` as a string and the sink reads it as a number, so no event matches and the wrapped sink never receives an entry. Use the expression filter above until this is fixed.
->
-> The same mismatch is why an old filter such as `Category = 4` no longer selects the Monitoring entries: compare with the string `'Monitoring'`.
+Without `Serilog.Expressions`, `WriteTo.CategoryFilter(categories, sink)` (the `CategoryFilterSink` of `Arc4u.Diagnostics.Serilog`) does the same in code: it forwards to the wrapped sink only the entries whose category is one of the flags you pass, and skips the entries without a `Category` property. A [category your application adds](index.md#add-your-own-category) works the same way: add its flag to the filter, for example `MessageCategory.Business | SecurityLoggerExtensions.SecurityCategory`.
+
+```csharp
+using Arc4u.Diagnostics;
+using Arc4u.Diagnostics.Formatter;
+using Serilog;
+
+public static class CategoryFilterRouting
+{
+    public static LoggerConfiguration Configure(LoggerConfiguration configuration) => configuration
+        .WriteTo.CategoryFilter(MessageCategory.Technical | MessageCategory.Business,
+            new LoggerConfiguration().WriteTo.Console(new SimpleTextFormatter()).CreateLogger());
+}
+```
+
+> [!NOTE]
+> `Category` is a string, so an old expression filter such as `Category = 4` no longer selects the Monitoring entries: compare with the string `'Monitoring'`.
 
 ## Hide the user identity
 
@@ -261,7 +274,7 @@ public class ClassAndMethodSink : ILogEventSink
 }
 ```
 
-The `Category` element of the tuple is affected by the [known issue](index.md#the-category-is-always-technical): it is `Technical` for every event. Read `logEvent.Properties["Category"]` (a `ScalarValue` holding a string) when you need the category.
+The `Category` element of the tuple is the category of the entry, or `Technical` when the event has no `Category` property. `Helper.GetCategory(logEvent.Properties["Category"])` reads the category alone, including a name registered with `MessageCategoryRegistry`; it returns `null` for a value that is not a category.
 
 ## Write your own Serilog writer
 
@@ -286,10 +299,6 @@ public class ConsoleWriter : SerilogWriter
 ### Nothing is written to the console or the file
 
 Check, in this order: `UseSerilog` is called on the host; the sink package is referenced and listed in `"Using"`; the sub-logger `MinimumLevel` is not higher than the level you log; a `Filter` does not exclude the entry. Serilog writes sink failures to its self log: add `Serilog.Debugging.SelfLog.Enable(Console.Error)` before you build the logger when a sink stays silent.
-
-### The Category column always shows Technical, and CategoryFilter forwards nothing
-
-Known issue, described in [Filter by category](#filter-by-category) and in the [fluent API troubleshooting](index.md#the-category-is-always-technical).
 
 ### Properties from an earlier entry appear on a later one
 

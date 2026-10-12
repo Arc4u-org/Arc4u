@@ -15,7 +15,7 @@ public static class Helper
     /// <param name="logEvent">The Serilog event.</param>
     /// <returns>
     /// A tuple with the Arc4u standard properties (category, application, identity, class, method, activity id, process id, thread id, stack trace; a default value when absent)
-    /// and the list of the other properties. The category is <see cref="MessageCategory.Technical"/> when it is absent or not a defined value.
+    /// and the list of the other properties. The category is <see cref="MessageCategory.Technical"/> when it is absent or not a category (see <see cref="GetCategory"/>).
     /// </returns>
     public static (MessageCategory Category,
                     string Application,
@@ -37,7 +37,7 @@ public static class Helper
                application = string.Empty;
         int processId = -1,
             threadId = -1;
-        short category = -1;
+        var category = MessageCategory.Technical;
 
         var filteredProperties = new List<LogEventProperty>();
 
@@ -61,7 +61,7 @@ public static class Helper
                     threadId = GetValue(property.Value, -1);
                     break;
                 case LoggingConstants.Category:
-                    category = GetValue(property.Value, (short)1);
+                    category = GetCategory(property.Value) ?? MessageCategory.Technical;
                     break;
                 case LoggingConstants.Stacktrace:
                     stacktrace = GetValue(property.Value, string.Empty);
@@ -85,13 +85,51 @@ public static class Helper
             }
         }
 
-        var _category = MessageCategory.Technical;
-        if (Enum.IsDefined(typeof(MessageCategory), category))
+        return (category, application, identity, classType, methodName, activityId, processId, threadId, stacktrace, filteredProperties);
+    }
+
+    /// <summary>
+    /// Reads the Arc4u <see cref="MessageCategory"/> from a property value.
+    /// The category is written by the logger as a string but, depending on the pipeline, it reaches the sink as
+    /// the enum itself, its name (e.g. "Monitoring") or its numeric value.
+    /// A category is a <see cref="short"/> flag: a category invented by the application is read from the name registered
+    /// with <see cref="MessageCategoryRegistry"/> (e.g. "Security") or from its number (e.g. "8").
+    /// </summary>
+    /// <param name="pv">The property value.</param>
+    /// <returns>The category, or <see langword="null"/> when the value is not a scalar, not a predefined or registered name, or not a positive <see cref="short"/>.</returns>
+    public static MessageCategory? GetCategory(LogEventPropertyValue pv)
+    {
+        if (pv is not ScalarValue { Value: { } value })
         {
-            _category = (MessageCategory)Enum.ToObject(typeof(MessageCategory), category);
+            return null;
         }
 
-        return (_category, application, identity, classType, methodName, activityId, processId, threadId, stacktrace, filteredProperties);
+        MessageCategory category;
+        switch (value)
+        {
+            case MessageCategory messageCategory:
+                category = messageCategory;
+                break;
+            case string text:
+                if (!MessageCategoryRegistry.TryGetCategory(text, out category))
+                {
+                    return null;
+                }
+                break;
+            case short or int or long or byte or sbyte or ushort or uint:
+                var number = Convert.ToInt64(value, System.Globalization.CultureInfo.InvariantCulture);
+                if (number > short.MaxValue)
+                {
+                    return null;
+                }
+                category = (MessageCategory)number;
+                break;
+            default:
+                return null;
+        }
+
+        // 0 is no category (it would match every filter) and a negative short is not a flag.
+        return category > 0 ? category : null;
     }
 
     /// <summary>Converts a Serilog <see cref="LogEventLevel"/> to the corresponding <see cref="LogLevel"/>; unknown values map to <see cref="LogLevel.Debug"/>.</summary>

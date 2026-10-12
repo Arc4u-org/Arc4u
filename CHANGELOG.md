@@ -18,6 +18,10 @@ packages. It contains breaking changes: follow the
 
 ### Added
 
+- `Arc4u.Diagnostics`: categories defined by the application. `MessageCategoryRegistry.Register("Security",
+  (MessageCategory)8)` names a flag, and `logger.Category(category)` starts an entry in any category, so
+  an application can write its own `logger.Security()` extension method. The name is written in the
+  `Category` property and read back by `CategoryFilter`, `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB`.
 - `Arc4u.Dependency.Tool`: source generators that turn `[Export]` attributes and the
   `Application.Dependency` section into `IServiceCollection` registrations at compile time.
 - `Arc4u.OAuth2.Client.Authentication`: OpenID Connect sign-in for desktop and mobile clients with
@@ -149,6 +153,12 @@ packages. It contains breaking changes: follow the
 - `StandardBearerEvents.Challenge` answered a 401 with a `ProblemDetails` body saying `"status": 403`
   and the `application/json` content type; the body now says 401 and the content type is
   `application/problem+json` ([#221](https://github.com/Arc4u-org/Arc4u/issues/221)).
+- `WriteTo.CategoryFilter` forwarded no event, and `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB`
+  labelled every entry `Technical`: they read the `Category` property as a number while the logger
+  writes it as a string. The new `Helper.GetCategory` reads the enum, its name, a registered name or
+  its number, and keeps a category defined by the application instead of replacing it with
+  `Technical`; `SimpleTextFormatter` writes such a category instead of failing
+  ([#235](https://github.com/Arc4u-org/Arc4u/issues/235)).
 
 ### Security
 

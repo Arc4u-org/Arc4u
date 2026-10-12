@@ -65,7 +65,7 @@ public class RealmLoggingDbCtx : ILogStore
         var mapped = result.Select(db => new LogMessage
         {
             Message = db.Message,
-            MessageCategory = ((MessageCategory)db.MessageCategory).ToString(),
+            MessageCategory = MessageCategoryRegistry.GetName((MessageCategory)db.MessageCategory),
             MessageType = ((LogLevel)db.MessageType).ToString(),
             Timestamp = db.Timestamp,
             ActivityId = db.ActivityId,

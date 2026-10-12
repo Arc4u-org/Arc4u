@@ -125,10 +125,6 @@ public class LogPage(ILogStore store)
 
 ## Troubleshooting
 
-### The category of every stored entry is Technical
-
-Known issue. `MemoryLogDB` and `RealmDB` read the category with the same helper as `SimpleTextFormatter`, which falls back to `Technical` because the logger writes the category as a string. See [The category is always Technical](index.md#the-category-is-always-technical).
-
 ### Realm accessed from incorrect thread
 
 Known issue. `RealmLoggingDbCtx` opens its `Realm` in the constructor and is registered as a singleton, and a Realm instance can only be used on the thread that opened it. `GetLogs` and `RemoveAll` called from another thread throw `RealmException: Realm accessed from incorrect thread`. This is what happens in ASP.NET Core, where requests run on thread-pool threads, so the Realm store is not usable from a web endpoint as in the memory example.

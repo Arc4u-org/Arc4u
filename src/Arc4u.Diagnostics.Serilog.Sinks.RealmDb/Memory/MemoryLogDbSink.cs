@@ -49,7 +49,7 @@ public class MemoryLogDbSink : IBatchedLogEventSink
                     ProcessId = ProcessId,
                     ThreadId = ThreadId,
                     Stacktrace = Stacktrace,
-                    MessageCategory = Category.ToString(),
+                    MessageCategory = MessageCategoryRegistry.GetName(Category),
                     MessageType = _event.Level.ToMessageType().ToString(),
                     Application = Application,
                     Identity = Identity,

@@ -116,7 +116,7 @@ The logger adds these properties to each entry (the names are constants of <xref
 
 | Property | Value |
 |---|---|
-| `Category` | `Technical`, `Business` or `Monitoring` (<xref:Arc4u.Diagnostics.MessageCategory>), written as a string. |
+| `Category` | `Technical`, `Business`, `Monitoring` (<xref:Arc4u.Diagnostics.MessageCategory>) or the name of [your own category](#add-your-own-category), written as a string. |
 | `Application` | The `LoggingName` described above. |
 | `SourceContext` | Full name of the class that logs (the `T` of `ILogger<T>`, or the type you pass for a non-generic `ILogger`). |
 | `Method` | Name of the calling member, filled in by the compiler (`[CallerMemberName]`). |
@@ -173,6 +173,39 @@ The values of the message template (`{Duration}` above) are also written as prop
 
 > [!WARNING]
 > Known issue: properties are not cleared after an entry is written. Read [Properties added with Add stay on later entries](#properties-added-with-add-stay-on-later-entries) before you add personal data.
+
+### Add your own category
+
+A category is a `short` flag: `Technical` is 1, `Business` 2 and `Monitoring` 4. Your application can use the other bits (8, 16, ... up to 16384) for its own categories. Give the value a name with <xref:Arc4u.Diagnostics.MessageCategoryRegistry>, and write an extension method that calls `Category(...)`:
+
+```csharp
+using System.Runtime.CompilerServices;
+using Arc4u.Diagnostics;
+using Microsoft.Extensions.Logging;
+
+public static class SecurityLoggerExtensions
+{
+    public const MessageCategory SecurityCategory = (MessageCategory)8;
+
+    static SecurityLoggerExtensions() => MessageCategoryRegistry.Register("Security", SecurityCategory);
+
+    public static ILoggerWrapper<T> Security<T>(this ILogger<T> logger, [CallerMemberName] string methodName = "") =>
+        logger.Category(SecurityCategory, methodName);
+}
+```
+
+`logger.Security().Add("User", user).LogWarning("Access denied")` then writes `Category` with the value `Security`, and works with everything that handles the predefined categories:
+
+- `WriteTo.CategoryFilter(MessageCategory.Business | SecurityLoggerExtensions.SecurityCategory, sink)` forwards it (see [Serilog](serilog.md#filter-by-category)), and so does the expression filter `Category = 'Security'`.
+- `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB` show `Security`.
+
+Keep these rules in mind:
+
+- Forward `methodName` to `Category(...)`, otherwise the `Method` property is the name of your extension method.
+- Register the name before the first entry is written. The static constructor above runs the first time `Security()` is called, which is early enough. A process that only reads the entries (a log viewer reading the RealmDB store) must register the name too; otherwise it reads the category as `Technical`, or as its number when it comes from the RealmDB store.
+- `Register` throws an `ArgumentException` for a predefined value or name, a numeric name, a value that is not positive, or a name or value already registered with another value or name. Registering the same name and value again does nothing.
+- Without registration, `Category((MessageCategory)8)` still works, and the category is written as `8`.
+- For a non-generic `ILogger`, use `Category(category, typeof(MyClass))`.
 
 ### Log from a static class
 
@@ -452,10 +485,6 @@ public class Cleaner(ILogger<Cleaner> logger)
     }
 }
 ```
-
-### The category is always Technical
-
-Known issue. The logger writes `Category` as a string (`Business`), but the Arc4u helper that reads it for `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB` expects a number and falls back to `Technical`. Sinks that read the property as it is (the Serilog Expressions filter, the JSON formatter, OpenTelemetry) see the right value. The same mismatch makes `WriteTo.CategoryFilter` forward nothing, see [Serilog](serilog.md#filter-by-category).
 
 ## See also
 

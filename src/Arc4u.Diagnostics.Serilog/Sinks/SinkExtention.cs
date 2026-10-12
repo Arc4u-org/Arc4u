@@ -10,8 +10,7 @@ public static class SinkExtention
 {
     /// <summary>Writes to a sink only the events whose Arc4u message category is one of the given categories (see <see cref="CategoryFilterSink"/>).</summary>
     /// <remarks>
-    /// Known issue: the logger writes the <c>Category</c> property as a string while <see cref="CategoryFilterSink"/> reads it as a number,
-    /// so in the current implementation the events are not recognized and nothing is forwarded to <paramref name="sink"/>. Do not rely on this filter until this is fixed.
+    /// The categories are <see cref="short"/> flags: a category invented by the application (<c>(MessageCategory)8</c>) is filtered like the predefined ones.
     /// </remarks>
     /// <param name="loggerConfiguration">The sink configuration (<c>WriteTo</c>).</param>
     /// <param name="category">The categories (flags) that are forwarded.</param>
