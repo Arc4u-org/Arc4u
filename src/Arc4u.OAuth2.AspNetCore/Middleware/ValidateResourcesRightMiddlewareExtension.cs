@@ -68,12 +68,12 @@ public static class ValidateResourcesRightMiddlewareExtension
         return app.UseMiddleware<ValidateResourcesRightMiddleware>(validate);
     }
 
-    /// <summary>Adds the <see cref="ValidateResourcesRightMiddleware"/> to the request pipeline from a configuration section. Nothing is added when the section is missing or defines no resource.</summary>
+    /// <summary>Adds the <see cref="ValidateResourcesRightMiddleware"/> to the request pipeline from a configuration section. Nothing is added when the section defines no resource.</summary>
     /// <param name="app">The application builder.</param>
     /// <param name="sectionName">The section, bound to <see cref="ValidateResourcesRightMiddlewareOptions"/>. The default is <c>Authentication:ResourcesRights</c>.</param>
     /// <returns>The application builder, to chain calls.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="app"/> is <see langword="null"/> or <paramref name="sectionName"/> is empty.</exception>
-    /// <exception cref="ConfigurationException">A resource has no path or no policy, or the default content is empty.</exception>
+    /// <exception cref="ConfigurationException">The section does not exist, a resource has no path or no policy, or the default content is empty.</exception>
     /// <example>
     /// <code language="csharp">
     /// app.UseAuthentication();
@@ -91,7 +91,7 @@ public static class ValidateResourcesRightMiddlewareExtension
 
         var section = app.ApplicationServices.GetRequiredService<IConfiguration>().GetSection(sectionName);
 
-        if (section is null && !section.Exists())
+        if (!section.Exists())
         {
             throw new ConfigurationException($"Section {sectionName} does not exist!");
         }

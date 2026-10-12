@@ -140,7 +140,6 @@ when there is one.
 | Area | Issue | Workaround |
 |---|---|---|
 | OpenID Connect, hybrid | Security: the audience check of the access token is a substring search in the space-separated list of `OpenId.Settings:Audiences`, so an `aud` that is part of a configured audience (`api://my` for `api://my-api`) is accepted. | Use audiences that no other audience of your provider is a part of, or register the exact check of [Token checks](oidc-cookie.md#token-checks). |
-| Resource rights | `UseResourcesRightValidationFor(sectionName)` adds nothing, without error, when the section does not exist. | Check the section path. |
 | Custom root CA | When the standard certificate validation fails, `ConfigureLocalCaCertificate` (and `ConfigureLocalCaCertificateForGrpc`) only check the chain: a certificate of the custom authority for another host name is accepted. | Issue certificates of the private authority only to trusted services. |
 | Middleware | `UseAddContextToPrincipal()` assumes that the request has an `Activity.Current` and answers 500 (`NullReferenceException`) when ASP.NET Core creates none, for example in an integration test without logging provider nor activity listener ([#124](https://github.com/Arc4u-org/Arc4u/issues/124)). | Keep a logging provider or an activity listener, or do not add the middleware in that host. |
 

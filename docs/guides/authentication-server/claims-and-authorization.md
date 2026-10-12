@@ -264,9 +264,8 @@ app.UseAuthorization();
 
 The method reads `Authentication:ResourcesRights`; pass `sectionName` to use another section.
 
-> [!NOTE]
-> Known issue: when the section does not exist, `UseResourcesRightValidationFor` adds nothing and does not
-> report it. Check the path of the section if the resources are not protected.
+When the section does not exist, `UseResourcesRightValidationFor` throws a `ConfigurationException` at startup,
+so a misspelled section path is reported instead of leaving the resources unprotected.
 
 ## User profile
 
