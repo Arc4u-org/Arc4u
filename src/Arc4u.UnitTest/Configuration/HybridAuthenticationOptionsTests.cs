@@ -331,6 +331,35 @@ public class HybridAuthenticationOptionsTests
     }
 
     [Theory]
+    [InlineData(null, "name")]
+    [InlineData("preferred_username", "preferred_username")]
+    public void Jwt_Authentication_Without_TokenCache_Should_Set_The_Name_Claim_Type(string? nameClaimType, string expected)
+    {
+        var configDic = new Dictionary<string, string?>
+        {
+            { "Authentication:DefaultAuthority:Url", "https://login.example.com/tenant/v2.0" },
+            { "Authentication:OAuth2.Settings:Audiences:0", "api" },
+        };
+        if (nameClaimType is not null)
+        {
+            configDic.Add("Authentication:NameClaimType", nameClaimType);
+        }
+
+        IConfiguration configuration = new ConfigurationBuilder().AddInMemoryCollection(configDic).Build();
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddJwtAuthentication(configuration);
+
+        var serviceProvider = services.BuildServiceProvider();
+        var sut = serviceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme).TokenValidationParameters;
+
+        sut.NameClaimType.Should().Be(expected);
+        sut.RoleClaimType.Should().Be("role");
+        serviceProvider.GetRequiredService<IOptions<TokenCacheOptions>>().Value.MaxTime.Should().Be(TimeSpan.FromMinutes(50));
+    }
+
+    [Theory]
     [InlineData("https://issuer.example.com/tenant/", null, "https://issuer.example.com/tenant/", true)]
     [InlineData("https://issuer.example.com/tenant/", null, "https://other.example.com/tenant/", false)]
     [InlineData(null, "https://metadata.example.com/tenant/", "https://metadata.example.com/tenant/", true)]

@@ -3,10 +3,13 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Arc4u.Diagnostics;
+using Arc4u.OAuth2.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Arc4u.OAuth2.Events
@@ -70,7 +73,8 @@ namespace Arc4u.OAuth2.Events
 
         /// <summary>
         /// Saves the access token, read from the <c>Authorization</c> header, in the <see cref="ClaimsIdentity.BootstrapContext"/> of the identity.
-        /// The authentication fails with a 401 status when the header does not carry a <c>Bearer</c> token.
+        /// The authentication fails with a 401 status when the header does not carry a <c>Bearer</c> token, or when the claims filler is enabled
+        /// (<see cref="ClaimsFillerOptions.LoadClaimsFromClaimsFillerProvider"/>) and no claim identifying the user (see <see cref="ClaimsIdentifierOption"/>) is in the token.
         /// </summary>
         /// <param name="context">The token validated context.</param>
         /// <returns>A completed task.</returns>
@@ -85,6 +89,13 @@ namespace Arc4u.OAuth2.Events
                     {
                         sToken = sToken[7..];
                         identity.BootstrapContext = sToken;
+
+                        if (!HasUserIdentifier(context, identity))
+                        {
+                            context.Fail("The token has no claim identifying the user.");
+                            context.Response.Clear();
+                            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                        }
                     }
                     else
                     {
@@ -96,6 +107,34 @@ namespace Arc4u.OAuth2.Events
             }
 
             return Task.CompletedTask;
+        }
+
+        // The claims transformation builds the cache key of the extra claims from the user identifier: check it here to answer with a 401 instead of failing later with a 500.
+        private bool HasUserIdentifier(TokenValidatedContext context, ClaimsIdentity identity)
+        {
+            var services = context.HttpContext.RequestServices;
+            if (services?.GetService<IOptions<ClaimsFillerOptions>>()?.Value.LoadClaimsFromClaimsFillerProvider != true)
+            {
+                return true;
+            }
+
+            var keyGenerator = services.GetService<ICacheKeyGenerator>();
+            if (keyGenerator is null)
+            {
+                return true;
+            }
+
+            try
+            {
+                keyGenerator.GetClaimsKey(identity);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                var claimTypes = services.GetService<IOptions<ClaimsIdentifierOption>>()?.Value ?? [];
+                logger.Technical().LogNoUserIdentifierClaim(string.Join(",", claimTypes), ex.Message);
+                return false;
+            }
         }
     }
 }

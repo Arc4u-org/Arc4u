@@ -24,7 +24,7 @@ The registration methods validate the configuration and throw when the applicati
 | `We need a cookie name defined specifically for your services.` | OpenID Connect and hybrid: add `Authentication:CookieName`. |
 | `Audiences field is not defined.` | Add the audience of the tokens to `OAuth2.Settings:Audiences` (JWT bearer, hybrid) or `OpenId.Settings:Audiences` (OpenID Connect), or set `ValidateAudience` to `false` in that section. In hybrid mode, the `OAuth2.Settings` section is required. |
 | `ClientId field is not defined.` or `Scopes field is not defined.` | Complete `Authentication:OpenId.Settings`. |
-| `TokenCacheOptions.CacheName is not defined in the configuration file.` | Add `Authentication:TokenCache:CacheName`, the name of one of your caches. |
+| `TokenCacheOptions.CacheName is not defined in the configuration file.` | The `Authentication:TokenCache` section exists without `CacheName`: add the name of one of your caches. With JWT bearer, you can also remove the section. |
 | `No certificate found for the given criteria.` | The data protection certificate of `Authentication:DataProtection:EncryptionCertificate:Store` is not in the store (or the process cannot read it). Check `Name`, `FindType`, `Location` and `StoreName`, or use the `File` form. |
 | `Public key file doesn't exist.` or `Private key file doesn't exist.` | A path of the `File` form of a certificate is wrong. |
 | `A section with name Authentication:DataProtection:CacheStore doesn't exist.` | Add `CacheKey` and `CacheName` for the data protection keys. |
@@ -56,10 +56,11 @@ Check, in this order:
    not, the response detail says that the issuer is invalid. Set `DefaultAuthority:Issuer` to the issuer of your
    tokens, see [What is validated](jwt-bearer.md#what-is-validated).
 
-### 500: No distinguish key found for the identity
+### 401: The token has no claim identifying the user
 
-`NullReferenceException: No distinguish key found for the identity ...`: none of the `Authentication:ClaimsIdentifier`
-claim types is in the token. The default claim types (`http://schemas.microsoft.com/identity/claims/objectidentifier`,
+The log says `The token has no claim identifying the user (...)` (event id 9150): the claims filler is enabled and
+none of the `Authentication:ClaimsIdentifier` claim types is in the token. With the OpenID Connect cookie, the request fails with a 500
+`NullReferenceException: No distinguish key found for the identity ...`. The default claim types (`http://schemas.microsoft.com/identity/claims/objectidentifier`,
 `oid`) are Microsoft identity platform claims; other providers usually identify the user with `sub`. Set it to a claim of
 your tokens, for example `"ClaimsIdentifier": [ "sub" ]`. See [Identity providers](identity-providers.md).
 
@@ -139,8 +140,6 @@ when there is one.
 | Area | Issue | Workaround |
 |---|---|---|
 | OpenID Connect, hybrid | Security: the audience check of the access token is a substring search in the space-separated list of `OpenId.Settings:Audiences`, so an `aud` that is part of a configured audience (`api://my` for `api://my-api`) is accepted. | Use audiences that no other audience of your provider is a part of, or register the exact check of [Token checks](oidc-cookie.md#token-checks). |
-| JWT bearer | `HttpContext.User.Identity.Name` is `null` with `AddJwtAuthentication`: no name claim type is set and the claims are not mapped. | `PostConfigure<JwtBearerOptions>` with `NameClaimType = "name"`, see [What is validated](jwt-bearer.md#what-is-validated). |
-| All | `Authentication:TokenCache:CacheName` is required, even for an API that makes no outgoing call. | Point it to any configured cache. |
 | Resource rights | `UseResourcesRightValidationFor(sectionName)` adds nothing, without error, when the section does not exist. | Check the section path. |
 | Custom root CA | When the standard certificate validation fails, `ConfigureLocalCaCertificate` (and `ConfigureLocalCaCertificateForGrpc`) only check the chain: a certificate of the custom authority for another host name is accepted. | Issue certificates of the private authority only to trusted services. |
 | Middleware | `UseAddContextToPrincipal()` assumes that the request has an `Activity.Current` and answers 500 (`NullReferenceException`) when ASP.NET Core creates none, for example in an integration test without logging provider nor activity listener ([#124](https://github.com/Arc4u-org/Arc4u/issues/124)). | Keep a logging provider or an activity listener, or do not add the middleware in that host. |

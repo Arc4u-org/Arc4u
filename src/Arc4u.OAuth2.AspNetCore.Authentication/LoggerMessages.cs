@@ -281,5 +281,15 @@ namespace Arc4u.OAuth2
         [LoggerMessage(EventId = 9149, Level = LogLevel.Error,
             Message = "Getting the Access token with Obo failed. Enable PII to have more info.")]
         public static partial void LogOboFailedWithNoReasonNoPII(this ILogger logger);
+
+        /// <summary>
+        /// Logs an Error message (event id 9150): <c>The token has no claim identifying the user ({ClaimTypes}), it is required to cache the claims of the claims filler. Configure Authentication:ClaimsIdentifier or disable the claims filler. {Reason}</c>
+        /// </summary>
+        /// <param name="logger">The logger to write to.</param>
+        /// <param name="claimTypes">The configured claim types identifying a user.</param>
+        /// <param name="reason">The message of the exception thrown by the cache key generator.</param>
+        [LoggerMessage(EventId = 9150, Level = LogLevel.Error,
+            Message = "The token has no claim identifying the user ({ClaimTypes}), it is required to cache the claims of the claims filler. Configure Authentication:ClaimsIdentifier or disable the claims filler. {Reason}")]
+        public static partial void LogNoUserIdentifierClaim(this ILogger logger, string claimTypes, string reason);
     }
 }

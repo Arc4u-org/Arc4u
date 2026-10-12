@@ -66,7 +66,7 @@ Whatever the provider, check these values first. They explain most sign-in failu
 - Use the `code` response type (default).
 - Set `ClaimsIdentifier` to a claim of your ADFS tokens, for example `[ "upn" ]`. The default identifier, `oid`,
   is a Microsoft Entra ID claim (**general guidance**: ADFS does not issue it); without an identifier every
-  request fails with a 500 (see [Troubleshooting](troubleshooting.md#500-no-distinguish-key-found-for-the-identity)).
+  bearer request fails with a 401 (see [Troubleshooting](troubleshooting.md#401-the-token-has-no-claim-identifying-the-user)).
 - A `upn` claim of the form `user@domain` or `DOMAIN\user` fills `SamAccountName` and `Domain` of the
   profile. Map the domain with `Authentication:DomainsMapping`:
 

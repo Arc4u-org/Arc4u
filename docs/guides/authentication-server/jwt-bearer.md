@@ -54,8 +54,10 @@ The keys of the `Authentication` section itself:
 | `DefaultAuthority` | object | none (required) | The identity provider, see [Configuration](index.md#configuration). |
 | `OAuth2SettingsSectionPath` | string | `Authentication:OAuth2.Settings` | Section holding the OAuth2 settings above. |
 | `ValidateAuthority` | bool | `true` | Validates the issuer (`iss` claim) of the token, see [What is validated](#what-is-validated). |
+| `NameClaimType` | string | `name` | Claim type of `HttpContext.User.Identity.Name`. |
+| `RoleClaimType` | string | `role` | Claim type of the roles of the identity. |
 | `CertSecurityKeyPath` | string | none | Section describing a certificate (`Store` or `File`, as for the [data protection certificate](oidc-cookie.md#data-protection-certificate)) whose key is used as issuer signing key. |
-| `TokenCacheSectionPath` | string | `Authentication:TokenCache` | Token cache options. The `CacheName` is required. |
+| `TokenCacheSectionPath` | string | `Authentication:TokenCache` | Token cache options. Optional: when the section does not exist, the default cache is used for 50 minutes. |
 | `ClaimsIdentifierSectionPath` | string | `Authentication:ClaimsIdentifier` | Claim types that identify a user. |
 | `ClaimsFillerSectionPath` | string | `Authentication:ClaimsMiddleWare:ClaimsFiller` | Options of the extra claims. |
 | `DomainMappingsSectionPath` | string | `Authentication:DomainsMapping` | Domain mapping of the user profile. |
@@ -64,8 +66,8 @@ The keys of the `Authentication` section itself:
 
 The audience validation is not set on this section: use `OAuth2.Settings:ValidateAudience`.
 
-`Authentication:TokenCache:CacheName` is required even when the API makes no outgoing call: the cache also
-holds the extra claims of the users.
+The `Authentication:TokenCache` section is optional: an API that makes no outgoing call can omit it. The extra
+claims of the users and the tokens are then cached in the default cache.
 
 ### Code
 
@@ -94,22 +96,10 @@ The handler is configured with:
   `DefaultAuthority:Issuer` when it is set, or the `issuer` of the authority's metadata otherwise. When `false`,
   a token is accepted when it is signed by one of the keys of the authority's metadata, whatever its issuer.
 - `MapInboundClaims = false`: claim types keep the names of the token (`oid`, `name`, `upn`, ...).
+- `NameClaimType` and `RoleClaimType` from the keys of the same name (`name` and `role` by default), so
+  `HttpContext.User.Identity.Name` is the `name` claim of the token.
 
 The token is kept in the `BootstrapContext` of the identity, whose authentication type is `OAuth2`.
-
-> [!NOTE]
-> Known issue: `AddJwtAuthentication` does not set the name claim type, and the claims are not mapped, so
-> `HttpContext.User.Identity.Name` is `null` (the `AppPrincipal` profile is filled anyway). If your code reads
-> `Identity.Name`, set the claim type after the registration:
->
-> ```csharp
-> using Microsoft.AspNetCore.Authentication.JwtBearer;
->
-> builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
->     options => options.TokenValidationParameters.NameClaimType = "name");
-> ```
->
-> `AddHybridAuthentication` sets it from `NameClaimType` (default `name`).
 
 > [!CAUTION]
 > With `ValidateAuthority: false`, the issuer is not validated and the audience check is what ties a token
@@ -218,9 +208,9 @@ The handler could not download the metadata or the token was not signed by the k
 `DefaultAuthority:Url` (or `MetaDataAddress`) is reachable from the server and that the token comes from that
 authority. For a private certificate authority, see [Custom root CA](custom-root-ca.md).
 
-### 500 on every authenticated request
+### 401 on every authenticated request, with a valid token
 
-See [No user identifier found](troubleshooting.md#500-no-distinguish-key-found-for-the-identity).
+See [No user identifier found](troubleshooting.md#401-the-token-has-no-claim-identifying-the-user).
 
 ## See also
 

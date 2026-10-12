@@ -18,6 +18,16 @@ namespace Arc4u.OAuth2.Options
         /// </summary>
         public bool ValidateAuthority { get; set; } = true;
 
+        /// <summary>
+        /// Gets or sets the claim type holding the name of the user (<c>User.Identity.Name</c>). The default is <c>name</c>.
+        /// </summary>
+        public string NameClaimType { get; set; } = "name";
+
+        /// <summary>
+        /// Gets or sets the claim type holding the roles of the user. The default is <c>role</c>.
+        /// </summary>
+        public string RoleClaimType { get; set; } = "role";
+
         /// <summary>Gets or sets an optional certificate used as issuer signing key to validate tokens.</summary>
         public X509Certificate2? CertSecurityKey { get; set; } = default!;
     }

@@ -55,7 +55,8 @@ type is listed in `Authentication:ClaimsIdentifier` (by default the object ident
 `http://schemas.microsoft.com/identity/claims/objectidentifier` and `oid`).
 
 > [!IMPORTANT]
-> When the token has none of the `ClaimsIdentifier` claim types, every authenticated request fails with a 500
+> When the token has none of the `ClaimsIdentifier` claim types, every bearer request fails with a 401 and the
+> log says `The token has no claim identifying the user`; a cookie (OpenID Connect) request fails with a 500
 > (`NullReferenceException: No distinguish key found for the identity`). The default claim types are Microsoft
 > identity platform claims; other providers usually identify the user with `sub`: set the identifier, for
 > example `"ClaimsIdentifier": [ "sub" ]`.
@@ -292,7 +293,7 @@ Replace `IClaimProfileFiller` to build the profile differently.
 
 See [Roles and IsInRole](#roles-and-isinrole): the roles come from the Arc4u authorization claim.
 
-### 500 "No distinguish key found for the identity"
+### 401 "The token has no claim identifying the user"
 
 Set `Authentication:ClaimsIdentifier` to a claim type present in the tokens, see
 [Claims filler options](#claims-filler-options).

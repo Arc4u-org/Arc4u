@@ -18,6 +18,16 @@ namespace Arc4u.OAuth2.Options
         /// </summary>
         public bool ValidateAuthority { get; set; } = true;
 
+        /// <summary>
+        /// Gets or sets the claim type holding the name of the user (<c>User.Identity.Name</c>). It is copied to <see cref="JwtAuthenticationOptions.NameClaimType"/>. The default is <c>name</c>.
+        /// </summary>
+        public string NameClaimType { get; set; } = "name";
+
+        /// <summary>
+        /// Gets or sets the claim type holding the roles of the user. It is copied to <see cref="JwtAuthenticationOptions.RoleClaimType"/>. The default is <c>role</c>.
+        /// </summary>
+        public string RoleClaimType { get; set; } = "role";
+
         /// <summary>Gets or sets the path of the section describing an optional certificate used as issuer signing key to validate tokens.</summary>
         public string? CertSecurityKeyPath { get; set; } = default!;
 
@@ -27,7 +37,8 @@ namespace Arc4u.OAuth2.Options
         /// <summary>Gets or sets the path of the section holding the <see cref="ClaimsFillerOptions"/>. The default is <c>Authentication:ClaimsMiddleWare:ClaimsFiller</c>.</summary>
         public string ClaimsFillerSectionPath { get; set; } = "Authentication:ClaimsMiddleWare:ClaimsFiller";
 
-        /// <summary>Gets or sets the path of the section holding the <see cref="TokenCacheOptions"/>. The default is <c>Authentication:TokenCache</c>.</summary>
+        /// <summary>Gets or sets the path of the section holding the <see cref="TokenCacheOptions"/>. The default is <c>Authentication:TokenCache</c>.
+        /// The section is optional: when it does not exist, the token cache options keep their defaults (the default cache is used).</summary>
         public string TokenCacheSectionPath { get; set; } = "Authentication:TokenCache";
 
         /// <summary>Gets or sets the path of the section holding the client tokens (see <c>ClientTokenSettingsOptions</c>). The default is <c>Authentication:ClientTokens</c>.</summary>
