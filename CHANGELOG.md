@@ -150,6 +150,11 @@ packages. It contains breaking changes: follow the
 - `MemoryLogStore.GetLogs` never matched a criteria against a message with capital letters; the
   comparison now ignores case. Reading the memory log store while the sink wrote to it could throw
   `Collection was modified` ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).
+- `RealmLoggingDbCtx`, the singleton `ILogStore` registered by `AddRealmDBLog`, opened its `Realm` in
+  its constructor, so `GetLogs` and `RemoveAll` threw `Realm accessed from incorrect thread` from any
+  other thread (every ASP.NET Core request). It now opens a `Realm` for each call. The constructor no
+  longer takes the unused `ILoggerFactory`, and the `Realm` property is removed
+  ([#239](https://github.com/Arc4u-org/Arc4u/issues/239)).
 - `StandardBearerEvents.Challenge` answered a 401 with a `ProblemDetails` body saying `"status": 403`
   and the `application/json` content type; the body now says 401 and the content type is
   `application/problem+json` ([#221](https://github.com/Arc4u-org/Arc4u/issues/221)).

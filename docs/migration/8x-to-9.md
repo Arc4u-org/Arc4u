@@ -1421,4 +1421,5 @@ public static class Security
 | `SecretBasicExtension.AddSecretAuthentication`, `CredentialSecretTokenProvider` | `AddClientTokens` (see [Client secrets replaced by client tokens](#client-secrets-replaced-by-client-tokens)) |
 | `LoggerContext`, `CommonLoggerProperties`, `LoggerBase` | See [Fluent logging API](#fluent-logging-api) |
 | `RealmLoggingDbCtx.CreateMapping()` (AutoMapper) | Removed with the AutoMapper dependency |
+| `RealmLoggingDbCtx(RealmConfiguration, ILoggerFactory)` and `RealmLoggingDbCtx.Realm` | `RealmLoggingDbCtx(RealmConfiguration)`. The store opens a `Realm` for each call, so it no longer exposes one: open your own with `Realm.GetInstance(config)` on the thread that uses it |
 | `Arc4u.Data.RelationAttribute` | None: nothing in Arc4u read it. Delete the `[Relation(...)]` attributes and configure relationships in your EF Core model (`HasMany`, `WithOne`, `HasForeignKey`) |

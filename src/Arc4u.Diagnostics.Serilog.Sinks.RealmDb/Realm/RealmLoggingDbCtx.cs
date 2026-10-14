@@ -4,20 +4,49 @@ using Realms;
 namespace Arc4u.Diagnostics.Serilog.Sinks.RealmDb;
 
 /// <summary>An <see cref="ILogStore"/> that reads the log messages persisted in a Realm database, the most recent first.</summary>
+/// <remarks>
+/// A Realm instance can only be used on the thread that opened it, so each call opens its own instance and closes it before returning.
+/// The store can therefore be registered as a singleton and called from any thread, including under a synchronization context that is not bound to one thread (Blazor Server, xUnit).
+/// </remarks>
 public class RealmLoggingDbCtx : ILogStore
 {
-    /// <summary>Initializes a new instance of the <see cref="RealmLoggingDbCtx"/> class and opens the Realm database.</summary>
+    /// <summary>Initializes a new instance of the <see cref="RealmLoggingDbCtx"/> class.</summary>
     /// <param name="config">The configuration of the Realm database.</param>
-    /// <param name="loggerFactory">The logger factory (not used).</param>
-    public RealmLoggingDbCtx(RealmConfiguration config, ILoggerFactory loggerFactory)
+    public RealmLoggingDbCtx(RealmConfiguration config)
     {
-        _realm = Realm.GetInstance(config);
+        ArgumentNullException.ThrowIfNull(config);
+
+        _config = config;
+    }
+
+    private readonly RealmConfiguration _config;
+
+    // Realm binds an instance to the current synchronization context and expects that context to always run on the opening thread.
+    // Contexts such as the Blazor Server renderer or xUnit move between threads, so the instance is opened, used and closed without one:
+    // the store reads and writes synchronously and does not need notifications.
+    private T UseRealm<T>(Func<Realm, T> operation)
+    {
+        var current = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(null);
+        try
+        {
+            using var realm = Realm.GetInstance(_config);
+            return operation(realm);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(current);
+        }
     }
 
     /// <inheritdoc/>
     public void RemoveAll()
     {
-        _realm.Write(_realm.RemoveAll<LogDBMessage>);
+        UseRealm(realm =>
+        {
+            realm.Write(realm.RemoveAll<LogDBMessage>);
+            return true;
+        });
     }
 
     /// <summary>
@@ -33,9 +62,14 @@ public class RealmLoggingDbCtx : ILogStore
         var hasCriteria = !string.IsNullOrWhiteSpace(criteria);
         var searchText = hasCriteria ? criteria.ToLowerInvariant() : "";
 
-        var queryable = _realm.All<LogDBMessage>().OrderByDescending(msg => msg.Timestamp);
+        return UseRealm(realm => GetLogs(realm, hasCriteria, searchText, skip, take));
+    }
 
-        var enumerator = queryable.GetEnumerator();
+    private static List<LogMessage> GetLogs(Realm realm, bool hasCriteria, string searchText, int skip, int take)
+    {
+        var queryable = realm.All<LogDBMessage>().OrderByDescending(msg => msg.Timestamp);
+
+        using var enumerator = queryable.GetEnumerator();
 
         var i = 0;
         while (i < skip && enumerator.MoveNext())
@@ -62,6 +96,7 @@ public class RealmLoggingDbCtx : ILogStore
         }
 
         // return the list<LogMessage> based on the list<LogDBMessage>.
+        // The mapping must happen before the Realm is closed: the LogDBMessage objects are live views on the database.
         var mapped = result.Select(db => new LogMessage
         {
             Message = db.Message,
@@ -81,9 +116,4 @@ public class RealmLoggingDbCtx : ILogStore
 
         return mapped;
     }
-
-    private readonly Realm _realm;
-    private readonly ILoggerFactory _loggerFactory;
-    /// <summary>Gets the opened Realm database.</summary>
-    public Realm Realm { get { return _realm; } }
 }

@@ -68,7 +68,7 @@ The columns are `Timestamp`, `MessageType`, `MessageCategory`, `Message` and `Pr
 
 ### Store the entries in a Realm database
 
-`WriteTo.RealmDB()` (namespace `Serilog`) writes the entries to a Realm database as `LogDBMessage` objects. `AddRealmDBLog()` registers the `RealmConfiguration` and an `ILogStore` (`RealmLoggingDbCtx`) as singletons. The second one opens the database when it is first resolved.
+`WriteTo.RealmDB()` (namespace `Serilog`) writes the entries to a Realm database as `LogDBMessage` objects. `AddRealmDBLog()` registers the `RealmConfiguration` and an `ILogStore` (`RealmLoggingDbCtx`) as singletons. A Realm instance can only be used on the thread that opened it, so the store opens one for each call to `GetLogs` or `RemoveAll` and closes it before returning. You can call it from any thread, for example from a web endpoint.
 
 ```csharp
 using Arc4u.Diagnostics.Serilog.Sinks.RealmDb;
@@ -124,12 +124,6 @@ public class LogPage(ILogStore store)
 `ILogStore` and the sinks are independent of each other. Register your own `ILogStore` to read from another store, or write your own Serilog sink with the [Arc4u helper](serilog.md#read-the-arc4u-properties-in-your-own-sink).
 
 ## Troubleshooting
-
-### Realm accessed from incorrect thread
-
-Known issue. `RealmLoggingDbCtx` opens its `Realm` in the constructor and is registered as a singleton, and a Realm instance can only be used on the thread that opened it. `GetLogs` and `RemoveAll` called from another thread throw `RealmException: Realm accessed from incorrect thread`. This is what happens in ASP.NET Core, where requests run on thread-pool threads, so the Realm store is not usable from a web endpoint as in the memory example.
-
-The supported pattern is a client application whose reads happen on one thread: resolve `ILogStore` on that thread (for example the UI thread of a desktop application) and call it from there only. The Realm sink that writes the entries opens its own instance on its writer thread and is not affected. In a web application, use the memory store or a server-side sink instead.
 
 ### A Realm page holds fewer entries than requested
 
