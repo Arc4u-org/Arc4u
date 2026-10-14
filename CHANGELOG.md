@@ -155,6 +155,11 @@ packages. It contains breaking changes: follow the
   other thread (every ASP.NET Core request). It now opens a `Realm` for each call. The constructor no
   longer takes the unused `ILoggerFactory`, and the `Realm` property is removed
   ([#239](https://github.com/Arc4u-org/Arc4u/issues/239)).
+- `RealmDBSink` opened a `Realm` for every batch and never closed it, so instances and their native
+  handles piled up until the garbage collector finalized them, and it wrote each event in its own
+  transaction. It now opens and closes one `Realm` per batch, without a synchronization context, and
+  writes the batch in one transaction
+  ([#267](https://github.com/Arc4u-org/Arc4u/issues/267)).
 - `StandardBearerEvents.Challenge` answered a 401 with a `ProblemDetails` body saying `"status": 403`
   and the `application/json` content type; the body now says 401 and the content type is
   `application/problem+json` ([#221](https://github.com/Arc4u-org/Arc4u/issues/221)).

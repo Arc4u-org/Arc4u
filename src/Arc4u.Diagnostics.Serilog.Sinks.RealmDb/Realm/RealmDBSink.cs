@@ -24,51 +24,76 @@ public class RealmDBSink : IBatchedLogEventSink
 
     private RealmConfiguration Config { get; set; }
 
-    /// <summary>Writes each event of the batch to the Realm database. Events that cannot be written are ignored.</summary>
+    /// <summary>Writes the events of the batch to the Realm database in one transaction. Events that cannot be converted are ignored.</summary>
     /// <param name="events">The batch of events.</param>
     /// <returns>A task that completes when the batch has been written.</returns>
-    public async Task EmitBatchAsync(IEnumerable<LogEvent> events)
+    public Task EmitBatchAsync(IEnumerable<LogEvent> events)
     {
-        var DB = await Realm.GetInstanceAsync(Config).ConfigureAwait(false);
-
+        var messages = new List<LogDBMessage>();
         foreach (var _event in events)
         {
-            var (Category, Application, Identity, ClassType, MethodName, ActivityId, ProcessId, ThreadId, Stacktrace, Properties) = Helper.ExtractEventInfo(_event);
-
             try
             {
-                using var properties = new StringWriter();
-                using var messageText = new StringWriter();
-                PropertyFormatter.Format(Properties, properties);
-                MessageFormatter.Format(_event, messageText);
-
-                var logMsg = new LogDBMessage
-                {
-                    Timestamp = _event.Timestamp,
-                    Message = messageText.ToString(),
-                    ActivityId = ActivityId,
-                    MethodName = MethodName,
-                    ClassType = ClassType,
-                    Properties = properties.ToString(),
-                    ProcessId = ProcessId,
-                    ThreadId = ThreadId,
-                    Stacktrace = Stacktrace,
-                    MessageCategory = (short)Category,
-                    MessageType = (int)_event.Level.ToMessageType(),
-                    Application = Application,
-                    Identity = Identity,
-                };
-
-                await DB.WriteAsync(() =>
-                {
-                    DB.Add(logMsg);
-                }).ConfigureAwait(false);
+                messages.Add(ToLogDBMessage(_event));
             }
             catch (Exception)
             {
             }
-
         }
+
+        if (messages.Count == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        // A Realm instance can only be used on the thread that opened it, and Realm binds it to the current synchronization context.
+        // The instance is opened, used and closed synchronously without one, so it never moves to another thread and its native handles are released.
+        var current = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(null);
+        try
+        {
+            using var realm = Realm.GetInstance(Config);
+            realm.Write(() =>
+            {
+                foreach (var message in messages)
+                {
+                    realm.Add(message);
+                }
+            });
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(current);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private LogDBMessage ToLogDBMessage(LogEvent _event)
+    {
+        var (Category, Application, Identity, ClassType, MethodName, ActivityId, ProcessId, ThreadId, Stacktrace, Properties) = Helper.ExtractEventInfo(_event);
+
+        using var properties = new StringWriter();
+        using var messageText = new StringWriter();
+        PropertyFormatter.Format(Properties, properties);
+        MessageFormatter.Format(_event, messageText);
+
+        return new LogDBMessage
+        {
+            Timestamp = _event.Timestamp,
+            Message = messageText.ToString(),
+            ActivityId = ActivityId,
+            MethodName = MethodName,
+            ClassType = ClassType,
+            Properties = properties.ToString(),
+            ProcessId = ProcessId,
+            ThreadId = ThreadId,
+            Stacktrace = Stacktrace,
+            MessageCategory = (short)Category,
+            MessageType = (int)_event.Level.ToMessageType(),
+            Application = Application,
+            Identity = Identity,
+        };
     }
 
     /// <summary>Called when no event is available; does nothing.</summary>
