@@ -1,4 +1,5 @@
-using System.Globalization;
+﻿using System.Globalization;
+using Arc4u.Configuration;
 
 namespace Arc4u.Security.Principal;
 
@@ -17,44 +18,57 @@ public class AppAuthorization : IAuthorization
     /// Initializes a new instance of the <see cref="AppAuthorization"/> class and indexes the roles and operations of the authorization data for fast look-up.
     /// </summary>
     /// <param name="authorizationData">The authorization data (scopes, roles and operations) of the user.</param>
+    /// <exception cref="ConfigurationException">An entry of <see cref="Authorization.Operations"/> or <see cref="Authorization.Roles"/> has no <c>scope</c>; the default scope is the empty string.</exception>
     public AppAuthorization(Authorization authorizationData)
     {
         // Fill the Dictionnary structure for fast retrieving the information.
         // Add Operations
         _operations = new Dictionary<string, Dictionary<int, string>>();
         _operationsName = new Dictionary<string, Dictionary<string, int>>();
-        foreach (var scopedOperations in authorizationData.Operations)
+        foreach (var scopedOperations in authorizationData.Operations ?? [])
         {
-            var operations = new Dictionary<int, string>();
-            var operationsName = new Dictionary<string, int>();
-
-            foreach (var operationId in scopedOperations.Operations)
+            var scope = scopedOperations.Scope
+                        ?? throw new ConfigurationException($"An entry of the authorization operations has no scope (operations: {string.Join(", ", scopedOperations.Operations ?? [])}). Use the empty string for the default scope.");
+            if (!_operations.TryGetValue(scope, out var operations))
             {
-                var operation = authorizationData.AllOperations.SingleOrDefault(o => o.ID == operationId);
+                operations = new Dictionary<int, string>();
+                _operations.Add(scope, operations);
+            }
+            if (!_operationsName.TryGetValue(scope, out var operationsName))
+            {
+                operationsName = new Dictionary<string, int>();
+                _operationsName.Add(scope, operationsName);
+            }
+
+            foreach (var operationId in scopedOperations.Operations ?? [])
+            {
+                var operation = authorizationData.AllOperations?.FirstOrDefault(o => o.ID == operationId);
                 if (default(Operation) != operation)
                 {
-                    operations.Add(operation.ID, operation.Name);
-                    operationsName.Add(operation.Name, operation.ID);
+                    operations[operation.ID] = operation.Name;
+                    operationsName[operation.Name] = operation.ID;
                 }
-            };
-            _operations.Add(scopedOperations.Scope, operations);
-            _operationsName.Add(scopedOperations.Scope, operationsName);
+            }
         }
 
         // Add Roles.
         _roles = new Dictionary<string, Dictionary<string, short>>();
-        foreach (var scopedRoles in authorizationData.Roles)
+        foreach (var scopedRoles in authorizationData.Roles ?? [])
         {
-            var roles = new Dictionary<string, short>();
-            foreach (var role in scopedRoles.Roles)
+            var scope = scopedRoles.Scope
+                        ?? throw new ConfigurationException($"An entry of the authorization roles has no scope (roles: {string.Join(", ", scopedRoles.Roles ?? [])}). Use the empty string for the default scope.");
+            if (!_roles.TryGetValue(scope, out var roles))
             {
-                roles.Add(role, 0);
+                roles = new Dictionary<string, short>();
+                _roles.Add(scope, roles);
             }
-
-            _roles.Add(scopedRoles.Scope, roles);
+            foreach (var role in scopedRoles.Roles ?? [])
+            {
+                roles[role] = 0;
+            }
         }
 
-        _scopes = authorizationData.Scopes;
+        _scopes = authorizationData.Scopes ?? [];
     }
 
     #region IAuthorization Members

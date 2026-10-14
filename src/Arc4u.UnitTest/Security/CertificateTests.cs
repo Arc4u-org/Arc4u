@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Arc4u.Configuration;
@@ -123,6 +123,22 @@ public class CertificateTests
         return request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1));
     }
     #if NET10_0
+    [Fact]
+    public void Custom_Root_CA_Keys_Should_Be_Kept_Per_Service_Collection()
+    {
+        var services1 = new ServiceCollection();
+        services1.AddCustomRootCA("CA1", option => option.CaFilePath = "ca1.pem");
+        services1.AddCustomRootCA("CA1", option => option.CaFilePath = "ca1.pem");
+        var services2 = new ServiceCollection();
+        services2.AddCustomRootCA("CA2", option => option.CaFilePath = "ca2.pem");
+
+        var keys1 = services1.BuildServiceProvider().GetRequiredService<IOptions<CARootOptionKeys>>().Value.Keys;
+        var keys2 = services2.BuildServiceProvider().GetRequiredService<IOptions<CARootOptionKeys>>().Value.Keys;
+
+        keys1.Should().Equal("CA1");
+        keys2.Should().Equal("CA2");
+    }
+
     [Fact]
     public void Custom_Root_CA_With_One_Certificate_Should_Be_Registered()
     {

@@ -80,6 +80,12 @@ Arc4u logger. Call `builder.Services.AddApplicationContext()` (or `AddILogger()`
 The principal has no authorization: implement a claims filler that returns the Arc4u authorization claim, see
 [Load the user's rights](claims-and-authorization.md#load-the-users-rights-with-a-claims-filler).
 
+### Requests fail with "An entry of the authorization operations (or roles) has no scope"
+
+The authorization returned by your claims filler has an entry of `operations` or `roles` without `scope`, and
+the principal cannot be created (`ConfigurationException`). Give every entry a scope; use the empty string
+(`"scope": ""`) for the default scope, the one checked by the methods without a scope parameter.
+
 ### Caches are not initialized
 
 The memory, Redis and SQL Server caches need an `IObjectSerialization` registration (`JsonSerialization` of

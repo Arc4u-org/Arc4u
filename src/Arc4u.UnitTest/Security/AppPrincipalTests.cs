@@ -1,3 +1,4 @@
+﻿using Arc4u.Configuration;
 using Arc4u.Extensions;
 using Arc4u.Security.Principal;
 using AutoFixture;
@@ -20,6 +21,33 @@ public class AppPrincipalTests
 
     private static List<Operation> AllOperations => Enum.GetValues<Access>()
         .Select(o => new Operation { Name = o.GetValue(), ID = (int)o }).ToList();
+
+    [Fact]
+    public void Authorization_Operations_Without_Scope_Should_Throw_ConfigurationException()
+    {
+        var authorization = new Arc4u.Security.Principal.Authorization
+        {
+            AllOperations = AllOperations,
+            Operations = [new ScopedOperations { Operations = [(int)Access.AccessApplication] }],
+        };
+
+        var exception = Record.Exception(() => new AppAuthorization(authorization));
+
+        exception.Should().BeOfType<ConfigurationException>().Which.Message.Should().Contain("operations has no scope");
+    }
+
+    [Fact]
+    public void Authorization_Roles_Without_Scope_Should_Throw_ConfigurationException()
+    {
+        var authorization = new Arc4u.Security.Principal.Authorization
+        {
+            Roles = [new ScopedRoles { Roles = ["Admin"] }],
+        };
+
+        var exception = Record.Exception(() => new AppAuthorization(authorization));
+
+        exception.Should().BeOfType<ConfigurationException>().Which.Message.Should().Contain("roles has no scope");
+    }
 
     [Fact]
     public void Test_IsAuthorise_By_Enum_Should()

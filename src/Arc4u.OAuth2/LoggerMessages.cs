@@ -1,4 +1,4 @@
-
+﻿
 using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2;
@@ -33,11 +33,11 @@ public static partial class LoggerMessages
     public static partial void LogRequestingAuthenticationToken(this ILogger logger);
 
     /// <summary>
-    /// Logs an Error message (event id 9083): <c>Requesting an authentication token.</c>
+    /// Logs an Error message (event id 9083): <c>The token provider did not return an authentication token.</c>
     /// </summary>
     /// <param name="logger">The logger to write to.</param>
     [LoggerMessage(EventId = 9083, Level = LogLevel.Error,
-           Message = "Requesting an authentication token.")]
+           Message = "The token provider did not return an authentication token.")]
     public static partial void LogNoToken(this ILogger logger);
 
     /// <summary>

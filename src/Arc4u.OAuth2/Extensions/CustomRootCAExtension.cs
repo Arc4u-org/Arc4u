@@ -40,7 +40,8 @@ public static class CustomRootCaExtension
                 }
                 else
                 {
-                    options.AddRange(CustomRootCaExtensions.CertificateOptionKeys.Select(key => caRootOptions.Get(key)));
+                    var keys = sp.GetRequiredService<IOptions<CARootOptionKeys>>().Value.Keys;
+                    options.AddRange(keys.Select(key => caRootOptions.Get(key)));
                 }
 
                 // Load certificates once during handler creation (OPTIMIZATION)
