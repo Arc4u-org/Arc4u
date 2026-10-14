@@ -279,15 +279,6 @@ the logger category of the interceptor (its type parameter, `OrderService.OrderS
 and look for a missing application context, principal, authentication type or token provider. When
 the settings name passed to the interceptor does not exist, its creation throws `ConfigurationException`.
 
-### `ClientErrorInterceptor` does not convert my errors
-
-`ClientErrorInterceptor` turns `StatusCode.PermissionDenied` into an `UnauthorizedAccessException`
-and rethrows any other `RpcException`, but only when the exception is raised while the call is being
-started. The failure of a unary call surfaces when you await the response, after the interceptor
-returned, so it is not converted. It does not intercept client-streaming or blocking unary calls. Catch
-the `RpcException` and use `ToResult()` instead, as shown in
-[ProblemDetails over gRPC](grpc-problem-details.md).
-
 ### Culture and activity ID are not set on a client-streaming method
 
 `AuthorizationInterceptor` overrides the unary, server-streaming and duplex handlers. Client-streaming

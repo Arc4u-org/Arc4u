@@ -134,6 +134,9 @@ packages. It contains breaking changes: follow the
   `Arc4u.Utils.Enum<T>` / `EnumUtil`.
 - The AutoMapper dependency of `Arc4u.Diagnostics.Serilog.Sinks.RealmDb`.
 - `Arc4u.Data.RelationAttribute`, which nothing in Arc4u read.
+- `Arc4u.gRPC`: `ClientErrorInterceptor`. With `Grpc.Net.Client` it converted almost nothing, since a
+  call fails when it is awaited, after the interceptor returned. Catch the `RpcException` and use
+  `ToResult()` to get the server's ProblemDetails back.
 
 ### Fixed
 

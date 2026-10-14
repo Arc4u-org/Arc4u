@@ -37,7 +37,7 @@ flowchart LR
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.gRPC` | Client and shared side: `OAuth2Interceptor<T>`, `AddSuffixPathInterceptor`, `ClientErrorInterceptor`, the server `AuthorizationInterceptor`, `RpcException.ToResult()` and the `arc4u.grpc.v1` proto. |
+| `Arc4u.gRPC` | Client and shared side: `OAuth2Interceptor<T>`, `AddSuffixPathInterceptor`, the server `AuthorizationInterceptor`, `RpcException.ToResult()` and the `arc4u.grpc.v1` proto. |
 | `Arc4u.AspNetCore.gRpc` | Server side: `Result.ToRpcException()`, the gRPC middleware and `ConfigureLocalCaCertificateForGrpc`. References `Arc4u.gRPC`. |
 | `Arc4u.AspNetCore.Versioning` | `AddServiceApiVersioning()` for REST endpoints. Independent of the two gRPC packages. |
 
