@@ -155,15 +155,13 @@ already call it with the default section: do not call it a second time, see
 | `Authentication:OnBehalfOf:<name>:ClientId` | `string` | none (required) | Client ID of your application. |
 | `Authentication:OnBehalfOf:<name>:ClientSecret` | `string` | none (required) | Client secret of your application. |
 | `Authentication:OnBehalfOf:<name>:Scopes` | `string[]` | none (required) | Scopes requested for the downstream API. |
-| `Authentication:OnBehalfOf:<name>:AuthenticationType` | `string` | `Inject` | See the warning below. |
+| `Authentication:OnBehalfOf:<name>:AuthenticationType` | `string` | `Inject` | See [How a provider is selected](#how-a-provider-is-selected). |
 | `Authentication:OnBehalfOf:<name>:ProviderId` | `string` | `Obo` | Key of the token provider. |
 
-> [!WARNING]
-> Set `AuthenticationType` to the authentication type of your callers: `OAuth2` in an API,
-> `Cookies` in a web app. With the default `Inject`, the handler uses the token type as the
-> scheme, and the on-behalf-of provider returns the type `access_token`: the token is sent in a
-> header named `access_token` instead of `Authorization: Bearer`, and the downstream API
-> rejects the call (known issue).
+> [!NOTE]
+> The provider returns the token type `Bearer`: with the default `Inject`, the token is sent in
+> the `Authorization: Bearer` header. Set `AuthenticationType` to `OAuth2` (in an API) or
+> `Cookies` (in a web app) to send the token only when the caller was authenticated that way.
 
 Register the provider and the services it uses: the scoped `TokenRefreshInfo` (already registered
 by `AddOidcAuthentication`, not by `AddJwtAuthentication`), an `ICacheHelper` that gives the cache

@@ -88,7 +88,8 @@ namespace Arc4u.OAuth2.TokenProviders
                 // arbitrary 1 minute to have time to perform a request => must be a variable.
                 if (token.ValidTo.Subtract(DateTime.UtcNow).TotalSeconds > 60)
                 {
-                    return tokenFromCache;
+                    // Entries cached by previous versions have the type access_token: the token must be sent as a Bearer.
+                    return new TokenInfo("Bearer", tokenFromCache.Token, tokenFromCache.ExpiresOnUtc);
                 }
             }
 
@@ -134,11 +135,11 @@ namespace Arc4u.OAuth2.TokenProviders
                     if (payload.RootElement.TryGetProperty("expires_in", out var property) && property.TryGetInt32(out var seconds))
                     {
                         var expirationAt = DateTime.UtcNow + TimeSpan.FromSeconds(seconds);
-                        oboToken = new TokenInfo("access_token", payload!.RootElement!.GetString("access_token") ?? string.Empty, expirationAt.ToUniversalTime());
+                        oboToken = new TokenInfo("Bearer", payload!.RootElement!.GetString("access_token") ?? string.Empty, expirationAt.ToUniversalTime());
                     }
                     else
                     {
-                        oboToken = new TokenInfo("access_token", payload!.RootElement!.GetString("access_token") ?? string.Empty);
+                        oboToken = new TokenInfo("Bearer", payload!.RootElement!.GetString("access_token") ?? string.Empty);
                     }
 
                     await cache.PutAsync(cacheKey, oboToken.ExpiresOnUtc - DateTime.UtcNow, oboToken).ConfigureAwait(false);

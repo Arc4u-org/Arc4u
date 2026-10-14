@@ -591,9 +591,10 @@ public class JwtHttpHandlerTests
         services.AddSingleton(mockActivitySourceFactory.Object);
 
         // Uses the cache to return the access token in the Obo provider => avoid any call to the Authority!
+        // The cached entry has the type access_token, as written by previous versions: it must still be sent as a Bearer (issue #229).
         var mockCache = _fixture.Freeze<Mock<ICache>>();
         mockCache.Setup(m => m.GetAsync<TokenInfo>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TokenInfo("Bearer", accessToken));
+            .ReturnsAsync(new TokenInfo("access_token", accessToken));
 
         var mockCacheHelper = _fixture.Freeze<Mock<ICacheHelper>>();
         mockCacheHelper.Setup(m => m.GetCache()).Returns(mockCache.Object);

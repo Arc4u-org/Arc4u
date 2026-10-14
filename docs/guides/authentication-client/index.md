@@ -272,9 +272,6 @@ wrote the same settings name. Common causes:
 
 ### Known issues
 
-- On-behalf-of with the default `AuthenticationType` `Inject` sends the token in an `access_token`
-  header. Set `AuthenticationType` explicitly, see
-  [Call an API on behalf of the user](token-providers.md#call-an-api-on-behalf-of-the-user).
 - A gRPC call made outside an HTTP request throws `NullReferenceException` unless a scope is set,
   see [Call an API outside a request](httpclient-grpc.md#call-an-api-outside-a-request).
 - `NullTokenProvider` (`ProviderId` `"null"`) makes the service and desktop `JwtHttpHandler<T>`

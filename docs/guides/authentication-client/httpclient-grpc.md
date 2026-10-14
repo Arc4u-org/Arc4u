@@ -190,12 +190,6 @@ gRPC interceptor throws a `NullReferenceException` (known issue).
   result: the handler logs it in the `Technical` category.
 - For gRPC, the `IApplicationContext` has no principal.
 
-### The token is sent in an access_token header
-
-The settings use the on-behalf-of provider with `AuthenticationType` `Inject`. Set
-`AuthenticationType` to `OAuth2` or `Cookies`, see
-[Call an API on behalf of the user](token-providers.md#call-an-api-on-behalf-of-the-user).
-
 ### NullReferenceException in the handler
 
 - The `ProviderId` is the string `"null"` (<xref:Arc4u.OAuth2.Token.NullTokenProvider>): the
