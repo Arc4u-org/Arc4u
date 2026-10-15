@@ -128,6 +128,8 @@ packages. It contains breaking changes: follow the
   [MSAL status](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#msal-status).
 - `IContainer`, `IContainerRegistry`, `IContainerResolve`, `ComponentModelContainer`,
   `DependencyContext` and the `Arc4u.Standard.Dependency.ComponentModel` package.
+- `Arc4u.Diagnostics`: the `OpenTelemetrySettings` class, which no Arc4u code read. Configure the
+  OpenTelemetry SDK with its own options.
 - `Message`, `Messages`, `MessageType`, `LocalizedMessage` and `AppException`, and the
   FluentValidation helpers `ToMessages` and `ToMessageType`.
 - `Arc4u.Standard.OAuth2.AspNetCore.Api` (`ServiceAspectAttribute` for controllers).

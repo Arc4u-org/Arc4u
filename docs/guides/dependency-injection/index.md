@@ -56,8 +56,8 @@ Reference both packages in every project that contains `[Export]` classes. On `d
 `Microsoft.Extensions.Hosting`, which brings the `Microsoft.Extensions.DependencyInjection` API that
 the generated code calls.
 
-`Arc4u.Dependency.ComponentModel`, which held the `IContainer` implementation, is not built or
-shipped in Arc4u 9. See [Package support](../package-support.md).
+`Arc4u.Dependency.ComponentModel`, which held the `IContainer` implementation, is removed from
+Arc4u 9. See [Package support](../package-support.md).
 
 ## Install
 
