@@ -75,10 +75,11 @@ your stub, replace every `<...>` placeholder and delete the comment.
 - One table per feature area, in the order of the guides, with the columns
   `Package | Status | Target frameworks | Guide`. Packages that have no guide of their own
   (the foundation packages) go in their own table and link to Concepts.
-- `Status` is one of **Supported**, **Deprecated**, **Not shipped in 9.x** (the source exists
+- `Status` is one of **Supported**, **8.x only** (supported with 8.x, no 9.x build; not
+  deprecated on NuGet.org while 8.x is supported), **Not shipped in 9.x** (the source exists
   but is not in `src/Arc4u.slnx`, so no 9.x package is built) or **Removed**. Target frameworks
   come from the package's `.csproj` on `develop/9.0.0`.
-- A final section lists deprecated, not shipped and removed packages with their last listed
+- A final section lists 8.x only, not shipped and removed packages with their last listed
   NuGet version, their replacement and a link to the migration guide.
 
 ### Migration guide outline

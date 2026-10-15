@@ -111,14 +111,12 @@ packages. It contains breaking changes: follow the
   new `AddNotificationHandlersAsTransient()`
   ([#260](https://github.com/Arc4u-org/Arc4u/issues/260)).
 
-### Deprecated
+### Removed
 
 - `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core`, `Arc4u.Standard.NServiceBus.RabbitMQ`
   and `Arc4u.Prism.DI.Wpf`: no 9.0 version
-  ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)). Use Dapr pub/sub and `Prism.DryIoc`.
-
-### Removed
-
+  ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)). They stay supported with 8.x. In 9, use
+  Dapr pub/sub and `Prism.DryIoc`.
 - .NET 8 and .NET 9 targets, and the .NET Standard 2.0 target of every package except
   `Arc4u.Dependency` and `Arc4u.Dependency.Tool`.
 - ADAL (`Arc4u.Standard.OAuth2.AspNetCore.Adal`), Protobuf serializers

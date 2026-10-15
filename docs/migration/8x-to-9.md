@@ -366,8 +366,8 @@ Steps:
 ## NServiceBus replaced by Dapr pub/sub
 
 `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core` and
-`Arc4u.Standard.NServiceBus.RabbitMQ` are deprecated and removed in Arc4u 9
-([#135](https://github.com/Arc4u-org/Arc4u/issues/135), [#189](https://github.com/Arc4u-org/Arc4u/issues/189)).
+`Arc4u.Standard.NServiceBus.RabbitMQ` stay supported with Arc4u 8.x but are not continued in
+Arc4u 9 ([#135](https://github.com/Arc4u-org/Arc4u/issues/135), [#189](https://github.com/Arc4u-org/Arc4u/issues/189)).
 They targeted `net8.0` only and depended on NServiceBus 7.8. Arc4u 9 has no messaging package:
 use [Dapr pub/sub](https://docs.dapr.io/developing-applications/building-blocks/pubsub/howto-publish-subscribe/)
 directly with the `Dapr.AspNetCore` package. The broker (RabbitMQ, Azure Service Bus, Kafka and
@@ -465,9 +465,9 @@ Steps:
 
 ## Prism.DI.Wpf replaced by Prism.DryIoc
 
-`Arc4u.Prism.DI.Wpf` adapted Prism 7.2 to the Arc4u `IContainer`. It is deprecated and removed in
-Arc4u 9 ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)): it targeted `net8.0-windows` and
-`net9.0-windows`, and `IContainer` no longer exists in Arc4u 9 (see
+`Arc4u.Prism.DI.Wpf` adapted Prism 7.2 to the Arc4u `IContainer`. It stays supported with Arc4u 8.x
+but is not continued in Arc4u 9 ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)): it
+targeted `net8.0-windows` and `net9.0-windows`, and `IContainer` no longer exists in Arc4u 9 (see
 [IContainer replaced by keyed services](#icontainer-replaced-by-keyed-services)). Use Prism's own
 DryIoc container, `Prism.DryIoc`.
 
