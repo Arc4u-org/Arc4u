@@ -275,6 +275,9 @@ packages. It contains breaking changes: follow the
 - The authentication cookie of `AddOidcAuthentication` and `AddHybridAuthentication`, with or without a
   ticket store, is always `Secure`, `HttpOnly` and `SameSite=Lax`. It was only `Secure` when the request
   was in HTTPS, so not behind a proxy that ends TLS ([#110](https://github.com/Arc4u-org/Arc4u/issues/110)).
+- `Arc4u.Caching.SqlServer`: `System.Security.Cryptography.Pkcs`, a dependency of
+  `Microsoft.Data.SqlClient`, raised from 9.0.18 to 9.0.21 (CVE-2026-84008, high;
+  CVE-2026-70162, moderate; both denial of service).
 
 ## [8.3.2] - 2025-07-18
 

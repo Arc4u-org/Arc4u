@@ -40,6 +40,7 @@
     <PackageVersion Include="System.Security.Cryptography.Cng" Version="5.0.0" />
     <PackageVersion Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
     <PackageVersion Include="Dapr.Client" Version="1.18.8" />
     <PackageVersion Include="MongoDB.Driver" Version="3.12.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OData" Version="9.5.0" />
