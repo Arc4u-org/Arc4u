@@ -170,7 +170,7 @@ A Serilog enricher adds a property to every event, whatever wrote it. Add them i
 |---|---|
 | 1 | Timestamp, `dd/MM/yyyy HH:mm:ss,fff` |
 | 2 | Level: `Trace`, `Debug`, `Information`, `Warning`, `Error` or `Critical` |
-| 3 | Category (see the known issue below) |
+| 3 | Category |
 | 4 | `Identity` |
 | 5, 6 | `Pid` and `Tid` (`-1` when the entry did not come from the Arc4u logger) |
 | 7 | `ActivityId` |

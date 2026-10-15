@@ -471,16 +471,12 @@ Inspect the generated `GeneratedTypes.g.cs` file (see
 
 ### A class marked [Export] is not registered
 
-> [!WARNING]
-> Known issues of the `DependencyToolGenerator` on `develop/9.0.0`:
->
-> - The attribute is recognized by its exact spelling `[Export(...)]`. A class marked
->   `[ExportAttribute(...)]` or `[Arc4u.Dependency.Attribute.Export(...)]` is silently skipped.
-> - `[Export]` accepts several instances on a class, but only the first one is registered.
-> - `[Export]` on a `record` is ignored.
-
-Write the attribute as `[Export(...)]` with `using Arc4u.Dependency.Attribute;`, and register the
-other contracts of a multi-contract class yourself.
+The `DependencyToolGenerator` registers every class and record class with an `[Export]` attribute,
+whatever its spelling (`[Export]`, `[ExportAttribute]`, a fully qualified name or a `using` alias),
+once for each `[Export]`. When a class is still missing, check that the project references
+`Arc4u.Dependency.Tool` and that the type is not a struct, then
+[inspect the generated code](#inspect-the-generated-code). See
+[What is registered](source-generators.md#what-is-registered).
 
 ### ARC4UDEP005: A type has both [Shared] and [Scoped]
 

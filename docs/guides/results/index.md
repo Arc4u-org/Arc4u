@@ -239,10 +239,8 @@ Some older notes use `ToActionResultAsync`. The methods are `ToActionOkResultAsy
 ### Known issues
 
 > [!WARNING]
-> - `LogIfFailed(context, content, level)` makes the singleton `FluentLogger` add a `Context` property that is never
->   cleared, so it appears on every later result log in the process. Avoid that overload until it is fixed.
-> - Three of the four `ToGenericMessage` overloads ignore their `unexpectedType` argument
->   (see [Results to HTTP responses](http-mapping.md#the-generic-500-message)).
+> `LogIfFailed(context, content, level)` makes the singleton `FluentLogger` add a `Context` property that is never
+> cleared, so it appears on every later result log in the process. Avoid that overload until it is fixed.
 
 ## See also
 

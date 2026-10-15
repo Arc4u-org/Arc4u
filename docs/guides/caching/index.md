@@ -293,13 +293,6 @@ that `Kind`. `Default` fails the same way when `Caching:Default` is empty or is 
 The cache exists but could not finish its initialization. For the Memory, Redis and Sql kinds, the message says that an
 `IObjectSerialization` cannot be resolved: register one (see [Serialization](serialization.md)).
 
-### A memory cache silently stores nothing
-
-> [!WARNING]
-> Known issue, reproduced on `develop/9.0.0`. A `Memory` cache declared without a `Settings` section gets a size limit
-> of 100 bytes instead of the documented 100 MB, so values larger than that are not stored (`Put` succeeds, `Get`
-> returns `null`). Always declare `Settings` with a `SizeLimitInMB`. See [Memory cache](memory.md).
-
 ## See also
 
 - [Serialization](serialization.md)

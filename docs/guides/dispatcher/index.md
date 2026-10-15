@@ -82,11 +82,14 @@ public class UpdateStock : INotificationHandler<OrderPlaced>
 }
 ```
 
-<xref:Arc4u.Dispatcher.Notification.NotificationHandlersExtension.AddNotificationHandlersAsScoped*> registers `INotificationHandlers<>` (and its two to five parameter variants) as open generics, so you call it once for every notification type. It does not register your handlers: you do that with the usual `AddScoped`, `AddTransient` or `AddSingleton` calls.
+<xref:Arc4u.Dispatcher.Notification.NotificationHandlersExtension.AddNotificationHandlersAsScoped*> registers `INotificationHandlers<>` (and its two to five parameter variants) as scoped open generics, so you call it once, for every notification type. It does not register your handlers: you do that with the usual `AddScoped`, `AddTransient` or `AddSingleton` calls.
 
-| Parameter of `AddNotificationHandlersAsScoped` | Type | Default | Description |
-|---|---|---|---|
-| `lifetime` | `ServiceLifetime` | `Scoped` | Lifetime of the `INotificationHandlers<>` services. `Transient` registers them as transient. Any other value, including `Singleton`, registers them as scoped. |
+| Method | Lifetime of the `INotificationHandlers<>` services |
+|---|---|
+| `AddNotificationHandlersAsScoped()` | Scoped |
+| `AddNotificationHandlersAsTransient()` | Transient |
+
+Call only one of them.
 
 ## Common scenarios
 
@@ -140,7 +143,7 @@ The dispatcher does not catch, log or retry. If a reaction must not break the us
 
 | Service | Default implementation | Replace it to |
 |---|---|---|
-| `INotificationHandlers<T>` (and the variants with two to five parameters) | `NotificationHandlers<T>` | Filter, order or decorate the handlers before publishing. Register your own open generic after `AddNotificationHandlersAsScoped`, or register a closed type such as `INotificationHandlers<OrderPlaced>`. |
+| `INotificationHandlers<T>` (and the variants with two to five parameters) | `NotificationHandlers<T>` | Filter, order or decorate the handlers before publishing. Register your own open generic after `AddNotificationHandlersAsScoped` (or `AddNotificationHandlersAsTransient`), or register a closed type such as `INotificationHandlers<OrderPlaced>`. |
 | `INotificationHandler<T>` | none: you provide them | Add a reaction to a notification. Register as many as you want for the same `T`. |
 
 `NotificationHandlers<T>` reads the handlers from the `IServiceProvider` it is created with, in its constructor, with `GetServices<INotificationHandler<T>>()`. The handlers are therefore created when you resolve `INotificationHandlers<T>`, and they live as long as the handlers' own registration lifetime allows.
@@ -170,11 +173,7 @@ You did not call `AddNotificationHandlersAsScoped()`. Call it once at startup. I
 
 ### `Cannot resolve scoped service ... from root provider`
 
-`INotificationHandlers<T>` is scoped by default. Resolve it from a scope, for example from `HttpContext.RequestServices` or an `IServiceScope`, or pass `ServiceLifetime.Transient` to `AddNotificationHandlersAsScoped` and register singleton or transient handlers.
-
-### `AddNotificationHandlersAsScoped(ServiceLifetime.Singleton)` does not register singletons
-
-By design of the current code, any lifetime other than `Transient` registers the services as scoped. The method name says so.
+`INotificationHandlers<T>` is scoped by default. Resolve it from a scope, for example from `HttpContext.RequestServices` or an `IServiceScope`, or call `AddNotificationHandlersAsTransient()` instead of `AddNotificationHandlersAsScoped()` and register singleton or transient handlers.
 
 ## See also
 

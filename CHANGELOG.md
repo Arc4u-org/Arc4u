@@ -106,6 +106,10 @@ packages. It contains breaking changes: follow the
 - `MemoryLogMessages` (`MemoryLogDbSink.LogMessages`) is a thread-safe `IReadOnlyCollection<LogMessage>`
   instead of a `List<LogMessage>`: use `Add`, `Clear`, `Count` and `GetPage`, and enumerate it to
   read a snapshot ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).
+- `AddNotificationHandlersAsScoped` no longer takes a `ServiceLifetime`, which registered the
+  services as scoped for any value but `Transient`. Call `AddNotificationHandlersAsScoped()` or the
+  new `AddNotificationHandlersAsTransient()`
+  ([#260](https://github.com/Arc4u-org/Arc4u/issues/260)).
 
 ### Deprecated
 

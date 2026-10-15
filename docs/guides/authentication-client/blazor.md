@@ -233,7 +233,7 @@ application uses.
 
 `Arc4u.OAuth2.Blazor` contains two other providers. Both are registered under the key `blazor`:
 register only one of them, because a keyed registration replaces the previous one with the same
-key (known issue).
+key.
 
 - <xref:Arc4u.OAuth2.TokenProvider.BlazorMsalTokenProvider> works with the Microsoft WebAssembly
   authentication (`AddMsalAuthentication` or `AddOidcAuthentication`), where the browser signs the

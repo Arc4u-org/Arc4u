@@ -359,9 +359,9 @@ Steps:
 2. Implement `IBrowser` for your UI technology and move the client settings to the `Authentication`
    section, as described in the [client authentication guide](../guides/authentication-client/index.md).
 
-> [!WARNING]
-> Known issue: `BlazorTokenProvider` and `BlazorMsalTokenProvider` are both registered under the
-> provider name `blazor`, so only one of them can be resolved by name in the same application.
+> [!NOTE]
+> `BlazorTokenProvider` and `BlazorMsalTokenProvider` are both registered under the provider name
+> `blazor`: register only one of them in an application.
 
 ## NServiceBus replaced by Dapr pub/sub
 

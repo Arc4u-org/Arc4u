@@ -270,21 +270,6 @@ wrote the same settings name. Common causes:
 - An entry named like a settings name that Arc4u uses, for example a `ClientTokens` entry named
   `OAuth2` or `Cookies`. Give each entry a unique name.
 
-### Known issues
-
-- A gRPC call made outside an HTTP request throws `NullReferenceException` unless a scope is set,
-  see [Call an API outside a request](httpclient-grpc.md#call-an-api-outside-a-request).
-- `NullTokenProvider` (`ProviderId` `"null"`) makes the service and desktop `JwtHttpHandler<T>`
-  throw `NullReferenceException`, see
-  [HttpClient and gRPC clients](httpclient-grpc.md#nullreferenceexception-in-the-handler).
-- The token caches of the `Obo` and `Credential` providers, and the client credentials cache with
-  extra parameters, are not keyed as expected, see
-  [Token providers](token-providers.md#cache-keys).
-- In Blazor, `BlazorTokenProvider` and `BlazorMsalTokenProvider` share the key `blazor`, and the
-  pop-up flow of `BlazorController` ends on a 404, see [Blazor](blazor.md#other-webassembly-token-providers).
-- In desktop apps, several options of `AddOidcClientAuthentication` are not used, see
-  [Desktop and mobile clients](desktop.md#configuration).
-
 ## See also
 
 - [Token providers](token-providers.md)

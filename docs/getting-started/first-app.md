@@ -87,9 +87,6 @@ Replace the content of `appsettings.json` with:
     },
     "OAuth2.Settings": {
       "Audiences": [ "getting-started-api" ]
-    },
-    "TokenCache": {
-      "CacheName": "Volatile"
     }
   }
 }
@@ -102,7 +99,6 @@ Replace the content of `appsettings.json` with:
 | `Application.Configuration` | `AddApplicationConfig` | The application name and environment. The section and its four values are required: when a value is missing, startup fails with a `ConfigurationException` that lists the missing ones. `Environment:LoggingName` is written in every log entry as `Application`. |
 | `Authentication:DefaultAuthority:Url` | `AddJwtAuthentication` | The identity provider that issues the tokens. The placeholder is enough to start: the application contacts the identity provider only to validate a token. |
 | `Authentication:OAuth2.Settings:Audiences` | `AddJwtAuthentication` | The values accepted in the `aud` claim of a token. |
-| `Authentication:TokenCache:CacheName` | `AddJwtAuthentication` | The name of the Arc4u cache that stores tokens. It must be set, even though this application never uses it. |
 
 `Application.Configuration` and `OAuth2.Settings` are single keys that contain a dot, not nested
 sections.
@@ -271,9 +267,9 @@ curl -i http://localhost:5080/me
 
 ```http
 HTTP/1.1 401 Unauthorized
-Content-Type: application/json
+Content-Type: application/problem+json
 
-{"status":403}
+{"status":401}
 ```
 
 With a token that is not a valid JWT, the body also names the error:
@@ -284,9 +280,9 @@ curl -i -H "Authorization: Bearer not-a-jwt" http://localhost:5080/me
 
 ```http
 HTTP/1.1 401 Unauthorized
-Content-Type: application/json
+Content-Type: application/problem+json
 
-{"title":"invalid_token","status":403,"detail":""}
+{"title":"invalid_token","status":401,"detail":""}
 ```
 
 and the application logs the reason with the `Technical` category:
@@ -294,11 +290,6 @@ and the application logs the reason with the `Technical` category:
 ```text
 [15:04:55 ERR] Technical  Arc4u.OAuth2.Events.StandardBearerEvents: Exception: IDX14100: JWT is not well formed, there are no dots (.).
 ```
-
-> [!WARNING]
-> Known issue: the JSON body of these `401` responses contains `"status":403`, and its content type
-> is `application/json` rather than `application/problem+json`. Use the HTTP status code of the
-> response, not the `status` field of the body.
 
 You now have a running Arc4u application. Stop it with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 
@@ -361,7 +352,7 @@ for your API: add one on the provider side rather than turning audience validati
 |---|---|
 | `'IServiceCollection' does not contain a definition for 'RegisterGettingStartedTypes'` | The generator did not run or the name differs. Check that `Arc4u.Dependency.Tool` is referenced, and use the last part of your assembly name (`Register<Name>Types`). |
 | `InvalidOperationException: Bad Arc4u usage.` | `AddILogger()` is not called. |
-| `ConfigurationException: TokenCacheOptions.CacheName is not defined in the configuration file.` | `Authentication:TokenCache:CacheName` is missing. |
+| `ConfigurationException: TokenCacheOptions.CacheName is not defined in the configuration file.` | The `Authentication:TokenCache` section exists without `CacheName`. This application makes no outgoing call, so remove the section. |
 | `ConfigurationException: Audiences field is not defined.` | `Authentication:OAuth2.Settings:Audiences` is missing or empty. |
 | `MissingFieldException: DefaultAuthority must be filled!` | `Authentication:DefaultAuthority` is missing. |
 | `InvalidOperationException: No section exists with name Authentication ...` | The `Authentication` section is missing. |

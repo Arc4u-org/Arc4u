@@ -102,13 +102,10 @@ Calling `GET /orders/7` writes these two lines (the `RequestId`, `RequestPath` a
 
 ```text
 29/09/2026 14:53:26,030  Information   Technical   27153  7   Program - <Main>$ - Reading order 7 - {"OrderId":7,"RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
-29/09/2026 14:53:26,044  Information   Technical   27153  7   Program - <Main>$ - Order shipped - {"OrderId":7,"Customer":"contoso","RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
+29/09/2026 14:53:26,044  Information   Business    27153  7   Program - <Main>$ - Order shipped - {"OrderId":7,"Customer":"contoso","RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
 ```
 
-Two things in this output are known issues, described in [Troubleshooting](#troubleshooting):
-
-- the second entry is a Business entry but the text formatter prints `Technical` (the category is not read correctly by the Arc4u Serilog formatters and stores, although the entry itself carries the right value);
-- `OrderId`, which was only a template argument of the first entry, is written again on the second one.
+`OrderId`, which was only a template argument of the first entry, is written again on the second one. This is a known issue, described in [Properties added with Add stay on later entries](#properties-added-with-add-stay-on-later-entries).
 
 ### Properties written on every entry
 
