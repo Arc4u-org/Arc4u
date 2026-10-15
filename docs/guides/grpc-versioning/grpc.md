@@ -176,9 +176,11 @@ scheme is the token's type; otherwise the header is `Bearer <token>`. The interc
 When one of the conditions is not met, the interceptor adds nothing and lets the call go on: the
 service then answers `Unauthenticated`. Most cases log at trace level; an identity whose
 authentication type differs from the settings' returns silently, without a log entry. The interceptor
-catches token provider errors, but it throws when the Arc4u logger is not registered, and a
-`KeyNotFoundException` when an `authorization` metadata already exists and the settings have no
-`AuthenticationType`.
+catches token provider errors, but it throws when the Arc4u logger is not registered.
+
+For a unary call made with the async API, the token is requested asynchronously before the call
+starts. The blocking and the streaming calls return their call object synchronously, so for them the
+interceptor waits for the token provider.
 
 ### Route through a reverse proxy with a path prefix
 

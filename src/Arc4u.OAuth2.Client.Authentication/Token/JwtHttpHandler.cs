@@ -102,7 +102,12 @@ public class JwtHttpHandler<T> : DelegatingHandler
 
         _logger.Technical().LogTokenProviderIsResolved(providerName);
 
-        var provider = GetResolver().GetRequiredKeyedService<ITokenProvider>(providerName);
+        var provider = GetResolver().GetKeyedService<ITokenProvider>(providerName);
+        if (provider is null)
+        {
+            _logger.Technical().LogNoAuthenticationTokenCanBeRetrieve(providerName);
+            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        }
 
         _logger.Technical().LogRequestingAToken();
         var tokenResultInfo = await provider.GetTokenAsync(_settings, new object()).ConfigureAwait(false);
@@ -110,10 +115,16 @@ public class JwtHttpHandler<T> : DelegatingHandler
         if (tokenResultInfo.IsFailed)
         {
             _logger.Technical().LogNoAuthenticationTokenCanBeRetrieve(providerName);
+            tokenResultInfo.Log();
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
+        // A successful result without a token (the NullTokenProvider) means no token must be sent.
         var tokenInfo = tokenResultInfo.Value;
+        if (tokenInfo is null)
+        {
+            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        }
 
         // check if the token is still valid.
         // This is due to gRPC. It is possible that a gRPC streaming call is not closed and the token in the HttpContext is expired.

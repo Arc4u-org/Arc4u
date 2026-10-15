@@ -31,9 +31,7 @@ public class OidcClientIdentityModelTokenProvider(
     /// <summary>Gets the access token of the user, refreshing it or logging the user in when necessary.</summary>
     /// <param name="settings">The provider settings. They are not used.</param>
     /// <param name="platformParameters">Not used.</param>
-    /// <returns>The access token.</returns>
-    /// <exception cref="Exception">The refresh of the token failed.</exception>
-    /// <exception cref="AccessViolationException">The login failed.</exception>
+    /// <returns>The access token, or a failed result when the login failed. When the refresh of the token fails, the user is logged in again.</returns>
     public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         // Check if the token exists?
@@ -65,16 +63,18 @@ public class OidcClientIdentityModelTokenProvider(
 
             var result = await client.RefreshTokenAsync(tokensInfo.RefreshToken.Token, parameters).ConfigureAwait(false);
 
-            if (result.IsError)
+            if (!result.IsError)
             {
-                throw new Exception(result.Error);
+                tokensInfo.RefreshToken = new TokenInfo(TokenType, result.RefreshToken, DateTime.UtcNow.AddDays(90));
+                tokensInfo.AccessToken = new TokenInfo(TokenType, result.AccessToken, result.AccessTokenExpiration.UtcDateTime);
+                await secureCache.PutAsync(TokenKey, tokensInfo).ConfigureAwait(false);
+
+                return tokensInfo.AccessToken;
             }
 
-            tokensInfo.RefreshToken = new TokenInfo(TokenType, result.RefreshToken, DateTime.UtcNow.AddDays(90));
-            tokensInfo.AccessToken = new TokenInfo(TokenType, result.AccessToken, result.AccessTokenExpiration.UtcDateTime);
-            await secureCache.PutAsync(TokenKey, tokensInfo).ConfigureAwait(false);
-
-            return tokensInfo.AccessToken;
+            // The refresh token is rejected (revoked or expired at the authority): the user must log in again.
+            tokensInfo.RefreshToken = null;
+            tokensInfo.AccessToken = null;
         }
 
         // Perform the login.
@@ -91,7 +91,7 @@ public class OidcClientIdentityModelTokenProvider(
 
         if (loginResult.IsError)
         {
-            throw new AccessViolationException(loginResult.Error);
+            return FluentResults.Result.Fail($"The login failed: {loginResult.Error} {loginResult.ErrorDescription}".TrimEnd());
         }
 
         tokensInfo.RefreshToken = new TokenInfo(TokenType, loginResult.RefreshToken, DateTime.UtcNow.AddDays(90));

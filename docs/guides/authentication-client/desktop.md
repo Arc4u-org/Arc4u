@@ -175,12 +175,12 @@ multi-factor authentication.
 
 ## Troubleshooting
 
-### The call fails with an exception from the token provider
+### The API returns 401 after the sign-in window was closed
 
-`OidcClientIdentityModelTokenProvider` throws when the refresh of the access token fails
-(`Exception` with the error of the authority) and when the sign-in fails or is cancelled
-(`AccessViolationException`). The desktop `JwtHttpHandler<T>` does not catch them: the call to the
-API fails with the same exception. Catch it where you call the API, and sign the user in again.
+When the authority rejects the refresh token, `OidcClientIdentityModelTokenProvider` drops the
+tokens and signs the user in again through the browser. When the sign-in fails or is cancelled, it
+returns a failed result: the desktop `JwtHttpHandler<T>` logs the error in the `Technical` category
+and sends the request without a token, so the API answers 401. Sign the user in again and retry.
 
 ### ConfigurationException: No settings found for OidcClient
 

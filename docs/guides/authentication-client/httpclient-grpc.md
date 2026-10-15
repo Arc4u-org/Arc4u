@@ -103,8 +103,9 @@ For each request, <xref:Arc4u.OAuth2.Token.JwtHttpHandler`1>:
    (case-insensitive).
 4. Sends the request unchanged when it already has an `Authorization` header.
 5. Resolves the keyed `ITokenProvider` named by `ProviderId`, and sends the request unchanged when
-   there is none, when the provider returns a failed result or when the token is expired. Settings
-   with an `AuthenticationType` but no `ProviderId` throw `KeyNotFoundException`.
+   the settings have no `ProviderId`, when no provider is registered under it, when the provider
+   returns a failed result or no token (<xref:Arc4u.OAuth2.Token.NullTokenProvider>), or when the
+   token is expired.
 6. Sets the header: with `Inject`, the scheme is the token type (`Bearer` and `Basic` go in
    `Authorization`, any other type is the name of a custom header); otherwise the scheme is
    `Bearer`.
@@ -175,8 +176,8 @@ public sealed class StockSynchronizer(IServiceScopeFactory scopeFactory, IScoped
 
 The accessor keeps the scope for the rest of the async flow, even after the scope is disposed: set
 it again for each new scope, otherwise the next call fails with `ObjectDisposedException`. Without
-a scope, the HttpClient handler falls back to the service provider it was created with, while the
-gRPC interceptor throws a `NullReferenceException` (known issue).
+a scope, the HttpClient handler and the gRPC interceptor fall back to the service provider they
+were created with.
 
 ## Troubleshooting
 
@@ -190,14 +191,9 @@ gRPC interceptor throws a `NullReferenceException` (known issue).
   result: the handler logs it in the `Technical` category.
 - For gRPC, the `IApplicationContext` has no principal.
 
-### NullReferenceException in the handler
-
 - The `ProviderId` is the string `"null"` (<xref:Arc4u.OAuth2.Token.NullTokenProvider>): the
-  provider returns a success without a token (known issue). The service `JwtHttpHandler<T>` and the
-  desktop `JwtHttpHandler<T>` then throw `NullReferenceException`. `OAuth2Interceptor<T>` logs the
-  exception and sends the call with the `culture` entry only, and the Blazor `JwtHttpHandler` logs
-  it and sends no header. Do not add a handler to a client that must not send a token.
-- gRPC call outside a request: see [Call an API outside a request](#call-an-api-outside-a-request).
+  provider returns a success without a token, and the handlers and the interceptor send the
+  request without one. This is by design.
 
 ## See also
 

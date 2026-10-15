@@ -53,7 +53,8 @@ public class JwtHttpHandler(IServiceProvider container, ILogger<JwtHttpHandler> 
                 var tokenProvider = container.GetRequiredKeyedService<ITokenProvider>(providerId);
                 var tokenResult = await tokenProvider.GetTokenAsync(settings, null).ConfigureAwait(false);
 
-                if (tokenResult.IsSuccess)
+                // A successful result without a token (the NullTokenProvider) means no token must be sent.
+                if (tokenResult.IsSuccess && tokenResult.Value is not null)
                 {
                     request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
                         tokenResult.Value.TokenType,

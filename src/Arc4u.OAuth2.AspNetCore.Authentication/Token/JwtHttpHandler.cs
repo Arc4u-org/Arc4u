@@ -146,7 +146,13 @@ namespace Arc4u.OAuth2.Token
 
             _logger.Technical().LogGetTheTokenProvider(GetType().Name);
 
-            var provider = containerResolve.GetKeyedService<ITokenProvider>(_settings.Values[TokenKeys.ProviderIdKey]);
+            if (!_settings.Values.TryGetValue(TokenKeys.ProviderIdKey, out var providerId))
+            {
+                _logger.Technical().LogNoTokenProvider(GetType().Name);
+                return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+
+            var provider = containerResolve.GetKeyedService<ITokenProvider>(providerId);
             if (provider is null)
             {
                 _logger.Technical().LogNoTokenProvider(GetType().Name);
@@ -160,6 +166,13 @@ namespace Arc4u.OAuth2.Token
             {
                 _logger.Technical().LogNoTokenProvider(GetType().Name);
                 tokenInfoResult.Log();
+                return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+
+            // A successful result without a token (the NullTokenProvider) means no token must be sent.
+            if (tokenInfoResult.Value is null)
+            {
+                _logger.Technical().LogNoTokenProvider(GetType().Name);
                 return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
             }
 
