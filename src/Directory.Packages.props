@@ -81,26 +81,26 @@
     <PackageVersion Include="System.Formats.Asn1" Version="10.0.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net11.0' ">
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.Caching.SqlServer" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="11.0.0-rc.1.26425.128" />
-    <PackageVersion Include="System.Formats.Asn1" Version="11.0.0-rc.1.26425.128" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.SqlServer" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="11.0.0-rc.2.26504.105" />
+    <PackageVersion Include="System.Formats.Asn1" Version="11.0.0-rc.2.26504.105" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
