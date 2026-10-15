@@ -244,12 +244,6 @@ key (known issue).
   `BlazorController` of the server, which sends the token back to a page of the package and the
   token is kept in the browser local storage.
 
-> [!WARNING]
-> The pop-up flow does not work in 9.0 (known issue): `BlazorController` redirects to
-> `_content/Arc4u.Standard.OAuth2.Blazor/GetToken.html`, the path of the package before it was
-> renamed, instead of `_content/Arc4u.OAuth2.Blazor/GetToken.html`, and the browser gets a 404.
-> Use `ClientTokenProvider`.
-
 ## Troubleshooting
 
 ### No service for type AttachCookiesHandler has been registered

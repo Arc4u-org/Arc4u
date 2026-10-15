@@ -88,11 +88,6 @@ What the rename does and does not change:
 - **Some packages were not carried over** to Arc4u 9, and some are new. The
   [package support](../guides/package-support.md) page lists the status of each one.
 
-> [!WARNING]
-> Known issue: `BlazorController` in `Arc4u.OAuth2.AspNetCore.Blazor` still redirects to
-> `_content/Arc4u.Standard.OAuth2.Blazor/GetToken.html`, which no longer exists after the rename,
-> so that redirect returns 404.
-
 The complete list of renamed packages is in
 [Package renames](../migration/8x-to-9.md#package-renames) in the migration guide.
 

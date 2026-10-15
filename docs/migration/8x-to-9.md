@@ -134,11 +134,6 @@ generators for dependency registration), `Arc4u.OAuth2.Client.Authentication` (O
 for desktop and mobile clients) and `Arc4u.AspNetCore.Versioning` (not published on NuGet yet).
 The [package support matrix](../guides/package-support.md) lists the status of every package.
 
-> [!WARNING]
-> Known issue: `BlazorController` (`Arc4u.OAuth2.AspNetCore.Blazor`) still redirects to
-> `_content/Arc4u.Standard.OAuth2.Blazor/GetToken.html`, which no longer exists after the rename,
-> so that redirect returns 404.
-
 ## Target frameworks
 
 Arc4u 8.3.x targeted `netstandard2.0`, `net8.0` and `net9.0` (ASP.NET Core packages: `net8.0`
