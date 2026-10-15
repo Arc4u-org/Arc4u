@@ -7,7 +7,8 @@ framework, how to propose a code change, and how to write and preview the docume
 
 - **Report a bug or request a feature** with the
   [issue templates](https://github.com/Arc4u-org/Arc4u/issues/new/choose). Include the Arc4u
-  package versions, the target framework and a minimal reproduction.
+  package versions, the target framework and a minimal reproduction. Report security
+  vulnerabilities privately, as described in [`SECURITY.md`](SECURITY.md).
 - **Fix a bug or add a feature** with a pull request (see [Contribute code](#contribute-code)).
   For anything larger than a small fix, open an issue first so the approach can be agreed on.
 - **Improve the documentation**: the site, the package READMEs or the XML comments

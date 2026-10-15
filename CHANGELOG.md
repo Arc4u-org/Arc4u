@@ -56,6 +56,8 @@ packages. It contains breaking changes: follow the
 
 ### Changed
 
+- Packages are now licensed under `Apache-2.0` in their NuGet metadata, matching the `LICENSE`
+  file; earlier versions declared `MIT`.
 - Packages renamed from `Arc4u.Standard.*` to `Arc4u.*` (assembly names too). See
   [Package renames](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#package-renames).
 - Target frameworks: `net10.0` and `net11.0` (the previews up to `9.0.0-preview37` target `net8.0`,

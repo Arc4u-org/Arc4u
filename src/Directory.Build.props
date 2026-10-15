@@ -16,7 +16,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Gilles Flisch</Authors>
     <Company>Gilles Flisch</Company>
-    <Copyright>Gilles Flisch 2021</Copyright>
+    <Copyright>Copyright 2021-2026 Gilles Flisch and the Arc4u contributors</Copyright>
     <PackageIcon>Arc4u.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://arc4u-org.github.io/Arc4u/</PackageProjectUrl>
@@ -27,7 +27,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <LangVersion>latest</LangVersion>
     <RootNamespace>$(MSBuildProjectName.Replace(" ", "_").Replace(".Standard", ""))</RootNamespace>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
