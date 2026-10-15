@@ -25,9 +25,11 @@ Report them privately with GitHub's
 - a description of the vulnerability and its impact;
 - the steps or a minimal reproduction to trigger it.
 
-We aim to acknowledge a report within 5 working days and to keep you informed until it is fixed.
-Once a fix is published, the vulnerability is disclosed in a GitHub security advisory and in the
-`Security` section of [`CHANGELOG.md`](CHANGELOG.md). Tell us if you want to be credited.
+We aim to acknowledge a report within 5 working days and to send a first assessment within
+15 working days, and we keep you informed until it is fixed. The fix is coordinated through a
+GitHub security advisory, with a CVE requested where appropriate. Once the fix is published, the
+advisory is made public, the vulnerability is listed in the `Security` section of
+[`CHANGELOG.md`](CHANGELOG.md), and you are credited unless you ask not to be.
 
 ## Known issues
 
