@@ -17,14 +17,14 @@ public abstract class AuditEntity<TId, TAuditedBy, TAuditedOn>
     : IdEntity<TId>
     , IAuditEntity<TAuditedBy, TAuditedOn>
 {
-    /// <ignore/>
+    /// <summary>The name of the <see cref="AuditedBy"/> property, used when raising property change notifications.</summary>
     protected const string AuditedByPropertyName = "AuditedBy";
-    /// <ignore/>
+    /// <summary>The name of the <see cref="AuditedOn"/> property, used when raising property change notifications.</summary>
     protected const string AuditedOnPropertyName = "AuditedOn";
 
     #region IEntityAudit Members
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="AuditedBy"/> property.</summary>
     protected TAuditedBy _auditedBy = default!;
 
     /// <summary>
@@ -45,7 +45,7 @@ public abstract class AuditEntity<TId, TAuditedBy, TAuditedOn>
         }
     }
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="AuditedOn"/> property.</summary>
     protected TAuditedOn _auditedOn = default!;
 
     /// <summary>

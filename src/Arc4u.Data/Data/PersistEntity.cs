@@ -13,15 +13,15 @@ namespace Arc4u.Data;
 [DataContract]
 public abstract class PersistEntity : NotifyEntity, IPersistEntity
 {
-    /// <ignore/>
+    /// <summary>The name of the <see cref="PersistChange"/> property, used when raising property change notifications.</summary>
     protected const string PersistChangePropertyName = "PersistChange";
 
-    /// <ignore/>
+    /// <summary>Composite format of the message thrown when <see cref="PersistChange"/> is set to a value that is not reachable from its current value; <c>{0}</c> is the current value and <c>{1}</c> the requested one.</summary>
     protected const string InvalidTransition = "Invalid transition between {0} and {1} change.";
 
     #region IPersistChange Members
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="PersistChange"/> property.</summary>
     protected PersistChange _persistChange;
 
     /// <summary>
@@ -99,16 +99,14 @@ public abstract class PersistEntity : NotifyEntity, IPersistEntity
 
     #region Deserialization Members
 
-    /// <ignore/>
-    /// <remarks>This methods must be public; otherwise Silverlight serializers will not be able to use it.</remarks>
+    /// <summary>Suspends property change notifications while the entity is being deserialized.</summary>
     [OnDeserializing]
     void OnDeserializing(StreamingContext context)
     {
         IgnoreOnPropertyChanged = true;
     }
 
-    /// <ignore/>        
-    /// <remarks>This methods must be public; otherwise Silverlight serializers will not be able to use it.</remarks>
+    /// <summary>Resumes property change notifications once the entity has been deserialized.</summary>
     [OnDeserialized]
     void OnDeserialized(StreamingContext context)
     {

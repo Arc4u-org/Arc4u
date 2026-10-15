@@ -16,14 +16,14 @@ public abstract class CreateAuditEntity<TId, TCreatedBy, TCreatedOn>
     : IdEntity<TId>
     , ICreateAuditEntity<TCreatedBy, TCreatedOn>
 {
-    /// <ignore/>
+    /// <summary>The name of the <see cref="CreatedBy"/> property, used when raising property change notifications.</summary>
     protected const string CreatedByPropertyName = "CreatedBy";
-    /// <ignore/>
+    /// <summary>The name of the <see cref="CreatedOn"/> property, used when raising property change notifications.</summary>
     protected const string CreatedOnPropertyName = "CreatedOn";
 
     #region ICreateEntity Members
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="CreatedBy"/> property.</summary>
     protected TCreatedBy _createdBy = default!;
 
     /// <summary>
@@ -44,7 +44,7 @@ public abstract class CreateAuditEntity<TId, TCreatedBy, TCreatedOn>
         }
     }
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="CreatedOn"/> property.</summary>
     protected TCreatedOn _createdOn = default!;
 
     /// <summary>

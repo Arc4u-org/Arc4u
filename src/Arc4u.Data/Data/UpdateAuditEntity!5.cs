@@ -18,9 +18,9 @@ public abstract class UpdateAuditEntity<TId, TCreatedBy, TCreatedOn, TUpdatedBy,
     : CreateAuditEntity<TId, TCreatedBy, TCreatedOn>
     , IUpdateAuditEntity<TCreatedBy, TCreatedOn, TUpdatedBy, TUpdatedOn>
 {
-    /// <ignore/>
+    /// <summary>The name of the <see cref="UpdatedBy"/> property, used when raising property change notifications.</summary>
     protected const string UpdatedByPropertyName = "UpdatedBy";
-    /// <ignore/>
+    /// <summary>The name of the <see cref="UpdatedOn"/> property, used when raising property change notifications.</summary>
     protected const string UpdatedOnPropertyName = "UpdatedOn";
 
     /// <summary>
@@ -38,7 +38,7 @@ public abstract class UpdateAuditEntity<TId, TCreatedBy, TCreatedOn, TUpdatedBy,
 
     #region IEntityAudit Members
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="UpdatedBy"/> property.</summary>
     protected TUpdatedBy _updatedBy = default!;
 
     /// <summary>
@@ -59,7 +59,7 @@ public abstract class UpdateAuditEntity<TId, TCreatedBy, TCreatedOn, TUpdatedBy,
         }
     }
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="UpdatedOn"/> property.</summary>
     protected TUpdatedOn _updatedOn = default!;
 
     /// <summary>

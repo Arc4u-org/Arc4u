@@ -21,14 +21,14 @@ public abstract class DeleteAuditEntity<TId, TCreatedBy, TCreatedOn, TUpdatedBy,
     : UpdateAuditEntity<TId, TCreatedBy, TCreatedOn, TUpdatedBy, TUpdatedOn>
     , IDeleteAuditEntity<TCreatedBy, TCreatedOn, TUpdatedBy, TUpdatedOn, TDeletedBy, TDeletedOn>
 {
-    /// <ignore/>
+    /// <summary>The name of the <see cref="DeletedBy"/> property, used when raising property change notifications.</summary>
     protected const string DeletedByPropertyName = "DeletedBy";
-    /// <ignore/>
+    /// <summary>The name of the <see cref="DeletedOn"/> property, used when raising property change notifications.</summary>
     protected const string DeletedOnPropertyName = "DeletedOn";
 
     #region IEntityAudit Members
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="DeletedBy"/> property.</summary>
     protected TDeletedBy _deletedBy = default!;
 
     /// <summary>
@@ -49,7 +49,7 @@ public abstract class DeleteAuditEntity<TId, TCreatedBy, TCreatedOn, TUpdatedBy,
         }
     }
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="DeletedOn"/> property.</summary>
     protected TDeletedOn _deletedOn = default!;
 
     /// <summary>

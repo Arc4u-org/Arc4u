@@ -16,7 +16,7 @@ public abstract class IdEntity<TId>
     , IIdEntity<TId>
     , IEquatable<IdEntity<TId>>
 {
-    /// <ignore/>
+    /// <summary>The name of the <see cref="Id"/> property, used when raising property change notifications.</summary>
     protected const string IdPropertyName = "Id";
 
     #region Constructors
@@ -54,7 +54,7 @@ public abstract class IdEntity<TId>
 
     #region IIdEntity<TId> Members
 
-    /// <ignore/>
+    /// <summary>Backing field of the <see cref="Id"/> property.</summary>
     protected TId _id;
 
     /// <summary>

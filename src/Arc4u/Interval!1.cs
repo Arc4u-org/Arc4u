@@ -489,7 +489,7 @@ public class Interval<T>
     /// <param name="other">Another <see cref="Interval&lt;T&gt;"/>.</param>
     /// <returns>An <see cref="IntervalCollection&lt;T&gt;"/> that contains all distinct elements of this instance and the <paramref name="other"/> one.</returns>
     /// <remarks>
-    /// While performing an <see cref="Interval.UnionOf&lt;T&gt;">UnionOf</see> intervals, depending of the specified <see cref="UnionDenominator"/>, the result will be different.
+    /// While performing an <see cref="Interval.UnionOf{T}(UnionDenominator, Interval{T}[])">UnionOf</see> intervals, depending of the specified <see cref="UnionDenominator"/>, the result will be different.
     /// If you consider the following intervals:
     /// <list type="table">
     /// <item>
