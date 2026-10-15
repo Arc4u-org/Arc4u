@@ -1,5 +1,6 @@
 ﻿using Arc4u.Caching;
 using Arc4u.Dependency.Attribute;
+using Arc4u.OAuth2.Client.Authentication.Options;
 using Arc4u.OAuth2.Options;
 using Arc4u.OAuth2.Token;
 using Duende.IdentityModel.Client;
@@ -11,18 +12,21 @@ namespace Arc4u.OAuth2.Client.Authentication.TokenProvider;
 
 /// <summary>
 /// An <see cref="ITokenProvider"/> for a client application using <c>Duende.IdentityModel.OidcClient</c>. The tokens are kept in the secure cache; an expired access token is renewed with the refresh token,
-/// and the user is logged in through the browser when there is no valid refresh token. The refresh token is assumed valid for 90 days.
+/// and the user is logged in through the browser when there is no valid refresh token. The access token is refreshed when it expires in less than
+/// <see cref="OidcClientAuthenticationOptions.ForceRefreshTimeoutTimeSpan"/>, and the refresh token is assumed valid for <see cref="OidcClientAuthenticationOptions.RefreshTokenLifetime"/>.
 /// </summary>
 /// <param name="options">The <c>OidcClient</c> options.</param>
 /// <param name="tokensInfo">The access and refresh tokens of the user.</param>
 /// <param name="secureCache">The secure cache in which the tokens are persisted.</param>
-/// <param name="apiExtraContextOption">The extra parameters added to the authorization and token requests.</param>
+/// <param name="apiExtraContextOption">The extra parameters added to the authorization (front channel) and token (back channel) requests.</param>
+/// <param name="authenticationOptions">The client authentication options, giving the refresh threshold and the refresh token lifetime.</param>
 [Export(TokenProviderName, typeof(ITokenProvider))]
 public class OidcClientIdentityModelTokenProvider(
                                                     OidcClientOptions options,
                                                     TokenRefreshInfo tokensInfo,
                                                     ISecureCache secureCache,
-                                                    IOptionsMonitor<ApiExtraContextAuthenticationOption> apiExtraContextOption) : ITokenProvider
+                                                    IOptionsMonitor<ApiExtraContextAuthenticationOption> apiExtraContextOption,
+                                                    IOptionsMonitor<OidcClientAuthenticationOptions> authenticationOptions) : ITokenProvider
 {
     /// <summary>The key (<c>OidcClientIdentityModel</c>) under which the provider is registered.</summary>
     public const string TokenProviderName = "OidcClientIdentityModel";
@@ -42,7 +46,10 @@ public class OidcClientIdentityModelTokenProvider(
             tokensInfo.RefreshToken = tokens.RefreshToken;
         }
 
-        if (tokensInfo.AccessToken is not null && tokensInfo.AccessToken.ExpiresOnUtc > DateTime.UtcNow)
+        var clientOptions = authenticationOptions.CurrentValue;
+
+        // The access token is renewed before it expires, so it does not expire while a call is in flight.
+        if (tokensInfo.AccessToken is not null && tokensInfo.AccessToken.ExpiresOnUtc - clientOptions.ForceRefreshTimeoutTimeSpan > DateTime.UtcNow)
         {
             return tokensInfo.AccessToken;
         }
@@ -51,11 +58,8 @@ public class OidcClientIdentityModelTokenProvider(
 
         if (tokensInfo.RefreshToken is not null && tokensInfo.RefreshToken.ExpiresOnUtc > DateTime.UtcNow)
         {
+            // The refresh is a token endpoint (back channel) request: only the token parameters apply.
             var parameters = new Parameters();
-            foreach (var parameter in apiExtraContextOption.CurrentValue.AuthorizationParameters.Values)
-            {
-                parameters.Add(parameter.Key, parameter.Value);
-            }
             foreach (var parameter in apiExtraContextOption.CurrentValue.TokenParameters.Values)
             {
                 parameters.Add(parameter.Key, parameter.Value);
@@ -65,7 +69,7 @@ public class OidcClientIdentityModelTokenProvider(
 
             if (!result.IsError)
             {
-                tokensInfo.RefreshToken = new TokenInfo(TokenType, result.RefreshToken, DateTime.UtcNow.AddDays(90));
+                tokensInfo.RefreshToken = new TokenInfo(TokenType, result.RefreshToken, DateTime.UtcNow + clientOptions.RefreshTokenLifetime);
                 tokensInfo.AccessToken = new TokenInfo(TokenType, result.AccessToken, result.AccessTokenExpiration.UtcDateTime);
                 await secureCache.PutAsync(TokenKey, tokensInfo).ConfigureAwait(false);
 
@@ -77,15 +81,16 @@ public class OidcClientIdentityModelTokenProvider(
             tokensInfo.AccessToken = null;
         }
 
-        // Perform the login.
+        // Perform the login: the authorization parameters go to the authorize request (front channel, in the browser),
+        // the token parameters to the code exchange at the token endpoint (back channel).
         var loginRequest = new LoginRequest();
         foreach (var parameter in apiExtraContextOption.CurrentValue.AuthorizationParameters.Values)
         {
-            loginRequest.BackChannelExtraParameters.Add(parameter.Key, parameter.Value);
+            loginRequest.FrontChannelExtraParameters.Add(parameter.Key, parameter.Value);
         }
         foreach (var parameter in apiExtraContextOption.CurrentValue.TokenParameters.Values)
         {
-            loginRequest.FrontChannelExtraParameters.Add(parameter.Key, parameter.Value);
+            loginRequest.BackChannelExtraParameters.Add(parameter.Key, parameter.Value);
         }
         var loginResult = await client.LoginAsync(loginRequest, CancellationToken.None).ConfigureAwait(false);
 
@@ -94,7 +99,7 @@ public class OidcClientIdentityModelTokenProvider(
             return FluentResults.Result.Fail($"The login failed: {loginResult.Error} {loginResult.ErrorDescription}".TrimEnd());
         }
 
-        tokensInfo.RefreshToken = new TokenInfo(TokenType, loginResult.RefreshToken, DateTime.UtcNow.AddDays(90));
+        tokensInfo.RefreshToken = new TokenInfo(TokenType, loginResult.RefreshToken, DateTime.UtcNow + clientOptions.RefreshTokenLifetime);
         tokensInfo.AccessToken = new TokenInfo(TokenType, loginResult.AccessToken, loginResult.AccessTokenExpiration.UtcDateTime);
         await secureCache.PutAsync("TokensInfo", tokensInfo).ConfigureAwait(false);
 

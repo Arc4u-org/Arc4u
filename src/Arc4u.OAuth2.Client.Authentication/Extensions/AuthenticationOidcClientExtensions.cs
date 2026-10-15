@@ -189,10 +189,9 @@ namespace Arc4u.OAuth2.Extensions
             options.LoadProfile = settings.LoadProfile;
             options.ForceRefreshTimeoutTimeSpan = settings.ForceRefreshTimeoutTimeSpan;
             options.RefreshTokenLifetime = settings.RefreshTokenLifetime;
+            options.ClockSkew = settings.ClockSkew;
             options.ClaimsIdentifierOptions =
                 ClaimsidentifierExtension.PrepareAction(configuration, settings.ClaimsIdentifierSectionPath);
-            options.NameClaimType = settings.NameClaimType;
-            options.RoleClaimType = settings.RoleClaimType;
         }
 
         private static string? ValidateOidcConfiguration(OidcClientAuthenticationSectionOptions settings)
@@ -202,18 +201,6 @@ namespace Arc4u.OAuth2.Extensions
             if (settings.DefaultAuthority is null)
             {
                 configErrors += "DefaultAuthority must be filled!" + System.Environment.NewLine;
-            }
-
-            if (string.IsNullOrWhiteSpace(settings.NameClaimType))
-            {
-                configErrors += "We need a name claim type defined specifically for your services." +
-                                System.Environment.NewLine;
-            }
-
-            if (string.IsNullOrWhiteSpace(settings.RoleClaimType))
-            {
-                configErrors += "We need a role claim type defined specifically for your services." +
-                                System.Environment.NewLine;
             }
 
             if (string.IsNullOrWhiteSpace(settings.OidcClientIdSettingsSectionPath))
@@ -247,6 +234,8 @@ namespace Arc4u.OAuth2.Extensions
         {
             ArgumentNullException.ThrowIfNull(options.OidcClientSettingsOption);
             ArgumentNullException.ThrowIfNull(options.DefaultAuthority.GetMetaDataAddress());
+            ArgumentOutOfRangeException.ThrowIfLessThan(options.ForceRefreshTimeoutTimeSpan, TimeSpan.Zero);
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(options.RefreshTokenLifetime, TimeSpan.Zero);
         }
 
     }

@@ -74,6 +74,9 @@ whose full path is in the `OidcClientIdSettingsSectionPath` key of that section,
 | `Authentication:CallbackPath` | `string` | `/` | Redirect URI registered for the app. |
 | `Authentication:PostLogoutRedirectUri` | `string` | `/` | Redirect URI after sign-out. |
 | `Authentication:LoadProfile` | `bool` | `false` | Loads the claims of the user info endpoint. |
+| `Authentication:ForceRefreshTimeoutTimeSpan` | `TimeSpan` | `00:05:00` | The access token is renewed with the refresh token once it expires in less than this value. |
+| `Authentication:RefreshTokenLifetime` | `TimeSpan` | `90.00:00:00` | Assumed lifetime of a refresh token. Older than that, the user logs in again. Set it to the lifetime configured in the identity provider. |
+| `Authentication:ClockSkew` | `TimeSpan` | `00:05:00` | Tolerated clock difference when the tokens are validated. |
 
 `Application.Configuration` is read by `AddApplicationConfig` in the code below (see
 [Configuration](../configuration/index.md)). HTTPS is required for the metadata, except when the
@@ -81,12 +84,14 @@ authority is `localhost`. The `Authentication` section also
 takes the claims settings of the server authentication (`ClaimsIdentifier`, `DomainsMapping`,
 `ClaimsMiddleWare:ClaimsFiller`); see [Server authentication](../authentication-server/index.md).
 
+The extra parameters of `Authentication:OidcClient.Settings:AuthorizationEndpoint` are added to the
+authorize request (in the browser), those of `Authentication:OidcClient.Settings:TokenEndpoint` to
+the token requests (code exchange and refresh).
+
 > [!NOTE]
-> `ForceRefreshTimeoutTimeSpan`, `RefreshTokenLifetime`, `NameClaimType`, `RoleClaimType` and
-> `ValidateAuthority` are bound but not used (known issue): the access token is refreshed only
-> once expired, and the refresh token is assumed valid for 90 days. `ClockSkew` is not copied
-> from the configuration: it stays at 5 minutes unless you use the overload that takes an
-> `Action<OidcClientAuthenticationOptions>`.
+> Since 9.0, the client authentication has no `NameClaimType`, `RoleClaimType` or
+> `ValidateAuthority`: they were never used. The principal of the client is built by the
+> `AppPrincipalFactory`. Remove them from your configuration and code.
 
 ## Register the services
 
