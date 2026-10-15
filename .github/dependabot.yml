@@ -1,11 +1,33 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# Dependabot version updates.
+# https://docs.github.com/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# GitHub only reads this file from the default branch (master). Until 9.0 is the
+# default branch, this file must also be on master for the updates to run.
+# target-branch points the update PRs at develop/9.0.0, where development happens.
+# Security updates (from Dependabot alerts) always target the default branch.
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # NuGet packages. Versions are managed centrally in src/Directory.Packages.props.
+  - package-ecosystem: "nuget"
+    directory: "/src"
+    target-branch: "develop/9.0.0"
     schedule:
-      interval: "weekly" 
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Actions used by the workflows in .github/workflows.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "develop/9.0.0"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

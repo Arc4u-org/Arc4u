@@ -1,0 +1,79 @@
+name: Vulnerable packages
+
+# Lists NuGet packages (direct and transitive) with known vulnerabilities, using
+# the GitHub Advisory Database that NuGet queries. Fails on high or critical.
+# Replaces the OWASP Dependency-Check workflows, which did not understand the
+# central package versions in src/Directory.Packages.props.
+# The weekly schedule only runs from the default branch (master).
+
+on:
+  push:
+    branches:
+      - 'develop/9.0.0'
+  pull_request:
+    branches:
+      - 'develop/9.0.0'
+      - 'master'
+    paths:
+      - 'src/**/*.csproj'
+      - 'src/Directory.Packages.props'
+      - 'src/Directory.Build.props'
+      - 'src/global.json'
+      - '.github/workflows/vulnerable-packages.yml'
+  schedule:
+    - cron: '41 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # src/global.json pins the SDK with rollForward disabled.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+
+      - name: Restore
+        run: dotnet restore src/Arc4u.slnx
+
+      - name: List vulnerable packages
+        shell: bash
+        run: |
+          dotnet list src/Arc4u.slnx package --vulnerable --include-transitive --format json > vulnerable.json
+
+          # One line per (project, package, severity), duplicates across frameworks removed.
+          jq -r '
+            [ .projects[]
+              | .path as $project
+              | .frameworks[]?
+              | (.topLevelPackages[]?, .transitivePackages[]?)
+              | select(.vulnerabilities)
+              | . as $package
+              | .vulnerabilities[]
+              | "\(.severity)\t\($package.id) \($package.resolvedVersion)\t\(.advisoryurl)\t\($project | split("/") | last)" ]
+            | unique | .[]' vulnerable.json | tee vulnerable.txt
+
+          if [ ! -s vulnerable.txt ]; then
+            echo "No vulnerable packages."
+            exit 0
+          fi
+
+          {
+            echo "### Vulnerable NuGet packages"
+            echo
+            echo "| Severity | Package | Advisory | Project |"
+            echo "|---|---|---|---|"
+            sed 's/\t/ | /g; s/^/| /; s/$/ |/' vulnerable.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if grep -q -E '^(High|Critical)' vulnerable.txt; then
+            echo "::error::High or critical vulnerabilities found, see the job summary."
+            exit 1
+          fi
+          echo "::warning::Low or moderate vulnerabilities found, see the job summary."
