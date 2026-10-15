@@ -129,6 +129,9 @@ packages. It contains breaking changes: follow the
 ### Security
 
 - Vulnerable dependencies upgraded ([#130](https://github.com/Arc4u-org/Arc4u/issues/130)).
+- `Arc4u.Caching.SqlServer`: `System.Security.Cryptography.Pkcs`, a dependency of
+  `Microsoft.Data.SqlClient`, raised from 9.0.18 to 9.0.21 (CVE-2026-84008, high;
+  CVE-2026-70162, moderate; both denial of service).
 
 ## [8.3.2] - 2025-07-18
 
