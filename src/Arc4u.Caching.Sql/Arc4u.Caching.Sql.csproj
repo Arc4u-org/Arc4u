@@ -9,6 +9,8 @@
     <PackageReference Include="System.Text.Json" />
     <PackageReference Include="Azure.Identity" />
     <PackageReference Include="Microsoft.Data.SqlClient" />
+    <!-- Lifts the transitive dependency of Microsoft.Data.SqlClient above CVE-2026-84008 and CVE-2026-70162. Remove once SqlClient depends on 9.0.21 or later. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Arc4u.Caching\Arc4u.Caching.csproj" />
