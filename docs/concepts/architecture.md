@@ -146,7 +146,7 @@ layer.
 | Data access layer | `Arc4u.EfCore`, `Arc4u.MongoDB`, `Arc4u.OData` | [Data access](../guides/data/index.md) |
 | Service agents | `Arc4u.OAuth2.Client`, `Arc4u.OAuth2.Client.Authentication` | [Client authentication and Blazor](../guides/authentication-client/index.md) |
 | Service agents | `Arc4u.gRPC` | [gRPC and API versioning](../guides/grpc-versioning/index.md) |
-| Domain model | `Arc4u.Data`, `Arc4u.Core` | [Data access](../guides/data/index.md) |
+| Domain model | `Arc4u.Core` | [Domain model](#domain-model) |
 | Cross-cutting | `Arc4u.Dependency`, `Arc4u.Dependency.Tool` | [Dependency injection](../guides/dependency-injection/index.md) |
 | Cross-cutting | `Arc4u.Configuration` and its extensions | [Configuration](../guides/configuration/index.md) |
 | Cross-cutting | `Arc4u.Diagnostics`, `Arc4u.Diagnostics.Serilog` | [Diagnostics and logging](../guides/diagnostics/index.md) |
@@ -157,7 +157,7 @@ Three foundation packages are referenced by most of the others:
 |---|---|
 | `Arc4u.Core` | Settings abstractions (<xref:Arc4u.IKeyValueSettings>, <xref:Arc4u.IAppSettings>), the application configuration model (<xref:Arc4u.Configuration.ApplicationConfig>) and the <xref:Arc4u.Core.ValueObject> base class for the domain model. |
 | `Arc4u.Threading` | Threading helpers: <xref:Arc4u.Threading.Scope`1>, <xref:Arc4u.Threading.AsyncLock>, <xref:Arc4u.Threading.AsyncSemaphore> and <xref:Arc4u.Threading.Culture>. |
-| `Arc4u` | Shared building blocks: the [AppPrincipal](glossary.md#appprincipal) and [application context](glossary.md#application-context), certificate loading, change tracking (<xref:Arc4u.Data.IPersistEntity>), extension methods and collections. |
+| `Arc4u` | Shared building blocks: the [AppPrincipal](glossary.md#appprincipal) and [application context](glossary.md#application-context), certificate loading, query include paths (<xref:Arc4u.Graph`1>), extension methods and collections. |
 
 The [package support](../guides/package-support.md) page lists every package with its status
 and target frameworks.

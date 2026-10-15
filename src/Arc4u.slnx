@@ -28,7 +28,6 @@
   <Project Path="Arc4u.Configuration.Store/Arc4u.Configuration.Store.csproj" />
   <Project Path="Arc4u.Configuration/Arc4u.Configuration.csproj" />
   <Project Path="Arc4u.Core/Arc4u.Core.csproj" />
-  <Project Path="Arc4u.Data/Arc4u.Data.csproj" />
   <Project Path="Arc4u.Dependency.Tool/Arc4u.Dependency.Tool.csproj" />
   <Project Path="Arc4u.Dependency/Arc4u.Dependency.csproj" />
   <Project Path="Arc4u.Diagnostics.Serilog.Sinks.RealmDb/Arc4u.Diagnostics.Serilog.Sinks.RealmDb.csproj" />

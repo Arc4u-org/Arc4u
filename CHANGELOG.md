@@ -53,11 +53,6 @@ packages. It contains breaking changes: follow the
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
   `JsonSerialization` accepts a `JsonSerializerContext`.
-- `Arc4u.EfCore`: `ChangeTracker.TrackPersistGraph`, which sets the state of every entity of a graph
-  from its `PersistChange`, including the entities the context already tracks, and
-  `SavePersistChangesAsync` / `SavePersistChanges`, which reset `PersistChange` to `None` after a
-  successful save ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)). See
-  [Entity Framework Core and entity validation](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#entity-framework-core-and-entity-validation).
 
 ### Changed
 
@@ -100,9 +95,6 @@ packages. It contains breaking changes: follow the
 - The authentication cookie expires after the shorter of `AuthenticationTicketTtl` and
   `RefreshTokenLifetime`, and its maximum age is `RefreshTokenLifetime`.
 - Dapr packages updated to 1.18.
-- `PersistEntity.Validate<T>(logger)` and `ValidateAll(logger)` write the validation errors to the
-  logger you pass, instead of the FluentResults logger (`Validate<T>`) or nothing (`ValidateAll`)
-  ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)).
 - `MemoryLogMessages` (`MemoryLogDbSink.LogMessages`) is a thread-safe `IReadOnlyCollection<LogMessage>`
   instead of a `List<LogMessage>`: use `Add`, `Clear`, `Count` and `GetPage`, and enumerate it to
   read a snapshot ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).
@@ -137,7 +129,14 @@ packages. It contains breaking changes: follow the
 - The `DataContractSerializer`, `DataContractJsonSerializer` and `XmlSerializer` string helpers, and
   `Arc4u.Utils.Enum<T>` / `EnumUtil`.
 - The AutoMapper dependency of `Arc4u.Diagnostics.Serilog.Sinks.RealmDb`.
-- `Arc4u.Data.RelationAttribute`, which nothing in Arc4u read.
+- The change-tracking concept, obsolete with a domain-centric approach
+  ([#266](https://github.com/Arc4u-org/Arc4u/issues/266)): the `Arc4u.Standard.Data` package
+  (`IdEntity`, `PersistEntity`, the audit entities, `EntitySet<TEntity>`, `EntityItem<TEntity>`,
+  `RelationAttribute`, `Validate<T>`, `ValidateAll`), `IPersistEntity` and `PersistChange`,
+  `ChangeGraphTracker` and `PersisteChangeExtension` in `Arc4u.EfCore`, and the `IsInsert`,
+  `IsUpdate`, `IsDelete`, `IsNone` rules and `ValidatorPredicates` in `Arc4u.FluentValidation`.
+  `Graph<T>` and `GraphExtension` are kept. See
+  [Arc4u.Data and change tracking removed](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#arc4udata-and-change-tracking-removed).
 - `Arc4u.gRPC`: `ClientErrorInterceptor`. With `Grpc.Net.Client` it converted almost nothing, since a
   call fails when it is awaited, after the interceptor returned. Catch the `RpcException` and use
   `ToResult()` to get the server's ProblemDetails back.
@@ -151,9 +150,6 @@ packages. It contains breaking changes: follow the
 - `FlagsEnum.TryPowerOfTwo` and `TryPowerOfTwoExponent` accepted values that are not powers of two,
   so `FlagValues<T>()` also returned `None` and composite values
   ([#261](https://github.com/Arc4u-org/Arc4u/issues/261)).
-- A new child added under an entity the EF Core context already tracks was marked `Modified` and
-  `SaveChanges` threw `DbUpdateConcurrencyException`; use `TrackPersistGraph`
-  ([#255](https://github.com/Arc4u-org/Arc4u/issues/255)).
 - `MemoryLogStore.GetLogs` never matched a criteria against a message with capital letters; the
   comparison now ignores case. Reading the memory log store while the sink wrote to it could throw
   `Collection was modified` ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).

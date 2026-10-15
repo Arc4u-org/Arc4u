@@ -1,5 +1,4 @@
 using Arc4u.AspNetCore.Results;
-using Arc4u.Data;
 using Arc4u.Results.Validation;
 using Arc4u.Validation;
 using AwesomeAssertions;
@@ -9,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
-using ValidatorPredicates = Arc4u.FluentValidation.ValidatorPredicates;
 
 namespace Arc4u.UnitTest.Results;
 
@@ -34,11 +32,6 @@ public class ResultsApiPolishTests
         {
             RuleFor(e => e.CreatedOn).IsDateOnly();
         }
-    }
-
-    private sealed class Entity : IPersistEntity
-    {
-        public PersistChange PersistChange { get; set; }
     }
 
     [Fact]
@@ -71,14 +64,6 @@ public class ResultsApiPolishTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().StartWith("Property must be a DateTime with no Time");
-    }
-
-    [Fact]
-    [Trait("Category", "CI")]
-    public void IsNone_Should_Detect_An_Unchanged_Entity()
-    {
-        ValidatorPredicates.IsNone(new Entity { PersistChange = PersistChange.None }).Should().BeTrue();
-        ValidatorPredicates.IsNone(new Entity { PersistChange = PersistChange.Insert }).Should().BeFalse();
     }
 
     [Fact]

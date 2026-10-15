@@ -127,43 +127,32 @@ answers `422`.
 > `Arc4u.Results.Validation.Severity` and `FluentValidation.Severity` have the same name. A file that imports both
 > namespaces must qualify the one it uses.
 
-## Rules for persisted entities
+## Rules for DateTime properties
 
-`Arc4u.FluentValidation` also contains rules for entities that carry a `PersistChange` (the `IPersistEntity` interface
-of `Arc4u`, used by the [data guide](../data/index.md)). They check that the state of the entity matches the operation
-you are validating.
+`Arc4u.FluentValidation` also contains rules for `DateTime` properties.
 
 | Rule | Passes when the property is |
 |---|---|
-| `IsInsert()` | `PersistChange.Insert` |
-| `IsUpdate()` | `PersistChange.Update` |
-| `IsDelete()` | `PersistChange.Delete` |
-| `IsNone()` | `PersistChange.None` |
 | `IsUtcDateTime()` | A `DateTime` whose `Kind` is `Utc` |
 | `IsDateOnly()` | A `DateTime` whose time of day is zero |
 
 ```csharp
-using Arc4u.Data;
 using Arc4u.Validation;
 using FluentValidation;
 
-public class CustomerInsertValidator : AbstractValidator<Customer>
+public class CustomerValidator : AbstractValidator<Customer>
 {
-    public CustomerInsertValidator()
+    public CustomerValidator()
     {
-        RuleFor(x => x.PersistChange).IsInsert();
         RuleFor(x => x.CreatedOn).IsUtcDateTime();
     }
 }
 
-public class Customer : PersistEntity
+public class Customer
 {
     public DateTime CreatedOn { get; set; }
 }
 ```
-
-`ValidatorPredicates` in the namespace `Arc4u.FluentValidation` offers the same tests as predicates for
-`When(...)`: `IsInsert`, `IsUpdate`, `IsDelete` and `IsNone`.
 
 ## Troubleshooting
 

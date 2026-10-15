@@ -19,7 +19,7 @@ documents every public type.
 | [Caching](caching/index.md) | `Arc4u.Caching`, `Arc4u.Caching.Memory`, `Arc4u.Caching.Redis`, `Arc4u.Caching.SqlServer`, `Arc4u.Caching.Dapr`, `Arc4u.Serializer`, `Arc4u.Serializer.JSon` |
 | [Results and errors](results/index.md) | `Arc4u.Results`, `Arc4u.AspNetCore.Results`, `Arc4u.FluentValidation` |
 | [gRPC and API versioning](grpc-versioning/index.md) | `Arc4u.gRPC`, `Arc4u.AspNetCore.gRpc`, `Arc4u.AspNetCore.Versioning` |
-| [Data access](data/index.md) | `Arc4u.Data`, `Arc4u.EfCore`, `Arc4u.MongoDB`, `Arc4u.OData` |
+| [Data access](data/index.md) | `Arc4u.EfCore`, `Arc4u.MongoDB`, `Arc4u.OData` |
 | [Dispatcher](dispatcher/index.md) | `Arc4u.Dispatcher` |
 
 The foundation packages `Arc4u`, `Arc4u.Core` and `Arc4u.Threading` are used by

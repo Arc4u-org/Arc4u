@@ -78,8 +78,7 @@ Each package ID below is the name you pass to `dotnet add package`. The area nam
 | [gRPC and versioning](https://arc4u-org.github.io/Arc4u/guides/grpc-versioning/) | `Arc4u.gRPC` | [![Arc4u.gRPC](https://img.shields.io/nuget/vpre/Arc4u.gRPC?label=)](https://www.nuget.org/packages/Arc4u.gRPC) |
 |  | `Arc4u.AspNetCore.gRpc` | [![Arc4u.AspNetCore.gRpc](https://img.shields.io/nuget/vpre/Arc4u.AspNetCore.gRpc?label=)](https://www.nuget.org/packages/Arc4u.AspNetCore.gRpc) |
 |  | `Arc4u.AspNetCore.Versioning` | not on NuGet yet |
-| [Data access](https://arc4u-org.github.io/Arc4u/guides/data/) | `Arc4u.Data` | [![Arc4u.Data](https://img.shields.io/nuget/vpre/Arc4u.Data?label=)](https://www.nuget.org/packages/Arc4u.Data) |
-|  | `Arc4u.EfCore` | [![Arc4u.EfCore](https://img.shields.io/nuget/vpre/Arc4u.EfCore?label=)](https://www.nuget.org/packages/Arc4u.EfCore) |
+| [Data access](https://arc4u-org.github.io/Arc4u/guides/data/) | `Arc4u.EfCore` | [![Arc4u.EfCore](https://img.shields.io/nuget/vpre/Arc4u.EfCore?label=)](https://www.nuget.org/packages/Arc4u.EfCore) |
 |  | `Arc4u.MongoDB` | [![Arc4u.MongoDB](https://img.shields.io/nuget/vpre/Arc4u.MongoDB?label=)](https://www.nuget.org/packages/Arc4u.MongoDB) |
 |  | `Arc4u.OData` | [![Arc4u.OData](https://img.shields.io/nuget/vpre/Arc4u.OData?label=)](https://www.nuget.org/packages/Arc4u.OData) |
 | [Dispatcher](https://arc4u-org.github.io/Arc4u/guides/dispatcher/) | `Arc4u.Dispatcher` | [![Arc4u.Dispatcher](https://img.shields.io/nuget/vpre/Arc4u.Dispatcher?label=)](https://www.nuget.org/packages/Arc4u.Dispatcher) |

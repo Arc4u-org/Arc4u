@@ -94,7 +94,6 @@ Steps:
 | `Arc4u.Standard.Configuration.Decryptor` | `Arc4u.Configuration.Decryptor` |
 | `Arc4u.Standard.Configuration.Store` | `Arc4u.Configuration.Store` |
 | `Arc4u.Standard.Core` | `Arc4u.Core` |
-| `Arc4u.Standard.Data` | `Arc4u.Data` |
 | `Arc4u.Standard.Dependency` | `Arc4u.Dependency` |
 | `Arc4u.Standard.Diagnostics` | `Arc4u.Diagnostics` |
 | `Arc4u.Standard.Diagnostics.Serilog` | `Arc4u.Diagnostics.Serilog` |
@@ -128,6 +127,7 @@ following 8.x packages have no Arc4u 9 version:
 | `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core`, `Arc4u.Standard.NServiceBus.RabbitMQ` | [NServiceBus replaced by Dapr pub/sub](#nservicebus-replaced-by-dapr-pubsub) |
 | `Arc4u.Prism.DI.Wpf` | [Prism.DI.Wpf replaced by Prism.DryIoc](#prismdiwpf-replaced-by-prismdryioc) |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api` | [Other removed APIs](#other-removed-apis) |
+| `Arc4u.Standard.Data` | [Arc4u.Data and change tracking removed](#arc4udata-and-change-tracking-removed) |
 
 Arc4u 9 also adds packages that have no 8.x equivalent: `Arc4u.Dependency.Tool` (source
 generators for dependency registration), `Arc4u.OAuth2.Client.Authentication` (OpenID Connect
@@ -1231,20 +1231,22 @@ A few smaller changes may also need attention:
   Update any client or test that matches on that text.
 - `ToProblemDetails` called on a successful result no longer adds an error to that result: it stays successful.
 
-## Entity Framework Core and entity validation
+## Arc4u.Data and change tracking removed
 
-Two changes affect the data access layer: `Arc4u.EfCore` has new methods to track and save a graph of
-entities, and the validation methods of `Arc4u.Data` now write to the logger you pass.
+With a domain-centric approach, the domain model decides what changes in an aggregate, and the data
+access layer persists the aggregate with the API of Entity Framework Core. The entities no longer carry
+the change to persist, so Arc4u 9 removes the change-tracking concept
+([#266](https://github.com/Arc4u-org/Arc4u/issues/266)):
 
-### Track and save a graph
+| 8.x | Replacement |
+|---|---|
+| The `Arc4u.Standard.Data` package: `IdEntity`, `PersistEntity`, the audit entities (`CreateAuditEntity`, `UpdateAuditEntity`, `DeleteAuditEntity`, `AuditEntity` and their interfaces), `EntitySet<TEntity>`, `EntityItem<TEntity>`, `PersistChangeActions`, `RelationAttribute`, `Validate<T>` and `ValidateAll` | Define the entities in your domain model with your own base classes, and validate them with FluentValidation and `ValidateWithResult` from `Arc4u.FluentValidation` |
+| `Arc4u.Data.IPersistEntity` and `Arc4u.Data.PersistChange` (package `Arc4u`) | None: remove the `PersistChange` property and its `entity.Ignore(e => e.PersistChange)` mapping |
+| `Arc4u.EfCore`: `ChangeGraphTracker` (`Tracker`, `TrackPersistGraph`, `SavePersistChangesAsync`, `SavePersistChanges`) and `PersisteChangeExtension.Convert` | The Entity Framework Core API: load the aggregate tracked, call its domain methods, then `SaveChangesAsync`. For a detached aggregate use `Add`, `Update`, `Remove` or `ChangeTracker.TrackGraph` with your own callback |
+| `Arc4u.FluentValidation`: the `IsInsert()`, `IsUpdate()`, `IsDelete()` and `IsNone()` rules and `ValidatorPredicates` | Validate the operation in the domain model, or write a separate validator for each operation |
 
-`ChangeTracker.TrackGraph(root, ChangeGraphTracker.Tracker)` still works, but it does not visit the
-entities the context already tracks, and does not go through them to reach their children. A new
-child (`PersistChange.Insert`) added under a tracked root is then marked `Modified` and
-`SaveChanges` throws `DbUpdateConcurrencyException`
-([#255](https://github.com/Arc4u-org/Arc4u/issues/255)). In 8.x the workaround was to track only
-detached graphs. Arc4u 9 adds `TrackPersistGraph`, which visits the tracked entities too, and
-`SavePersistChangesAsync`, which sets `PersistChange` back to `None` after a successful save.
+`Graph<T>` and the `GraphExtension` methods of `Arc4u.EfCore` that apply its include paths to a
+query are kept.
 
 **Before (8.x)**
 
@@ -1259,10 +1261,6 @@ public class OrderRepository(ShopContext db)
     {
         db.ChangeTracker.TrackGraph(order, ChangeGraphTracker.Tracker);
         await db.SaveChangesAsync(cancellationToken);
-
-        // PersistChange is not reset: an entity still on Insert cannot become Delete.
-        order.PersistChange = PersistChange.None;
-        order.Lines.ForEach(l => l.PersistChange = PersistChange.None);
     }
 }
 ```
@@ -1270,80 +1268,26 @@ public class OrderRepository(ShopContext db)
 **After (9)**
 
 ```csharp
-using Arc4u.EfCore;
 using Microsoft.EntityFrameworkCore;
 
-public class OrderRepository(ShopContext db)
+public class OrderService(ShopContext db)
 {
-    public async Task SaveAsync(Order order, CancellationToken cancellationToken)
+    public async Task AddLineAsync(Guid orderId, string label, CancellationToken cancellationToken)
     {
-        db.ChangeTracker.TrackPersistGraph(order);                 // also visits the tracked entities
-        await db.SavePersistChangesAsync(cancellationToken);       // resets PersistChange to None
+        var order = await db.Orders.Include(o => o.Lines)
+                                   .SingleAsync(o => o.Id == orderId, cancellationToken);
+
+        order.AddLine(label);                          // the domain model changes the aggregate
+
+        await db.SaveChangesAsync(cancellationToken);  // EF Core detects the changes
     }
 }
 ```
 
-1. Replace `ChangeTracker.TrackGraph(root, ChangeGraphTracker.Tracker)` with
-   `ChangeTracker.TrackPersistGraph(root)`. An entity the context already tracks keeps its state when
-   its `PersistChange` is `None`; otherwise it gets the state of its `PersistChange`.
-2. Replace `SaveChangesAsync` (or `SaveChanges`) with `SavePersistChangesAsync` (or
-   `SavePersistChanges`) after tracking a graph, and remove the code that set `PersistChange` back to
-   `None`. When the save throws, `PersistChange` is left as it was.
-3. Keep `TrackGraph(root, node => ChangeGraphTracker.Tracker(root, node))` to give the whole
-   aggregate the state of the root (for example to delete it): there is no `TrackPersistGraph`
-   equivalent.
-
-See [Entity Framework Core](../guides/data/efcore.md) for the full behavior.
-
-### Validation logging
-
-In 8.x the `logger` argument of `PersistEntity.Validate<T>(ILogger<T>)` and of `ValidateAll` was not
-used: `Validate<T>` wrote to the logger configured for FluentResults (`Result.Setup`, or
-`AddResultLogger()` from `Arc4u.Results`), and `ValidateAll` did not log. In Arc4u 9 both write one
-error to the logger you pass for each validation message
-(`Validation of {EntityType} failed: {Message}`), and they throw `ArgumentNullException` when the
-logger is `null`. The signatures do not change.
-
-**Before (8.x)**
-
-```csharp
-using Arc4u.Data;
-using FluentResults;
-using Microsoft.Extensions.Logging;
-
-public static class CustomerValidation
-{
-    public static Result ValidateAll(List<Customer> customers, ILogger<Customer> logger)
-    {
-        customers[0].Validate(logger);                 // logged through Result.Setup, not logger
-
-        return customers.ValidateAll(logger).LogIfFailed();   // ValidateAll did not log
-    }
-}
-```
-
-**After (9)**
-
-```csharp
-using Arc4u.Data;
-using FluentResults;
-using Microsoft.Extensions.Logging;
-
-public static class CustomerValidation
-{
-    public static Result ValidateAll(List<Customer> customers, ILogger<Customer> logger)
-    {
-        customers[0].Validate(logger);                 // logged to logger
-
-        return customers.ValidateAll(logger);          // logged to logger
-    }
-}
-```
-
-1. Pass a real logger (not `null`) to `Validate<T>` and `ValidateAll`.
-2. Remove the `LogIfFailed()` call after `ValidateAll`, or the errors are logged twice.
-3. If you only needed `Result.Setup` for these methods, you can drop it; the other uses of
-   `LogIfFailed` still need it.
+1. Remove the `Arc4u.Standard.Data` package reference and the `using Arc4u.Data;` directives.
+2. Replace the Arc4u entity base classes with your own (for example a base class with a `Guid Id`).
+3. Remove the `PersistChange` properties, their `Ignore` mappings, and the code that sets them.
+4. Persist the aggregates with the Entity Framework Core API instead of `ChangeGraphTracker`.
 
 ## Other API changes
 
@@ -1418,6 +1362,5 @@ public static class Security
 | `RealmLoggingDbCtx.CreateMapping()` (AutoMapper) | Removed with the AutoMapper dependency |
 | `RealmLoggingDbCtx(RealmConfiguration, ILoggerFactory)` and `RealmLoggingDbCtx.Realm` | `RealmLoggingDbCtx(RealmConfiguration)`. The store opens a `Realm` for each call, so it no longer exposes one: open your own with `Realm.GetInstance(config)` on the thread that uses it |
 | `CustomRootCaExtensions.CertificateOptionKeys` (static, shared by every service collection of the process) | The names registered with `AddCustomRootCA` in a service collection: `serviceProvider.GetRequiredService<IOptions<CARootOptionKeys>>().Value.Keys` |
-| `Arc4u.Data.RelationAttribute` | None: nothing in Arc4u read it. Delete the `[Relation(...)]` attributes and configure relationships in your EF Core model (`HasMany`, `WithOne`, `HasForeignKey`) |
 | `Arc4u.gRPC`: `ClientErrorInterceptor` | Catch the `RpcException` and call `ToResult()` (see [ProblemDetails over gRPC](../guides/grpc-versioning/grpc-problem-details.md)). A 403 returned by the service arrives as `PermissionDenied` with status 403 in its ProblemDetails. The interceptor only converted exceptions raised while a call was started, which almost never happens with `Grpc.Net.Client`, so removing it barely changes what your code receives |
 | `Arc4u.OAuth2.Client.Authentication`: `OidcClientAuthenticationOptions` and `OidcClientAuthenticationSectionOptions` `NameClaimType`, `RoleClaimType` and `ValidateAuthority` (`Authentication:NameClaimType`, `Authentication:RoleClaimType`, `Authentication:ValidateAuthority` in a client application) | None: the client authentication never read them. Delete the assignments; the configuration keys are ignored. The client principal is built by the `AppPrincipalFactory` |

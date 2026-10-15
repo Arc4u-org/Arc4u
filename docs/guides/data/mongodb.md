@@ -13,7 +13,7 @@ The MongoDB driver leaves you to create a `MongoClient`, keep it as a singleton,
 - creates the client and database once, lazily, and shares them through a singleton `IMongoClientFactory<TContext>`;
 - keeps the collection name of each entity type in one place, so that `GetCollection<Product>()` needs no string.
 
-It does not wrap the driver: you get `IMongoClient` and `IMongoCollection<T>` back and use them as documented by MongoDB. It also does not use `Arc4u.Data` entities: any class the driver can serialize works.
+It does not wrap the driver: you get `IMongoClient` and `IMongoCollection<T>` back and use them as documented by MongoDB. Any class the driver can serialize works.
 
 ## Install
 

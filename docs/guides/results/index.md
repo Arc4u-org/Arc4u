@@ -46,7 +46,7 @@ flowchart LR
 |---|---|
 | `Arc4u.Results` | Fluent chain extensions on `Result`, `ProblemDetailError`, `ValidationError`, and `FluentLogger`, the logger for results. No ASP.NET Core dependency: use it in the business layer. |
 | `Arc4u.AspNetCore.Results` | Conversion of a result to `ActionResult`, `IResult` or typed `Results<...>`, and of errors to `ProblemDetails`. Use it in the interface layer (controllers and minimal APIs). References `Arc4u.Results`. |
-| `Arc4u.FluentValidation` | FluentValidation rules and `ValidateWithResult` extensions that produce a `Result` with `ValidationError`s. The assembly is named `Arc4u.Validation`. References `Arc4u.Results` and `Arc4u.Data`. |
+| `Arc4u.FluentValidation` | FluentValidation rules and `ValidateWithResult` extensions that produce a `Result` with `ValidationError`s. The assembly is named `Arc4u.Validation`. References `Arc4u.Results`. |
 
 All three target `net10.0` and `net11.0`.
 

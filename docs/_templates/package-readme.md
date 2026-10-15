@@ -51,7 +51,6 @@ The package ID (title, install command) is the <PackageId> of the .csproj, not t
   Arc4u.gRPC                               guides/grpc-versioning/        api/Arc4u.gRPC.html
   Arc4u.AspNetCore.gRpc                    guides/grpc-versioning/        api/Arc4u.AspNetCore.gRpc.html
   Arc4u.AspNetCore.Versioning              guides/grpc-versioning/        api/Arc4u.AspNetCore.Versioning.html   (not on NuGet.org yet)
-  Arc4u.Data                               guides/data/                   api/Arc4u.Data.html
   Arc4u.EfCore                             guides/data/                   api/Arc4u.EfCore.html
   Arc4u.MongoDB                            guides/data/                   api/Arc4u.MongoDB.html
   Arc4u.OData                              guides/data/                   api/Arc4u.OData.html

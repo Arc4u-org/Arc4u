@@ -11,7 +11,6 @@
     <PackageReference Include="System.Text.Json" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Arc4u.Data\Arc4u.Data.csproj" />
     <ProjectReference Include="..\Arc4u.Results\Arc4u.Results.csproj" />
   </ItemGroup>
 </Project>

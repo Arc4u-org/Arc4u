@@ -20,7 +20,6 @@
             "Arc4u.Configuration.Store/Arc4u.Configuration.Store.csproj",
             "Arc4u.Configuration.Store.EFCore/Arc4u.Configuration.Store.EFCore.csproj",
             "Arc4u.Core/Arc4u.Core.csproj",
-            "Arc4u.Data/Arc4u.Data.csproj",
             "Arc4u.Dependency/Arc4u.Dependency.csproj",
             "Arc4u.Diagnostics/Arc4u.Diagnostics.csproj",
             "Arc4u.Diagnostics.Serilog/Arc4u.Diagnostics.Serilog.csproj",

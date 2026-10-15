@@ -105,7 +105,6 @@ These packages are used by many of the others and have no guide of their own. Se
 
 | Package | Status | Target frameworks | Guide |
 |---|---|---|---|
-| `Arc4u.Data` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |
 | `Arc4u.EfCore` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |
 | `Arc4u.MongoDB` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |
 | `Arc4u.OData` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |

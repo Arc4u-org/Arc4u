@@ -1,18 +1,15 @@
 ---
-description: "Save an entity graph with one call: ChangeGraphTracker turns PersistChange into Entity Framework Core states, and Graph<T> applies includes to queries."
+description: "Apply the include paths of a Graph<T> to Entity Framework Core queries."
 ---
 # Entity Framework Core
 
-`Arc4u.EfCore` connects the `PersistChange` of [Arc4u entities](data-primitives.md) to Entity Framework Core. It contains a callback for `ChangeTracker.TrackGraph` that sets the state of every entity of a graph, a conversion from `PersistChange` to `EntityState`, and helpers that apply a `Graph<T>` (a list of include paths) to a query. It sits in the [data access layer](../../concepts/glossary.md#data-access-layer) next to your `DbContext`; the [overview](index.md) shows where it fits.
+`Arc4u.EfCore` applies a <xref:Arc4u.Graph`1> (a list of include paths) to an Entity Framework Core query. It sits in the [data access layer](../../concepts/glossary.md#data-access-layer) next to your `DbContext`; the [overview](index.md) shows where it fits.
+
+Arc4u does not track changes on your entities. Persist your aggregates with the Entity Framework Core API (`Add`, `Update`, `Remove`, `SaveChangesAsync`), driven by the behavior of your domain model.
 
 ## What it solves
 
-A detached graph (an order with its lines) comes back from a client. Some lines are new, some edited, some removed. Plain EF Core needs code that walks the graph and sets `EntityState.Added`, `Modified` or `Deleted` on each node, or a full reload and compare. With Arc4u each entity already says what to do, and the data layer becomes:
-
-```csharp
-db.ChangeTracker.TrackPersistGraph(order);
-await db.SavePersistChangesAsync(cancellationToken);
-```
+A caller decides which parts of an aggregate it needs (an order with its lines, or with its customer). `Graph<T>` lets it express that as a list of paths built from expressions, and because `Graph<T>` is a data contract it can be sent between processes. At the data layer, one call turns the paths into `Include` and `ThenInclude` calls.
 
 ## Install
 
@@ -20,26 +17,27 @@ await db.SavePersistChangesAsync(cancellationToken);
 dotnet add package Arc4u.EfCore --prerelease
 ```
 
-`Arc4u.EfCore` references `Microsoft.EntityFrameworkCore` and `Arc4u.Data`. Add the provider package of your database yourself. The package has no configuration section and registers nothing in dependency injection: you keep registering your `DbContext` with `AddDbContext` as usual.
+`Arc4u.EfCore` references `Microsoft.EntityFrameworkCore` and `Arc4u`, which defines `Graph<T>`. Add the provider package of your database yourself. The package has no configuration section and registers nothing in dependency injection: you keep registering your `DbContext` with `AddDbContext` as usual.
 
-## Set up the model and the repository
+## Apply the includes of a Graph to a query
 
-Two things are needed: entities that implement <xref:Arc4u.Data.IPersistEntity> (usually by deriving from <xref:Arc4u.Data.IdEntity> or another class of [Arc4u.Data](data-primitives.md)) and a model that ignores `PersistChange`. `PersistChange` describes what to do with the entity, it is not data to store. Without `Ignore`, EF Core would map it as a column.
+<xref:Arc4u.EfCore.GraphExtension> applies a graph to an EF Core query:
 
 ```csharp
-// ShopContext.cs
-using Arc4u.Data;
+using Arc4u;
 using Arc4u.EfCore;
 using Microsoft.EntityFrameworkCore;
 
-public class OrderLine : IdEntity
+public class OrderLine
 {
+    public Guid Id { get; set; }
     public string Label { get; set; } = string.Empty;
     public Guid OrderId { get; set; }
 }
 
-public class Order : IdEntity
+public class Order
 {
+    public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public List<OrderLine> Lines { get; set; } = [];
 }
@@ -50,143 +48,12 @@ public class ShopContext(DbContextOptions<ShopContext> options) : DbContext(opti
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Order>(e =>
-        {
-            e.HasKey(o => o.Id);
-            e.Ignore(o => o.PersistChange);
-            e.HasMany(o => o.Lines).WithOne().HasForeignKey(l => l.OrderId);
-        });
-
-        modelBuilder.Entity<OrderLine>(e =>
-        {
-            e.HasKey(l => l.Id);
-            e.Ignore(l => l.PersistChange);
-        });
+        modelBuilder.Entity<Order>()
+                    .HasMany(o => o.Lines)
+                    .WithOne()
+                    .HasForeignKey(l => l.OrderId);
     }
 }
-
-public class OrderRepository(ShopContext db)
-{
-    public async Task SaveAsync(Order order, CancellationToken cancellationToken)
-    {
-        db.ChangeTracker.TrackPersistGraph(order);
-
-        await db.SavePersistChangesAsync(cancellationToken);
-    }
-
-    public async Task SaveAsync(IEnumerable<Order> orders, CancellationToken cancellationToken)
-    {
-        foreach (var order in orders)
-        {
-            db.ChangeTracker.TrackPersistGraph(order);
-        }
-
-        await db.SavePersistChangesAsync(cancellationToken);
-    }
-}
-```
-
-```csharp
-// Program.cs
-using Microsoft.EntityFrameworkCore;
-
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddDbContext<ShopContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Shop")));
-builder.Services.AddScoped<OrderRepository>();
-
-var app = builder.Build();
-app.Run();
-```
-
-`UseSqlite` stands for the provider of your choice.
-
-## How the states are set
-
-<xref:Arc4u.EfCore.ChangeGraphTracker> provides an extension method that walks the whole graph, and two callbacks for `ChangeTracker.TrackGraph`:
-
-| Method | Use it for |
-|---|---|
-| `ChangeTracker.TrackPersistGraph(root)` | Each entity gets the state of its own `PersistChange`, including the entities the context already tracks: a new child (`Insert`) under a tracked root becomes `Added`. A tracked entity on `None` keeps its current state; an untracked entity that does not implement `IPersistEntity` becomes `Unchanged`. Prefer it. |
-
-`TrackGraph(root, callback)` only visits the entities that the context does not track yet, and does not go through a tracked entity to reach its children (see [Pitfalls](#pitfalls)). Use the callbacks with detached graphs:
-
-| Callback | Use it for |
-|---|---|
-| `ChangeGraphTracker.Tracker(EntityEntryGraphNode)` | Each entity gets the state of its own `PersistChange`. An entity that does not implement `IPersistEntity` becomes `Unchanged`. Pass it as a method group: `TrackGraph(order, ChangeGraphTracker.Tracker)`. |
-| `ChangeGraphTracker.Tracker(IPersistEntity, EntityEntryGraphNode)` | Every entity of the graph gets the state of the root's `PersistChange`. Use it to delete or insert a whole aggregate: `TrackGraph(order, node => ChangeGraphTracker.Tracker(order, node))`. |
-
-<xref:Arc4u.EfCore.ChangeGraphTracker.SavePersistChangesAsync*> (and `SavePersistChanges`) calls `SaveChanges` and, when it succeeds, sets the `PersistChange` of the saved entities back to `None`, so the objects can be edited and saved again. When the save throws, `PersistChange` is left as it was.
-
-The conversion is done by <xref:Arc4u.EfCore.PersisteChangeExtension.Convert*> (the class name is spelled that way), also available on its own:
-
-| `PersistChange` | `EntityState` |
-|---|---|
-| `Insert` | `Added` |
-| `Update` | `Modified` |
-| `Delete` | `Deleted` |
-| `None` | `Unchanged` |
-
-## Common scenarios
-
-### Apply the edits of a client to a loaded graph
-
-Load the graph without tracking (or receive it from a client), let the caller set `PersistChange` on the nodes it touched, then track and save. With the code below, the lines end up `Modified`, `Deleted` and `Added`, and the root `Unchanged` (checked against SQLite):
-
-```csharp
-using Arc4u.Data;
-using Arc4u.EfCore;
-using Microsoft.EntityFrameworkCore;
-
-public static class EditSamples
-{
-    public static async Task ApplyEditsAsync(ShopContext db, Guid orderId)
-    {
-        var order = await db.Orders.AsNoTracking()
-                            .Include(o => o.Lines)
-                            .SingleAsync(o => o.Id == orderId);
-
-        order.Lines[0].Label = "renamed";
-        order.Lines[0].PersistChange = PersistChange.Update;          // Modified
-        order.Lines[1].PersistChange = PersistChange.Delete;          // Deleted
-        order.Lines.Add(new OrderLine { Label = "new", PersistChange = PersistChange.Insert });   // Added
-
-        db.ChangeTracker.TrackPersistGraph(order);   // root is None: Unchanged
-        await db.SavePersistChangesAsync();
-    }
-}
-```
-
-An entity loaded from the database has `PersistChange.None`, so the root and every line you did not touch are left alone.
-
-### Delete a whole aggregate
-
-```csharp
-using Arc4u.Data;
-using Arc4u.EfCore;
-using Microsoft.EntityFrameworkCore;
-
-public static class DeleteSamples
-{
-    public static async Task DeleteAsync(ShopContext db, Order order)
-    {
-        order.PersistChange = PersistChange.Delete;
-
-        db.ChangeTracker.TrackGraph(order, node => ChangeGraphTracker.Tracker(order, node));
-        await db.SaveChangesAsync();
-    }
-}
-```
-
-### Apply the includes of a Graph to a query
-
-<xref:Arc4u.Graph`1> is a list of include paths built from expressions. It is a data contract, so it can be sent between processes. <xref:Arc4u.EfCore.GraphExtension> applies it to an EF Core query:
-
-```csharp
-using Arc4u;
-using Arc4u.EfCore;
-using Microsoft.EntityFrameworkCore;
 
 public static class GraphSamples
 {
@@ -207,24 +74,9 @@ public static class GraphSamples
 
 ## Pitfalls
 
-- **Plain `SaveChangesAsync` does not reset `PersistChange`.** After it the entities still say `Insert`, `Update` or `Delete`, and an entity still on `Insert` refuses to become `Delete`. Use `SavePersistChangesAsync`, or set them back to `None` yourself.
-- **`TrackGraph(root, ChangeGraphTracker.Tracker)` skips tracked entities and does not go through them.** A new child (`PersistChange.Insert`) added under a root the context already tracks is never passed to the callback. `DetectChanges` then sees an entity with a non-default `Guid` key (`IdEntity` generates it in the constructor) and marks it `Modified`, so `SaveChanges` throws `DbUpdateConcurrencyException`. Use `TrackPersistGraph`, which visits tracked entities too.
-- **Nothing sets `Update` for you.** Changing a property does not change `PersistChange`. The caller that edits the entity sets it.
 - **The graph helpers use reflection** (`GraphExtension` builds `Include` and `ThenInclude` calls at run time), so they are not trim-safe or native AOT-safe.
 
-## Extensibility points
-
-`ChangeGraphTracker`, `PersisteChangeExtension` and `GraphExtension` are static. To change the mapping (for example to treat `Update` as `Unchanged`), pass your own callback to `TrackGraph` and call `PersistChange.Convert()` for the cases you keep.
-
 ## Troubleshooting
-
-### A property `PersistChange` appears in the database schema or the migration
-
-The model does not ignore it. Add `entity.Ignore(e => e.PersistChange)` for every entity type that implements `IPersistEntity`.
-
-### The entities are saved as `Unchanged` and nothing is written
-
-`PersistChange` is `None` on the nodes you edited, or you used `TrackGraph` on entities the context already tracked (see [Pitfalls](#pitfalls)). Set `PersistChange` on the edited entities and use `TrackPersistGraph`.
 
 ### `InvalidOperationException: It is not allowed to check more than one level!` from `ApplyReferences`
 
@@ -232,7 +84,6 @@ The path expression goes deeper than one property, for example `o => o.Customer.
 
 ## See also
 
-- [Data primitives](data-primitives.md)
 - [Data access](index.md)
 - [Configuration store on EF Core](../configuration/index.md) for the separate `Arc4u.Configuration.Store.EfCore` package
 - <xref:Arc4u.EfCore> in the API reference

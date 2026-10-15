@@ -1,7 +1,5 @@
 - name: Overview
   href: index.md
-- name: Data primitives
-  href: data-primitives.md
 - name: Entity Framework Core
   href: efcore.md
 - name: MongoDB
