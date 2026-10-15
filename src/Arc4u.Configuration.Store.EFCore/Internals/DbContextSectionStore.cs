@@ -70,7 +70,8 @@ sealed class DbContextSectionStore<TDbContext> : ISectionStore
     public async Task ResetAsync(CancellationToken cancellationToken)
     {
         var set = SectionEntitySet;
-        set.RemoveRange(await set.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false));
+        // A tracking query returns the instances already tracked by this context (e.g. after UpdateAsync), so removing them cannot conflict.
+        set.RemoveRange(await set.ToListAsync(cancellationToken).ConfigureAwait(false));
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

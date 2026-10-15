@@ -185,6 +185,41 @@ public class SectionStoreTests
 
     #endregion
 
+    #region ResetAsync
+
+    [Fact]
+    public async Task Reload_After_ResetAsync_Should_Publish_The_Initial_Data()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddSectionStoreConfiguration(options => options.Add("Feature", new FeatureOptions { Enabled = true, Limit = 5 }))
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(configuration);
+        AddEfStore(services, new FailingSaveChangesInterceptor { Fail = false });
+        services.AddSectionStoreService();
+        using var serviceProvider = services.BuildServiceProvider();
+        serviceProvider.UseSectionStoreConfiguration();
+
+        using (var scope = serviceProvider.CreateScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<ISectionStore>();
+            (await store.TrySetValueAsync("Feature", new FeatureOptions { Enabled = false, Limit = 7 }, CancellationToken.None)).Should().BeTrue();
+            configuration.Reload();
+            configuration.GetSection("Feature").Get<FeatureOptions>().Should().BeEquivalentTo(new FeatureOptions { Enabled = false, Limit = 7 });
+
+            await store.ResetAsync(CancellationToken.None);
+        }
+
+        // the first read after the reset re-seeds the store and must publish the initial data, not an empty set.
+        configuration.Reload();
+
+        configuration.GetSection("Feature").Get<FeatureOptions>().Should().BeEquivalentTo(new FeatureOptions { Enabled = true, Limit = 5 });
+    }
+
+    #endregion
+
     #region Extension class names
 
     [Fact]
