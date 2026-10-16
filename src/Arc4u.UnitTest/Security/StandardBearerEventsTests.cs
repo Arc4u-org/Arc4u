@@ -54,6 +54,38 @@ public class StandardBearerEventsTests
         json.RootElement.GetProperty("detail").GetString().Should().Be($"The token expired on {expires:o}");
     }
 
+    [Fact]
+    public async Task Challenge_With_An_Invalid_Audience_Should_Give_The_Audience()
+    {
+        var (context, body) = CreateContext(new SecurityTokenInvalidAudienceException("invalid audience") { InvalidAudience = "api://other" });
+
+        await new StandardBearerEvents(NullLogger<StandardBearerEvents>.Instance).Challenge(context);
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+
+        using var json = JsonDocument.Parse(body.ToArray());
+        json.RootElement.GetProperty("title").GetString().Should().Be("invalid_token");
+        json.RootElement.GetProperty("detail").GetString().Should().Be("The audience 'api://other' of the token is not an audience accepted by this service.");
+    }
+
+    [Fact]
+    public async Task AuthenticationFailed_With_An_Invalid_Audience_Should_Fail_With_A_401()
+    {
+        var exception = new SecurityTokenInvalidAudienceException("invalid audience") { InvalidAudience = "api://other" };
+        var options = new JwtBearerOptions();
+        options.TokenValidationParameters.ValidAudiences = ["api://mine"];
+        var scheme = new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler));
+        var context = new AuthenticationFailedContext(new DefaultHttpContext(), scheme, options) { Exception = exception };
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddILogger();
+
+        await new StandardBearerEvents(services.BuildServiceProvider().GetRequiredService<ILogger<StandardBearerEvents>>()).AuthenticationFailed(context);
+
+        context.Result!.Failure.Should().BeSameAs(exception);
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+    }
+
     [Theory]
     [InlineData(true, false, false)]
     [InlineData(true, true, true)]

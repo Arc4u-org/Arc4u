@@ -291,5 +291,15 @@ namespace Arc4u.OAuth2
         [LoggerMessage(EventId = 9150, Level = LogLevel.Error,
             Message = "The token has no claim identifying the user ({ClaimTypes}), it is required to cache the claims of the claims filler. Configure Authentication:ClaimsIdentifier or disable the claims filler. {Reason}")]
         public static partial void LogNoUserIdentifierClaim(this ILogger logger, string claimTypes, string reason);
+
+        /// <summary>
+        /// Logs a Warning message (event id 9151): <c>The audience '{InvalidAudience}' of the bearer token is not one of the expected audiences ({ExpectedAudiences}) defined in the OAuth2 settings.</c>
+        /// </summary>
+        /// <param name="logger">The logger to write to.</param>
+        /// <param name="invalidAudience">The audience of the rejected token.</param>
+        /// <param name="expectedAudiences">The audiences accepted by the service.</param>
+        [LoggerMessage(EventId = 9151, Level = LogLevel.Warning,
+            Message = "The audience '{InvalidAudience}' of the bearer token is not one of the expected audiences ({ExpectedAudiences}) defined in the OAuth2 settings.")]
+        public static partial void LogInvalidAudience(this ILogger logger, string invalidAudience, string expectedAudiences);
     }
 }

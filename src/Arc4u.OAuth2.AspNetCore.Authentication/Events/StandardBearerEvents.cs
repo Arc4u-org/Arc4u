@@ -24,7 +24,7 @@ namespace Arc4u.OAuth2.Events
     /// <param name="logger">The logger.</param>
     public class StandardBearerEvents(ILogger<StandardBearerEvents> logger) : JwtBearerEvents
     {
-        /// <summary>Answers the challenge with a 401 status and a <see cref="ProblemDetails"/> body (<c>application/problem+json</c>). For an expired token, the <c>x-token-expired</c> header gives the expiration date.</summary>
+        /// <summary>Answers the challenge with a 401 status and a <see cref="ProblemDetails"/> body (<c>application/problem+json</c>). For an expired token, the <c>x-token-expired</c> header gives the expiration date; for a token issued for another audience, the detail names the rejected audience.</summary>
         /// <param name="context">The challenge context.</param>
         /// <returns>A task that completes when the response is written.</returns>
         public override Task Challenge(JwtBearerChallengeContext context)
@@ -39,6 +39,13 @@ namespace Arc4u.OAuth2.Events
                 var expires = authenticationException.Expires.ToString("o");
                 context.Response.Headers.Append("x-token-expired", expires);
                 context.ErrorDescription = $"The token expired on {expires}";
+            }
+
+            // Give a clear reason when the token was issued for another service.
+            if (context.AuthenticateFailure is SecurityTokenInvalidAudienceException audienceException)
+            {
+                context.Error ??= "invalid_token";
+                context.ErrorDescription = $"The audience '{audienceException.InvalidAudience ?? "(null)"}' of the token is not an audience accepted by this service.";
             }
 
             return context.Response.WriteAsync(JsonSerializer.Serialize(new ProblemDetails
@@ -56,13 +63,21 @@ namespace Arc4u.OAuth2.Events
         }
 
         /// <summary>
-        /// Logs the exception, the reason why the authentication failed, fails the authentication and answers with a 401 status.
+        /// Logs the exception (or, for a token whose audience is not accepted, the received and expected audiences), the reason why the authentication failed, fails the authentication and answers with a 401 status.
         /// </summary>
         /// <param name="context">The authentication failure context.</param>
         /// <returns>A completed task.</returns>
         public override Task AuthenticationFailed(AuthenticationFailedContext context)
         {
-            logger.Technical().LogException(context.Exception);
+            if (context.Exception is SecurityTokenInvalidAudienceException audienceException)
+            {
+                var expected = context.Options?.TokenValidationParameters?.ValidAudiences ?? [];
+                logger.Technical().LogInvalidAudience(audienceException.InvalidAudience ?? "(null)", string.Join(",", expected));
+            }
+            else
+            {
+                logger.Technical().LogException(context.Exception);
+            }
 
             context.Fail(context.Exception);
             context.Response.Clear();
