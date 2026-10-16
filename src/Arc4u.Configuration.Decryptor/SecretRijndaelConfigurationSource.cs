@@ -12,7 +12,7 @@ public class SecretRijndaelConfigurationSource : IConfigurationSource
     /// </summary>
     public const string PrefixDefault = "Decrypt:";
     /// <summary>
-    /// The default name (<c>EncryptionRijndael</c>) of the configuration section that contains the Rijndael <c>Key</c> and <c>IV</c> (both base64 encoded).
+    /// The default name (<c>EncryptionRijndael</c>) of the configuration section that contains the AES <c>Key</c> (base64 encoded).
     /// </summary>
     public const string SecretSectionNameDefault = "EncryptionRijndael";
 

@@ -186,6 +186,11 @@ packages. It contains breaking changes: follow the
 ### Security
 
 - Vulnerable dependencies upgraded ([#130](https://github.com/Arc4u-org/Arc4u/issues/130)).
+- `CypherCodec` encrypts with AES-GCM and a random nonce for each value (`GenerateKey`, `Encrypt`,
+  `Decrypt`), so a modified value or a wrong key is detected. `GenerateKeyAndIV`, `EncodeClearText`,
+  `DecodeCypherstring` and `CypherCodecConfig.IV` are removed: the `EncryptionRijndael` section only has a
+  `Key`. Long values encrypted with a certificate now have the form `<key>.<data>`. Values encrypted
+  with 8.x must be encrypted again ([#114](https://github.com/Arc4u-org/Arc4u/issues/114)).
 
 ## [8.3.2] - 2025-07-18
 

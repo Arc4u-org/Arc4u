@@ -180,15 +180,12 @@ public class CertificateDecryptor
     public void RijndaelShouldDecrypt()
     {
         // arrange
-        var stringKey = CypherCodec.GenerateKeyAndIV(out var stringIV);
+        var stringKey = CypherCodec.GenerateKey();
 
-        var key = Convert.FromBase64String(stringKey);
-        var iv = Convert.FromBase64String(stringIV);
-
-        CypherCodecConfig rijndaelConfig = new() { Key = stringKey, IV = stringIV };
+        CypherCodecConfig rijndaelConfig = new() { Key = stringKey };
 
         var plainText = _fixture.Create<string>();
-        var cypherText = CypherCodec.EncodeClearText(plainText, key, iv);
+        var cypherText = CypherCodec.Encrypt(plainText, Convert.FromBase64String(stringKey));
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(
@@ -210,14 +207,11 @@ public class CertificateDecryptor
     public void RijndaelConfigShouldBe()
     {
         // arrange
-        var stringKey = CypherCodec.GenerateKeyAndIV(out var stringIV);
+        var stringKey = CypherCodec.GenerateKey();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(
-                new Dictionary<string, string?>
-                {
-                    ["EncryptionRijndael:Key"] = stringKey, ["EncryptionRijndael:IV"] = stringIV
-                }).Build();
+                new Dictionary<string, string?> { ["EncryptionRijndael:Key"] = stringKey }).Build();
         var tempRoot = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         // act
@@ -227,28 +221,22 @@ public class CertificateDecryptor
         rijndaelConfig.Should().NotBeNull();
         rijndaelConfig!.Key.Should().NotBeNull();
         rijndaelConfig.Key.Should().Be(stringKey);
-        rijndaelConfig.IV.Should().NotBeNull();
-        rijndaelConfig.IV.Should().Be(stringIV);
     }
 
     [Fact]
     public void RijndaelWithConfigShouldDecrypt()
     {
         // arrange
-        var stringKey = CypherCodec.GenerateKeyAndIV(out var stringIV);
-
-        var key = Convert.FromBase64String(stringKey);
-        var iv = Convert.FromBase64String(stringIV);
+        var stringKey = CypherCodec.GenerateKey();
 
         var plainText = _fixture.Create<string>();
-        var cypherText = CypherCodec.EncodeClearText(plainText, key, iv);
+        var cypherText = CypherCodec.Encrypt(plainText, Convert.FromBase64String(stringKey));
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(
                 new Dictionary<string, string?>
                 {
                     ["EncryptionRijndael:Key"] = stringKey,
-                    ["EncryptionRijndael:IV"] = stringIV,
                     ["ConnectionStrings:Toto"] = $"Tag:{cypherText}"
                 });
 
@@ -262,6 +250,68 @@ public class CertificateDecryptor
         sut.TryGet("ConnectionStrings:Toto", out var value).Should().BeTrue();
         value.Should().NotBeNull();
         value.Should().Be(plainText);
+    }
+
+    [Fact]
+    public void EncryptShouldUseANewNonceForEachValue()
+    {
+        // arrange
+        var key = Convert.FromBase64String(CypherCodec.GenerateKey());
+        var plainText = _fixture.Create<string>();
+
+        // act
+        var first = CypherCodec.Encrypt(plainText, key);
+        var second = CypherCodec.Encrypt(plainText, key);
+
+        // assert
+        first.Should().NotBe(second);
+        CypherCodec.Decrypt(first, key).Should().Be(plainText);
+        CypherCodec.Decrypt(second, key).Should().Be(plainText);
+    }
+
+    [Fact]
+    public void DecryptShouldDetectTampering()
+    {
+        // arrange
+        var key = Convert.FromBase64String(CypherCodec.GenerateKey());
+        var cypherText = CypherCodec.Encrypt(_fixture.Create<string>(), key);
+        var data = Convert.FromBase64String(cypherText);
+        data[^1] ^= 0x01;
+        var tampered = Convert.ToBase64String(data);
+
+        // act
+        var exception = Record.Exception(() => CypherCodec.Decrypt(tampered, key));
+
+        // assert
+        exception.Should().BeAssignableTo<System.Security.Cryptography.CryptographicException>();
+    }
+
+    [Fact]
+    public void DecryptWithAnotherKeyShouldThrow()
+    {
+        // arrange
+        var cypherText = CypherCodec.Encrypt(_fixture.Create<string>(), Convert.FromBase64String(CypherCodec.GenerateKey()));
+
+        // act
+        var exception = Record.Exception(() => CypherCodec.Decrypt(cypherText, Convert.FromBase64String(CypherCodec.GenerateKey())));
+
+        // assert
+        exception.Should().BeAssignableTo<System.Security.Cryptography.CryptographicException>();
+    }
+
+    [Fact]
+    public void CertificateShouldEncryptAndDecryptLongText()
+    {
+        // arrange
+        using var certificate = GetX509Certificate2();
+        var plainText = new string('x', 500);
+
+        // act
+        var cypherText = certificate.Encrypt(plainText);
+
+        // assert
+        cypherText.Split('.').Should().HaveCount(2);
+        certificate.Decrypt(cypherText).Should().Be(plainText);
     }
 
     public static X509Certificate2 GetX509Certificate2()

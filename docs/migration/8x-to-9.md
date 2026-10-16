@@ -1357,6 +1357,7 @@ public static class Security
 
 | 8.x | Replacement |
 |---|---|
+| `CypherCodec.GenerateKeyAndIV`, `EncodeClearText`, `DecodeCypherstring`, `CypherCodecConfig.IV` (AES-CBC with a shared IV) | `CypherCodec.GenerateKey`, `Encrypt` and `Decrypt` (AES-GCM with a random nonce per value). Remove `EncryptionRijndael:IV` and encrypt the `Decrypt:` values again. Long values encrypted with a certificate (`<key>.<iv>.<data>`) must also be encrypted again |
 | `IApplicationContext.ActivityID` (set by the gRPC interceptors and the HTTP handlers) | `Activity.Current?.TraceId` (OpenTelemetry). The logger adds it as the `ActivityId` property when an activity exists |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api`: `ServiceAspectAttribute`, `OperationCheckAttribute` (already obsolete in 8.x) | ASP.NET Core authorization policies from `AddScopedOperationsPolicy` (`[Authorize("<operation>")]`), `ManageExceptionsFilter` and `SetCultureActionFilter` |
 | `SecretBasicExtension.AddSecretAuthentication`, `CredentialSecretTokenProvider` | `AddClientTokens` (see [Client secrets replaced by client tokens](#client-secrets-replaced-by-client-tokens)) |

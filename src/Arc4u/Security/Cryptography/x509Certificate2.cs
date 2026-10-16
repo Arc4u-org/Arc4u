@@ -8,7 +8,7 @@ namespace Arc4u.Security.Cryptography;
 /// <summary>
 /// Extension methods to encrypt and decrypt strings with an <see cref="X509Certificate2"/>.
 /// Short texts are encrypted directly with RSA (OAEP, SHA-256); longer texts are encrypted with a random AES key that is itself encrypted with the certificate.
-/// The result is a base64 string, or three base64 parts separated by dots (<c>key.iv.data</c>) in the AES case.
+/// The result is a base64 string, or two base64 parts separated by a dot (<c>key.data</c>) in the AES case, where <c>data</c> is produced by <see cref="CypherCodec.Encrypt(string, byte[])"/>.
 /// Only certificates with an RSA key are supported.
 /// </summary>
 public static class Certificate
@@ -46,15 +46,12 @@ public static class Certificate
             // Encapsulate in case of on an unexpected behaviour on an non tested platform.
         }
 
-        using var aes = Aes.Create();
-        aes.GenerateKey();
-        aes.GenerateIV();
+        var key = Convert.FromBase64String(CypherCodec.GenerateKey());
 
-        var encryptedKey = rsa.Encrypt(aes.Key);
-        var encryptedIv = rsa.Encrypt(aes.IV);
-        var encryptedData = CypherCodec.EncodeClearText(plainText, aes.Key, aes.IV);
+        var encryptedKey = rsa.Encrypt(key);
+        var encryptedData = CypherCodec.Encrypt(plainText, key);
 
-        return $"{encryptedKey}.{encryptedIv}.{encryptedData}";
+        return $"{encryptedKey}.{encryptedData}";
 
     }
 
@@ -100,15 +97,14 @@ public static class Certificate
         if (base64Cypherstring.Contains('.'))
         {
             var parts = base64Cypherstring.Split('.');
-            if (parts.Length != 3)
+            if (parts.Length != 2)
             {
                 throw new ApplicationException("Invalid encrypted string format");
             }
 
             var key = rsa.DecryptstringToBytes(parts[0]);
-            var iv = rsa.DecryptstringToBytes(parts[1]);
 
-            return CypherCodec.DecodeCypherstring(parts[2], key, iv);
+            return CypherCodec.Decrypt(parts[1], key);
         }
 
         return Encoding.UTF8.GetString(rsa.DecryptstringToBytes(base64Cypherstring));

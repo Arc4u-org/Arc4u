@@ -99,8 +99,8 @@ Decrypt:C6PBLlEuyKB3aTnC77sRYvEmgXvoKqHsKlR7kjoYVppiQXfDTWj5r0Wm...
 The output is Base64 text and changes on every run (the encryption is randomized), so a different
 string for the same value is normal. A value shorter than 191 bytes is trimmed of leading and trailing whitespace and encrypted directly with the
 certificate's RSA public key (RSA-OAEP with SHA-256, for a 2048-bit key). A longer value is
-encrypted with a random AES key, and the output has the form `<key>.<iv>.<data>` where the AES key
-and IV are themselves encrypted with the certificate. Both forms decrypt the same way.
+encrypted with AES-GCM and a random AES key, and the output has the form `<key>.<data>` where the
+AES key is itself encrypted with the certificate. Both forms decrypt the same way.
 
 ### Step 3: Put the encrypted value in the configuration
 
@@ -292,15 +292,14 @@ Values that start with `Secret:` are now decrypted, and the certificate is read 
 
 ### Encrypt with an AES key instead of a certificate
 
-`AddRijndaelDecryptorConfiguration()` decrypts with an AES key and IV that you put in the
-configuration. It uses the same prefix mechanism, so values start with `Decrypt:`. The key and IV are
-Base64 strings in the `EncryptionRijndael` section (<xref:Arc4u.Security.CypherCodecConfig>):
+`AddRijndaelDecryptorConfiguration()` decrypts with an AES key that you provide to the
+configuration. It uses the same prefix mechanism, so values start with `Decrypt:`. The key is a
+Base64 string in the `EncryptionRijndael` section (<xref:Arc4u.Security.CypherCodecConfig>):
 
 ```json
 {
   "EncryptionRijndael": {
-    "Key": "<base64-key>",
-    "IV": "<base64-iv>"
+    "Key": "<base64-key>"
   }
 }
 ```
@@ -319,20 +318,26 @@ app.Run();
 
 <xref:Arc4u.Configuration.Decryptor.SecretRijndaelOptions> has the same `Prefix` and
 `SecretSectionName` properties (default `EncryptionRijndael`), and a `RijnDael` property to pass the key
-and IV in code. To generate a key and encrypt a value, use <xref:Arc4u.Security.Cryptography.CypherCodec>:
+in code. To generate a key and encrypt a value, use <xref:Arc4u.Security.Cryptography.CypherCodec>:
 
 ```csharp
 using Arc4u.Security.Cryptography;
 
-var key = CypherCodec.GenerateKeyAndIV(out var iv);   // both Base64 strings
-var cypher = CypherCodec.EncodeClearText("s3cret", Convert.FromBase64String(key), Convert.FromBase64String(iv));
+var key = CypherCodec.GenerateKey();   // a 256 bits key, Base64
+var cypher = CypherCodec.Encrypt("s3cret", Convert.FromBase64String(key));
 Console.WriteLine($"Decrypt:{cypher}");
 ```
 
+`CypherCodec.Encrypt` uses AES-GCM: each value gets its own random nonce, so one key can protect many
+values, and a modified value or a wrong key fails with a `CryptographicException` instead of returning
+garbage.
+
 > [!CAUTION]
-> The AES key sits in the configuration, next to the values it protects. This only hides values from
-> someone who reads the file but not the rest of the configuration. Prefer the certificate
-> decryptor, where the private key is kept apart from the configuration.
+> Do not put the AES key in `appsettings.json` next to the values it protects: that only hides values from
+> someone who reads one file but not the rest of the configuration. Give the key from a source kept apart,
+> such as an environment variable (`EncryptionRijndael__Key`), a Kubernetes secret or a key vault, added
+> before `AddRijndaelDecryptorConfiguration()`. Better, prefer the certificate decryptor, where the private
+> key lives in the certificate store or a protected file.
 
 ### Rotate the certificate
 

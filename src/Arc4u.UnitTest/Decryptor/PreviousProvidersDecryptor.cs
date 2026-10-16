@@ -71,29 +71,28 @@ public class PreviousProvidersDecryptor
     private static IConfigurationBuilder CreateBuilder(string builderType)
         => builderType == nameof(ConfigurationManager) ? new ConfigurationManager() : new ConfigurationBuilder();
 
-    private static (string Key, string IV, string Cypher) Encrypt()
+    private static (string Key, string Cypher) Encrypt()
     {
-        var key = CypherCodec.GenerateKeyAndIV(out var iv);
-        return (key, iv, CypherCodec.EncodeClearText(ClearText, Convert.FromBase64String(key), Convert.FromBase64String(iv)));
+        var key = CypherCodec.GenerateKey();
+        return (key, CypherCodec.Encrypt(ClearText, Convert.FromBase64String(key)));
     }
 
     private static Dictionary<string, string?> Values()
     {
-        var (key, iv, cypher) = Encrypt();
+        var (key, cypher) = Encrypt();
         return new Dictionary<string, string?>
         {
             ["EncryptionRijndael:Key"] = key,
-            ["EncryptionRijndael:IV"] = iv,
             ["ConnectionStrings:Orders"] = $"Decrypt:{cypher}",
         };
     }
 
     private static string Json()
     {
-        var (key, iv, cypher) = Encrypt();
+        var (key, cypher) = Encrypt();
         return $$"""
                  {
-                   "EncryptionRijndael": { "Key": "{{key}}", "IV": "{{iv}}" },
+                   "EncryptionRijndael": { "Key": "{{key}}" },
                    "ConnectionStrings": { "Orders": "Decrypt:{{cypher}}" }
                  }
                  """;

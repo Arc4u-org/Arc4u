@@ -4,61 +4,78 @@ using System.Text;
 namespace Arc4u.Security.Cryptography;
 
 /// <summary>
-/// The Rijndael class is used to encode and decode a string with the Aes API.
+/// Encrypts and decrypts strings with AES-GCM.
+/// A random nonce is generated for each value, so the same key can safely protect many values,
+/// and any modification of the cypher text (or a wrong key) is detected when decrypting.
 /// </summary>
 public static class CypherCodec
 {
     private static readonly Encoding _cypherEncoding = Encoding.UTF8;
 
+    private const int KeySizeInBytes = 32;
+    private static readonly int NonceSize = AesGcm.NonceByteSizes.MaxSize;
+    private static readonly int TagSize = AesGcm.TagByteSizes.MaxSize;
+
     /// <summary>
-    /// Decodes the cypher string.
+    /// Generates a random 256 bits key to use with <see cref="Encrypt(string, byte[])"/>.
     /// </summary>
-    /// <param name="cypherText">The cypher PWD.</param>
-    /// <param name="rgbKey">The RGB key.</param>
-    /// <param name="rgbIV">The RGB IV.</param>
-    /// <returns>the clear text.</returns>
-    public static string DecodeCypherstring(string cypherText, byte[] rgbKey, byte[] rgbIV)
+    /// <returns>The base64 encoded key.</returns>
+    public static string GenerateKey()
     {
-        using var aes = Aes.Create();
-        using var decryptor = aes.CreateDecryptor(rgbKey, rgbIV);
-        using var csDecrypt = new CryptoStream(new MemoryStream(Convert.FromBase64String(cypherText)), decryptor, CryptoStreamMode.Read);
-        using var reader = new StreamReader(csDecrypt, _cypherEncoding);
-        return reader.ReadToEnd();
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(KeySizeInBytes));
     }
 
     /// <summary>
-    /// Encodes the clear text.
+    /// Encrypts a text with AES-GCM. A new random nonce is generated for each call.
     /// </summary>
     /// <param name="clearText">The clear text.</param>
-    /// <param name="rgbKey">The RGB key.</param>
-    /// <param name="rgbIV">The RGB IV.</param>
-    /// <returns>The cyper text.</returns>
-    public static string EncodeClearText(string clearText, byte[] rgbKey, byte[] rgbIV)
+    /// <param name="key">The AES key (16, 24 or 32 bytes).</param>
+    /// <returns>The base64 of nonce, tag and cypher text.</returns>
+    public static string Encrypt(string clearText, byte[] key)
     {
-        using var aes = Aes.Create();
-        using var encryptor = aes.CreateEncryptor(rgbKey, rgbIV);
-        using var msEncrypt = new MemoryStream();
-        using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
-        //Convert the data to a byte array.
-        var toEncrypt = _cypherEncoding.GetBytes(clearText);
-        //Write all data to the crypto stream and flush it.
-        csEncrypt.Write(toEncrypt, 0, toEncrypt.Length);
-        csEncrypt.FlushFinalBlock();
-        // do not allocate an extra buffer: use the memory stream buffer directly to get the encrypted data
-        return Convert.ToBase64String(msEncrypt.GetBuffer(), 0, (int)msEncrypt.Length);
+        ArgumentNullException.ThrowIfNull(clearText);
+        ArgumentNullException.ThrowIfNull(key);
+
+        var plain = _cypherEncoding.GetBytes(clearText);
+
+        var result = new byte[NonceSize + TagSize + plain.Length];
+        var nonce = result.AsSpan(0, NonceSize);
+        var tag = result.AsSpan(NonceSize, TagSize);
+        var cypher = result.AsSpan(NonceSize + TagSize);
+
+        RandomNumberGenerator.Fill(nonce);
+
+        using var aes = new AesGcm(key, TagSize);
+        aes.Encrypt(nonce, plain, cypher, tag);
+
+        return Convert.ToBase64String(result);
     }
 
     /// <summary>
-    /// Generates the key and IV which are used by the rijndael algorithm.
+    /// Decrypts a text produced by <see cref="Encrypt(string, byte[])"/>.
     /// </summary>
-    /// <param name="IV">The IV.</param>
-    /// <returns>the key</returns>
-    public static string GenerateKeyAndIV(out string IV)
+    /// <param name="cypherText">The base64 cypher text.</param>
+    /// <param name="key">The AES key.</param>
+    /// <returns>The clear text.</returns>
+    /// <exception cref="FormatException">The cypher text is not in the expected format.</exception>
+    /// <exception cref="AuthenticationTagMismatchException">The key is wrong or the cypher text was modified.</exception>
+    public static string Decrypt(string cypherText, byte[] key)
     {
-        using var aes = Aes.Create();
-        aes.GenerateKey();
-        aes.GenerateIV();
-        IV = Convert.ToBase64String(aes.IV);
-        return Convert.ToBase64String(aes.Key);
+        ArgumentNullException.ThrowIfNull(cypherText);
+        ArgumentNullException.ThrowIfNull(key);
+
+        var data = Convert.FromBase64String(cypherText);
+
+        if (data.Length < NonceSize + TagSize)
+        {
+            throw new FormatException("The cypher text is too short.");
+        }
+
+        var plain = new byte[data.Length - NonceSize - TagSize];
+
+        using var aes = new AesGcm(key, TagSize);
+        aes.Decrypt(data.AsSpan(0, NonceSize), data.AsSpan(NonceSize + TagSize), data.AsSpan(NonceSize, TagSize), plain);
+
+        return _cypherEncoding.GetString(plain);
     }
 }
