@@ -109,8 +109,8 @@ packages. It contains breaking changes: follow the
 
 - `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core`, `Arc4u.Standard.NServiceBus.RabbitMQ`
   and `Arc4u.Prism.DI.Wpf`: no 9.0 version
-  ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)). They stay supported with 8.x. In 9, use
-  Dapr pub/sub and `Prism.DryIoc`.
+  ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)). They are deprecated on NuGet.org
+  ([#272](https://github.com/Arc4u-org/Arc4u/issues/272)). In 9, use Dapr pub/sub and `Prism.DryIoc`.
 - .NET 8 and .NET 9 targets, and the .NET Standard 2.0 target of every package except
   `Arc4u.Dependency` and `Arc4u.Dependency.Tool`.
 - ADAL (`Arc4u.Standard.OAuth2.AspNetCore.Adal`), Protobuf serializers
