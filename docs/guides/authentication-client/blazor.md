@@ -238,11 +238,15 @@ key.
 - <xref:Arc4u.OAuth2.TokenProvider.BlazorMsalTokenProvider> works with the Microsoft WebAssembly
   authentication (`AddMsalAuthentication` or `AddOidcAuthentication`), where the browser signs the
   user in and holds the tokens. It returns the token of the current principal when it is still
-  valid, otherwise the token requested from `IAccessTokenProviderAccessor`. It does not use the
+  valid, otherwise the token requested from `IAccessTokenProviderAccessor`. When that token cannot
+  be renewed silently (`AccessTokenResultStatus.RequiresRedirect`), it clears the current principal,
+  redirects the user to the login page with `NavigationManager.NavigateToLogin` and returns a failed
+  result, so the pending request is sent without a token. It does not use the
   Microsoft Authentication Library for .NET (see [MSAL status](desktop.md#msal-status)).
 - <xref:Arc4u.OAuth2.TokenProvider.BlazorTokenProvider> opens a pop-up window on the
   `BlazorController` of the server, which sends the token back to a page of the package and the
-  token is kept in the browser local storage.
+  token is kept in the browser local storage. A stored token is reused only while it is valid for
+  at least five more minutes.
 
 ## Troubleshooting
 

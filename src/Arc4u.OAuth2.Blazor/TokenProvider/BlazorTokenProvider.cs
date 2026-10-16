@@ -86,7 +86,7 @@ public class BlazorTokenProvider : ITokenProvider
             try
             {
                 var token = new JwtSecurityToken(accessToken);
-                if (token.ValidTo > DateTime.UtcNow.AddMinutes(-5))
+                if (token.ValidTo > DateTime.UtcNow.AddMinutes(5))
                 {
                     return new TokenInfo("Bearer", accessToken, token.ValidTo);
                 }
