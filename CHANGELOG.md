@@ -149,6 +149,9 @@ packages. It contains breaking changes: follow the
 
 ### Fixed
 
+- The access token was not in the `BootstrapContext` of the identity in a cookie session, so the `Bootstrap`
+  token provider and code written for bearer tokens did not work without `UseOpenIdBearerInjector()`.
+  `StandardCookieEvents` now puts it there on each request, after refreshing it when needed (#90, #158).
 - `OidcTokenProvider` and `RefreshTokenProvider` threw a `NullReferenceException` when the user was not
   logged in yet (the `AccessToken` and `RefreshToken` of `TokenRefreshInfo` are null). `OidcTokenProvider`
   now returns a failed result, or refreshes when only the refresh token is there, and `RefreshTokenProvider`

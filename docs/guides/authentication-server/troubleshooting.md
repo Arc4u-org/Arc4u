@@ -128,11 +128,6 @@ The data protection keys or the tickets are in a memory cache. Use a cache share
 
 The default challenge scheme is JWT bearer. See [Hybrid](hybrid.md#browser-requests-get-a-401-instead-of-the-sign-in-page).
 
-### The access token is not in the BootstrapContext of a cookie session
-
-It was requested in [#158](https://github.com/Arc4u-org/Arc4u/issues/158). Add `app.UseOpenIdBearerInjector()`
-after `UseAuthentication()`, see [Use the user's access token](oidc-cookie.md#use-the-users-access-token).
-
 ### The first sign-in of a Blazor WebAssembly application fails
 
 This is a client-side issue ([#155](https://github.com/Arc4u-org/Arc4u/issues/155)), see

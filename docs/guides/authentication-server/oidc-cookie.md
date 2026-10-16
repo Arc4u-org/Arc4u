@@ -377,10 +377,12 @@ builder.Services.AddOidcAuthentication(options =>
 
 ### Use the user's access token
 
-In a cookie session the access token is not in the `BootstrapContext` of the identity. Resolve the keyed
-`ITokenProvider` named `Oidc` to get it (refreshed when needed), or add `app.UseOpenIdBearerInjector()` after
-`UseAuthentication()`: for cookie-authenticated requests, it puts the token in the `Authorization` header of
-the request and in the `BootstrapContext`, so code written for bearer tokens works unchanged. When on-behalf-of
+In a cookie session the access token is in the `BootstrapContext` of the identity, as with JWT bearer: on each
+request, the cookie authentication puts it there after refreshing it when it expires in less than
+`ForceRefreshTimeoutTimeSpan`. It is not refreshed again during the request. For long-running work, resolve the
+keyed `ITokenProvider` named `Oidc` instead: it refreshes the token when needed. To also put the token in the
+`Authorization` header of cookie-authenticated requests, so code written for bearer tokens works unchanged, add
+`app.UseOpenIdBearerInjector()` after `UseAuthentication()`. When on-behalf-of
 settings named `Obo_for_OpenId` exist (`Authentication:OnBehalfOf:Obo_for_OpenId`), the injector puts an
 on-behalf-of token obtained with the `Obo` provider instead of the user's token. Its options are registered by
 the configuration overloads; with the code overload, call `builder.Services.AddOpenIdBearerInjector()`. Calling other
