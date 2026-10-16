@@ -2,10 +2,10 @@ using Arc4u.Diagnostics;
 
 namespace Arc4u.Diagnostics;
 
-/// <summary>Fluent extension methods that add properties to the additional fields of an <see cref="ILoggerWrapper{T}"/>; they are written with the log entries of that logger.</summary>
+/// <summary>Fluent extension methods that add properties to the additional fields of an <see cref="ILoggerWrapper{T}"/>; they are written with the next log entry of that logger.</summary>
 /// <remarks>
 /// The keys defined in <see cref="LoggingConstants"/> are reserved: using one of them throws a <see cref="ReservedLoggingKeyException"/>.
-/// Known issue: properties are not cleared after an entry is written; they persist on later entries written by the same logger instance, whose lifetime follows its consumer.
+/// The properties are cleared once the entry is written: they never appear on later entries.
 /// </remarks>
 public static class LoggerWrapperExtensions
 {
@@ -95,7 +95,7 @@ public static class LoggerWrapperExtensions
     }
 
     /// <summary>Requests that the stack trace is added, in the <see cref="LoggingConstants.Stacktrace"/> property, to the log entries: the stack trace of the exception when one is logged, otherwise the current stack trace.</summary>
-    /// <remarks>Known issue: the setting is not reset after an entry is written; it applies to later entries written by the same logger instance.</remarks>
+    /// <remarks>The request applies to the next entry only.</remarks>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger wrapper.</param>
     /// <returns>The same logger wrapper, for chaining.</returns>

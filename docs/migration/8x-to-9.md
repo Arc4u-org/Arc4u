@@ -1105,10 +1105,9 @@ Steps:
 4. `LoggerContext` is removed: use `ILogger.BeginScope` or an `IAddPropertiesToLog` implementation to
    add properties to every entry. The [diagnostics guide](../guides/diagnostics/index.md) covers both.
 
-> [!WARNING]
-> Known issue: the properties added with `Add` are not cleared after the entry is written. They are
-> added to every later entry written by the same `ILogger<T>` instance, which can leak data between
-> requests when that instance is shared.
+> [!NOTE]
+> The properties added with `Add` (and the message template arguments) are written with that entry
+> only: `Technical()`, `Business()` and `Monitoring()` return a logger dedicated to the entry.
 
 ## Result extension methods
 

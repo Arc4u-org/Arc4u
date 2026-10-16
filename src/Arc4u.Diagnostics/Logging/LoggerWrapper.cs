@@ -14,19 +14,19 @@ namespace Arc4u.Diagnostics;
 /// <typeparam name="T">The category type of the logger.</typeparam>
 public interface ILoggerWrapper<T> : ILogger<T>, ILoggerCallerMember
 {
-    /// <summary>Gets the additional properties that are written with the log entries of this logger.</summary>
-    /// <remarks>Known issue: properties are not cleared after an entry is written; they persist on later entries written by the same logger instance, whose lifetime follows its consumer.</remarks>
+    /// <summary>Gets the additional properties that are written with the next log entry of this logger.</summary>
+    /// <remarks>The properties are cleared once the entry is written.</remarks>
     public Dictionary<string, object?> AdditionalFields { get; }
 
-    /// <summary>Sets a value indicating whether the stack trace is added to the log entry.</summary>
+    /// <summary>Sets a value indicating whether the stack trace is added to the next log entry; reset once the entry is written.</summary>
     public bool IncludeStackTrace { set; }
 
-    /// <summary>Sets the category, the calling member and optionally the source context type used by the log entries of this logger.</summary>
-    /// <remarks>The values stay set until <see cref="SetContext"/> is called again on the same instance (the source context type is only replaced when <paramref name="realType"/> is given).</remarks>
+    /// <summary>Returns a logger that writes its entries with the category, the calling member and optionally the source context type given.</summary>
+    /// <remarks>The returned logger has its own additional fields, so a logger shared between callers (or threads) is never modified by an entry being prepared.</remarks>
     /// <param name="category">The message category, see <see cref="MessageCategory"/>.</param>
     /// <param name="caller">The name of the calling member.</param>
     /// <param name="realType">The type to report as the source context instead of <typeparamref name="T"/>, or <see langword="null"/> to keep <typeparamref name="T"/>.</param>
-    /// <returns>This logger wrapper.</returns>
+    /// <returns>The logger wrapper to use for the entry.</returns>
     ILoggerWrapper<T> SetContext(string category, string caller = "", Type? realType = null);
 
 }
@@ -67,13 +67,15 @@ public sealed class LoggerWrapper<T> : LoggerBaseWrapper<T>
 /// Base implementation of <see cref="ILoggerWrapper{T}"/>. It enriches every log entry with the Arc4u properties (see <see cref="LoggingConstants"/>)
 /// and the properties supplied by <see cref="IAddPropertiesToLog"/> before forwarding it to the underlying logger.
 /// </summary>
+/// <remarks>
+/// <see cref="SetContext"/> (used by <c>Technical()</c>, <c>Business()</c>, <c>Monitoring()</c>, ...) returns a new logger dedicated to one entry: the properties
+/// added to it are written with its next entry only, and they are never shared with other callers of this instance.
+/// </remarks>
 /// <typeparam name="T">The category type of the logger.</typeparam>
 public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
 {
     private readonly ILogger _logger;
-    private string _category;
     private readonly Dictionary<string, object?> _additionalFields = [];
-    private Type _contextType;
     private string _caller = string.Empty;
     private bool _disposed;
     private readonly IAddPropertiesToLog? _addPropertiesToLog;
@@ -109,8 +111,6 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     public LoggerBaseWrapper(ILoggerFactory loggerFactory, IAddPropertiesToLog addPropertiesToLog, IOptionsMonitor<ApplicationConfig> appConfig)
     {
         _logger = loggerFactory.CreateLogger<T>();
-        _category = nameof(MessageCategory.Technical);
-        _contextType = typeof(T);
         _addPropertiesToLog = addPropertiesToLog;
         _applicationConfig = appConfig.CurrentValue ?? new();
 
@@ -121,20 +121,14 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     }
 
     /// <inheritdoc/>
-    public  ILoggerWrapper<T> SetContext(string category, string caller = "", Type? realType = null)
-    {
-        _caller = caller;
-        _category = category;
-        if (realType != null)
-        {
-            _contextType = realType;
-        }
-        return this;
-    }
+    /// <remarks>This instance is not modified: the returned logger carries the context and its own additional fields.</remarks>
+    public ILoggerWrapper<T> SetContext(string category, string caller = "", Type? realType = null) =>
+        new LogEntry(this, category, caller, realType ?? typeof(T));
 
     private static string ApplicationName => Assembly.GetEntryAssembly()?.GetName().Name ?? "Unknown App";
 
-    private void Log(LogLevel level, EventId eventId, string? message, Exception? exception = null)
+    private void Write<TState>(LogLevel level, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter,
+                               string category, string caller, Type contextType, Dictionary<string, object?> fields, bool includeStackTrace)
     {
         ThrowIfDisposed();
 
@@ -145,16 +139,27 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
 
         try
         {
-            var properties = AddAdditionalProperties();
+            // The properties of the entry: a copy, so the fields of the caller are never modified by the entry itself.
+            var properties = new Dictionary<string, object?>(fields);
 
-            if (IncludeStackTrace)
+            if (state is IEnumerable<KeyValuePair<string, object>> pairs)
+            {
+                foreach (var pair in pairs)
+                {
+                    properties.AddOrReplace(pair.Key, pair.Value);
+                }
+            }
+
+            AddPropertiesToLog(properties);
+
+            if (includeStackTrace)
             {
                 properties.AddIfNotExist(LoggingConstants.Stacktrace, exception?.StackTrace ?? System.Environment.StackTrace);
             }
 
-            properties.AddIfNotExist(LoggingConstants.MethodName, _caller);
-            properties.AddIfNotExist(LoggingConstants.Class, _contextType?.FullName ?? nameof(_contextType));
-            properties.AddIfNotExist(LoggingConstants.Category, _category);
+            properties.AddIfNotExist(LoggingConstants.MethodName, caller);
+            properties.AddIfNotExist(LoggingConstants.Class, contextType.FullName ?? contextType.Name);
+            properties.AddIfNotExist(LoggingConstants.Category, category);
             properties.AddIfNotExist(LoggingConstants.Application, _applicationConfig.Environment.LoggingName);
             properties.AddIfNotExist(LoggingConstants.ThreadId, System.Environment.CurrentManagedThreadId);
             properties.AddIfNotExist(LoggingConstants.ProcessId, ProcessId);
@@ -163,13 +168,15 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
                 properties.AddIfNotExist(LoggingConstants.ActivityId, activity.TraceId.ToString());
             }
 
-            _logger.Log(level, eventId, properties, exception, (state, ex) => message ?? "");
+            var message = formatter(state, exception);
+
+            _logger.Log(level, eventId, properties, exception, (_, _) => message ?? "");
 
             if (exception is AggregateException aggregateException)
             {
                 foreach (var innerException in aggregateException.Flatten().InnerExceptions)
                 {
-                    _logger.Log(level, eventId, properties, innerException, (state, ex) => message ?? "");
+                    _logger.Log(level, eventId, properties, innerException, (_, _) => message ?? "");
                 }
             }
         }
@@ -192,9 +199,8 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
         _disposed = true;
     }
 
-    private Dictionary<string, object?> AddAdditionalProperties()
+    private void AddPropertiesToLog(Dictionary<string, object?> properties)
     {
-        var properties = new Dictionary<string, object?>(AdditionalFields);
         try
         {
             var definedProperties = _addPropertiesToLog?.GetProperties();
@@ -208,18 +214,17 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
                     }
                 }
             }
-            return properties;
         }
         catch (Exception ex)
         {
-            Log(LogLevel.Error, default, "Error getting property providers. Logging without additional properties.", ex);
-            return new Dictionary<string, object?>(AdditionalFields);
+            _logger.LogError(ex, "Error getting property providers. Logging without additional properties.");
         }
     }
 
     /// <summary>
-    /// Writes a log entry. When <paramref name="state"/> is a sequence of key/value pairs, the pairs are added to <see cref="AdditionalFields"/> first.
+    /// Writes a log entry in the <see cref="MessageCategory.Technical"/> category. When <paramref name="state"/> is a sequence of key/value pairs, the pairs are written as properties of this entry.
     /// The entry is enriched with the Arc4u properties and forwarded to the underlying logger; for an <see cref="AggregateException"/> the flattened inner exceptions are logged as well.
+    /// The <see cref="AdditionalFields"/>, the stack trace request and the calling member are reset once the entry is written.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <param name="logLevel">The severity of the entry.</param>
@@ -230,15 +235,16 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     /// <exception cref="ObjectDisposedException">The wrapper has been disposed.</exception>
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        if (state is IEnumerable<KeyValuePair<string, object>> pairs)
+        try
         {
-            foreach (var pair in pairs)
-            {
-                AdditionalFields.AddOrReplace(pair.Key, pair.Value);
-            }
+            Write(logLevel, eventId, state, exception, formatter, nameof(MessageCategory.Technical), _caller, typeof(T), _additionalFields, IncludeStackTrace);
         }
-
-        Log(logLevel, eventId, formatter(state, exception), exception);
+        finally
+        {
+            _additionalFields.Clear();
+            IncludeStackTrace = false;
+            _caller = string.Empty;
+        }
     }
 
     /// <inheritdoc/>
@@ -255,12 +261,46 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _logger.BeginScope(state);
 
     /// <summary>
-    /// Sets the name of the calling member written in the <see cref="LoggingConstants.MethodName"/> property.
+    /// Sets the name of the calling member written in the <see cref="LoggingConstants.MethodName"/> property of the next entry.
     /// </summary>
     /// <param name="caller">The name of the calling member.</param>
     public void CallerMemberName(string caller)
     {
         _caller = caller;
     }
-}
 
+    /// <summary>
+    /// The logger returned by <see cref="SetContext"/>: it holds the category, the calling member, the source context type and the additional fields
+    /// of one entry, and writes through its parent. The additional fields and the stack trace request are reset once an entry is written.
+    /// </summary>
+    private sealed class LogEntry(LoggerBaseWrapper<T> parent, string category, string caller, Type contextType) : ILoggerWrapper<T>
+    {
+        private string _caller = caller;
+
+        public Dictionary<string, object?> AdditionalFields { get; } = [];
+
+        public bool IncludeStackTrace { private get; set; }
+
+        public ILoggerWrapper<T> SetContext(string category, string caller = "", Type? realType = null) =>
+            new LogEntry(parent, category, caller, realType ?? contextType);
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            try
+            {
+                parent.Write(logLevel, eventId, state, exception, formatter, category, _caller, contextType, AdditionalFields, IncludeStackTrace);
+            }
+            finally
+            {
+                AdditionalFields.Clear();
+                IncludeStackTrace = false;
+            }
+        }
+
+        public bool IsEnabled(LogLevel logLevel) => parent.IsEnabled(logLevel);
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => parent.BeginScope(state);
+
+        public void CallerMemberName(string caller) => _caller = caller;
+    }
+}

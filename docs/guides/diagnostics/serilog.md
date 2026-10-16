@@ -300,10 +300,6 @@ public class ConsoleWriter : SerilogWriter
 
 Check, in this order: `UseSerilog` is called on the host; the sink package is referenced and listed in `"Using"`; the sub-logger `MinimumLevel` is not higher than the level you log; a `Filter` does not exclude the entry. Serilog writes sink failures to its self log: add `Serilog.Debugging.SelfLog.Enable(Console.Error)` before you build the logger when a sink stays silent.
 
-### Properties from an earlier entry appear on a later one
-
-Known issue, described in [Properties added with Add stay on later entries](index.md#properties-added-with-add-stay-on-later-entries).
-
 ## See also
 
 - [Diagnostics and logging](index.md)

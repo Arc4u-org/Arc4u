@@ -236,12 +236,6 @@ Some older notes use `ToActionResultAsync`. The methods are `ToActionOkResultAsy
 `ToActionCreatedResultAsync` (controllers), `ToHttpOkResultAsync` and `ToHttpCreatedResultAsync`
 (`IResult`), `ToTypedOkResultAsync` and `ToTypedCreatedResultAsync` (typed results).
 
-### Known issues
-
-> [!WARNING]
-> `LogIfFailed(context, content, level)` makes the singleton `FluentLogger` add a `Context` property that is never
-> cleared, so it appears on every later result log in the process. Avoid that overload until it is fixed.
-
 ## See also
 
 - [Fluent result chains](fluent-results.md)

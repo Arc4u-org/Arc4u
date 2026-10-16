@@ -39,7 +39,7 @@ public class FluentLogger : IResultLogger
         if (!string.IsNullOrEmpty(context) && !string.IsNullOrEmpty(content))
         {
             var logger = _logger.Business()
-                                .Add("Context", () => context!);
+                                .Add("Context", context);
 
             GetBusinessLogger(logger, logLevel)(content);
         }

@@ -196,10 +196,6 @@ The level passed to `LogIfFailed` is also used for the optional `content` line, 
 overload `LogIfFailed(context, content, logLevel)` with a non-empty context and content. A `ValidationError` keeps the
 level of its own `Severity`, and an exception is always logged at error level.
 
-> [!WARNING]
-> Known issue: the overload `LogIfFailed(context, content, logLevel)` makes the singleton `FluentLogger` add a `Context` property to its logger, and the
-> property is never cleared. It then appears on every later result log in the process. Avoid the overload until it is fixed.
-
 `FluentLogger` needs the Arc4u `ILogger<T>`; register it with `AddResultLogger()` as shown in the [overview](index.md#code).
 
 ## Extensibility points

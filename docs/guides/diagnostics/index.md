@@ -102,10 +102,10 @@ Calling `GET /orders/7` writes these two lines (the `RequestId`, `RequestPath` a
 
 ```text
 29/09/2026 14:53:26,030  Information   Technical   27153  7   Program - <Main>$ - Reading order 7 - {"OrderId":7,"RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
-29/09/2026 14:53:26,044  Information   Business    27153  7   Program - <Main>$ - Order shipped - {"OrderId":7,"Customer":"contoso","RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
+29/09/2026 14:53:26,044  Information   Business    27153  7   Program - <Main>$ - Order shipped - {"Customer":"contoso","RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
 ```
 
-`OrderId`, which was only a template argument of the first entry, is written again on the second one. This is a known issue, described in [Properties added with Add stay on later entries](#properties-added-with-add-stay-on-later-entries).
+Each property belongs to one entry: `OrderId` (a template argument of the first entry) and `Customer` (added to the second) are not written on any other entry. See [Properties belong to one entry](#properties-belong-to-one-entry).
 
 ### Properties written on every entry
 
@@ -168,8 +168,8 @@ A `null` or white-space key throws `ArgumentNullException`, and a reserved key t
 
 The values of the message template (`{Duration}` above) are also written as properties, as with any structured logger. What `Add` gives you is a property that is not in the message text.
 
-> [!WARNING]
-> Known issue: properties are not cleared after an entry is written. Read [Properties added with Add stay on later entries](#properties-added-with-add-stay-on-later-entries) before you add personal data.
+> [!NOTE]
+> The properties are written with the next entry only. See [Properties belong to one entry](#properties-belong-to-one-entry).
 
 ### Add your own category
 
@@ -451,37 +451,19 @@ The key you passed to `Add` is one of `Application`, `Pid`, `Tid`, `Method`, `So
 
 Check, in this order: a provider such as `DefaultLoggingProperties` is registered under `"Scoped"` (`AddApplicationContext()` does not register one); for the logger of a singleton, `HttpContextLoggingProperties` is registered under `"Transient"` (`AddHttpContextLoggingProperties()` called before `AddApplicationContext()`, see [Loggers of singletons in an ASP.NET Core host](#loggers-of-singletons-in-an-aspnet-core-host)) and the entry is written during an HTTP or gRPC request; `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal). `ActivityId` is missing when the entry is written outside a `System.Diagnostics.Activity` (for example in a background service that starts none). See [Add the user to every entry](#add-the-user-to-every-entry).
 
-### Properties added with Add stay on later entries
+### Properties belong to one entry
 
-Known issue. The properties you add (`Add`, `AddIf`, ...), the values of message template arguments (including the `Message` property that `LogException` writes with the exception message, which often contains data) and the `AddStackTrace()` setting are stored in the logger instance and are not cleared once the entry is written. Every later entry written by the same logger instance carries them, even when it uses another category. The lifetime of the instance follows its consumer: an `ILogger<T>` injected in a singleton service lives as long as the application.
+`Technical()`, `Business()`, `Monitoring()` and `Category(...)` return a new logger for the entry you are writing; the injected `ILogger<T>` is never modified. The properties you add (`Add`, `AddIf`, ...), the values of the message template arguments and the `AddStackTrace()` request are written with the next entry and cleared once it is written. They never appear on a later entry, even when the `ILogger<T>` lives as long as the application (injected in a singleton) or is used by several threads at the same time.
 
-This output comes from one `ILogger<Program>` that logs three entries, only the first with `Add("Ssn", ...)` (the fixed columns are shortened):
-
-```text
-Information  Technical  Program - first - {"Ssn":"123-45-6789"}
-Information  Technical  Program - second (no Add) - {"Ssn":"123-45-6789"}
-Information  Technical  Program - third (plain ILogger call) - {"Ssn":"123-45-6789"}
-```
-
-Until this is fixed:
-
-- do not `Add` personal or secret data (names, e-mail addresses, tokens) on a logger that lives longer than the operation you log;
-- put per-call data in the message template of a short-lived logger, or clear the logger yourself before you log, as below.
+If you keep the logger returned by `Technical()` in a variable, each entry it writes starts again with no property:
 
 ```csharp
-using Arc4u.Diagnostics;
-
-public class Cleaner(ILogger<Cleaner> logger)
-{
-    public void Log()
-    {
-        var entry = logger.Technical();
-        entry.AdditionalFields.Clear();
-        entry.IncludeStackTrace = false;
-        entry.LogInformation("Starts with no property from a previous entry");
-    }
-}
+var entry = logger.Technical();
+entry.Add("OrderId", 7).LogInformation("Order read");   // OrderId = 7
+entry.LogInformation("Order processed");                // no OrderId
 ```
+
+Versions of 9.x before this fix kept these properties on the logger instance and wrote them on every later entry (Arc4u-org/Arc4u#273).
 
 ## See also
 

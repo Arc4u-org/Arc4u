@@ -19,6 +19,8 @@ public class NullLoggerWrapper<T> : ILoggerWrapper<T>
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         _logger.Log(logLevel, eventId, state, exception, formatter);
+        AdditionalFields.Clear();
+        IncludeStackTrace = false;
     }
 
     /// <inheritdoc/>
@@ -46,6 +48,7 @@ public class NullLoggerWrapper<T> : ILoggerWrapper<T>
     /// <inheritdoc/>
     public ILoggerWrapper<T> SetContext(string category, string caller = "", Type? realType = null)
     {
-        return this;
+        // A new instance per entry: the shared Instance never collects the properties of the callers.
+        return new NullLoggerWrapper<T>();
     }
 }
