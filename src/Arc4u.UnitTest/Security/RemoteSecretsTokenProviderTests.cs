@@ -1,3 +1,4 @@
+using System.Text;
 using Arc4u.Configuration;
 using Arc4u.OAuth2.Options;
 using Arc4u.OAuth2.Token;
@@ -44,6 +45,75 @@ public class RemoteSecretsTokenProviderTests
         token.Should().NotBeNull();
         token!.Token.Should().Be(options.ClientSecret);
         token.TokenType.Should().Be(options.HeaderKey);
+    }
+
+    [Theory]
+    [InlineData("Basic")]
+    [InlineData("basic")]
+    public async Task RemoteSecrets_TokenProvider_With_Basic_And_Clear_Secret_Should_Encode_Base64(string headerKey)
+    {
+        // arrange
+        const string clearSecret = "user:p@ssw0rd";
+
+        var settings = new SimpleKeyValueSettings(new Dictionary<string, string>
+        {
+            { TokenKeys.ProviderIdKey, RemoteClientSecretTokenProvider.ProviderName },
+            { TokenKeys.ClientSecret, clearSecret },
+            { TokenKeys.ClientSecretHeader, headerKey }
+        });
+
+        // act
+        var sut = _fixture.Create<RemoteClientSecretTokenProvider>();
+        var tokenResult = await sut.GetTokenAsync(settings, null);
+
+        // assert
+        tokenResult.IsSuccess.Should().BeTrue();
+        tokenResult.Value.Token.Should().Be(Convert.ToBase64String(Encoding.UTF8.GetBytes(clearSecret)));
+        tokenResult.Value.TokenType.Should().Be(headerKey);
+    }
+
+    [Fact]
+    public async Task RemoteSecrets_TokenProvider_With_Basic_And_Base64_Secret_Should_Not_Encode_Twice()
+    {
+        // arrange
+        var encodedSecret = Convert.ToBase64String(Encoding.UTF8.GetBytes("user:p@ssw0rd"));
+
+        var settings = new SimpleKeyValueSettings(new Dictionary<string, string>
+        {
+            { TokenKeys.ProviderIdKey, RemoteClientSecretTokenProvider.ProviderName },
+            { TokenKeys.ClientSecret, encodedSecret },
+            { TokenKeys.ClientSecretHeader, "Basic" }
+        });
+
+        // act
+        var sut = _fixture.Create<RemoteClientSecretTokenProvider>();
+        var tokenResult = await sut.GetTokenAsync(settings, null);
+
+        // assert
+        tokenResult.IsSuccess.Should().BeTrue();
+        tokenResult.Value.Token.Should().Be(encodedSecret);
+    }
+
+    [Fact]
+    public async Task RemoteSecrets_TokenProvider_With_Custom_Header_Should_Not_Encode()
+    {
+        // arrange
+        const string clearSecret = "user:p@ssw0rd";
+
+        var settings = new SimpleKeyValueSettings(new Dictionary<string, string>
+        {
+            { TokenKeys.ProviderIdKey, RemoteClientSecretTokenProvider.ProviderName },
+            { TokenKeys.ClientSecret, clearSecret },
+            { TokenKeys.ClientSecretHeader, "SecretKey" }
+        });
+
+        // act
+        var sut = _fixture.Create<RemoteClientSecretTokenProvider>();
+        var tokenResult = await sut.GetTokenAsync(settings, null);
+
+        // assert
+        tokenResult.IsSuccess.Should().BeTrue();
+        tokenResult.Value.Token.Should().Be(clearSecret);
     }
 
     [Fact]

@@ -319,7 +319,7 @@ another section). The configuration based `AddJwtAuthentication` already calls i
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `Authentication:RemoteSecrets:<name>:ClientSecret` | `string` | none (required) | The value to send. |
-| `Authentication:RemoteSecrets:<name>:HeaderKey` | `string` | `SecretKey` | The header that carries the value. `Basic` sends `Authorization: Basic <value>`. |
+| `Authentication:RemoteSecrets:<name>:HeaderKey` | `string` | `SecretKey` | The header that carries the value. `Basic` sends `Authorization: Basic <value>`: a clear `user:password` value is Base64 encoded first, a value already Base64 encoded is sent as is. |
 | `Authentication:RemoteSecrets:<name>:AuthenticationType` | `string` | `Inject` | Keep `Inject`: the header name is taken from the token type only in that mode. |
 | `Authentication:RemoteSecrets:<name>:ProviderId` | `string` | `RemoteSecret` | Key of the token provider. |
 
