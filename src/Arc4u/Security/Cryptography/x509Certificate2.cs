@@ -76,7 +76,7 @@ public static class Certificate
     /// <param name="x509">The certificate used to encrypt</param>
     /// <returns>The decrypted text.</returns>
     /// <exception cref="ArgumentNullException"></exception>
-    /// <exception cref="CryptographicException">The certificate has no private key.</exception>
+    /// <exception cref="CryptographicException">The certificate has no private key, or its private key cannot be accessed (for example missing permissions on a LocalMachine certificate).</exception>
     /// <exception cref="NotSupportedException">The certificate has no RSA private key.</exception>
     public static string Decrypt(this X509Certificate2 x509, string base64Cypherstring)
     {
@@ -92,7 +92,7 @@ public static class Certificate
             throw new CryptographicException(string.Format(CultureInfo.InvariantCulture, "The certificate {0} has no private key!", x509.FriendlyName));
         }
 
-        using var rsa = x509.GetRSAPrivateKey() ?? throw NotRsa(x509);
+        using var rsa = GetRSAPrivateKey(x509);
 
         if (base64Cypherstring.Contains('.'))
         {
@@ -127,6 +127,26 @@ public static class Certificate
         var cipherBytes = Convert.FromBase64String(base64Cypherstring);
 
         return rsa.Decrypt(cipherBytes, RSAEncryptionPadding.OaepSHA256);
+    }
+
+    /// <summary>
+    /// Get the RSA private key and explain the failure when the key exists but cannot be opened,
+    /// typically a certificate in the LocalMachine store whose private key is not readable by the current user ("Keyset does not exist").
+    /// </summary>
+    private static RSA GetRSAPrivateKey(X509Certificate2 x509)
+    {
+        try
+        {
+            return x509.GetRSAPrivateKey() ?? throw NotRsa(x509);
+        }
+        catch (CryptographicException ex)
+        {
+            throw new CryptographicException(string.Format(CultureInfo.InvariantCulture,
+                                                           "The private key of the certificate {0} ({1}) cannot be accessed: {2} " +
+                                                           "When the certificate is in the LocalMachine store, the current user must be granted read access to its private key " +
+                                                           "(Manage Private Keys in the certificate MMC), or use a certificate in the CurrentUser store or loaded from PEM files.",
+                                                           x509.Subject, x509.Thumbprint, ex.Message), ex);
+        }
     }
 
     private static NotSupportedException NotRsa(X509Certificate2 x509)
