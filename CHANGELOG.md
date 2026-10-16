@@ -104,9 +104,15 @@ packages. It contains breaking changes: follow the
   services as scoped for any value but `Transient`. Call `AddNotificationHandlersAsScoped()` or the
   new `AddNotificationHandlersAsTransient()`
   ([#260](https://github.com/Arc4u-org/Arc4u/issues/260)).
+- `IApplicationContext.Principal` is an `AppPrincipal?` and `SetPrincipal` accepts `null` to clear
+  the principal, so the compiler warns when the principal is used without a null check
+  ([#125](https://github.com/Arc4u-org/Arc4u/issues/125)).
 
 ### Removed
 
+- `IApplicationContext.ActivityID`: the `ActivityId` log property is the trace id of the current
+  `System.Diagnostics.Activity` (OpenTelemetry), added by the logger when an activity exists
+  ([#222](https://github.com/Arc4u-org/Arc4u/issues/222)).
 - `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core`, `Arc4u.Standard.NServiceBus.RabbitMQ`
   and `Arc4u.Prism.DI.Wpf`: no 9.0 version
   ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)). They are deprecated on NuGet.org

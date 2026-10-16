@@ -1350,12 +1350,14 @@ public static class Security
 | `Arc4u.OAuth2.AspNetCore.Options.ValidateResourceRightMiddlewareOptions` | `Arc4u.OAuth2.Options.ValidateResourceRightMiddlewareOptions` |
 | `Arc4u.OAuth2.Security.Principal.AppServicePrincipalFactory` | `Arc4u.OAuth2.AppServicePrincipalFactory` |
 | `Arc4u.Utils.Enum<T>`, `EnumUtil` | The generic methods of `System.Enum` (`Enum.GetValues<T>()`, `Enum.TryParse<T>()`) |
+| `IApplicationContext.Principal` as an `AppPrincipal`, `SetPrincipal(AppPrincipal)` | `AppPrincipal? Principal` and `SetPrincipal(AppPrincipal?)`: check the principal for `null` before using it (nobody authenticated), and pass `null` to clear it |
 | `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
 
 ### Other removed APIs
 
 | 8.x | Replacement |
 |---|---|
+| `IApplicationContext.ActivityID` (set by the gRPC interceptors and the HTTP handlers) | `Activity.Current?.TraceId` (OpenTelemetry). The logger adds it as the `ActivityId` property when an activity exists |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api`: `ServiceAspectAttribute`, `OperationCheckAttribute` (already obsolete in 8.x) | ASP.NET Core authorization policies from `AddScopedOperationsPolicy` (`[Authorize("<operation>")]`), `ManageExceptionsFilter` and `SetCultureActionFilter` |
 | `SecretBasicExtension.AddSecretAuthentication`, `CredentialSecretTokenProvider` | `AddClientTokens` (see [Client secrets replaced by client tokens](#client-secrets-replaced-by-client-tokens)) |
 | `LoggerContext`, `CommonLoggerProperties`, `LoggerBase` | See [Fluent logging API](#fluent-logging-api) |
