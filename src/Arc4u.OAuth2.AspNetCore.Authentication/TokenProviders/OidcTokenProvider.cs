@@ -39,21 +39,31 @@ namespace Arc4u.OAuth2.TokenProviders
         /// <param name="settings">The provider settings, which must not be <see langword="null"/>.</param>
         /// <param name="platformParameters">Not used.</param>
         /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
-        /// <returns>The access token.</returns>
-        public async Task<Result<TokenInfo?>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+        /// <returns>The access token, or a failed result when the user is not logged in (no access and no refresh token).</returns>
+        public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
         {
             ArgumentNullException.ThrowIfNull(settings);
 
-            var timeRemaining = _tokenRefreshInfo.AccessToken.ExpiresOnUtc.Subtract(DateTime.UtcNow);
+            var accessToken = _tokenRefreshInfo.AccessToken;
 
-            if (timeRemaining > _hybridOptions.ForceRefreshTimeoutTimeSpan)
+            if (accessToken is not null && accessToken.ExpiresOnUtc.Subtract(DateTime.UtcNow) > _hybridOptions.ForceRefreshTimeoutTimeSpan)
             {
-                return _tokenRefreshInfo.AccessToken;
+                return accessToken;
+            }
+
+            if (_tokenRefreshInfo.RefreshToken is null)
+            {
+                return Result.Fail("No access token and no refresh token: the user is not logged in.");
             }
 
             var refreshTokenInfo = await _refreshTokenProvider.RefreshTokenAsync(CancellationToken.None).ConfigureAwait(false);
 
-            return refreshTokenInfo?.AccessToken;
+            if (refreshTokenInfo?.AccessToken is null)
+            {
+                return Result.Fail("Refreshing the token did not return an access token.");
+            }
+
+            return refreshTokenInfo.AccessToken;
         }
 
         /// <summary>Not supported.</summary>

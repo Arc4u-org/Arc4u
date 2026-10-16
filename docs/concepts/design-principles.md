@@ -65,7 +65,8 @@ builder.Services.AddOpenTelemetry()
 ```
 
 `AddOpenTelemetry` comes from the `OpenTelemetry.Extensions.Hosting` package; add the
-exporters you use as usual.
+exporters you use as usual. `Arc4u.Diagnostics` contains an
+<xref:Arc4u.Diagnostics.OpenTelemetrySettings> class, but no Arc4u code reads it.
 
 ### Replace a behavior through dependency injection
 

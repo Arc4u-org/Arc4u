@@ -55,7 +55,7 @@ namespace Arc4u.OAuth2.TokenProviders
         /// <summary>Calls the token endpoint of the authority with the <c>refresh_token</c> grant and stores the new tokens in the scoped <see cref="TokenRefreshInfo"/>.</summary>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
         /// <returns>The updated <see cref="TokenRefreshInfo"/>.</returns>
-        /// <exception cref="InvalidOperationException">The refresh token is expired.</exception>
+        /// <exception cref="InvalidOperationException">There is no refresh token, or it is expired.</exception>
         /// <exception cref="HttpRequestException">The token endpoint does not answer with a success status code.</exception>
         public async Task<TokenRefreshInfo?> RefreshTokenAsync(CancellationToken cancellationToken)
         {
@@ -65,11 +65,19 @@ namespace Arc4u.OAuth2.TokenProviders
 
             using var activity = _activitySource?.StartActivity("Get on behal of token", ActivityKind.Producer);
 
+            // No refresh token when the user is not logged in.
+            var refreshTokenInfo = _tokenRefreshInfo.RefreshToken;
+            if (refreshTokenInfo is null)
+            {
+                _logger.Technical().LogError("No refresh token available: the user is not logged in.");
+                throw new InvalidOperationException("Refreshing the token is impossible, no refresh token is available.");
+            }
+
             // Check if the token refresh is not expired.
             // if yes => we have to log this and return a Unauthorized!
-            if (DateTime.UtcNow > _tokenRefreshInfo.RefreshToken.ExpiresOnUtc)
+            if (DateTime.UtcNow > refreshTokenInfo.ExpiresOnUtc)
             {
-                _logger.Technical().LogError($"Refresh token is expired: {_tokenRefreshInfo.RefreshToken.ExpiresOnUtc}.");
+                _logger.Technical().LogError($"Refresh token is expired: {refreshTokenInfo.ExpiresOnUtc}.");
                 throw new InvalidOperationException("Refreshing the token is impossible, validity date is expired.");
             }
 
@@ -81,7 +89,7 @@ namespace Arc4u.OAuth2.TokenProviders
                 { "client_id", options.ClientId ?? string.Empty},
                 { "client_secret", options.ClientSecret ?? string.Empty },
                 { "grant_type", "refresh_token" },
-                { "refresh_token", _tokenRefreshInfo.RefreshToken.Token }
+                { "refresh_token", refreshTokenInfo.Token }
             };
 
             // Some Idp require extra parameters to link application definition to the right Api context.

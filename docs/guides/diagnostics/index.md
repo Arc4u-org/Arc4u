@@ -408,7 +408,7 @@ LogRecord.Attributes (Key:Value):
     Pid: 30603
 ```
 
-Arc4u has no OpenTelemetry settings class: configure the OpenTelemetry SDK with its own options.
+The <xref:Arc4u.Diagnostics.OpenTelemetrySettings> class (`Address`, `Attributes`, `Sources`) exists in the package, but no Arc4u code reads it. Configure the OpenTelemetry SDK with its own options.
 
 ## Extensibility points
 
