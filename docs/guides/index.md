@@ -30,5 +30,5 @@ most of the packages above and have no guide of their own: see
 
 The [package support](package-support.md) page lists every package with its
 support status and target frameworks, including the packages that are not shipped in 9.x
-(`Arc4u.OAuth2.Msal` and the removed `Arc4u.Dependency.ComponentModel`, NServiceBus and
-Prism.DI.Wpf packages).
+(`Arc4u.OAuth2.Msal` and the removed `Arc4u.Data`, `Arc4u.Dependency.ComponentModel`, NServiceBus
+and Prism.DI.Wpf packages).

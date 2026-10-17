@@ -14,7 +14,7 @@ dotnet add package Arc4u.Caching.SqlServer --prerelease
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, SqlCache>(CacheContext.Sql);
+builder.Services.AddSqlCacheKind();
 ```
 
 The `Caching` section declares the cache with `"Kind": "Sql"` and the settings `ConnectionString`, `SchemaName` and

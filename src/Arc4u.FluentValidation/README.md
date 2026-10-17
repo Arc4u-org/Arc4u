@@ -24,5 +24,5 @@ var result = validator.ValidateWithResult("");
 ## Documentation
 
 - Guide: [Results and errors](https://arc4u-org.github.io/Arc4u/guides/results/)
-- API reference: [Arc4u.FluentValidation](https://arc4u-org.github.io/Arc4u/api/Arc4u.FluentValidation.html)
+- API reference: [Arc4u.Validation](https://arc4u-org.github.io/Arc4u/api/Arc4u.Validation.html)
 - Source and issues: [github.com/Arc4u-org/Arc4u](https://github.com/Arc4u-org/Arc4u)

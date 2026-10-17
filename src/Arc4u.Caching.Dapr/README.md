@@ -13,7 +13,7 @@ dotnet add package Arc4u.Caching.Dapr --prerelease
 ```csharp
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
-builder.Services.AddKeyedTransient<ICache, DaprCache>(CacheContext.Dapr);
+builder.Services.AddDaprCacheKind();
 ```
 
 The `Caching` section declares the cache with `"Kind": "Dapr"` and `"Settings": { "Name": "<state store name>" }`. The

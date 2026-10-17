@@ -332,7 +332,7 @@ the reason:
 | Token | Response |
 |---|---|
 | Expired | `401` with an `x-token-expired` response header, and `detail` "The token expired on ..." |
-| Wrong audience | `401` with `detail` "The audience '...' is invalid" |
+| Wrong audience | `401` with `detail` "The audience '...' of the token is not an audience accepted by this service." |
 
 > [!CAUTION]
 > `AddJwtAuthentication` validates the signature, the lifetime, the audience and the issuer (`iss`

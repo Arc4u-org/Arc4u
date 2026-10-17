@@ -145,7 +145,7 @@ builder.Services.AddApplicationContext();
 
 // Caches for the tokens and the extra claims.
 builder.Services.AddCacheContext(builder.Configuration);
-builder.Services.AddKeyedTransient<ICache, MemoryCache>("Memory");
+builder.Services.AddMemoryCacheKind();
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
 
 // Creation of the AppPrincipal.
@@ -237,8 +237,9 @@ The registration methods add their defaults with `TryAdd`, or you register the s
 | <xref:Arc4u.OAuth2.Token.ITokenRefreshProvider> | <xref:Arc4u.OAuth2.TokenProviders.RefreshTokenProvider> | Refresh the tokens of a cookie session differently. |
 | <xref:Arc4u.OAuth2.Token.ITokenProvider> (keyed) | `Oidc`, `Bootstrap`, `Obo`, `Credential`, ... | Provide a token for a `ProviderId` of your settings. |
 
-For example, to answer an unauthenticated API call with a 401 whose `ProblemDetails.Status` is also 401,
-derive from `StandardBearerEvents` (the override keeps the `x-token-expired` header of the base class):
+For example, to write your own `ProblemDetails` in the 401 response (here, a default title when the handler
+gives no error), derive from `StandardBearerEvents` and override `Challenge` (the override keeps the
+`x-token-expired` header of the base class):
 
 ```csharp
 // MyBearerEvents.cs

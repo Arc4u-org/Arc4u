@@ -18,7 +18,7 @@ changing the object after `Put` does not change what `Get` returns, and the size
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Caching.Memory` | The `MemoryCache` class. |
+| `Arc4u.Caching.Memory` | The `MemoryCache` class and `AddMemoryCacheKind()`. |
 | `Arc4u.Caching` | `ICacheContext`, `AddCacheContext`, and `AddMemoryCache` with `MemoryCacheOption` (namespace `Arc4u.Configuration.Memory`). |
 | `Arc4u.Serializer.JSon` | The serializer (any `IObjectSerialization` works). |
 
@@ -81,7 +81,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
+builder.Services.AddMemoryCacheKind();
 
 var app = builder.Build();
 
@@ -119,7 +119,8 @@ in a second instance of the service, the cache is empty.
 
 ## Extensibility points
 
-`MemoryCache` is registered under the key `Memory`. Register your own `ICache` under that key to replace it, or under
+`AddMemoryCacheKind()` registers `MemoryCache` under the key `Memory` with `TryAddKeyedTransient`. Register your own `ICache`
+under that key before calling it (or instead of it) to replace it, or under
 another key for a new kind (see [Caching](index.md#extensibility-points)).
 
 ## Troubleshooting

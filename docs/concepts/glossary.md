@@ -8,8 +8,8 @@ Definitions of the terms used across the Arc4u documentation.
 ## Application context
 
 The scoped <xref:Arc4u.Security.Principal.IApplicationContext> service that holds the
-[AppPrincipal](#appprincipal) and the activity ID of the current request or scope.
-`AddApplicationContext` registers it. See
+[AppPrincipal](#appprincipal) of the current request or scope, or `null` when nobody is
+authenticated. `AddApplicationContext` registers it. See
 [Server authentication](../guides/authentication-server/index.md).
 
 ## AppPrincipal
