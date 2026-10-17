@@ -222,8 +222,14 @@ app.MapPost("/orders", async (IApplicationAuthorizationPolicy policy) =>
 > [!NOTE]
 > In MVC controllers, `ManageExceptionsFilter` of `Arc4u.OAuth2.AspNetCore`
 > (`AddControllers(o => o.Filters.Add<ManageExceptionsFilter>())`) turns this exception into a 403
-> `ProblemDetails`. It logs the exception with the trace id of the current activity as `ActivityId`; for any
-> other exception it answers a 500 whose detail gives that id.
+> `ProblemDetails`. It logs the exception with the trace id of the current activity as `ActivityId` and the
+> request context (HTTP method, path, action and route values); for any other exception it answers a 500
+> whose detail gives that id. For minimal APIs and middlewares, which the filter does not see, call
+> `services.AddManageExceptionsHandler()` and `app.UseExceptionHandler()` to get the same responses.
+> `ManageExceptionsFilterOptions` controls the `exception` extension with the exception details
+> (`IncludeExceptionDetails`, by default only in the `Development` environment) and the logging of the action
+> arguments (`LogActionArguments`, off by default, truncated to `MaxActionArgumentLength`). Never return
+> exception details to untrusted callers, and log action arguments only when they carry no sensitive data.
 
 ### Protect resource paths from configuration
 

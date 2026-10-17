@@ -80,6 +80,11 @@ packages. It contains breaking changes: follow the
 - `SectionEntity(string key, string value)` constructor (`Arc4u.Configuration.Store`)
   ([#245](https://github.com/Arc4u-org/Arc4u/issues/245)).
 - `MemoryCacheOption.SizeLimitInBytes` ([#241](https://github.com/Arc4u-org/Arc4u/issues/241)).
+- `Arc4u.OAuth2.AspNetCore`: `ManageExceptionsHandler` (`AddManageExceptionsHandler` with
+  `app.UseExceptionHandler()`) answers exceptions thrown outside MVC actions with the same problem details
+  as `ManageExceptionsFilter`. `ManageExceptionsFilterOptions` adds the exception details to the response
+  (`IncludeExceptionDetails`, by default in the `Development` environment only) and logs the action
+  arguments (`LogActionArguments`, off by default).
 
 ### Changed
 
@@ -157,6 +162,9 @@ packages. It contains breaking changes: follow the
   ([#248](https://github.com/Arc4u-org/Arc4u/issues/248)).
 - `Arc4u.Configuration.Store.EfCore`: the static class `ServiceCollectionExtensions` is renamed
   `DbContextSectionStoreServiceCollectionExtensions` ([#245](https://github.com/Arc4u-org/Arc4u/issues/245)).
+- `ManageExceptionsFilter` logs the request context (HTTP method, path, action and route values) with
+  the exception. In the `Development` environment its responses now carry the exception details unless
+  `ManageExceptionsFilterOptions.IncludeExceptionDetails` is set to `false`.
 - The `Arc4u.Dependency.Tool` package contains the generator as an analyzer only: no assembly is
   copied to the output of the application ([#259](https://github.com/Arc4u-org/Arc4u/issues/259)).
 
