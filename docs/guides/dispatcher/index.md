@@ -117,7 +117,7 @@ public class AuditHandler : INotificationHandler<string, int>
 }
 ```
 
-Register the handler with `services.AddScoped<INotificationHandler<string, int>, AuditHandler>()`. Resolve `INotificationHandlers<string, int>` from a scope. Resolving it from the root provider throws when scope validation is on (the ASP.NET Core Development default), unless you call `AddNotificationHandlersAsScoped(ServiceLifetime.Transient)` and register singleton or transient handlers.
+Register the handler with `services.AddScoped<INotificationHandler<string, int>, AuditHandler>()`. Resolve `INotificationHandlers<string, int>` from a scope. Resolving it from the root provider throws when scope validation is on (the ASP.NET Core Development default), unless you call `AddNotificationHandlersAsTransient()` instead and register singleton or transient handlers.
 
 ### Run the handlers in parallel or one after the other
 
@@ -163,7 +163,7 @@ Plain dependency injection already lets you inject `IEnumerable<IOrderReaction>`
 
 ### `InvalidOperationException`: no service for type `INotificationHandlers<...>`
 
-You did not call `AddNotificationHandlersAsScoped()`. Call it once at startup. In a minimal API endpoint that takes `INotificationHandlers<T>` as a parameter, the symptom is different: the parameter is inferred as a request body and the request fails with HTTP 400 (`Implicit body inferred for parameter "notifier" but no body was provided`).
+You did not call `AddNotificationHandlersAsScoped()` (or `AddNotificationHandlersAsTransient()`). Call one of them once at startup. In a minimal API endpoint that takes `INotificationHandlers<T>` as a parameter, the symptom is different: the parameter is inferred as a request body and the request fails with HTTP 400 (`Implicit body inferred for parameter "notifier" but no body was provided`).
 
 ### My handler is never called
 

@@ -17,7 +17,10 @@ HTTP/2 hosting in [Kestrel and HTTP/2](kestrel.md). The general ideas are in the
   [token provider](../../concepts/glossary.md#token-provider) and puts it in the `authorization`
   metadata of every call, together with the user's culture.
 - **Server context.** `AuthorizationInterceptor` applies the culture header (when the application
-  context already has a principal) and sets the activity ID of the Arc4u application context, and hides unexpected exceptions behind an `Internal` status.
+  context already has a principal) and hides unexpected exceptions behind an `Internal` status.
+  It does not deal with correlation: ASP.NET Core starts a `System.Diagnostics.Activity` for each call,
+  propagated with the W3C `traceparent` header, and the Arc4u logger writes its trace id as the
+  `ActivityId` property (see [Diagnostics and logging](../diagnostics/index.md#properties-written-on-every-entry)).
 - **Consistent failures.** `AddGrpcAuthenticationControl()` turns the redirect an interactive
   authentication challenge produces into a `401`, which a gRPC client understands.
 - **Timing.** `AddGrpcMonitoringTimeElapsed()` logs how long each call took.
@@ -32,7 +35,7 @@ sequenceDiagram
     I->>I: token from the token provider
     I->>S: authorization + culture metadata
     S->>S: JWT bearer validation
-    S->>A: culture, activity ID
+    S->>A: culture
     A->>S: service method
 ```
 
@@ -281,10 +284,10 @@ the logger category of the interceptor (its type parameter, `OrderService.OrderS
 and look for a missing application context, principal, authentication type or token provider. When
 the settings name passed to the interceptor does not exist, its creation throws `ConfigurationException`.
 
-### Culture and activity ID are not set on a client-streaming method
+### Culture is not set on a client-streaming method
 
 `AuthorizationInterceptor` overrides the unary, server-streaming and duplex handlers. Client-streaming
-calls are not intercepted: they get no culture, no activity ID and no exception mapping.
+calls are not intercepted: they get no culture and no exception mapping.
 
 ### `RootPemCertificates.GetPemFor` throws `KeyNotFoundException`
 

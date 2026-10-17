@@ -117,7 +117,8 @@ These packages are used by many of the others and have no guide of their own. Se
 
 ## Deprecated, not shipped and removed packages
 
-None of these packages has a 9.x build.
+None of these packages is built from the current 9.x source. `Arc4u.Data` was published with the
+9.0.0 previews up to `9.0.0-preview37` and removed afterwards.
 
 | Package | Status | Last version on NuGet | Replacement | More |
 |---|---|---|---|---|
@@ -126,6 +127,7 @@ None of these packages has a 9.x build.
 | `Arc4u.Standard.NServiceBus.RabbitMQ` | Deprecated | `8.3.2` | In 9: use Dapr pub/sub directly. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
 | `Arc4u.Prism.DI.Wpf` | Deprecated | `8.3.2` | In 9: use `Prism.DryIoc`, Prism's own DryIoc container package. | [Prism.DI.Wpf replaced by Prism.DryIoc](../migration/8x-to-9.md#prismdiwpf-replaced-by-prismdryioc) |
 | `Arc4u.Dependency.ComponentModel` (8.x ID `Arc4u.Standard.Dependency.ComponentModel`) | Removed | `8.3.2` | `Arc4u.Dependency`, which registers services on `IServiceCollection`. | [Dependency injection](dependency-injection/index.md) |
+| `Arc4u.Data` (8.x ID `Arc4u.Standard.Data`) | Removed | `9.0.0-preview37` (`Arc4u.Standard.Data`: `8.3.2`) | None: define the entities in your domain model and persist them with the Entity Framework Core API. | [Arc4u.Data and change tracking removed](../migration/8x-to-9.md#arc4udata-and-change-tracking-removed) |
 | `Arc4u.OAuth2.Msal` (8.x ID `Arc4u.Standard.OAuth2.Msal`, folder `src/Arc4u.OAuth.Msal`) | Not shipped in 9.x | `8.3.2` | None in Arc4u 9. | [MSAL status](../migration/8x-to-9.md#msal-status) |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api` | Removed | `8.3.2` | None. The project was deleted from 9.x. For server authentication see `Arc4u.OAuth2.AspNetCore`. | [Server authentication](authentication-server/index.md) |
 | `Arc4u.Standard.OAuth2.Adal`, `Arc4u.Standard.OAuth2.AspNetCore.Adal` | Removed | `6.0.6.1-preview02`, `8.3.0-preview01` | None. ADAL is retired by Microsoft. | [ADAL and Protobuf removed](../migration/8x-to-9.md#adal-and-protobuf-removed) |

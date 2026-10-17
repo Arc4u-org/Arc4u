@@ -97,7 +97,8 @@ For each request, <xref:Arc4u.OAuth2.Token.JwtHttpHandler`1>:
    set for the current async flow, otherwise the `HttpContext.RequestServices` of the current
    request, otherwise the service provider given to the constructor.
 2. Sends the request unchanged when no `IApplicationContext` is registered, or when the settings
-   have no `AuthenticationType` (for example when the settings name does not exist).
+   have no `AuthenticationType` (for example empty settings, given to the constructor that takes
+   the `IKeyValueSettings`).
 3. When `AuthenticationType` is not `Inject` and the current user has an identity, sends the
    request unchanged unless the settings value contains the identity's authentication type
    (case-insensitive).
@@ -146,8 +147,9 @@ differs from the HttpClient handler on these points:
 - When `AuthenticationType` is not `Inject`, the settings value must be equal to the identity's
   authentication type (case-insensitive), not only contain it.
 - It passes the current `ClaimsIdentity` to the token provider as `platformParameters`.
-- It waits synchronously for the token provider, and logs and ignores the exceptions the provider
-  throws: the call is then sent without a token.
+- For an asynchronous unary call, it awaits the token provider before the call starts; for a
+  blocking or streaming call, it waits synchronously for it. It logs and ignores the exceptions the
+  provider throws: the call is then sent without a token.
 
 Status codes and ProblemDetails returned by gRPC services are covered in
 [gRPC and versioning](../grpc-versioning/index.md).
@@ -183,14 +185,15 @@ were created with.
 
 ### The downstream API returns 401 and the request has no Authorization header
 
-- The settings name passed to the handler does not exist: `IOptionsMonitor.Get` then returns empty
-  settings and the handler does nothing. Check the entry name in `appsettings.json`.
+- The settings given to the handler are empty: `IOptionsMonitor.Get` returns empty settings for a
+  name that does not exist, and the handler then does nothing. Check the entry name in
+  `appsettings.json`. The constructors that take the settings name throw `ConfigurationException`
+  instead.
 - The `AuthenticationType` of the settings does not match the caller (step 3 above). Use
   `Inject` for an application identity.
 - The token provider is not registered under the `ProviderId` key, or it returned a failed
   result: the handler logs it in the `Technical` category.
 - For gRPC, the `IApplicationContext` has no principal.
-
 - The `ProviderId` is the string `"null"` (<xref:Arc4u.OAuth2.Token.NullTokenProvider>): the
   provider returns a success without a token, and the handlers and the interceptor send the
   request without one. This is by design.

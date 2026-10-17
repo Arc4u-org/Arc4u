@@ -98,11 +98,11 @@ app.Run();
 - the non-generic `ILogger` as a transient `ILogger<DefaultLogger>`, for [static classes](#log-from-a-static-class);
 - a `NullLoggerProperties` under the keys `"Scoped"` and `"Transient"` (see [Add the user to every entry](#add-the-user-to-every-entry)), unless you registered your own.
 
-Calling `GET /orders/7` writes these two lines (the `RequestId`, `RequestPath` and `ConnectionId` come from the ASP.NET Core logging scope; the long padding of the fixed columns is shortened here):
+Calling `GET /orders/7` writes these two lines (the `RequestId`, `RequestPath` and `ConnectionId` come from the ASP.NET Core logging scope, and the 32-character `ActivityId` is the trace id of the request; the long padding of the fixed columns is shortened here):
 
 ```text
-29/09/2026 14:53:26,030  Information   Technical   27153  7   Program - <Main>$ - Reading order 7 - {"OrderId":7,"RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
-29/09/2026 14:53:26,044  Information   Business    27153  7   Program - <Main>$ - Order shipped - {"Customer":"contoso","RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
+17/10/2026 10:27:15,904  Information   Technical   24918  10   6e0460a043e459729ef37849c797cd9d   Program - <Main>$ - Reading order 7 - {"OrderId":7,"RequestId":"0HNPC51POMDHV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNPC51POMDHV"}
+17/10/2026 10:27:15,912  Information   Business    24918  10   6e0460a043e459729ef37849c797cd9d   Program - <Main>$ - Order shipped - {"Customer":"contoso","RequestId":"0HNPC51POMDHV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNPC51POMDHV"}
 ```
 
 Each property belongs to one entry: `OrderId` (a template argument of the first entry) and `Customer` (added to the second) are not written on any other entry. See [Properties belong to one entry](#properties-belong-to-one-entry).
@@ -206,7 +206,7 @@ Keep these rules in mind:
 
 ### Log from a static class
 
-A static class cannot take an `ILogger<T>`. Inject or resolve the non-generic `ILogger`, and pass the type that should appear as the `SourceContext`. The overloads on `ILogger` exist for the Technical and Monitoring categories only. `Technical<T>()` is the generic form of `Technical(typeof(T))`; C# does not accept a static class as `T`, which is why the sample uses `typeof`.
+A static class cannot take an `ILogger<T>`. Inject or resolve the non-generic `ILogger`, and pass the type that should appear as the `SourceContext`. The overloads on `ILogger` exist for the Technical and Monitoring categories, plus `Category(category, type)` for any other. `Technical<T>()` is the generic form of `Technical(typeof(T))`; C# does not accept a static class as `T`, which is why the sample uses `typeof`.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -352,7 +352,7 @@ builder.Services.AddApplicationContext();
 builder.Services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped");
 ```
 
-`AddJwtAuthentication`, `AddOidcAuthentication` and `AddHybridAuthentication` also call it, so it is registered for you when the authentication is added before `AddApplicationContext()`. When the authentication is added after it, as is usual, call `AddHttpContextLoggingProperties()` yourself before `AddApplicationContext()`.
+The Arc4u authentication extensions (`AddJwtAuthentication`, `AddOidcAuthentication`, `AddHybridAuthentication`) do not register it: call `AddHttpContextLoggingProperties()` yourself, before `AddApplicationContext()`.
 
 A provider you registered under `"Transient"` before is kept; it must not have scoped dependencies (such as `TenantProperties` above).
 
@@ -386,7 +386,7 @@ Send these entries to their own sink, or exclude them from the console, with the
 
 Arc4u.Diagnostics has no dependency on OpenTelemetry. The two work side by side through standard .NET mechanisms, and this is what the code supports:
 
-- **Logs.** The wrapper hands the properties to the `ILoggerFactory` as the log state. An OpenTelemetry logging provider (`builder.Logging.AddOpenTelemetry(...)`) therefore receives `Category`, `Application`, `SourceContext`, `Method`, `Pid`, `Tid` and your `Add` properties as log record attributes, and OpenTelemetry adds the `TraceId` and `SpanId` of the current activity itself.
+- **Logs.** The wrapper hands the properties to the `ILoggerFactory` as the log state. An OpenTelemetry logging provider (`builder.Logging.AddOpenTelemetry(...)`) therefore receives `Category`, `Application`, `SourceContext`, `Method`, `Pid`, `Tid`, `ActivityId` (when there is a current activity) and your `Add` properties as log record attributes, and OpenTelemetry adds the `TraceId` and `SpanId` of the current activity itself.
 - **Traces.** Arc4u components that trace their work (token providers, principal creation, middleware) start activities on an `ActivitySource` named `Arc4u`. <xref:Arc4u.Diagnostics.IActivitySourceFactory> returns that source (and any other you ask for by name and version) as a singleton, and `AddApplicationContext()` registers it. Subscribe to the source with the OpenTelemetry SDK: `WithTracing(t => t.AddSource("Arc4u"))`.
 - **Ids.** The Arc4u `ActivityId` property is the `TraceId` of the current activity, the same value as the `TraceId` OpenTelemetry adds to the log record.
 
@@ -406,6 +406,7 @@ LogRecord.Attributes (Key:Value):
     Application: App
     Tid: 1
     Pid: 30603
+    ActivityId: e043c555c72709ccc77e2c854a69a99e
 ```
 
 The <xref:Arc4u.Diagnostics.OpenTelemetrySettings> class (`Address`, `Attributes`, `Sources`) exists in the package, but no Arc4u code reads it. Configure the OpenTelemetry SDK with its own options.

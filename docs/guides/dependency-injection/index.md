@@ -272,9 +272,12 @@ does not find `StripeGateway`.
 ### Register Arc4u implementations from other packages
 
 Some Arc4u implementations are registered only through their `[Export]` attribute. For example,
-no `Add...` method registers `Arc4u.Caching.Memory.MemoryCache`: it is exported as
-`[Export("Memory", typeof(ICache))]`, and the cache context resolves the `ICache` keyed by the
-`Kind` of each configured cache (see [Caching](../caching/index.md)). List such types in `Configs/appsettings.json` (see
+no `Add...` method registers `Arc4u.AppSettings`: it is exported as
+`[Export(typeof(IAppSettings)), Shared]`. Others also have an `Add...` method: the cache
+implementations, such as `Arc4u.Caching.Memory.MemoryCache` exported as
+`[Export("Memory", typeof(ICache))]`, are registered by `AddMemoryCacheKind()` and the similar
+methods of the other cache packages (see [Caching](../caching/index.md)). For those, the method is
+enough and a `RegisterTypes` entry is not needed (listing them as well does no harm). List the types to register in `Configs/appsettings.json` (see
 [appsettings.json](#appsettingsjson)) and call `RegisterTypes`:
 
 ```csharp
@@ -446,7 +449,8 @@ segment of the assembly name.
 
 ### ARC4UDEP001: The appsettings.json file cannot be read
 
-The error points at the line of `appsettings.json` where reading stopped, and the generated method
+The error points at the line of `appsettings.json` where reading stopped (or at the
+`Application.Dependency` key when the section itself is invalid), and the generated method
 registers no type. The message says why, for example:
 
 - `'"' is invalid after a value. Expected either ',', '}', or ']'`: a comma is missing between two

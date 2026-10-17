@@ -14,7 +14,7 @@ dotnet add package Arc4u.Caching.Memory --prerelease
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
+builder.Services.AddMemoryCacheKind();
 ```
 
 The `Caching` section declares the cache with `"Kind": "Memory"` and a `Settings` section with `SizeLimitInMB`. The
