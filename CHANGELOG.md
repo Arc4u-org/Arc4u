@@ -29,7 +29,8 @@ packages. It contains breaking changes: follow the
   ([#257](https://github.com/Arc4u-org/Arc4u/issues/257)); `Version=` in a type name is matched against
   the referenced assembly, and `appsettings.json` may contain comments and trailing commas
   ([#258](https://github.com/Arc4u-org/Arc4u/issues/258)). Mistakes are reported as build diagnostics
-  `ARC4UDEP001` to `ARC4UDEP007` (#257, #258).
+  `ARC4UDEP001` to `ARC4UDEP007` ([#257](https://github.com/Arc4u-org/Arc4u/issues/257),
+  [#258](https://github.com/Arc4u-org/Arc4u/issues/258)).
 - `Arc4u.OAuth2.Client.Authentication`: OpenID Connect sign-in for desktop and mobile clients with
   `Duende.IdentityModel.OidcClient` (`AddOidcClientAuthentication`).
 - `Arc4u.AspNetCore.Versioning`: API versioning helpers (`AddServiceApiVersioning`). Not published
@@ -75,8 +76,11 @@ packages. It contains breaking changes: follow the
   `AddILogger()` ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
 - `IAuthorization.IsAuthorized(string operation)`, so that `IsAuthorized("Name")` compiles
   ([#225](https://github.com/Arc4u-org/Arc4u/issues/225)).
-- `TryGetNamedSettings` on `IServiceProvider`, used by the `JwtHttpHandler` and `OAuth2Interceptor`
-  constructors that take a settings name ([#231](https://github.com/Arc4u-org/Arc4u/issues/231)).
+- `TryGetNamedSettings` (`Arc4u.OAuth2.Extensions.NamedSettingsExtensions`), an `IServiceProvider`
+  extension that reads the named `SimpleKeyValueSettings` options, used by `AppPrincipalFactory` and the
+  `JwtHttpHandler` and `OAuth2Interceptor` constructors that take a settings name. Such constructors are
+  added to `JwtHttpHandler<T>` (`Arc4u.OAuth2.AspNetCore.Authentication`), the Blazor `JwtHttpHandler` and
+  `OAuth2Interceptor<T>` ([#231](https://github.com/Arc4u-org/Arc4u/issues/231)).
 - `SectionEntity(string key, string value)` constructor (`Arc4u.Configuration.Store`)
   ([#245](https://github.com/Arc4u-org/Arc4u/issues/245)).
 - `MemoryCacheOption.SizeLimitInBytes` ([#241](https://github.com/Arc4u-org/Arc4u/issues/241)).
@@ -84,7 +88,7 @@ packages. It contains breaking changes: follow the
   `app.UseExceptionHandler()`) answers exceptions thrown outside MVC actions with the same problem details
   as `ManageExceptionsFilter`. `ManageExceptionsFilterOptions` adds the exception details to the response
   (`IncludeExceptionDetails`, by default in the `Development` environment only) and logs the action
-  arguments (`LogActionArguments`, off by default).
+  arguments (`LogActionArguments`, off by default, truncated to `MaxActionArgumentLength`) ([#31](https://github.com/Arc4u-org/Arc4u/issues/31)).
 
 ### Changed
 
@@ -141,9 +145,9 @@ packages. It contains breaking changes: follow the
   ([#125](https://github.com/Arc4u-org/Arc4u/issues/125)).
 - `AddJwtAuthentication` and the bearer scheme of `AddHybridAuthentication` validate the token issuer
   (`Authentication:ValidateAuthority`, `true` by default), and the OpenID Connect sign-in applies the
-  same rule: the issuer must be `DefaultAuthority:Issuer` when it is set, or the issuer of the provider's
-  metadata. The configuration overloads of `AddOidcAuthentication` and `AddHybridAuthentication` now
-  apply `ValidateAudience` and `ValidateAuthority` from the `Authentication` section
+  same rule: the issuer must be `Authentication:DefaultAuthority:Issuer` when it is set, or the issuer of the provider's
+  metadata. The configuration overloads of `AddOidcAuthentication` (as in 8.x) and
+  `AddHybridAuthentication` apply `ValidateAudience` and `ValidateAuthority` from the `Authentication` section
   ([#220](https://github.com/Arc4u-org/Arc4u/issues/220)).
 - The `Authentication:TokenCache` section is optional for `AddJwtAuthentication`, for an API that only
   validates inbound tokens ([#224](https://github.com/Arc4u-org/Arc4u/issues/224)).
@@ -151,12 +155,23 @@ packages. It contains breaking changes: follow the
   email. A logger resolved in a scope uses the `IAddPropertiesToLog` registered under the key `Scoped`,
   and a logger resolved from the root (for a singleton) the one under the key `Transient`
   ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
-- The client `JwtHttpHandler` classes and `OAuth2Interceptor` log a token provider failure and send the
-  request without a token instead of throwing ([#230](https://github.com/Arc4u-org/Arc4u/issues/230)).
-- `ICache`: `Put` saves the default value of a value type (`0`, `false`), every cache wraps an engine or
-  serialization error in a `DataCacheException` that keeps the original exception as its inner exception,
-  the Dapr cache also rejects a `null` value, and a memory cache that is full throws a
+- The client `JwtHttpHandler` classes and `OAuth2Interceptor` send the request without a token instead
+  of throwing when the settings have no `ProviderId`, the provider is not registered, the
+  provider returns no token (`NullTokenProvider`) or, for the interceptor, there is no current HTTP
+  request. `OAuth2Interceptor` no longer blocks on `.Result` for asynchronous unary calls.
+  `OidcClientIdentityModelTokenProvider` returns a failed result when the login fails, and logs the user
+  in again when the refresh fails, instead of throwing ([#230](https://github.com/Arc4u-org/Arc4u/issues/230)).
+- `ICache`: `Put` saves the default value of a value type (`0`, `false`), `Get` and `Put` of every cache
+  wrap an engine or serialization error in a `DataCacheException` that keeps the original exception as its
+  inner exception, the Dapr cache also rejects a `null` value and its `TryGetValue` returns `false` for a
+  missing key, and a memory cache that is full throws a
   `DataCacheException` instead of dropping the value ([#243](https://github.com/Arc4u-org/Arc4u/issues/243)).
+- `ToActionCreatedResultAsync`, `ToHttpCreatedResultAsync` and `ToTypedCreatedResultAsync` on a `Result`
+  without a value lost their unused type parameter, and the title of the generic `500` problem details is
+  "A technical error occurred!" (the typo "occured" is fixed) ([#252](https://github.com/Arc4u-org/Arc4u/issues/252)).
+- An authorization `Operations` or `Roles` entry without a `scope` throws a `ConfigurationException` when
+  the principal is created; use the empty string for the default scope
+  ([#226](https://github.com/Arc4u-org/Arc4u/issues/226)).
 - `AddApplicationConfig(configuration)` throws a `ConfigurationException` instead of a
   `NullReferenceException` when the section is missing or empty
   ([#248](https://github.com/Arc4u-org/Arc4u/issues/248)).
@@ -164,8 +179,11 @@ packages. It contains breaking changes: follow the
   `DbContextSectionStoreServiceCollectionExtensions` ([#245](https://github.com/Arc4u-org/Arc4u/issues/245)).
 - `ManageExceptionsFilter` logs the request context (HTTP method, path, action and route values) with
   the exception. In the `Development` environment its responses now carry the exception details unless
-  `ManageExceptionsFilterOptions.IncludeExceptionDetails` is set to `false`.
-- The `Arc4u.Dependency.Tool` package contains the generator as an analyzer only: no assembly is
+  `ManageExceptionsFilterOptions.IncludeExceptionDetails` is set to `false` ([#31](https://github.com/Arc4u-org/Arc4u/issues/31)).
+- `AddApplicationContext()` no longer registers `DefaultLoggingProperties`: register it with
+  `AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped")` to add the `Identity` property
+  to the log entries ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
+- Compared with the previews, the `Arc4u.Dependency.Tool` package contains the generator as an analyzer only: no assembly is
   copied to the output of the application ([#259](https://github.com/Arc4u-org/Arc4u/issues/259)).
 
 ### Removed
@@ -258,42 +276,59 @@ packages. It contains breaking changes: follow the
   `Technical`; `SimpleTextFormatter` writes such a category instead of failing
   ([#235](https://github.com/Arc4u-org/Arc4u/issues/235)).
 - The properties added with `Add` (and the message template arguments) were kept by the logger and
-  written again with later entries; they are now written with that entry only.
+  written again with later entries; they are now written with that entry only
+  ([#273](https://github.com/Arc4u-org/Arc4u/issues/273)).
 - The Arc4u logger dropped the `EventId` of every entry; it is now forwarded to the logging providers
   ([#236](https://github.com/Arc4u-org/Arc4u/issues/236)).
-- With the default registration, the `Identity` and `ActivityId` properties were never added to the log
-  entries ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
-- `FluentLogger` ignored the log level, and `LogIfFailed` logged nothing without `Result.Setup`
+- `ILogger<T>` always used the `IAddPropertiesToLog` registered under the key `Transient`, so the
+  `Identity` property of `DefaultLoggingProperties` (key `Scoped`) was never added to the log entries
+  ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
+- `FluentLogger` logged the errors other than a `ValidationError` or an exceptional error at the `Error`
+  level whatever the level given to `LogIfFailed`, and nothing gave it to FluentResults (`Result.Setup`),
+  so `LogIfFailed` logged nothing; `AddResultLogger` and `UseResultLogger` now do it
   ([#251](https://github.com/Arc4u-org/Arc4u/issues/251)).
 - `ToGenericMessage` ignored `unexpectedType` in three of its four overloads
   ([#250](https://github.com/Arc4u-org/Arc4u/issues/250)).
 - A bearer token issued for another audience is answered with a `detail` that names the rejected audience,
   and the expected audiences are logged ([#35](https://github.com/Arc4u-org/Arc4u/issues/35)).
-- `AddJwtAuthentication`: a token without the claim that identifies the user, when the claims filler is
-  enabled, gave a 500 error instead of a 401 ([#224](https://github.com/Arc4u-org/Arc4u/issues/224)).
+- `AddJwtAuthentication` and the bearer scheme of `AddHybridAuthentication`: a token without the claim
+  that identifies the user, when the claims filler is enabled, gave a 500 error instead of a 401 ([#224](https://github.com/Arc4u-org/Arc4u/issues/224)).
 - `UseResourcesRightValidationFor` never detected a missing section
   ([#223](https://github.com/Arc4u-org/Arc4u/issues/223)).
 - `ServerPrincipalCache.Put(key, timeout, value, isSlided)` cached the `isSlided` flag instead of the
   principal ([#219](https://github.com/Arc4u-org/Arc4u/issues/219)).
 - `AddContextToPrincipalMiddleware` threw when no activity was running, for example in integration tests
   ([#124](https://github.com/Arc4u-org/Arc4u/issues/124)).
-- `RemoteClientSecretTokenProvider` sent a clear `user:password` in a `Basic` header without the Base64
-  encoding ([#121](https://github.com/Arc4u-org/Arc4u/issues/121)).
+- `RemoteClientSecretTokenProvider` sent `user:password` without the Base64 encoding that the `Basic`
+  scheme requires ([#121](https://github.com/Arc4u-org/Arc4u/issues/121)).
 - The on-behalf-of token was sent in an `access_token` header instead of `Authorization: Bearer` with the
   default `AuthenticationType` ([#229](https://github.com/Arc4u-org/Arc4u/issues/229)).
-- The keyed `IKeyValueSettings` were never registered, so the `JwtHttpHandler` and `AppPrincipalFactory`
-  overloads that take a settings name always threw ([#231](https://github.com/Arc4u-org/Arc4u/issues/231)).
+- The keyed `IKeyValueSettings` were never registered, so the `JwtHttpHandler` constructors that take a
+  settings name (`Arc4u.OAuth2.Client.Authentication`, `Arc4u.OAuth.Msal`) always threw,
+  `AppPrincipalFactory.CreatePrincipalAsync()` and `CreatePrincipalAsync(settingsResolveName)` always
+  returned a failed result, and
+  `AppPrincipalFactory.SignOutUserAsync(CancellationToken)` always threw
+  ([#231](https://github.com/Arc4u-org/Arc4u/issues/231)).
 - Token cache keys depended on the process (`string.GetHashCode`), and the `ClientCredentials` keys
   ignored the extra parameters ([#232](https://github.com/Arc4u-org/Arc4u/issues/232)).
 - `BlazorMsalTokenProvider` sends the user to the login page when MSAL cannot renew the token silently,
-  instead of failing until the browser is restarted ([#86](https://github.com/Arc4u-org/Arc4u/issues/86)).
+  instead of failing until the browser is restarted, and `BlazorTokenProvider` no longer reuses a token
+  up to 5 minutes after it expired ([#86](https://github.com/Arc4u-org/Arc4u/issues/86)).
+- `ToProblemDetails` called on a successful result no longer adds an error to that result,
+  `ValidationError.WithMetadata` keeps the first value of a duplicate key instead of throwing, and the
+  `IsUtcDateTime` and `IsDateOnly` rules have a default message
+  ([#252](https://github.com/Arc4u-org/Arc4u/issues/252)).
 - `BlazorController` redirected to the static asset path used before the package rename, and
-  `CreatePopupWindow.js` was not found because of a case mismatch
+  `CreatePopupWindow.js` opened `authenticate.html` while the file is `Authenticate.html`, so the page
+  was not found on a case-sensitive file system
   ([#227](https://github.com/Arc4u-org/Arc4u/issues/227)).
 - The default section of `ReadAuthenticationCookieSettingsOption` (`Arc4u.OAuth2.Blazor`) is
-  `Authentication:OAuth2.Settings`, as for `AddAuthenticationCookie`, instead of `Authentication:OAuth.Settings` ([#226](https://github.com/Arc4u-org/Arc4u/issues/226)).
-- `AddCacheContext` lowercased `Kind` but resolved it case-sensitively, ignored `sectionName`, and
-  registered nothing for the cache kinds ([#242](https://github.com/Arc4u-org/Arc4u/issues/242)).
+  `Authentication:OAuth2.Settings`, as for `AddAuthenticationCookie`, instead of
+  `Authentication:OAuth.Settings` ([#226](https://github.com/Arc4u-org/Arc4u/issues/226)).
+- `AddCacheContext` matched `Kind` case-insensitively, but the `CacheContext` it registered resolved it
+  case-sensitively and always read the `Caching` section, whatever `sectionName`; nothing registered the
+  `ICache` of each kind, which `AddMemoryCacheKind()`, `AddRedisCacheKinds()`, `AddSqlCacheKind()` and
+  `AddDaprCacheKind()` now do ([#242](https://github.com/Arc4u-org/Arc4u/issues/242)).
 - The first access to a cache configured with `IsAutoStart: false` threw an `InvalidOperationException`
   ([#240](https://github.com/Arc4u-org/Arc4u/issues/240)).
 - A memory cache declared without a `Settings` section had a size limit of 100 bytes instead of 100 MB;
@@ -301,11 +336,15 @@ packages. It contains breaking changes: follow the
   ([#241](https://github.com/Arc4u-org/Arc4u/issues/241)).
 - `AddMongoDatabase` lost the connection-string options that it did not copy one by one (for example
   `directConnection` or `compressors`): the settings are now created from the connection string.
+  `DefaultMongoClientFactory.CreateClient` throws a `MongoClientException` when no settings are
+  registered for the database, instead of connecting to `localhost:27017`
+  ([#254](https://github.com/Arc4u-org/Arc4u/issues/254)).
 - `GraphExtension.ApplyReferences(graph, query, path)` always threw, and matched include paths by prefix
   instead of by segment ([#253](https://github.com/Arc4u-org/Arc4u/issues/253)).
 - Configuration store: after `ResetAsync`, the first poll published an empty data set
   ([#244](https://github.com/Arc4u-org/Arc4u/issues/244)); a concurrent insert of the initial sections
-  by another instance is accepted, and insert errors are no longer swallowed
+  by another instance is accepted, insert errors are no longer swallowed, and the section store
+  service no longer needs `AddILogger()` (the host failed to start with `Bad Arc4u usage.`)
   ([#245](https://github.com/Arc4u-org/Arc4u/issues/245)).
 - The secret decryptor read the earlier configuration sources again, so stream sources failed and remote
   providers were loaded twice ([#246](https://github.com/Arc4u-org/Arc4u/issues/246)).
@@ -314,7 +353,8 @@ packages. It contains breaking changes: follow the
   ([#247](https://github.com/Arc4u-org/Arc4u/issues/247)), and a private key that cannot be read gives
   an explicit error ([#40](https://github.com/Arc4u-org/Arc4u/issues/40)).
 - `Arc4u.Dependency.Tool`: `[Shared]` with `[Scoped]` gave different lifetimes in the two generators
-  ([#257](https://github.com/Arc4u-org/Arc4u/issues/257)), and the generated method names could collide
+  ([#257](https://github.com/Arc4u-org/Arc4u/issues/257)); such a class is now registered as scoped and
+  reported as `ARC4UDEP005`. A project without a `.cs` file at its root got no `RegisterTypes` method
   ([#258](https://github.com/Arc4u-org/Arc4u/issues/258)).
 
 ### Security

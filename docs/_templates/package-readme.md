@@ -47,7 +47,7 @@ The package ID (title, install command) is the <PackageId> of the .csproj, not t
   Arc4u.Serializer.JSon                    guides/caching/                api/Arc4u.Serializer.html
   Arc4u.Results                            guides/results/                api/Arc4u.Results.html
   Arc4u.AspNetCore.Results                 guides/results/                api/Arc4u.AspNetCore.Results.html
-  Arc4u.FluentValidation                   guides/results/                api/Arc4u.FluentValidation.html
+  Arc4u.FluentValidation                   guides/results/                api/Arc4u.Validation.html
   Arc4u.gRPC                               guides/grpc-versioning/        api/Arc4u.gRPC.html
   Arc4u.AspNetCore.gRpc                    guides/grpc-versioning/        api/Arc4u.AspNetCore.gRpc.html
   Arc4u.AspNetCore.Versioning              guides/grpc-versioning/        api/Arc4u.AspNetCore.Versioning.html   (not on NuGet.org yet)
@@ -57,8 +57,8 @@ The package ID (title, install command) is the <PackageId> of the .csproj, not t
   Arc4u.Dispatcher                         guides/dispatcher/             api/Arc4u.Dispatcher.Notification.html
 
 Not shipped in 9.x (not in src/Arc4u.slnx, net8.0/net9.0 only): Arc4u.OAuth2.Msal (project
-folder src/Arc4u.OAuth.Msal), and the removed Arc4u.Data, Arc4u.Dependency.ComponentModel,
-NServiceBus and Prism.DI.Wpf packages. Their status is on the Package support page (#189); do not write a
+folder src/Arc4u.OAuth.Msal). Removed: Arc4u.Data (last published as 9.0.0-preview37),
+Arc4u.Dependency.ComponentModel, NServiceBus and Prism.DI.Wpf. Their status is on the Package support page (#189); do not write a
 README from this template for them unless #189 decides they ship.
 -->
 # Arc4u.<Package>

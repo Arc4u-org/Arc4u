@@ -277,7 +277,8 @@ no `Add...` method registers `Arc4u.AppSettings`: it is exported as
 implementations, such as `Arc4u.Caching.Memory.MemoryCache` exported as
 `[Export("Memory", typeof(ICache))]`, are registered by `AddMemoryCacheKind()` and the similar
 methods of the other cache packages (see [Caching](../caching/index.md)). For those, the method is
-enough and a `RegisterTypes` entry is not needed (listing them as well does no harm). List the types to register in `Configs/appsettings.json` (see
+enough and a `RegisterTypes` entry is not needed. Avoid listing them as well: the generated
+registration is not a `TryAdd`, so when `RegisterTypes` runs after your own `ICache` registration for the same kind, it replaces it. List the types to register in `Configs/appsettings.json` (see
 [appsettings.json](#appsettingsjson)) and call `RegisterTypes`:
 
 ```csharp

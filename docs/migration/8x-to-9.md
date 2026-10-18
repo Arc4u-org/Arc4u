@@ -1352,6 +1352,7 @@ public static class Security
 | `Arc4u.Configuration.Store.EfCore`: `ServiceCollectionExtensions` (called as a static class) | `DbContextSectionStoreServiceCollectionExtensions`. Calls written as extension methods do not change |
 | `AddNotificationHandlersAsScoped(ServiceLifetime lifetime)` (`Arc4u.Dispatcher`), which registered the handlers as scoped for any value but `Transient` | `AddNotificationHandlersAsScoped()` or `AddNotificationHandlersAsTransient()` |
 | `Identity` log property: `UserProfile.Name` (`Domain\SamAccountName`) or the identity name | The email of the user profile, or the identity name when there is no email. Update the log queries and dashboards that filter on it |
+| `AddApplicationContext()` registered `DefaultLoggingProperties`, so the entries had the `Identity` property | `AddApplicationContext()` registers no provider: add `services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped")`, or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes`. See [Diagnostics and logging](../guides/diagnostics/index.md) |
 | `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
 
 ### Other removed APIs
