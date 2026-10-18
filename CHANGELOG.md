@@ -251,6 +251,9 @@ packages. It contains breaking changes: follow the
   `DecodeCypherstring` and `CypherCodecConfig.IV` are removed: the `EncryptionRijndael` section only has a
   `Key`. Long values encrypted with a certificate now have the form `<key>.<data>`. Values encrypted
   with 8.x must be encrypted again ([#114](https://github.com/Arc4u-org/Arc4u/issues/114)).
+- The authentication cookie of `AddOidcAuthentication` and `AddHybridAuthentication`, with or without a
+  ticket store, is always `Secure`, `HttpOnly` and `SameSite=Lax`. It was only `Secure` when the request
+  was in HTTPS, so not behind a proxy that ends TLS ([#110](https://github.com/Arc4u-org/Arc4u/issues/110)).
 
 ## [8.3.2] - 2025-07-18
 
