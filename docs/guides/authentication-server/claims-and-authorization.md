@@ -263,7 +263,7 @@ app.UseAuthorization();
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `ResourcesPolicies:<name>:Path` | string | none (required) | Request path, compared ignoring case and leading or trailing slashes. The entry name is only a label. |
+| `ResourcesPolicies:<name>:Path` | string | none (required) | Request path, compared ignoring case and leading or trailing slashes. The same path with another extension is protected too (`swagger.yaml` for `swagger.json`), since Swashbuckle serves the document in YAML and, up to 6.5, for any extension. The entry name is only a label. |
 | `ResourcesPolicies:<name>:AuthorizationPolicy` | string | none (required) | Policy the principal must satisfy. |
 | `ResourcesPolicies:<name>:ContentToDisplay` | string | `DefaultContent` | Content returned when access is denied. |
 | `DefaultContent` | string | an empty Swagger 2.0 document | Default content returned when access is denied. |

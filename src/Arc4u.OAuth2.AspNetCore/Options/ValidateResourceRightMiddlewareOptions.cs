@@ -5,7 +5,7 @@ public class ValidateResourceRightMiddlewareOptions
     /// <summary>Gets or sets the name of the authorization policy the current principal must satisfy to access the resource.</summary>
     public string AuthorizationPolicy { get; set; } = default!;
 
-    /// <summary>Gets or sets the request path of the resource. The comparison ignores the case and the leading and trailing slashes.</summary>
+    /// <summary>Gets or sets the request path of the resource. The comparison ignores the case and the leading and trailing slashes. The same path with another extension is protected too, for example <c>swagger.yaml</c> for <c>swagger.json</c>.</summary>
     public string Path { get; set; } = default!;
 
     /// <summary>

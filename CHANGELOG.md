@@ -250,6 +250,10 @@ packages. It contains breaking changes: follow the
 ### Security
 
 - Vulnerable dependencies upgraded ([#130](https://github.com/Arc4u-org/Arc4u/issues/130)).
+- `UseResourcesRightValidationFor` and `AddValidateSwaggerRightFor` only protected the exact path, so a user
+  without the right got the OpenAPI document by changing its extension: Swashbuckle serves it for
+  `swagger.yaml` and `swagger.yml`, and up to 6.5 for any extension (`swagger.jsonx`). The same path with
+  another extension is now protected too ([#112](https://github.com/Arc4u-org/Arc4u/issues/112)).
 - `CypherCodec` encrypts with AES-GCM and a random nonce for each value (`GenerateKey`, `Encrypt`,
   `Decrypt`), so a modified value or a wrong key is detected. `GenerateKeyAndIV`, `EncodeClearText`,
   `DecodeCypherstring` and `CypherCodecConfig.IV` are removed: the `EncryptionRijndael` section only has a

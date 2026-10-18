@@ -41,7 +41,7 @@ public class ValidateResourcesRightMiddleware
         var applicationContext = context.RequestServices.GetRequiredService<IApplicationContext>();
         var authorizationService = context.RequestServices.GetRequiredService<IAuthorizationService>();
 
-        var options = _options.ResourcesPolicies.Where(o => string.Equals(context.Request.Path.Value.Trim('/'), o.Value.Path.Trim('/'), StringComparison.OrdinalIgnoreCase)).Select(o => o.Value);
+        var options = _options.ResourcesPolicies.Where(o => ProtectedPath.Matches(context.Request.Path, o.Value.Path)).Select(o => o.Value);
 
         if (!options.Any() || applicationContext.Principal is null)
         {

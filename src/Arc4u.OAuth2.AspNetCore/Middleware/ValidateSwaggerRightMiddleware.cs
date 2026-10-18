@@ -33,8 +33,7 @@ public class ValidateSwaggerRightMiddleware
     {
         var applicationContext = context.RequestServices.GetRequiredService<IApplicationContext>();
 
-        if (context.Request.Path.HasValue &&
-            string.Equals(context.Request.Path.Value.Trim('/'), _option.Path.Trim('/'), StringComparison.OrdinalIgnoreCase) &&
+        if (ProtectedPath.Matches(context.Request.Path, _option.Path) &&
             applicationContext.Principal is not null)
         {
             if (applicationContext.Principal.IsAuthorized(_option.Access))
