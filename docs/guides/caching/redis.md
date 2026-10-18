@@ -17,7 +17,7 @@ serialization of the values. The connection to Redis is opened on the first oper
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Caching.Redis` | `RedisCache` (kind `Redis`) and `RedisSentinelCache` (kind `RedisSentinel`). |
+| `Arc4u.Caching.Redis` | `RedisCache` (kind `Redis`), `RedisSentinelCache` (kind `RedisSentinel`) and `AddRedisCacheKinds()`. |
 | `Arc4u.Caching` | `ICacheContext` and `AddCacheContext`. |
 | `Arc4u.Serializer.JSon` | The serializer (any `IObjectSerialization` works). |
 
@@ -98,8 +98,8 @@ The settings bind to <xref:Arc4u.Configuration.Redis.RedisSentinelCacheOption>:
 | `Caching:Caches:n:Settings:DefaultDatabase` | `int?` | `0` | Redis database number. |
 | `Caching:Caches:n:Settings:SerializerName` | `string` | none | Key of the `IObjectSerialization` to use. |
 
-`AddCacheContext` throws an `ArgumentException` when `InstanceName` is empty and an `ArgumentNullException` when
-`SentinelEndpoints` is empty. The Sentinel cache does not connect at initialization: it lets StackExchange.Redis discover the master
+`AddCacheContext` throws an `ArgumentException` when `InstanceName`, `MasterName` or `SentinelEndpoints` is empty.
+The Sentinel cache does not connect at initialization: it lets StackExchange.Redis discover the master
 from `MasterName` and the endpoints, and connects on the first operation.
 
 > [!CAUTION]
@@ -121,9 +121,8 @@ builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
 
-// Register the class of the kind you use.
-builder.Services.AddKeyedTransient<ICache, RedisCache>(CacheContext.Redis);
-builder.Services.AddKeyedTransient<ICache, RedisSentinelCache>(CacheContext.RedisSentinel);
+// Registers RedisCache (kind Redis) and RedisSentinelCache (kind RedisSentinel).
+builder.Services.AddRedisCacheKinds();
 
 var app = builder.Build();
 app.Run();
@@ -144,9 +143,9 @@ Redis. See [Use several caches](index.md#use-several-caches).
 
 ## Extensibility points
 
-The classes are registered under the keys `Redis` and `RedisSentinel`. Register another `ICache` under one of these keys
-to replace it. To tune StackExchange.Redis beyond the options above, register your own `ICache` (for example one that derives
-from <xref:Arc4u.Caching.BaseDistributeCache`1>).
+`AddRedisCacheKinds()` registers the classes under the keys `Redis` and `RedisSentinel` with `TryAddKeyedTransient`. Register
+another `ICache` under one of these keys before calling it to replace it. To tune StackExchange.Redis beyond the options
+above, register your own `ICache` (for example one that derives from <xref:Arc4u.Caching.BaseDistributeCache`1>).
 
 ## Troubleshooting
 

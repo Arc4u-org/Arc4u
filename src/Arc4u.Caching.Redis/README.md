@@ -14,8 +14,7 @@ dotnet add package Arc4u.Caching.Redis --prerelease
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, RedisCache>(CacheContext.Redis);
-builder.Services.AddKeyedTransient<ICache, RedisSentinelCache>(CacheContext.RedisSentinel);
+builder.Services.AddRedisCacheKinds();   // the Redis and RedisSentinel kinds
 ```
 
 The `Caching` section declares the cache with `"Kind": "Redis"` (settings `ConnectionString`, `InstanceName`) or

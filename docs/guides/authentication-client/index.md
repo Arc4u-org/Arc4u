@@ -170,7 +170,7 @@ builder.Services.AddScoped<IApplicationContext, ApplicationInstanceContext>();
 // The token cache: an Arc4u memory cache (see the Caching guide).
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
+builder.Services.AddMemoryCacheKind();
 builder.Services.AddTokenCache(builder.Configuration);
 builder.Services.AddSingleton<ICacheHelper, CacheHelper>();
 builder.Services.AddSingleton<ITokenCache, ApplicationCache>();
@@ -200,7 +200,7 @@ public sealed class InventoryClient(HttpClient httpClient)
 Every request of `InventoryClient` now carries `Authorization: Bearer <token>`. The token is
 requested once and reused until one minute before it expires. When you use the configuration based
 `AddJwtAuthentication` of [Server authentication](../authentication-server/index.md), it already
-calls `AddClientTokens` and `AddTokenCache`.
+calls `AddClientTokens`, and `AddTokenCache` when the `Authentication:TokenCache` section exists.
 
 ## Common scenarios
 

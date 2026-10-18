@@ -170,4 +170,4 @@ it through the result.
 - [Results and errors](index.md)
 - [Results to HTTP responses](http-mapping.md)
 - [FluentValidation documentation](https://docs.fluentvalidation.net/)
-- <xref:Arc4u.Results.Validation> and <xref:Arc4u.FluentValidation> in the API reference
+- <xref:Arc4u.Results.Validation> and <xref:Arc4u.Validation> in the API reference

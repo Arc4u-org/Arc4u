@@ -17,7 +17,7 @@ the named configuration and the serialization of the values. The kind is `Sql`; 
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Caching.SqlServer` | `SqlCache` (kind `Sql`). |
+| `Arc4u.Caching.SqlServer` | `SqlCache` (kind `Sql`) and `AddSqlCacheKind()`. |
 | `Arc4u.Caching` | `ICacheContext` and `AddCacheContext`. |
 | `Arc4u.Serializer.JSon` | The serializer (any `IObjectSerialization` works). |
 
@@ -88,7 +88,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, SqlCache>(CacheContext.Sql);
+builder.Services.AddSqlCacheKind();
 
 var app = builder.Build();
 app.Run();
@@ -103,7 +103,8 @@ in `Durable`, per-instance data in memory. See [Use several caches](index.md#use
 
 ## Extensibility points
 
-`SqlCache` is registered under the key `Sql`. Register your own `ICache` under that key to replace it.
+`AddSqlCacheKind()` registers `SqlCache` under the key `Sql` with `TryAddKeyedTransient`. To replace it, register your own
+`ICache` under that key before calling it, or instead of it.
 
 ## Troubleshooting
 
