@@ -219,6 +219,13 @@ packages. It contains breaking changes: follow the
   sign-out looked for the cached tokens of the user in another index, so the token of the injector stayed
   in the cache. In a cookie session it now uses the access token of the cookie (`TokenRefreshInfo`), and
   the `BootstrapContext` only when there is none ([#275](https://github.com/Arc4u-org/Arc4u/issues/275)).
+- Blazor Interactive Server: the `AppPrincipal` of a circuit was set once, when the circuit connected,
+  and never followed its authentication state. When the circuit reconnected with another user or without
+  a user (for example after a sign-out in another tab), or a revalidating provider turned the state
+  anonymous, the event handlers kept acting as the previous user. `ApplicationContextCircuitHandler` and
+  `AppPrincipalServerAuthenticationStateProvider` now update the `IApplicationContext` of the circuit on
+  `AuthenticationStateChanged`, and clear its principal for an anonymous user
+  ([#171](https://github.com/Arc4u-org/Arc4u/issues/171)).
 - `OidcTokenProvider` and `RefreshTokenProvider` threw a `NullReferenceException` when the user was not
   logged in yet (the `AccessToken` and `RefreshToken` of `TokenRefreshInfo` are null). `OidcTokenProvider`
   now returns a failed result, or refreshes when only the refresh token is there, and `RefreshTokenProvider`

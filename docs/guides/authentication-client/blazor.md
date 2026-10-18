@@ -194,6 +194,13 @@ fills the circuit's `IApplicationContext` in two places:
 - <xref:Arc4u.Blazor.ApplicationContextCircuitHandler> does the same when the circuit connects, so
   the principal is there even before a component reads the authentication state.
 
+Both also follow the changes of the circuit's authentication state. When the circuit reconnects,
+Blazor gives it the user of the new connection: another user, or no user after a sign-out in another
+tab. A revalidating provider can also turn the state anonymous. The principal is then rebuilt for the
+new user, or cleared, so the event handlers never keep acting as the previous user. The handler does
+this with any `AuthenticationStateProvider`, including one of your own that replaces
+`AppPrincipalServerAuthenticationStateProvider`.
+
 ```csharp
 // Program.cs (server project)
 using Arc4u.Blazor;
@@ -224,10 +231,11 @@ authentication. Only the principal is set in the circuit: the tokens kept for th
 ## Hybrid rendering
 
 With the Interactive Auto render mode, a component first runs on the server and then in the
-browser, so the application needs both setups above. Hybrid rendering is tracked in
-[#171](https://github.com/Arc4u-org/Arc4u/issues/171) (open): the principal is reported missing
-in server-rendered parts of a hybrid application. Test the principal in each render mode your
-application uses.
+browser, so the application needs both setups above: on the server, the circuit's
+`IApplicationContext` is filled as described in
+[Interactive Server](#interactive-server-get-the-principal-in-the-circuit); in the browser, the
+principal is rebuilt from the serialized authentication state. Only the claims that the server
+serializes reach the browser, so the authorization built there is only as complete as those claims.
 
 ## Other WebAssembly token providers
 

@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Arc4u.Security.Principal;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Arc4u.Blazor;
 
@@ -9,6 +10,7 @@ namespace Arc4u.Blazor;
 /// <see cref="AppPrincipalServerAuthenticationStateProvider"/> (prerender / SSR request scope) and by
 /// <see cref="ApplicationContextCircuitHandler"/> (interactive circuit scope), mirroring the WASM
 /// <c>Arc4u.Blazor.AppPrincipalFromAuthenticationState</c>.
+/// For an anonymous user, the principal of the <see cref="IApplicationContext"/> is cleared.
 /// </summary>
 internal static class ApplicationContextInitializer
 {
@@ -18,9 +20,11 @@ internal static class ApplicationContextInitializer
         IClaimProfileFiller profileFiller,
         IApplicationContext applicationContext)
     {
-        // Nothing to build for an anonymous user: leave the context untouched.
+        // Anonymous user: clear the context. A circuit that was signed in and is now anonymous (for example
+        // reconnected without the cookie after a sign-out) must not keep acting as the previous user.
         if (identity is null || !identity.IsAuthenticated)
         {
+            applicationContext.SetPrincipal(null);
             return null;
         }
 
@@ -31,6 +35,31 @@ internal static class ApplicationContextInitializer
         applicationContext.SetPrincipal(principal);
 
         return principal;
+    }
+
+    /// <summary>
+    /// Sets the principal of the state received with the <see cref="AuthenticationStateProvider.AuthenticationStateChanged"/> event:
+    /// nothing reads the state again after a change, so the <see cref="IApplicationContext"/> must be updated from the event.
+    /// Blazor raises the event with a completed task, so the principal is set before the event returns. A state that cannot be read is treated as an anonymous user.
+    /// </summary>
+    public static async Task SetPrincipalAsync(
+        Task<AuthenticationState> authenticationState,
+        IClaimAuthorizationFiller authorizationFiller,
+        IClaimProfileFiller profileFiller,
+        IApplicationContext applicationContext)
+    {
+        ClaimsIdentity? identity;
+        try
+        {
+            var state = await authenticationState.ConfigureAwait(false);
+            identity = state.User.Identity as ClaimsIdentity;
+        }
+        catch (Exception)
+        {
+            identity = null;
+        }
+
+        SetPrincipal(identity, authorizationFiller, profileFiller, applicationContext);
     }
 }
 
