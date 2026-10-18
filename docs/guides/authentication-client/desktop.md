@@ -135,7 +135,8 @@ environment name and logging name of `Application.Configuration`.
 
 The first call through the handler signs the user in: <xref:Arc4u.OAuth2.Client.Authentication.TokenProvider.OidcClientIdentityModelTokenProvider>
 returns the cached access token while it is valid, redeems the refresh token when the access token
-is expired, and opens the browser when there is no valid refresh token. The tokens are kept in
+expires in less than `ForceRefreshTimeoutTimeSpan`, and opens the browser when there is no valid
+refresh token or the authority rejects it. The tokens are kept in
 the `ISecureCache`.
 
 > [!CAUTION]

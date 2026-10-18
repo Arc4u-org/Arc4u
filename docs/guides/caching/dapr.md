@@ -23,7 +23,7 @@ Compared with the other kinds:
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Caching.Dapr` | `DaprCache` (kind `Dapr`). References `Dapr.Client`. |
+| `Arc4u.Caching.Dapr` | `DaprCache` (kind `Dapr`) and `AddDaprCacheKind()`. References `Dapr.Client`. |
 | `Arc4u.Caching` | `ICacheContext` and `AddCacheContext`. |
 
 ## Install
@@ -92,7 +92,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
-builder.Services.AddKeyedTransient<ICache, DaprCache>(CacheContext.Dapr);
+builder.Services.AddDaprCacheKind();
 
 var app = builder.Build();
 app.Run();
@@ -117,7 +117,8 @@ public static class DaprExpiration
 
 ## Extensibility points
 
-`DaprCache` is registered under the key `Dapr`. Register your own `ICache` under that key to replace it.
+`AddDaprCacheKind()` registers `DaprCache` under the key `Dapr` with `TryAddKeyedTransient`. To replace it, register your own `ICache`
+under that key before calling it, or instead of it.
 
 ## Troubleshooting
 

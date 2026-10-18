@@ -168,7 +168,8 @@ attributes and the source generators in detail.
 - Resolution happens at run time. A key that does not match any registration is not a
   compile error: for example, a cache whose `Kind` matches no registered `ICache` is not
   created, the problem is logged, and getting that cache by name throws an
-  `InvalidOperationException`. Keys are compared case-sensitively, so use the exact spelling.
+  `InvalidOperationException`. Keys are compared case-sensitively, so use the exact spelling
+  (only the built-in cache kinds, such as `Memory` or `Redis`, are matched whatever their case).
 - Registration order matters. A registration made after an Arc4u `Add...` call does not
   prevent the Arc4u default from being registered; when both are registered, the last one wins
   for single resolution, but code that resolves all implementations gets both.
