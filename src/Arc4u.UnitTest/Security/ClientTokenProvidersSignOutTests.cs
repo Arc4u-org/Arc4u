@@ -8,7 +8,7 @@ using Arc4u.OAuth2.TokenProvider;
 using Arc4u.Security.Principal;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication.Internal;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -69,7 +69,7 @@ public class ClientTokenProvidersSignOutTests
     public async Task BlazorMsal_SignOut_Should_Clear_The_Principal()
     {
         var applicationContext = new Mock<IApplicationContext>();
-        var sut = new BlazorMsalTokenProvider(new Mock<IAccessTokenProviderAccessor>().Object, applicationContext.Object, new Mock<NavigationManager>().Object);
+        var sut = new BlazorMsalTokenProvider(new Mock<IAccessTokenProvider>().Object, applicationContext.Object, new Mock<NavigationManager>().Object);
 
         await sut.SignOutAsync(new SimpleKeyValueSettings(), CancellationToken.None);
 

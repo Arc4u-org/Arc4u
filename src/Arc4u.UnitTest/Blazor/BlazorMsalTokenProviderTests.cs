@@ -5,7 +5,6 @@ using Arc4u.Security.Principal;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication.Internal;
 using Moq;
 using Xunit;
 
@@ -17,17 +16,11 @@ public class BlazorMsalTokenProviderTests
     private const string LoginUrl = "authentication/login";
 
     private readonly Mock<IAccessTokenProvider> _accessTokenProvider = new();
-    private readonly Mock<IAccessTokenProviderAccessor> _accessor = new();
     private readonly ApplicationInstanceContext _applicationContext = new();
     private readonly TestNavigationManager _navigation = new();
     private readonly Mock<IKeyValueSettings> _settings = new();
 
-    public BlazorMsalTokenProviderTests()
-    {
-        _accessor.SetupGet(a => a.TokenProvider).Returns(_accessTokenProvider.Object);
-    }
-
-    private BlazorMsalTokenProvider CreateSut() => new(_accessor.Object, _applicationContext, _navigation);
+    private BlazorMsalTokenProvider CreateSut() => new(_accessTokenProvider.Object, _applicationContext, _navigation);
 
     private static string CreateAccessToken(DateTime validTo)
     {

@@ -134,6 +134,10 @@ packages. It contains breaking changes: follow the
   cache: add it to your `JsonSerializerContext` if the cache serializer uses one. See
   [Other API changes](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#other-api-changes)
   ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `BlazorMsalTokenProvider` takes the public `IAccessTokenProvider` instead of
+  `IAccessTokenProviderAccessor`, an internal API of `Microsoft.AspNetCore.Components.WebAssembly.Authentication`
+  that can change in any release. Its registration does not change; code that creates it must pass an
+  `IAccessTokenProvider` ([#83](https://github.com/Arc4u-org/Arc4u/issues/83)).
 
 ### Removed
 

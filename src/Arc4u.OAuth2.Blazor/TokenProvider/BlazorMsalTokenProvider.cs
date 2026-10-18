@@ -6,7 +6,6 @@ using Arc4u.Security.Principal;
 using FluentResults;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication.Internal;
 
 namespace Arc4u.OAuth2.TokenProvider;
 
@@ -20,19 +19,19 @@ public class BlazorMsalTokenProvider : ISignOutTokenProvider
     public const string ProviderName = "blazor";
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BlazorMsalTokenProvider"/> class with the specified access token provider accessor, application context and navigation manager.
+    /// Initializes a new instance of the <see cref="BlazorMsalTokenProvider"/> class with the specified access token provider, application context and navigation manager.
     /// </summary>
-    /// <param name="accessor">The access token provider accessor to use for obtaining access tokens.</param>
+    /// <param name="tokenProvider">The access token provider of the WebAssembly authentication, used for obtaining access tokens.</param>
     /// <param name="applicationContext">The application context to use for getting the principal.</param>
     /// <param name="navigation">The navigation manager used to redirect the user to the login page when the token cannot be obtained silently.</param>
-    public BlazorMsalTokenProvider(IAccessTokenProviderAccessor accessor, IApplicationContext applicationContext, NavigationManager navigation)
+    public BlazorMsalTokenProvider(IAccessTokenProvider tokenProvider, IApplicationContext applicationContext, NavigationManager navigation)
     {
-        _accessor = accessor;
+        _tokenProvider = tokenProvider;
         _applicationContext = applicationContext;
         _navigation = navigation;
     }
 
-    private readonly IAccessTokenProviderAccessor _accessor;
+    private readonly IAccessTokenProvider _tokenProvider;
     private readonly IApplicationContext _applicationContext;
     private readonly NavigationManager _navigation;
 
@@ -66,7 +65,7 @@ public class BlazorMsalTokenProvider : ISignOutTokenProvider
 
         }
 
-        var requestAccessToken = await _accessor.TokenProvider.RequestAccessToken().ConfigureAwait(false);
+        var requestAccessToken = await _tokenProvider.RequestAccessToken().ConfigureAwait(false);
 
         if (requestAccessToken.TryGetToken(out var accessToken))
         {
