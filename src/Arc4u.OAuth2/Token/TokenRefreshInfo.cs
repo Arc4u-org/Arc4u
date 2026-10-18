@@ -7,5 +7,10 @@ public record TokenRefreshInfo
     public TokenInfo? AccessToken { get; set; }
     /// <summary>Gets or sets the refresh token.</summary>
     public TokenInfo? RefreshToken { get; set; }
+    /// <summary>
+    /// Gets or sets the identity token of the login, sent as <c>id_token_hint</c> when the user signs out so the authority ends that session.
+    /// It is kept by the client providers only.
+    /// </summary>
+    public string? IdentityToken { get; set; }
 
 }

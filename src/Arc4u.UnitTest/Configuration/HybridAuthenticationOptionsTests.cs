@@ -8,6 +8,7 @@ using Arc4u.Diagnostics;
 using Arc4u.OAuth2.Events;
 using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Options;
+using Arc4u.OAuth2.Token;
 using Arc4u.Security.Cryptography;
 using AutoFixture;
 using AutoFixture.AutoMoq;
@@ -109,6 +110,9 @@ public class HybridAuthenticationOptionsTests
             .Returns(_fixture.Create<X509Certificate2>());
 
         services.AddOidcAuthentication(configuration, certificateLoader: mockCertificateLoader.Object);
+
+        // The token providers are resolved one by one at the sign-out.
+        services.Should().ContainSingle(d => d.ServiceType == typeof(SignOutTokenProviderKeys));
 
         var app = services.BuildServiceProvider();
 
@@ -226,6 +230,9 @@ public class HybridAuthenticationOptionsTests
             options.ValidateAudience = false;
             options.ValidateAuthority = false;
         });
+
+        // The token providers are resolved one by one at the sign-out.
+        services.Should().ContainSingle(d => d.ServiceType == typeof(SignOutTokenProviderKeys));
 
         var provider = services.BuildServiceProvider();
         var sut = provider.GetRequiredService<IOptionsMonitor<OidcAuthenticationOptions>>().CurrentValue;

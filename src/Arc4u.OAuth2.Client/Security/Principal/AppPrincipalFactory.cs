@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Arc4u.Caching;
+using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Diagnostics;
@@ -284,30 +285,34 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
         }
     }
 
-    /// <summary>Signs the user out with the settings named <c>OAuth2</c>.</summary>
+    /// <summary>Signs the user out with the settings named <c>OAuth2</c>, or with empty settings when they do not exist.</summary>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task that completes when the user is signed out.</returns>
-    /// <exception cref="InvalidOperationException">No settings named <c>OAuth2</c> exist.</exception>
     public ValueTask SignOutUserAsync(CancellationToken cancellationToken)
     {
+        // The settings are only given to the token providers, which ignore the settings that are not theirs.
         if (!container.TryGetNamedSettings(DefaultSettingsResolveName, out var settings))
         {
-            throw new InvalidOperationException($"No section {DefaultSettingsResolveName} was found.");
+            settings = new SimpleKeyValueSettings();
         }
 
-        return SignOutUserAsync(settings, cancellationToken);
+        return SignOutUserAsync(settings!, cancellationToken);
     }
 
-    /// <summary>Removes the cached claims and signs the user out of the token provider.</summary>
-    /// <param name="settings">The settings, which must contain the <c>ProviderId</c> key.</param>
+    /// <summary>
+    /// Removes the cached claims and signs the user out of every token provider that holds a user session (<see cref="ISignOutTokenProvider"/>),
+    /// giving them <paramref name="settings"/>. An exception thrown by a token provider is logged and not rethrown.
+    /// </summary>
+    /// <param name="settings">The settings given to the token providers.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task that completes when the user is signed out.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     public async ValueTask SignOutUserAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+
         RemoveClaimsCache();
-        if (container.TryGetService(settings.Values[ProviderKey], out ITokenProvider? provider))
-        {
-            await provider!.SignOutAsync(settings, cancellationToken).ConfigureAwait(false);
-        }
+
+        await container.SignOutTokenProvidersAsync(settings, logger, cancellationToken).ConfigureAwait(false);
     }
 }

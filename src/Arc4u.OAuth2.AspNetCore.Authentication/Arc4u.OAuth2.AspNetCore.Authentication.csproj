@@ -14,4 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Arc4u.Diagnostics\Arc4u.Diagnostics.csproj" />
     <ProjectReference Include="..\Arc4u.OAuth2.AspNetCore\Arc4u.OAuth2.AspNetCore.csproj" />  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Arc4u.UnitTest" />
+  </ItemGroup>
 </Project>

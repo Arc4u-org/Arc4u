@@ -22,7 +22,7 @@ namespace Arc4u.OAuth2.Token;
 /// <param name="logger">The logger.</param>
 /// <param name="container">The service provider used to resolve the credential providers.</param>
 [Export(UsernamePasswordTokenProvider.ProviderName, typeof(ITokenProvider))]
-public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInformation networkStatus, ILogger<UsernamePasswordTokenProvider> logger, IServiceProvider container) : ITokenProvider
+public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInformation networkStatus, ILogger<UsernamePasswordTokenProvider> logger, IServiceProvider container) : ISignOutTokenProvider
 {
     /// <summary>The key (<c>usernamePassword</c>) under which the provider is registered.</summary>
     public const string ProviderName = "usernamePassword";
@@ -42,7 +42,7 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
     /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">The <c>Authority</c> or <c>ServiceApplicationId</c> setting is missing.</exception>
     /// <exception cref="InvalidOperationException">The settings are empty or no token is received.</exception>
-    public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -212,12 +212,23 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
 
     }
 
-    /// <summary>Removes the password and the token of the user from the secure cache.</summary>
+    /// <summary>
+    /// Removes the user name, the password and the token of the user from the secure cache. Nothing is done when the settings have no <c>Authority</c> or no
+    /// <c>ServiceApplicationId</c>: they are the settings of another provider.
+    /// </summary>
     /// <param name="settings">The provider settings.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A completed task.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+
+        if (!settings.Values.ContainsKey(TokenKeys.AuthorityKey) || !settings.Values.ContainsKey(TokenKeys.ServiceApplicationIdKey))
+        {
+            return ValueTask.CompletedTask;
+        }
+
         GetSettings(settings, out var serviceId, out _, out var passwordStoreKey);
 
         try
@@ -225,6 +236,16 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
             // remove the passord information.
             var pwdkey = passwordStoreKey + "_pwd";
             _secureCache.Remove(pwdkey);
+        }
+        catch (Exception ex)
+        {
+            logger.Technical().LogException(ex);
+        }
+
+        try
+        {
+            // remove the user name, so the next user does not see who signed in before.
+            _secureCache.Remove(passwordStoreKey + "_upn");
         }
         catch (Exception ex)
         {

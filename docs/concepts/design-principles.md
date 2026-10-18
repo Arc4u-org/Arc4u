@@ -122,16 +122,13 @@ public sealed class ApiKeyTokenProvider(IConfiguration configuration) : ITokenPr
 {
     public const string ProviderName = "ApiKey";
 
-    public Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         var key = configuration["Downstream:ApiKey"];
-        return Task.FromResult(key is null
+        return ValueTask.FromResult(key is null
             ? Result.Fail<TokenInfo>("Downstream:ApiKey is not configured.")
             : Result.Ok(new TokenInfo("X-Api-Key", key, DateTime.UtcNow.AddMinutes(5))));
     }
-
-    public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
-        => ValueTask.CompletedTask;
 }
 ```
 

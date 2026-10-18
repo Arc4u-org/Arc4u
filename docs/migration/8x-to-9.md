@@ -304,8 +304,7 @@ Steps:
 
 Arc4u 9 does not ship MSAL support ([#135](https://github.com/Arc4u-org/Arc4u/issues/135)).
 `Arc4u.Standard.OAuth2.Msal` (`MsalTokenProvider` and `PublicClientApp`, for desktop clients) has
-no 9 package: its last version is 8.3.2. The source code is still in the repository
-(`src/Arc4u.OAuth.Msal`), but it is not part of the solution and is not built or published.
+no 9 package: its last version is 8.3.2, and its source code is removed from the repository.
 
 | 8.x client | Arc4u 9 |
 |---|---|
@@ -631,7 +630,8 @@ validation problem details response through `ToActionOkResult`.
 | `Messages.LogAndThrowIfNecessary(logger)` | `result.LogIfFailed()` and return the result |
 | `PersistEntity.TryValidate()` returning `Messages` | `PersistEntity.TryValidate()` returning `Result` |
 | `ValidateAll<T>(logger)` throwing | `ValidateAll<T>(logger)` returning `Result` |
-| `ITokenProvider.GetTokenAsync` returning `TokenInfo?` | Returns `Result<TokenInfo>` |
+| `ITokenProvider.GetTokenAsync` returning `Task<TokenInfo?>` | Returns `ValueTask<Result<TokenInfo>>`: replace `Task.FromResult` with `ValueTask.FromResult` (or `async`) in your providers, and await the call only once |
+| `ICredentialTokenProvider.GetTokenAsync` | Returns `ValueTask<Result<TokenInfo>>`, like `ITokenProvider`. `CredentialTokenCacheTokenProvider.CreateBasicTokenInfoAsync` (protected) also returns a `ValueTask` |
 | `IAppPrincipalFactory.CreatePrincipalAsync(Messages messages, ...)` | `CreatePrincipalAsync(...)` without `Messages`, returns `Result<AppPrincipal>` |
 | `Arc4u.ServiceModel.MessageCategory` | `Arc4u.Diagnostics.MessageCategory` |
 
@@ -1350,6 +1350,7 @@ public static class Security
 | `Arc4u.OAuth2.Security.Principal.AppServicePrincipalFactory` | `Arc4u.OAuth2.AppServicePrincipalFactory` |
 | `Arc4u.Utils.Enum<T>`, `EnumUtil` | The generic methods of `System.Enum` (`Enum.GetValues<T>()`, `Enum.TryParse<T>()`) |
 | `IApplicationContext.Principal` as an `AppPrincipal`, `SetPrincipal(AppPrincipal)` | `AppPrincipal? Principal` and `SetPrincipal(AppPrincipal?)`: check the principal for `null` before using it (nobody authenticated), and pass `null` to clear it |
+| `ITokenProvider.SignOutAsync(settings, cancellationToken)` | Moved to <xref:Arc4u.OAuth2.Token.ISignOutTokenProvider>. Implement it only when your provider holds tokens for a user session; otherwise remove your `SignOutAsync` method. `SignOutUserAsync` of `AppPrincipalFactory` and `AppServicePrincipalFactory` signs out every registered provider that implements it, with the same settings: ignore the settings that are not yours. `OidcTokenProvider` and `CredentialTokenCacheTokenProvider` have no sign-out; sign out of the cookie with `HttpContext.SignOutAsync` |
 | `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
 
 ### Other removed APIs

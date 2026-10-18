@@ -12,10 +12,8 @@ caches the tokens, and an `HttpClient` handler.
 
 ## MSAL status
 
-Arc4u 9 does not ship an MSAL (Microsoft Authentication Library) package. The project that
-wraps MSAL (package ID `Arc4u.OAuth2.Msal`, folder `src/Arc4u.OAuth.Msal`) still targets
-`net8.0` only, is not part of the Arc4u 9 solution, and is not published for 9.x. The 9.0
-roadmap ([#129](https://github.com/Arc4u-org/Arc4u/issues/129)) drops MSAL support and adds
+Arc4u 9 does not ship an MSAL (Microsoft Authentication Library) package: the project that
+wrapped MSAL (package ID `Arc4u.OAuth2.Msal`) is removed. The 9.0 roadmap ([#129](https://github.com/Arc4u-org/Arc4u/issues/129)) drops MSAL support and adds
 IdentityModel for WPF and MAUI apps instead: that is `Arc4u.OAuth2.Client.Authentication`.
 See [MSAL status](../../migration/8x-to-9.md#msal-status) in the migration guide and the
 [package support](../package-support.md) page.
@@ -77,6 +75,8 @@ whose full path is in the `OidcClientIdSettingsSectionPath` key of that section,
 | `Authentication:ForceRefreshTimeoutTimeSpan` | `TimeSpan` | `00:05:00` | The access token is renewed with the refresh token once it expires in less than this value. |
 | `Authentication:RefreshTokenLifetime` | `TimeSpan` | `90.00:00:00` | Assumed lifetime of a refresh token. Older than that, the user logs in again. Set it to the lifetime configured in the identity provider. |
 | `Authentication:ClockSkew` | `TimeSpan` | `00:05:00` | Tolerated clock difference when the tokens are validated. |
+| `Authentication:LoginTimeout` | `TimeSpan` | `00:05:00` | Longest time an interactive login (or the logout of a sign-out) can take in the browser. The token calls wait for the login in progress; a call that waits longer fails, and a login or logout that does not complete in time is cancelled. |
+| `Authentication:SecureCacheTimeout` | `TimeSpan` | `00:00:30` | Longest time a read, write or removal of the tokens in the secure cache can take during a sign-out or a token write. |
 
 `Application.Configuration` is read by `AddApplicationConfig` in the code below (see
 [Configuration](../configuration/index.md)). HTTPS is required for the metadata, except when the

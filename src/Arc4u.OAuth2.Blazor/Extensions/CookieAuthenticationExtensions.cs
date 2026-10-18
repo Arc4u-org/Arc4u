@@ -67,6 +67,8 @@ public static class CookieAuthenticationExtensions
                                                               string sectionKey,
                                                               AuthenticationCookieSettingsOption authenticationCookieSettingsOption)
     {
+        services.AddTokenProvidersSignOut();
+
         // Register the settings for the cookie client token provider.
         void SettingsFiller(SimpleKeyValueSettings keyOptions)
         {

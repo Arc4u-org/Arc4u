@@ -33,4 +33,13 @@ namespace Arc4u.OAuth2.Client.Authentication.Options;
 
         /// <summary>Gets or sets the tolerated clock difference when tokens are validated. The default is 5 minutes.</summary>
         public TimeSpan ClockSkew { get; set; } = TimeSpan.FromMinutes(5);
+
+        /// <summary>
+        /// Gets or sets the longest time an interactive login (in the browser) can take. The default is 5 minutes. The token calls are made one at a time while the user logs in:
+        /// a call that waits longer than this value fails, and a login that does not complete in time is cancelled.
+        /// </summary>
+        public TimeSpan LoginTimeout { get; set; } = TimeSpan.FromMinutes(5);
+
+        /// <summary>Gets or sets the longest time a read, write or removal of the tokens in the secure cache can take during a sign-out or a token write. The default is 30 seconds.</summary>
+        public TimeSpan SecureCacheTimeout { get; set; } = TimeSpan.FromSeconds(30);
     }

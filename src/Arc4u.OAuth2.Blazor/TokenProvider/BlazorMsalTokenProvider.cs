@@ -14,7 +14,7 @@ namespace Arc4u.OAuth2.TokenProvider;
 /// Provides an implementation of <see cref="ITokenProvider"/> for Blazor applications using MSAL.
 /// </summary>
 [Export(ProviderName, typeof(ITokenProvider))]
-public class BlazorMsalTokenProvider : ITokenProvider
+public class BlazorMsalTokenProvider : ISignOutTokenProvider
 {
     /// <summary>The key (<c>blazor</c>) under which the provider is registered.</summary>
     public const string ProviderName = "blazor";
@@ -44,7 +44,7 @@ public class BlazorMsalTokenProvider : ITokenProvider
     /// <returns>A task representing the asynchronous operation. The token is the one stored in the identity of the current principal when it is still valid, otherwise the one requested to the MSAL access token provider; a failed result is returned when no token is found.
     /// When the MSAL access token provider requires an interactive login, the current principal is cleared and the user is redirected to the login page.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the settings parameter is null.</exception>
-    public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -97,13 +97,16 @@ public class BlazorMsalTokenProvider : ITokenProvider
     }
 
     /// <summary>
-    /// Does nothing: the tokens are managed by the MSAL authentication of the Blazor application.
+    /// Clears the current principal, so its token (the <see cref="ClaimsIdentity.BootstrapContext"/>) is no longer used.
+    /// The MSAL tokens are managed by the authentication of the Blazor application: the application signs out with <c>NavigateToLogout</c>.
     /// </summary>
     /// <param name="settings">The settings, which are not used.</param>
     /// <param name="cancellationToken">The cancellation token, which is not used.</param>
     /// <returns>A completed <see cref="ValueTask"/>.</returns>
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
+        _applicationContext.SetPrincipal(null);
+
         return ValueTask.CompletedTask;
     }
 }

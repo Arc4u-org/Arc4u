@@ -22,22 +22,30 @@ public partial class TokenJsonContext : JsonSerializerContext
 /// <param name="logger">The logger.</param>
 [Export(ProviderName, typeof(ITokenProvider)), Shared]
 public class ClientTokenProvider(IHttpClientFactory httpClientFactory, ILogger<ClientTokenProvider> logger)
-    : ITokenProvider
+    : ISignOutTokenProvider
 {
     /// <summary>The key (<c>Client</c>) under which the provider is registered.</summary>
     public const string ProviderName = "Client";
 
-    private TokenInfo _token = new TokenInfo("bearer", string.Empty, DateTime.MinValue);
+    private static readonly TokenInfo NoToken = new("bearer", string.Empty, DateTime.MinValue);
+
+    private TokenInfo _token = NoToken;
+
+    // Incremented by each sign-out, so a token requested before a sign-out is not kept after it.
+    private readonly SignOutGeneration _signOutGeneration = new();
 
     /// <summary>Gets the token from the server backend, or the previous one when it is still valid.</summary>
     /// <param name="settings">The settings giving <c>HttpClientName</c> and <c>TokenRequestUrl</c>.</param>
     /// <param name="platformParameters">Not used.</param>
     /// <returns>The token, or a failed result when a setting is missing or the token cannot be obtained.</returns>
-    public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
-        if (_token.ExpiresOnUtc >= DateTime.UtcNow)
+        // Like the other providers, a token expiring in less than one minute is renewed, so it does not expire while the request is in flight.
+        // The token is read once: a sign-out can replace it between a check and a second read.
+        var token = _token;
+        if (token.ExpiresOnUtc > DateTime.UtcNow.AddMinutes(1))
         {
-            return Result.Ok(_token);
+            return Result.Ok(token);
         }
 
         if (settings is null)
@@ -57,6 +65,8 @@ public class ClientTokenProvider(IHttpClientFactory httpClientFactory, ILogger<C
             return Result.Fail("No TokenRequestUrl provided.");
         }
 
+        var signOutCount = _signOutGeneration.Snapshot();
+
         try
         {
             var httpClient = httpClientFactory.CreateClient(httpClientName);
@@ -68,8 +78,16 @@ public class ClientTokenProvider(IHttpClientFactory httpClientFactory, ILogger<C
                 return Result.Fail($"Unable to get a token, HttpClientFactory({httpClientName}), endpoint is {httpClient.BaseAddress?.ToString()}.");
             }
 
-            _token = new TokenInfo("Bearer", bearerToken);
-            return Result.Ok(_token);
+            var received = new TokenInfo("Bearer", bearerToken);
+
+            // The user signed out while the token was requested: the token belongs to the previous session and is not kept.
+            if (_signOutGeneration.HasChanged(signOutCount))
+            {
+                return Result.Fail("The user signed out while the token was requested.");
+            }
+
+            _token = received;
+            return Result.Ok(received);
         }
         catch (Exception e)
         {
@@ -79,13 +97,18 @@ public class ClientTokenProvider(IHttpClientFactory httpClientFactory, ILogger<C
         return Result.Fail("Unable to get the token.");
     }
 
-    /// <summary>Not supported.</summary>
-    /// <param name="settings">The provider settings.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotImplementedException">Always thrown.</exception>
+    /// <summary>
+    /// Forgets the token kept in memory, so the next call asks the server backend again.
+    /// Signing out of the backend (its authentication cookie) is done by the application.
+    /// </summary>
+    /// <param name="settings">The provider settings, which are not used.</param>
+    /// <param name="cancellationToken">A token to cancel the operation, which is not used.</param>
+    /// <returns>A completed <see cref="ValueTask"/>.</returns>
     public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        _signOutGeneration.Increment();
+        _token = NoToken;
+
+        return ValueTask.CompletedTask;
     }
 }

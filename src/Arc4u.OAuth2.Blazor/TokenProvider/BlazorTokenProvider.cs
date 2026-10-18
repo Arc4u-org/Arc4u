@@ -13,7 +13,7 @@ namespace Arc4u.OAuth2.TokenProvider;
 /// Provides an implementation of <see cref="ITokenProvider"/> for Blazor applications.
 /// </summary>
 [Export(ProviderName, typeof(ITokenProvider))]
-public class BlazorTokenProvider : ITokenProvider
+public class BlazorTokenProvider : ISignOutTokenProvider
 {
     /// <summary>The key (<c>blazor</c>) under which the provider is registered.</summary>
     public const string ProviderName = "blazor";
@@ -44,7 +44,7 @@ public class BlazorTokenProvider : ITokenProvider
     /// <exception cref="ArgumentNullException">Thrown when the settings parameter, its Values property, or the <c>Authority</c> or <c>RedirectUrl</c> value is missing.</exception>
     /// <exception cref="UriFormatException">Thrown when the RedirectUrl from settings is not a valid URL.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no token is found after the window operation.</exception>
-    public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(settings.Values);

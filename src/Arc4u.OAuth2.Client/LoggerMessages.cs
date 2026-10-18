@@ -14,13 +14,4 @@ public static partial class LoggerMessages
     [LoggerMessage(EventId = 9170, Level = LogLevel.Trace,
                    Message = "Null token provider is invoked.")]
     public static partial void LogCallNullTokenProvider(this ILogger logger);
-
-    /// <summary>
-    /// Logs a Trace message (event id 9171): <c>Null token provider signout is invoked.</c>
-    /// </summary>
-    /// <param name="logger">The logger to write to.</param>
-    [LoggerMessage(EventId = 9171, Level = LogLevel.Trace,
-               Message = "Null token provider signout is invoked.")]
-    public static partial void LogCallSignOutNullTokenProvider(this ILogger logger);
-
 }

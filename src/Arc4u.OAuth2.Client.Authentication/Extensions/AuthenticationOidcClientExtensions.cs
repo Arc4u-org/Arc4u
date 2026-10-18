@@ -48,6 +48,8 @@ namespace Arc4u.OAuth2.Extensions
             ArgumentNullException.ThrowIfNull(browser);
             ArgumentNullException.ThrowIfNull(loggerFactory);
 
+            services.AddTokenProvidersSignOut();
+
             var oidcOptions = new OidcClientAuthenticationOptions();
             authenticationOptions(oidcOptions);
 
@@ -55,7 +57,6 @@ namespace Arc4u.OAuth2.Extensions
             ConfigureOidcServices(services, oidcOptions);
 
             services.Configure(authenticationOptions);
-            ConfigureOidcServices(services, oidcOptions);
 
             var oidcClientSettings = new OidcClientSettingsOption();
             oidcOptions.OidcClientSettingsOption?.Invoke(oidcClientSettings);
@@ -190,6 +191,8 @@ namespace Arc4u.OAuth2.Extensions
             options.ForceRefreshTimeoutTimeSpan = settings.ForceRefreshTimeoutTimeSpan;
             options.RefreshTokenLifetime = settings.RefreshTokenLifetime;
             options.ClockSkew = settings.ClockSkew;
+            options.LoginTimeout = settings.LoginTimeout;
+            options.SecureCacheTimeout = settings.SecureCacheTimeout;
             options.ClaimsIdentifierOptions =
                 ClaimsidentifierExtension.PrepareAction(configuration, settings.ClaimsIdentifierSectionPath);
         }
@@ -236,6 +239,8 @@ namespace Arc4u.OAuth2.Extensions
             ArgumentNullException.ThrowIfNull(options.DefaultAuthority.GetMetaDataAddress());
             ArgumentOutOfRangeException.ThrowIfLessThan(options.ForceRefreshTimeoutTimeSpan, TimeSpan.Zero);
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(options.RefreshTokenLifetime, TimeSpan.Zero);
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(options.LoginTimeout, TimeSpan.Zero);
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(options.SecureCacheTimeout, TimeSpan.Zero);
         }
 
     }

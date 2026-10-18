@@ -53,6 +53,14 @@ packages. It contains breaking changes: follow the
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
   `JsonSerialization` accepts a `JsonSerializerContext`.
+- Sign-out of the token providers: `ISignOutTokenProvider` for the providers that hold tokens for a
+  user session, `SignOutTokenProvidersAsync` (signs out every registered one), `AddTokenProvidersSignOut()`
+  and `SignOutTokenProviderKeys` (resolve each provider separately), `SignOutGeneration` (a token requested
+  before a sign-out is not kept after it), `TechnicalLoggerExtensions.LogTechnicalException` (logs with or
+  without an Arc4u logger) and `OboTokenCacheIndex`
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `LoginTimeout` and `SecureCacheTimeout` settings of the OpenID Connect sign-in of desktop and mobile
+  clients (`OidcClientAuthenticationOptions`) ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
 
 ### Changed
 
@@ -67,8 +75,9 @@ packages. It contains breaking changes: follow the
   instead of `IContainer`. See
   [IContainer replaced by keyed services](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#icontainer-replaced-by-keyed-services).
 - Errors are returned as FluentResults `Result` values instead of `Messages` and `AppException`:
-  `ITokenProvider.GetTokenAsync` returns `Result<TokenInfo>`, `IAppPrincipalFactory.CreatePrincipalAsync`
-  returns `Result<AppPrincipal>`, `PersistEntity.TryValidate` returns `Result`. See
+  `ITokenProvider.GetTokenAsync` and `ICredentialTokenProvider.GetTokenAsync` return
+  `ValueTask<Result<TokenInfo>>`, `IAppPrincipalFactory.CreatePrincipalAsync` returns
+  `Result<AppPrincipal>`, `PersistEntity.TryValidate` returns `Result`. See
   [Message and Messages replaced by ProblemDetails](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#message-and-messages-replaced-by-problemdetails).
 - Authentication settings: the OpenID Connect settings are registered under the name `Cookies`,
   the `AuthenticationType` and settings-key configuration entries are removed, events classes are
@@ -107,6 +116,20 @@ packages. It contains breaking changes: follow the
 - `IApplicationContext.Principal` is an `AppPrincipal?` and `SetPrincipal` accepts `null` to clear
   the principal, so the compiler warns when the principal is used without a null check
   ([#125](https://github.com/Arc4u-org/Arc4u/issues/125)).
+- `ITokenProvider.SignOutAsync` moved to the new `ISignOutTokenProvider` interface, implemented only
+  by the providers that hold tokens for a user session. `RemoteClientSecretTokenProvider`,
+  `ClientCredentialsTokenProvider`, `BootstrapContextTokenProvider`, `NullTokenProvider`,
+  `OidcTokenProvider` (its tokens are in the authentication cookie) and `CredentialTokenCacheTokenProvider`
+  (a configured account, not a user session) no longer have a sign-out. `SignOutUserAsync` of
+  `AppPrincipalFactory` and of `AppServicePrincipalFactory` signs the user out of every registered
+  `ISignOutTokenProvider`, not only the provider of the `ProviderId`, and logs their exceptions instead of
+  rethrowing them; `AppServicePrincipalFactory` only removed the cached claims before.
+  `AddOidcAuthentication`, `AddHybridAuthentication`, `AddOnBehalfOf`, `AddOidcClientAuthentication` and
+  `AddAuthenticationCookie` call `AddTokenProvidersSignOut()`, so a provider that cannot be resolved does
+  not prevent the sign-out of the others. `AzureADOboTokenProvider` keeps an `OboTokenCacheIndex` in the
+  cache: add it to your `JsonSerializerContext` if the cache serializer uses one. See
+  [Other API changes](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#other-api-changes)
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
 
 ### Removed
 
@@ -149,6 +172,36 @@ packages. It contains breaking changes: follow the
 
 ### Fixed
 
+- Signing out threw a `NotImplementedException` with `AzureADOboTokenProvider` and `ClientTokenProvider`.
+  `AzureADOboTokenProvider` now removes from the cache the tokens of every API obtained for the user, also
+  with a user access token refreshed since: the index is kept per user (the registered
+  `IUserObjectIdentifier`, otherwise the `oid` or `sub` claim) and application (`aud`, otherwise `azp` or
+  `appid`), both read from the user token ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `ClientTokenProvider` forgets the token kept in memory at the sign-out, also a token requested before
+  it, and renews a token expiring in less than one minute
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `BlazorMsalTokenProvider` clears the principal at the sign-out, and `UsernamePasswordTokenProvider` also
+  removes the cached user name ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider` kept returning the access token after the sign-out. The sign-out
+  now clears the tokens in memory, cancels a login in progress and does not keep the tokens of a refresh or
+  login in progress. It opens the browser logout only when the user had a session, sends the identity token
+  of the login as `id_token_hint` (kept in the new `TokenRefreshInfo.IdentityToken`), bounds the logout by
+  `LoginTimeout`, and still logs the user out of the authority when the secure cache fails
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider`: concurrent calls refresh the token (or log the user in) once,
+  since with refresh token rotation a second refresh failed and started an interactive login. The calls
+  waiting for a login get its result: when the user cancels it, they fail instead of opening the browser
+  again. `LoginTimeout` (5 minutes) bounds a login the user does not complete and the calls waiting for it
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider`: a network error during a refresh keeps the session (the access
+  token is still returned until it expires); only `invalid_grant`, `invalid_scope` and the interaction
+  errors log the user in again ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider` and its secure cache: an entry that cannot be decoded is removed
+  and the user logs in again, instead of making every call fail; a transient read failure fails the call
+  and keeps the entry; an inaccessible cache, or a serializer that does not support `TokenRefreshInfo`,
+  keeps the entry and logs the user in; a failing write no longer fails the call that obtained the tokens.
+  `SecureCacheTimeout` (30 seconds) bounds the secure-cache operations of a sign-out or a token write, and
+  the failures are logged with an optional logger ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
 - The access token was not in the `BootstrapContext` of the identity in a cookie session, so the `Bootstrap`
   token provider and code written for bearer tokens did not work without `UseOpenIdBearerInjector()`.
   `StandardCookieEvents` now puts it there on each request, after refreshing it when needed (#90, #158).

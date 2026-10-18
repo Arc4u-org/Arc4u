@@ -40,7 +40,7 @@ namespace Arc4u.OAuth2.TokenProviders
         /// <param name="platformParameters">Not used.</param>
         /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
         /// <returns>The access token, or a failed result when the user is not logged in (no access and no refresh token).</returns>
-        public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+        public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
         {
             ArgumentNullException.ThrowIfNull(settings);
 
@@ -64,16 +64,6 @@ namespace Arc4u.OAuth2.TokenProviders
             }
 
             return refreshTokenInfo.AccessToken;
-        }
-
-        /// <summary>Not supported.</summary>
-        /// <param name="settings">The provider settings.</param>
-        /// <param name="cancellationToken">A token to cancel the operation.</param>
-        /// <returns>Never returns.</returns>
-        /// <exception cref="NotImplementedException">Always thrown.</exception>
-        public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
         }
     }
 }

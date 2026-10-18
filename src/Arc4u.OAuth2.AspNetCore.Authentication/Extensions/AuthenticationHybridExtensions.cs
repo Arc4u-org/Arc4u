@@ -2,6 +2,7 @@
 using Arc4u.OAuth2.Events;
 using Arc4u.OAuth2.Middleware;
 using Arc4u.OAuth2.Options;
+using Arc4u.OAuth2.Token;
 using Arc4u.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -29,6 +30,8 @@ namespace Arc4u.OAuth2.Extensions
         {
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(authenticationOptions);
+
+            services.AddTokenProvidersSignOut();
 
             var oidcOptions = new HybridAuthenticationOptions();
             authenticationOptions(oidcOptions);

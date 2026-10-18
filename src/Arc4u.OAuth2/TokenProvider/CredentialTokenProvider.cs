@@ -38,7 +38,7 @@ public class CredentialTokenProvider(ILogger<CredentialTokenProvider> logger, IO
     private readonly ILogger<CredentialTokenProvider> _logger = logger;
 
     /// <inheritdoc/>
-    public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings settings, CredentialsResult credential)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings settings, CredentialsResult credential)
     {
         var result = GetContext(settings, out var clientId, out var authority, out var scope, out var clientSecret);
 

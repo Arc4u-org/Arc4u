@@ -10,5 +10,5 @@ public interface ICredentialTokenProvider
     /// <param name="settings">The provider settings (authority, client id, scope...). See <see cref="TokenKeys"/>.</param>
     /// <param name="credential">The user credentials.</param>
     /// <returns>The token, or a failed result when it cannot be obtained.</returns>
-    Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings settings, CredentialsResult credential);
+    ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings settings, CredentialsResult credential);
 }

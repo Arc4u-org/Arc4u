@@ -115,6 +115,30 @@ public class OidcClientAuthenticationOptionsTests
     }
 
     [Fact]
+    public void AddOidcClientAuthentication_Should_Register_The_Services_Once()
+    {
+        var oidcOptions = _fixture.Create<OidcClientSettingsOption>();
+        var authority = _fixture.Build<AuthorityOptions>().With(p => p.Url, new Uri("http://localhost:3000/")).Create();
+        var services = new ServiceCollection();
+
+        services.AddOidcClientAuthentication(new Mock<IBrowser>().Object, NullLoggerFactory.Instance, config =>
+        {
+            config.DefaultAuthority = authority;
+            config.ClaimsIdentifierOptions = identifier => identifier.Add("sub");
+            config.OidcClientSettingsOption = oidc =>
+            {
+                oidc.ClientId = oidcOptions.ClientId;
+                oidc.Scopes = oidcOptions.Scopes;
+                oidc.ProviderId = oidcOptions.ProviderId;
+            };
+        });
+
+        Assert.Single(services, d => d.ServiceType == typeof(TokenRefreshInfo));
+        Assert.Single(services, d => d.ServiceType == typeof(SignOutTokenProviderKeys));
+        Assert.Equal(["sub"], services.BuildServiceProvider().GetRequiredService<IOptions<ClaimsIdentifierOption>>().Value);
+    }
+
+    [Fact]
     public void OidcClientAuthenticationOptions_From_No_Config_Should()
     {
         var oidcOptions = _fixture.Create<OidcClientSettingsOption>();

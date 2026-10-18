@@ -23,7 +23,7 @@ public class RemoteClientSecretTokenProvider : ITokenProvider
     /// <returns>The token, or a failed result when the header name is not in the settings.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     /// <exception cref="ConfigurationException">The settings have no client secret.</exception>
-    public Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
+    public ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -34,7 +34,7 @@ public class RemoteClientSecretTokenProvider : ITokenProvider
         if (!settings.Values.ContainsKey(TokenKeys.ClientSecretHeader))
         {
 
-            return Task.FromResult(Result.Fail<TokenInfo>(new Error("Client secret Header is missing. Cannot process the request.")));
+            return ValueTask.FromResult(Result.Fail<TokenInfo>(new Error("Client secret Header is missing. Cannot process the request.")));
         }
 
         if (!settings.Values.ContainsKey(TokenKeys.ClientSecret))
@@ -52,7 +52,7 @@ public class RemoteClientSecretTokenProvider : ITokenProvider
             clientSecret = Convert.ToBase64String(Encoding.UTF8.GetBytes(clientSecret));
         }
 
-        return Task.FromResult(Result.Ok(new TokenInfo(headerKey, clientSecret, DateTime.UtcNow + TimeSpan.FromHours(1))));
+        return ValueTask.FromResult(Result.Ok(new TokenInfo(headerKey, clientSecret, DateTime.UtcNow + TimeSpan.FromHours(1))));
 
     }
 
@@ -63,15 +63,5 @@ public class RemoteClientSecretTokenProvider : ITokenProvider
     {
         var buffer = new byte[value.Length];
         return Convert.TryFromBase64String(value, buffer, out _);
-    }
-
-    /// <summary>Not supported.</summary>
-    /// <param name="settings">The provider settings.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotImplementedException">Always thrown.</exception>
-    public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
     }
 }

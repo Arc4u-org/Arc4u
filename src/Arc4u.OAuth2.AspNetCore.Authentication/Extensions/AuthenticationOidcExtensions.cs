@@ -67,6 +67,8 @@ namespace Arc4u.OAuth2.Extensions
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(authenticationOptions);
 
+            services.AddTokenProvidersSignOut();
+
             var oidcOptions = new OidcAuthenticationOptions();
             authenticationOptions(oidcOptions);
 
