@@ -210,6 +210,67 @@ public class MongoDBTests
     }
 
     [Fact]
+    public void Test_MongoDB_ConnectionString_With_Options_Should_Apply_Both()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["ConnectionStrings:mongo"] = "mongodb://myserver:27017/DB1?maxConnecting=5" })
+            .Build();
+
+        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddMongoDatabase<DatabaseDbContext>(configuration, "mongo", settings =>
+        {
+            settings.ApplicationName = "Arc4u";
+            settings.TranslationOptions = new ExpressionTranslationOptions { CompatibilityLevel = ServerVersion.Server60 };
+        });
+
+        var app = services.BuildServiceProvider();
+
+        var factory = app.GetService<IMongoClientFactory<DatabaseDbContext>>();
+        var client = factory!.CreateClient();
+
+        client.Settings.Server.Host.Should().Be("myserver");
+        client.Settings.MaxConnecting.Should().Be(5);
+        client.Settings.ApplicationName.Should().Be("Arc4u");
+        client.Settings.TranslationOptions.CompatibilityLevel.Should().Be(ServerVersion.Server60);
+    }
+
+    [Fact]
+    public void Test_MongoDB_Queryable_Should_Be_Translated()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["ConnectionStrings:mongo"] = "mongodb://localhost:27017/DB1" })
+            .Build();
+
+        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddMongoDatabase<DatabaseDbContext>(configuration, "mongo");
+
+        var app = services.BuildServiceProvider();
+
+        var factory = app.GetService<IMongoClientFactory<DatabaseDbContext>>();
+
+        // A captured value, as in the expressions built by OData for $filter, $orderby, $skip and $top.
+        var name = "Arc4u";
+        var query = factory!.GetCollection<Company>().AsQueryable()
+                            .Where(company => company.Name == name)
+                            .OrderBy(company => company.Name)
+                            .Skip(10)
+                            .Take(5);
+
+        var pipeline = query.ToString();
+
+        pipeline.Should().Contain("{ \"$match\" : { \"Name\" : \"Arc4u\" } }");
+        pipeline.Should().Contain("{ \"$sort\" : { \"Name\" : 1 } }");
+        pipeline.Should().Contain("{ \"$skip\" : 10 }");
+        pipeline.Should().Contain("{ \"$limit\" : 5 }");
+    }
+
+    [Fact]
     public void Test_MongoDB_Without_Settings_Should_Fail()
     {
         IServiceCollection services = new ServiceCollection();

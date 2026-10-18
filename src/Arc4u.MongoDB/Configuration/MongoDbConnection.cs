@@ -30,14 +30,52 @@ public static class MongoDbConnection
     /// </example>
     public static void AddMongoDatabase<TContext>(this IServiceCollection services, IConfiguration configuration, string connectionStringKey) where TContext : DbContext, new()
     {
+        AddFromConnectionString<TContext>(services, configuration, connectionStringKey, null);
+    }
+
+    /// <summary>
+    /// Registers the database context and its <see cref="IMongoClientFactory{TContext}"/>, with the client settings read from a connection string and completed by a delegate.
+    /// </summary>
+    /// <remarks>
+    /// The delegate runs on the settings created from the connection string, so it can set what a connection string cannot carry, such as
+    /// <see cref="MongoClientSettings.TranslationOptions"/> (the LINQ translation used by <c>AsQueryable()</c> and OData), <see cref="MongoClientSettings.ServerApi"/>
+    /// or <see cref="MongoClientSettings.ClusterConfigurator"/>. Otherwise it behaves as <see cref="AddMongoDatabase{TContext}(IServiceCollection, IConfiguration, string)"/>.
+    /// </remarks>
+    /// <typeparam name="TContext">The type of the database context.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration holding the connection string.</param>
+    /// <param name="connectionStringKey">The name of the connection string in the <c>ConnectionStrings</c> section.</param>
+    /// <param name="options">Configures the <see cref="MongoClientSettings"/> created from the connection string.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+    /// <example>
+    /// <code>
+    /// services.AddMongoDatabase&lt;ShopContext&gt;(configuration, "ShopDb", settings =&gt;
+    ///     settings.TranslationOptions = new ExpressionTranslationOptions { CompatibilityLevel = ServerVersion.Server60 });
+    /// </code>
+    /// </example>
+    public static void AddMongoDatabase<TContext>(this IServiceCollection services, IConfiguration configuration, string connectionStringKey, Action<MongoClientSettings> options) where TContext : DbContext, new()
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        AddFromConnectionString<TContext>(services, configuration, connectionStringKey, options);
+    }
+
+    private static void AddFromConnectionString<TContext>(IServiceCollection services, IConfiguration configuration, string connectionStringKey, Action<MongoClientSettings>? options) where TContext : DbContext, new()
+    {
         var connectionString = configuration.GetConnectionString(connectionStringKey);
 
         var mongoUrl = new MongoUrl(connectionString);
+        var name = mongoUrl.DatabaseName.ToLowerInvariant();
 
         // The settings are created from the connection string by MongoClientSettingsFactory, so every option the driver parses is kept.
-        GetConnectionStrings(services)[mongoUrl.DatabaseName.ToLowerInvariant()] = connectionString!;
+        GetConnectionStrings(services)[name] = connectionString!;
         services.AddOptions();
         services.TryAddSingleton<IOptionsFactory<MongoClientSettings>, MongoClientSettingsFactory>();
+
+        if (options is not null)
+        {
+            services.Configure(name, options);
+        }
 
         var contextBuilder = new DbContextBuilder(services, mongoUrl.DatabaseName);
 

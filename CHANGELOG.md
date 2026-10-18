@@ -61,6 +61,10 @@ packages. It contains breaking changes: follow the
   ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
 - `LoginTimeout` and `SecureCacheTimeout` settings of the OpenID Connect sign-in of desktop and mobile
   clients (`OidcClientAuthenticationOptions`) ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `Arc4u.MongoDB`: `AddMongoDatabase<TContext>(configuration, connectionStringKey, options)` completes the
+  `MongoClientSettings` read from the connection string with a delegate, for the settings a connection
+  string cannot carry (`TranslationOptions` of the LINQ3 provider, `ServerApi`, `ClusterConfigurator`)
+  ([#54](https://github.com/Arc4u-org/Arc4u/issues/54)).
 
 ### Changed
 

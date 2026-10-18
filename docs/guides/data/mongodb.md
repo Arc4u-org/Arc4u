@@ -141,6 +141,62 @@ The first argument is the database name; `DbContext.DatabaseName` keeps its casi
 > [!NOTE]
 > The connection-string overload applies every option of the connection string that the driver parses, including `directConnection`, `compressors`, `loadBalanced` and `maxConnecting`.
 
+### Complete the connection string in code
+
+Some settings cannot be written in a connection string: `TranslationOptions`, `ServerApi`, `ClusterConfigurator`, `LoggingSettings`, or an `SslSettings` with a client certificate. Pass a delegate after the connection string key; it runs on the settings created from the connection string:
+
+```csharp
+// Program.cs
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMongoDatabase<ShopContext>(builder.Configuration, "Shop", settings =>
+    settings.ServerApi = new ServerApi(ServerApiVersion.V1));
+```
+
+You do not need to know the options name: the delegate is registered under the lower-case database name of the connection string.
+
+### Query with LINQ and OData
+
+`Arc4u.MongoDB` references `MongoDB.Driver` 3, whose only LINQ provider is LINQ3: the `LinqProvider` setting of driver 2 no longer exists and there is nothing to switch on. `AsQueryable()` returns an `IQueryable<T>` that ASP.NET Core OData filters, sorts, pages and counts on the server (`$filter`, `$orderby`, `$skip`, `$top`, `$count`):
+
+```csharp
+// ProductsController.cs
+using Arc4u.MongoDB;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Query;
+using MongoDB.Driver;
+
+[ApiController]
+[Route("products")]
+public class ProductsController(IMongoClientFactory<ShopContext> factory) : ControllerBase
+{
+    [HttpGet]
+    [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.Filter | AllowedQueryOptions.OrderBy | AllowedQueryOptions.Skip |
+                                       AllowedQueryOptions.Top | AllowedQueryOptions.Count)]
+    public IQueryable<Product> Get() => factory.GetCollection<Product>().AsQueryable();
+}
+```
+
+The driver cannot translate the projection OData builds for `$select` and `$expand`, even with `EnableClientSideProjections`: the query fails with an `ArgumentException` ("Value type of serializer is ...AutoSelectedNamedProperty..."). Restricting `AllowedQueryOptions` as above makes OData reject these options with a validation error instead.
+
+The controller needs OData registered with its query options enabled, for example `AddOData(options => options.EnableQueryFeatures())` as in the [OData guide](odata.md#configure-the-base-address).
+
+To make LINQ3 generate stages for a given server version, set `TranslationOptions.CompatibilityLevel` with the overload of [the previous section](#complete-the-connection-string-in-code):
+
+```csharp
+// Program.cs
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMongoDatabase<ShopContext>(builder.Configuration, "Shop", settings =>
+    settings.TranslationOptions = new ExpressionTranslationOptions { CompatibilityLevel = ServerVersion.Server60 });
+```
+
 ### Store several entity types in one collection
 
 Call `With` once per type. Each type must be mapped once for a given collection:
@@ -196,7 +252,7 @@ Write one context per database and register each one. Each gets its own factory 
 | Service | Default implementation | Replace it to |
 |---|---|---|
 | `IMongoClientFactory<TContext>` | <xref:Arc4u.MongoDB.DefaultMongoClientFactory`1> | Create the client differently (for example from a shared client). `AddMongoDatabase` registers the default with `TryAdd`, so a registration made before the call wins. |
-| `MongoClientSettings` (named options) | Registered by `AddMongoDatabase` under the lower-case database name | Post-configure them with `services.Configure<MongoClientSettings>("shop", ...)`. |
+| `MongoClientSettings` (named options) | Registered by `AddMongoDatabase` under the lower-case database name | Complete them with the delegate of `AddMongoDatabase(configuration, key, settings => ...)`, or with `services.Configure<MongoClientSettings>("shop", ...)`. |
 
 ## Troubleshooting
 
