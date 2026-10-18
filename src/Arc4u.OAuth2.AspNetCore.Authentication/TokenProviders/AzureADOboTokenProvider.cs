@@ -19,7 +19,7 @@ namespace Arc4u.OAuth2.TokenProviders
 {
     /// <summary>
     /// An <see cref="ITokenProvider"/> that exchanges the access token of the current user for a token for another API, with the on-behalf-of flow
-    /// (<c>urn:ietf:params:oauth:grant-type:jwt-bearer</c>). The user token is the <see cref="ClaimsIdentity.BootstrapContext"/> of the current principal or, if empty, the access token of the scoped <see cref="TokenRefreshInfo"/>.
+    /// (<c>urn:ietf:params:oauth:grant-type:jwt-bearer</c>). The user token is the access token of the scoped <see cref="TokenRefreshInfo"/> (the OpenID Connect session) or, if empty, the <see cref="ClaimsIdentity.BootstrapContext"/> of the current principal (the bearer token of the request).
     /// The <c>ClientId</c>, <c>ClientSecret</c> and <c>Scope</c> come from the settings (see <see cref="OnBehalfOfSettingsOptions"/>) and the request goes to the token endpoint of the <c>Default</c> authority.
     /// The resulting token is cached until it expires.
     /// </summary>
@@ -336,9 +336,11 @@ namespace Arc4u.OAuth2.TokenProviders
         private static string? GetClaim(JwtSecurityToken jwt, string type)
             => jwt.Payload.TryGetValue(type, out var value) && value?.ToString() is { Length: > 0 } claim ? claim : null;
 
-        // The user token is the one of the incoming request or, with OpenID Connect, the one of the cookie.
+        // The user token is, with OpenID Connect, the one of the cookie or, otherwise, the one of the incoming request.
+        // The cookie token is read first: the OpenIdBearerInjectorMiddleware replaces the BootstrapContext with the on-behalf-of token it obtained,
+        // which is not a token of the user for this application (wrong audience for another exchange, and another index at sign-out).
         private string? GetCurrentToken(ClaimsIdentity? identity)
-            => (identity is not null && identity.BootstrapContext is not null) ? identity.BootstrapContext?.ToString() : tokenRefreshInfo?.AccessToken?.Token;
+            => tokenRefreshInfo?.AccessToken?.Token is { Length: > 0 } cookieToken ? cookieToken : identity?.BootstrapContext?.ToString();
 
         // the key is defined by user!
         // The hash must be stable across processes (the cache can be distributed): string.GetHashCode is not.

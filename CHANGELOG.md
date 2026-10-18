@@ -213,6 +213,12 @@ packages. It contains breaking changes: follow the
 - The access token was not in the `BootstrapContext` of the identity in a cookie session, so the `Bootstrap`
   token provider and code written for bearer tokens did not work without `UseOpenIdBearerInjector()`.
   `StandardCookieEvents` now puts it there on each request, after refreshing it when needed (#90, #158).
+- With `UseOpenIdBearerInjector()` and on-behalf-of settings, `AzureADOboTokenProvider` used the
+  on-behalf-of token that the injector puts in the `BootstrapContext` as the user's token: another
+  on-behalf-of exchange in the same request sent a token whose audience is not the application, and the
+  sign-out looked for the cached tokens of the user in another index, so the token of the injector stayed
+  in the cache. In a cookie session it now uses the access token of the cookie (`TokenRefreshInfo`), and
+  the `BootstrapContext` only when there is none ([#275](https://github.com/Arc4u-org/Arc4u/issues/275)).
 - `OidcTokenProvider` and `RefreshTokenProvider` threw a `NullReferenceException` when the user was not
   logged in yet (the `AccessToken` and `RefreshToken` of `TokenRefreshInfo` are null). `OidcTokenProvider`
   now returns a failed result, or refreshes when only the refresh token is there, and `RefreshTokenProvider`

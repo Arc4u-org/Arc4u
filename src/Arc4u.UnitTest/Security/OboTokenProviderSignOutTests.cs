@@ -19,7 +19,10 @@ using static Arc4u.UnitTest.Security.SignOutTestSupport;
 
 namespace Arc4u.UnitTest.Security;
 
-/// <summary>The sign-out of <see cref="AzureADOboTokenProvider"/> and the index of the cached on-behalf-of tokens (issue #113).</summary>
+/// <summary>
+/// The sign-out of <see cref="AzureADOboTokenProvider"/> and the index of the cached on-behalf-of tokens (issue #113),
+/// and the user token it exchanges when the OpenID bearer injector replaced the <see cref="ClaimsIdentity.BootstrapContext"/> (issue #275).
+/// </summary>
 [Trait("Category", "CI")]
 public class OboTokenProviderSignOutTests
 {
@@ -232,6 +235,72 @@ public class OboTokenProviderSignOutTests
 
         cache.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    // With UseOpenIdBearerInjector and on-behalf-of settings, the BootstrapContext of a cookie session holds the on-behalf-of token of the injector (audience api-x):
+    // the user token is the one of the cookie. The token is found in the cache only when it was obtained with the cookie token (no request is sent).
+    [Fact]
+    public async Task Obo_In_A_Cookie_Session_Should_Exchange_The_Cookie_Token_And_Not_The_BootstrapContext()
+    {
+        var userToken = CreateJwt(("oid", "user-1"), ("aud", "front-app"));
+        var injectedToken = CreateJwt(("oid", "user-1"), ("aud", "api-x"));
+        var apiYToken = CreateJwt(("oid", "user-1"), ("aud", "api-y"));
+        var authority = UnreachableAuthority();
+        var settings = OboSettings("api-y/.default");
+        var cache = new Mock<ICache>();
+        cache.Setup(c => c.GetAsync<TokenInfo>(OboCacheKey(authority, settings, userToken), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new TokenInfo("Bearer", apiYToken, DateTime.UtcNow.AddHours(1)));
+        var sut = CreateObo(PrincipalWithToken(injectedToken), new TokenRefreshInfo { AccessToken = new TokenInfo("access_token", userToken, DateTime.UtcNow.AddHours(1)) }, cache, authority);
+
+        var result = await sut.GetTokenAsync(settings, null);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Token.Should().Be(apiYToken);
+    }
+
+    [Fact]
+    public async Task Obo_Without_A_Cookie_Session_Should_Exchange_The_BootstrapContext()
+    {
+        var bearerToken = CreateJwt(("oid", "user-1"), ("aud", "api"));
+        var downstreamToken = CreateJwt(("oid", "user-1"), ("aud", "api-y"));
+        var authority = UnreachableAuthority();
+        var settings = OboSettings("api-y/.default");
+        var cache = new Mock<ICache>();
+        cache.Setup(c => c.GetAsync<TokenInfo>(OboCacheKey(authority, settings, bearerToken), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new TokenInfo("Bearer", downstreamToken, DateTime.UtcNow.AddHours(1)));
+        var sut = CreateObo(PrincipalWithToken(bearerToken), new TokenRefreshInfo(), cache, authority);
+
+        var result = await sut.GetTokenAsync(settings, null);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Token.Should().Be(downstreamToken);
+    }
+
+    [Fact]
+    public async Task Obo_SignOut_In_A_Cookie_Session_Should_Remove_The_Token_Of_The_Injector()
+    {
+        var userToken = CreateJwt(("oid", "user-1"), ("aud", "front-app"));
+        var injectedToken = CreateJwt(("oid", "user-1"), ("aud", "api-x"));
+        var (cache, entries) = CreateIndexCache();
+        var sut = CreateObo(PrincipalWithToken(injectedToken), new TokenRefreshInfo { AccessToken = new TokenInfo("access_token", userToken, DateTime.UtcNow.AddHours(1)) }, cache, UnreachableAuthority());
+        // The injector obtained its token with the cookie token, so it is in the index of the front-app.
+        await sut.AddToIndexAsync(cache.Object, userToken, "_Obo_api_x", DateTime.UtcNow.AddHours(1));
+
+        await sut.SignOutAsync(new SimpleKeyValueSettings(), CancellationToken.None);
+
+        cache.Verify(c => c.RemoveAsync("_Obo_api_x", It.IsAny<CancellationToken>()), Times.Once);
+        entries.Should().BeEmpty();
+    }
+
+    // No token request can succeed: a test reaching the token endpoint fails.
+    private static AuthorityOptions UnreachableAuthority()
+        => new(new Uri("https://login.example.com/tenant/v2.0"), new Uri("http://127.0.0.1:1/token"), null, null);
+
+    private static SimpleKeyValueSettings OboSettings(string scope)
+        => new(new Dictionary<string, string> { [TokenKeys.ClientIdKey] = "front-app", [TokenKeys.ClientSecret] = "secret", [TokenKeys.Scope] = scope });
+
+    // The cache key of an on-behalf-of token obtained with the given user token.
+    private static string OboCacheKey(AuthorityOptions authority, IKeyValueSettings settings, string userToken)
+        => $"_Obo_{settings.Values[TokenKeys.ClientIdKey]}_{TokenCacheKey.Hash(authority.Url.ToString(), userToken, settings.Values[TokenKeys.Scope])}";
 
     private AzureADOboTokenProvider CreateObo(IApplicationContext? applicationContext, TokenRefreshInfo tokens, Mock<ICache> cache, AuthorityOptions authority, IUserObjectIdentifier? userObjectIdentifier = null)
     {

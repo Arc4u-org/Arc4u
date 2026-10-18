@@ -122,8 +122,10 @@ API. Use it when the downstream API does not accept the token your API received.
 <xref:Arc4u.OAuth2.TokenProviders.AzureADOboTokenProvider> posts the exchange
 (`grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer`, `requested_token_use=on_behalf_of`)
 to the token endpoint of the `Default` authority, and caches the result until it expires. The
-user's token is the `BootstrapContext` of the current identity or, when there is none, the
-access token kept by the cookie authentication.
+user's token is the access token kept by the cookie authentication or, when there is none, the
+`BootstrapContext` of the current identity (the bearer token of the request). The cookie token
+comes first because `UseOpenIdBearerInjector()` replaces the `BootstrapContext` with the
+on-behalf-of token it injects.
 
 ```json
 {
