@@ -628,8 +628,6 @@ validation problem details response through `ToActionOkResult`.
 | `Messages`, `Message` with `MessageType.Error` | `Result.Fail(...)` with a <xref:Arc4u.Results.Validation.ValidationError> (expected, 422) or a <xref:Arc4u.Results.ProblemDetailError> (with your status code) |
 | `throw new AppException(...)` | Return a failed `Result`; throw only for unexpected errors |
 | `Messages.LogAndThrowIfNecessary(logger)` | `result.LogIfFailed()` and return the result |
-| `PersistEntity.TryValidate()` returning `Messages` | `PersistEntity.TryValidate()` returning `Result` |
-| `ValidateAll<T>(logger)` throwing | `ValidateAll<T>(logger)` returning `Result` |
 | `ITokenProvider.GetTokenAsync` returning `Task<TokenInfo?>` | Returns `ValueTask<Result<TokenInfo>>`: replace `Task.FromResult` with `ValueTask.FromResult` (or `async`) in your providers, and await the call only once |
 | `ICredentialTokenProvider.GetTokenAsync` | Returns `ValueTask<Result<TokenInfo>>`, like `ITokenProvider`. `CredentialTokenCacheTokenProvider.CreateBasicTokenInfoAsync` (protected) also returns a `ValueTask` |
 | `IAppPrincipalFactory.CreatePrincipalAsync(Messages messages, ...)` | `CreatePrincipalAsync(...)` without `Messages`, returns `Result<AppPrincipal>` |
@@ -689,7 +687,6 @@ public sealed class CheckoutService(IContainerResolve container)
 **After (9)**
 
 ```csharp
-using Arc4u.Caching;
 using Arc4u.Caching.Memory;
 
 public interface IPaymentGateway
@@ -709,7 +706,7 @@ public static class Registration
         builder.Services.AddKeyedTransient<IPaymentGateway, CardPaymentGateway>("card");
 
         // Was "Arc4u.Caching.Memory.MemoryCache, Arc4u.Standard.Caching.Memory" in Application.Dependency.
-        builder.Services.AddKeyedTransient<ICache, MemoryCache>("Memory");
+        builder.Services.AddMemoryCacheKind();
     }
 }
 
@@ -738,8 +735,10 @@ Steps:
    `InitializeFromConfig` and `DependencyContext` call.
 2. Register each named type as a keyed service. Arc4u types that 8.x found through the
    `Application.Dependency` section must be registered too: `AddCacheContext` resolves a cache
-   implementation by the key of its `Kind` (`Memory`, `Redis`, `Sql`, `Dapr`), so without the
-   keyed `ICache` registration shown above the cache is not created.
+   implementation by the key of its `Kind` (`Memory`, `Redis`, `RedisSentinel`, `Sql`, `Dapr`), so
+   without the keyed `ICache` registration the cache is not created. Call the method of each cache
+   package you use: `AddMemoryCacheKind()`, `AddRedisCacheKinds()`, `AddSqlCacheKind()` or
+   `AddDaprCacheKind()`.
 3. To keep registering types from `[Export]` attributes and from `Application.Dependency`, add the
    `Arc4u.Dependency.Tool` generator: it generates the registrations at compile time. The
    [dependency injection guide](../guides/dependency-injection/index.md) explains the setup.
@@ -803,7 +802,7 @@ they have no effect any more. Remove them to avoid confusion.
 
 | Section | Key | Change in Arc4u 9 |
 |---|---|---|
-| `Authentication` | `OpenIdSettingsKey`, `OAuth2SettingsKey` | No longer used: the settings names are fixed (see [Settings names](#settings-names)). |
+| `Authentication` | `OpenIdSettingsKey`, `OAuth2SettingsKey` | Removed: the settings names are fixed (see [Settings names](#settings-names)). |
 | `Authentication` (JWT bearer) | `ValidateAudience` | Removed: it was never read by `AddJwtAuthentication`. Use `Authentication:OAuth2.Settings:ValidateAudience`. |
 | `Authentication` | `JwtBearerEventsType`, `CookieAuthenticationEventsType`, `OpenIdConnectEventsType` | Removed: register your events class in the service collection (see [Custom events](#custom-events)). |
 | `Authentication` | `CookiesConfigureOptionsType` | Removed: register your own `IPostConfigureOptions<CookieAuthenticationOptions>` before the `Add…Authentication` call; Arc4u registers its own only if none is registered. |
@@ -1214,10 +1213,10 @@ public static class InvoiceSaving
 ```
 
 The FluentValidation helpers moved as well: `ValidateWithResult` and `ValidateWithResultAsync` are
-now in `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), next to the rules `IsInsert`,
-`IsUpdate`, `IsDelete`, `IsNone`, `IsDateOnly` and `IsUtcDateTime`. `ToFluentResultErrors` is
-renamed `ToResultErrors`, and `ToMessages` and `ToMessageType` (which produced `Messages`) are removed.
-The predicate `ValidatorPredicates.IsNonet` is renamed `IsNone`.
+now in `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), next to the rules `IsDateOnly` and
+`IsUtcDateTime`. `ToFluentResultErrors` is renamed `ToResultErrors`, and `ToMessages` and
+`ToMessageType` (which produced `Messages`) are removed. The `IsInsert`, `IsUpdate`, `IsDelete` and
+`IsNone` rules are removed (see [Arc4u.Data and change tracking removed](#arc4udata-and-change-tracking-removed)).
 
 A few smaller changes may also need attention:
 
@@ -1351,6 +1350,10 @@ public static class Security
 | `Arc4u.Utils.Enum<T>`, `EnumUtil` | The generic methods of `System.Enum` (`Enum.GetValues<T>()`, `Enum.TryParse<T>()`) |
 | `IApplicationContext.Principal` as an `AppPrincipal`, `SetPrincipal(AppPrincipal)` | `AppPrincipal? Principal` and `SetPrincipal(AppPrincipal?)`: check the principal for `null` before using it (nobody authenticated), and pass `null` to clear it |
 | `ITokenProvider.SignOutAsync(settings, cancellationToken)` | Moved to <xref:Arc4u.OAuth2.Token.ISignOutTokenProvider>. Implement it only when your provider holds tokens for a user session; otherwise remove your `SignOutAsync` method. `SignOutUserAsync` of `AppPrincipalFactory` and `AppServicePrincipalFactory` signs out every registered provider that implements it, with the same settings: ignore the settings that are not yours. `OidcTokenProvider` and `CredentialTokenCacheTokenProvider` have no sign-out; sign out of the cookie with `HttpContext.SignOutAsync` |
+| `Arc4u.Configuration.Store.EfCore`: `ServiceCollectionExtensions` (called as a static class) | `DbContextSectionStoreServiceCollectionExtensions`. Calls written as extension methods do not change |
+| `AddNotificationHandlersAsScoped(ServiceLifetime lifetime)` (`Arc4u.Dispatcher`), which registered the handlers as scoped for any value but `Transient` | `AddNotificationHandlersAsScoped()` or `AddNotificationHandlersAsTransient()` |
+| `Identity` log property: `UserProfile.Name` (`Domain\SamAccountName`) or the identity name | The email of the user profile, or the identity name when there is no email. Update the log queries and dashboards that filter on it |
+| `AddApplicationContext()` registered `DefaultLoggingProperties`, so the entries had the `Identity` property | `AddApplicationContext()` registers no provider: add `services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped")`, or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes`. See [Diagnostics and logging](../guides/diagnostics/index.md) |
 | `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
 
 ### Other removed APIs
@@ -1358,6 +1361,7 @@ public static class Security
 | 8.x | Replacement |
 |---|---|
 | `CypherCodec.GenerateKeyAndIV`, `EncodeClearText`, `DecodeCypherstring`, `CypherCodecConfig.IV` (AES-CBC with a shared IV) | `CypherCodec.GenerateKey`, `Encrypt` and `Decrypt` (AES-GCM with a random nonce per value). Remove `EncryptionRijndael:IV` and encrypt the `Decrypt:` values again. Long values encrypted with a certificate (`<key>.<iv>.<data>`) must also be encrypted again |
+| `UserProfile.Name` (`Domain\SamAccountName`) | `UserProfile.Email`, `PrincipalName`, or `Domain` and `SamAccountName` |
 | `IApplicationContext.ActivityID` (set by the gRPC interceptors and the HTTP handlers) | `Activity.Current?.TraceId` (OpenTelemetry). The logger adds it as the `ActivityId` property when an activity exists |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api`: `ServiceAspectAttribute`, `OperationCheckAttribute` (already obsolete in 8.x) | ASP.NET Core authorization policies from `AddScopedOperationsPolicy` (`[Authorize("<operation>")]`), `ManageExceptionsFilter` and `SetCultureActionFilter` |
 | `SecretBasicExtension.AddSecretAuthentication`, `CredentialSecretTokenProvider` | `AddClientTokens` (see [Client secrets replaced by client tokens](#client-secrets-replaced-by-client-tokens)) |
