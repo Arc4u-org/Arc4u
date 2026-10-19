@@ -23,7 +23,7 @@ Compared with the other kinds:
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Caching.Dapr` | `DaprCache` (kind `Dapr`). References `Dapr.Client`. |
+| `Arc4u.Caching.Dapr` | `DaprCache` (kind `Dapr`) and `AddDaprCacheKind()`. References `Dapr.Client`. |
 | `Arc4u.Caching` | `ICacheContext` and `AddCacheContext`. |
 
 ## Install
@@ -92,7 +92,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
-builder.Services.AddKeyedTransient<ICache, DaprCache>(CacheContext.Dapr);
+builder.Services.AddDaprCacheKind();
 
 var app = builder.Build();
 app.Run();
@@ -117,7 +117,8 @@ public static class DaprExpiration
 
 ## Extensibility points
 
-`DaprCache` is registered under the key `Dapr`. Register your own `ICache` under that key to replace it.
+`AddDaprCacheKind()` registers `DaprCache` under the key `Dapr` with `TryAddKeyedTransient`. To replace it, register your own `ICache`
+under that key before calling it, or instead of it.
 
 ## Troubleshooting
 
@@ -126,15 +127,10 @@ public static class DaprExpiration
 No sidecar is reachable. Start the application with `dapr run`, or check the `DAPR_HTTP_PORT` and `DAPR_GRPC_PORT` variables.
 The initialization creates the client but does not contact the sidecar, so the error appears on the first operation.
 
-### `TryGetValue` returns `true` for a key that does not exist
+### `DataCacheException` on `Get` or `Put`
 
-The Dapr cache returns `true` whenever the read did not fail, with `default` as the value for a missing key. The other kinds
-return `false`. Test the value for `null`, or use `Get`.
-
-### Errors are not wrapped in `DataCacheException`
-
-`Get` lets the exception of the Dapr client through. The synchronous methods wait for the asynchronous Dapr calls, so prefer
-`GetAsync` and `PutAsync` in a web application.
+The Dapr client failed; its exception is the `InnerException`. The synchronous methods wait for the asynchronous Dapr calls,
+so prefer `GetAsync` and `PutAsync` in a web application.
 
 ## See also
 

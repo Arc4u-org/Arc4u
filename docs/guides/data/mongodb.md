@@ -13,7 +13,7 @@ The MongoDB driver leaves you to create a `MongoClient`, keep it as a singleton,
 - creates the client and database once, lazily, and shares them through a singleton `IMongoClientFactory<TContext>`;
 - keeps the collection name of each entity type in one place, so that `GetCollection<Product>()` needs no string.
 
-It does not wrap the driver: you get `IMongoClient` and `IMongoCollection<T>` back and use them as documented by MongoDB. It also does not use `Arc4u.Data` entities: any class the driver can serialize works.
+It does not wrap the driver: you get `IMongoClient` and `IMongoCollection<T>` back and use them as documented by MongoDB. Any class the driver can serialize works.
 
 ## Install
 
@@ -139,7 +139,63 @@ public static class MongoSamples
 The first argument is the database name; `DbContext.DatabaseName` keeps its casing, while the options are registered under its lower-case form.
 
 > [!NOTE]
-> The connection-string overload copies a fixed list of properties from the parsed `MongoClientSettings` (servers, credentials, TLS, timeouts, pool sizes, read and write concerns, `ReplicaSetName`, `RetryReads`, `RetryWrites` and a few more). Options of the connection string that map to other properties, such as `directConnection`, `compressors`, `loadBalanced` or `maxConnecting`, are parsed by the driver but not applied to the client. Set them through the delegate overload.
+> The connection-string overload applies every option of the connection string that the driver parses, including `directConnection`, `compressors`, `loadBalanced` and `maxConnecting`.
+
+### Complete the connection string in code
+
+Some settings cannot be written in a connection string: `TranslationOptions`, `ServerApi`, `ClusterConfigurator`, `LoggingSettings`, or an `SslSettings` with a client certificate. Pass a delegate after the connection string key; it runs on the settings created from the connection string:
+
+```csharp
+// Program.cs
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMongoDatabase<ShopContext>(builder.Configuration, "Shop", settings =>
+    settings.ServerApi = new ServerApi(ServerApiVersion.V1));
+```
+
+You do not need to know the options name: the delegate is registered under the lower-case database name of the connection string.
+
+### Query with LINQ and OData
+
+`Arc4u.MongoDB` references `MongoDB.Driver` 3, whose only LINQ provider is LINQ3: the `LinqProvider` setting of driver 2 no longer exists and there is nothing to switch on. `AsQueryable()` returns an `IQueryable<T>` that ASP.NET Core OData filters, sorts, pages and counts on the server (`$filter`, `$orderby`, `$skip`, `$top`, `$count`):
+
+```csharp
+// ProductsController.cs
+using Arc4u.MongoDB;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Query;
+using MongoDB.Driver;
+
+[ApiController]
+[Route("products")]
+public class ProductsController(IMongoClientFactory<ShopContext> factory) : ControllerBase
+{
+    [HttpGet]
+    [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.Filter | AllowedQueryOptions.OrderBy | AllowedQueryOptions.Skip |
+                                       AllowedQueryOptions.Top | AllowedQueryOptions.Count)]
+    public IQueryable<Product> Get() => factory.GetCollection<Product>().AsQueryable();
+}
+```
+
+The driver cannot translate the projection OData builds for `$select` and `$expand`, even with `EnableClientSideProjections`: the query fails with an `ArgumentException` ("Value type of serializer is ...AutoSelectedNamedProperty..."). Restricting `AllowedQueryOptions` as above makes OData reject these options with a validation error instead.
+
+The controller needs OData registered with its query options enabled, for example `AddOData(options => options.EnableQueryFeatures())` as in the [OData guide](odata.md#configure-the-base-address).
+
+To make LINQ3 generate stages for a given server version, set `TranslationOptions.CompatibilityLevel` with the overload of [the previous section](#complete-the-connection-string-in-code):
+
+```csharp
+// Program.cs
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMongoDatabase<ShopContext>(builder.Configuration, "Shop", settings =>
+    settings.TranslationOptions = new ExpressionTranslationOptions { CompatibilityLevel = ServerVersion.Server60 });
+```
 
 ### Store several entity types in one collection
 
@@ -196,7 +252,7 @@ Write one context per database and register each one. Each gets its own factory 
 | Service | Default implementation | Replace it to |
 |---|---|---|
 | `IMongoClientFactory<TContext>` | <xref:Arc4u.MongoDB.DefaultMongoClientFactory`1> | Create the client differently (for example from a shared client). `AddMongoDatabase` registers the default with `TryAdd`, so a registration made before the call wins. |
-| `MongoClientSettings` (named options) | Registered by `AddMongoDatabase` under the lower-case database name | Post-configure them with `services.Configure<MongoClientSettings>("shop", ...)`. |
+| `MongoClientSettings` (named options) | Registered by `AddMongoDatabase` under the lower-case database name | Complete them with the delegate of `AddMongoDatabase(configuration, key, settings => ...)`, or with `services.Configure<MongoClientSettings>("shop", ...)`. |
 
 ## Troubleshooting
 
@@ -216,12 +272,9 @@ The same entity type is mapped twice to the same collection in `OnConfiguring`. 
 
 The connection string has no database name (`mongodb://host:27017` instead of `mongodb://host:27017/shop`). Add the name. A missing `ConnectionStrings` entry throws an `ArgumentNullException` for `connectionString`.
 
-### The client connects to `localhost:27017` instead of my server
+### `MongoClientException: No mongo client settings defined for key ...` on the first database call
 
-> [!WARNING]
-> Known issue: `DefaultMongoClientFactory<TContext>.CreateClient` looks up the named `MongoClientSettings` of the database with `IOptionsMonitor.Get`. The options system returns default settings for a name that has no registration, so the check for missing settings never fires and the client silently targets `localhost:27017`. `AddMongoDatabase` registers the settings under the name the factory uses, so this only happens when you register the context or the settings yourself under a different name.
-
-Check the name you registered the settings with: it must be the lower-case database name of the context.
+`DefaultMongoClientFactory<TContext>.CreateClient` found no `MongoClientSettings` registered under the lower-case database name of the context. This happens when you register the context or the settings yourself under a different name. Register the settings with the lower-case database name of the context, or use `AddMongoDatabase`, which does it for you.
 
 ## See also
 

@@ -31,6 +31,8 @@ namespace Arc4u.OAuth2.Extensions
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(options);
 
+            services.AddTokenProvidersSignOut();
+
             if (string.IsNullOrWhiteSpace(optionKey))
             {
                 throw new ArgumentNullException(optionKey);
@@ -51,6 +53,8 @@ namespace Arc4u.OAuth2.Extensions
         {
             ArgumentNullException.ThrowIfNull(configuration);
             ArgumentNullException.ThrowIfNull(services);
+
+            services.AddTokenProvidersSignOut();
 
             if (string.IsNullOrWhiteSpace(sectionName))
             {

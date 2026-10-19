@@ -109,10 +109,11 @@ all scenarios are:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `Authentication:DefaultAuthority:Url` | URI | none (required) | Base URL of the identity provider. For OpenID Connect it must be equal to the `iss` claim of the access tokens. |
+| `Authentication:DefaultAuthority:Url` | URI | none (required) | Base URL of the identity provider. |
 | `Authentication:DefaultAuthority:MetaDataAddress` | URI | `Url` + `/.well-known/openid-configuration` | Address of the OpenID Connect metadata document. Set it when the provider publishes the document elsewhere. When it starts with `http://`, HTTPS is not required for the metadata. |
+| `Authentication:DefaultAuthority:Issuer` | URI | read from the metadata | Expected `iss` claim of the access tokens, when `ValidateAuthority` is `true`. Set it when your tokens have another issuer than the metadata. |
 | `Authentication:DefaultAuthority:TokenEndpoint` | URI | read from the metadata | Token endpoint, used by the token providers. |
-| `Authentication:TokenCache:CacheName` | string | none (required) | Name of the [named cache](../../concepts/glossary.md#named-cache) that stores tokens and extra claims. When the name is unknown, the default cache is used. |
+| `Authentication:TokenCache:CacheName` | string | none (required when the section exists) | Name of the [named cache](../../concepts/glossary.md#named-cache) that stores tokens and extra claims. When the name is unknown, the default cache is used. With JWT bearer, the `TokenCache` section is optional. |
 | `Authentication:TokenCache:MaxTime` | TimeSpan | `00:50:00` | Lifetime of a cached entry, including the extra claims of a user. |
 | `Authentication:ClaimsIdentifier` | string array | `http://schemas.microsoft.com/identity/claims/objectidentifier`, `oid` | Claim types that identify a user. The first one found is used as cache key for the extra claims. |
 | `Authentication:ClaimsMiddleWare:ClaimsFiller` | object | see [Claims and authorization](claims-and-authorization.md#claims-filler-options) | Extra claims loaded when the principal is created. |
@@ -144,7 +145,7 @@ builder.Services.AddApplicationContext();
 
 // Caches for the tokens and the extra claims.
 builder.Services.AddCacheContext(builder.Configuration);
-builder.Services.AddKeyedTransient<ICache, MemoryCache>("Memory");
+builder.Services.AddMemoryCacheKind();
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
 
 // Creation of the AppPrincipal.
@@ -236,8 +237,9 @@ The registration methods add their defaults with `TryAdd`, or you register the s
 | <xref:Arc4u.OAuth2.Token.ITokenRefreshProvider> | <xref:Arc4u.OAuth2.TokenProviders.RefreshTokenProvider> | Refresh the tokens of a cookie session differently. |
 | <xref:Arc4u.OAuth2.Token.ITokenProvider> (keyed) | `Oidc`, `Bootstrap`, `Obo`, `Credential`, ... | Provide a token for a `ProviderId` of your settings. |
 
-For example, to answer an unauthenticated API call with a 401 whose `ProblemDetails.Status` is also 401,
-derive from `StandardBearerEvents` (the override keeps the `x-token-expired` header of the base class):
+For example, to write your own `ProblemDetails` in the 401 response (here, a default title when the handler
+gives no error), derive from `StandardBearerEvents` and override `Challenge` (the override keeps the
+`x-token-expired` header of the base class):
 
 ```csharp
 // MyBearerEvents.cs

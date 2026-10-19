@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -50,7 +49,7 @@ public class ClientCredentialsTokenProvider(
     /// <param name="_">Not used.</param>
     /// <returns>The token, or a failed result when a required setting is missing or the token cannot be obtained.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
-    public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -84,7 +83,7 @@ public class ClientCredentialsTokenProvider(
             ? ExtraParametersEncoder.Decode(extra).ToList()
             : [];
 
-        var cacheKey = BuildKey(authority, clientId!, scope!, clientSecret!);
+        var cacheKey = BuildKey(authority, clientId!, scope!, clientSecret!, extraParameters);
 
         // Serve a still-valid token from the cache; refresh when missing or close to expiry.
         var cached = tokenCache.Get<TokenInfo>(cacheKey);
@@ -114,23 +113,18 @@ public class ClientCredentialsTokenProvider(
         return result;
     }
 
-    /// <summary>Not supported.</summary>
-    /// <param name="settings">The provider settings.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotImplementedException">Always thrown.</exception>
-    public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
+    private static string BuildKey(AuthorityOptions authority, string clientId, string scope, string clientSecret, IEnumerable<KeyValuePair<string, string>> extraParameters)
     {
-        throw new NotImplementedException();
-    }
+        // Every value sent to the token endpoint changes the token, so all of them are part of the key.
+        // The extra parameters (e.g. resource) are sorted so their order in the settings does not matter.
+        var parts = new List<string?> { authority.Url.ToString(), scope, clientSecret };
+        foreach (var extra in extraParameters.OrderBy(p => p.Key, StringComparer.Ordinal).ThenBy(p => p.Value, StringComparer.Ordinal))
+        {
+            parts.Add(extra.Key);
+            parts.Add(extra.Value);
+        }
 
-    private static string BuildKey(AuthorityOptions authority, string clientId, string scope, string clientSecret)
-    {
-        // The cache is distributed/persistent, so the key must be stable across processes and
-        // restarts. Sort the extra parameters for order-independence and hash them with SHA-256
-        // (string.GetHashCode is randomized per process and must not be used here).
-        var extraHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(authority.Url.AbsolutePath + scope + clientSecret)));
-        return $"ClientCredentials_{clientId}_{extraHash}";
+        return $"ClientCredentials_{clientId}_{TokenCacheKey.Hash([.. parts])}";
     }
 
     private async Task<Result<TokenInfo>> GetTokenInfoAsync(Uri tokenEndpoint, string clientId, string clientSecret, string scope, IEnumerable<KeyValuePair<string, string>> extraParameters)
@@ -202,7 +196,7 @@ public class ClientCredentialsTokenProvider(
         if (dictionary is null)
         {
             logger.Technical().LogClientCredentialsTokenError(statusCode, loggedResponseBody ?? string.Empty);
-            return ValidationError.Create($"{statusCode} occured while requesting a client_credentials token.").WithCode("TokenError");
+            return ValidationError.Create($"{statusCode} occurred while requesting a client_credentials token.").WithCode("TokenError");
         }
 
         var technical = logger.Technical();
@@ -221,6 +215,6 @@ public class ClientCredentialsTokenProvider(
             return ValidationError.Create(error_description).WithCode(tokenErrorCode ?? string.Empty);
         }
 
-        return ValidationError.Create($"{statusCode} occured while requesting a client_credentials token.").WithCode("TokenError");
+        return ValidationError.Create($"{statusCode} occurred while requesting a client_credentials token.").WithCode("TokenError");
     }
 }

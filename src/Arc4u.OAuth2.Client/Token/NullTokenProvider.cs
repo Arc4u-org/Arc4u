@@ -24,18 +24,10 @@ public class NullTokenProvider : ITokenProvider
     private readonly ILogger<NullTokenProvider> _logger;
 
     /// <inheritdoc/>
-    public Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         _logger.Technical().LogCallNullTokenProvider();
-        return Task.FromResult<Result<TokenInfo>>(new());
-    }
-
-    /// <inheritdoc/>
-    public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
-    {
-        _logger.Technical().LogCallSignOutNullTokenProvider();
-
-        return ValueTask.CompletedTask;
+        return ValueTask.FromResult<Result<TokenInfo>>(new());
     }
 }
 

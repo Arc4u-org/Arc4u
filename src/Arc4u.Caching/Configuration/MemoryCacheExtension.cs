@@ -6,7 +6,7 @@ namespace Arc4u.Configuration.Memory;
 /// <summary>Extension methods to register the options of a memory cache.</summary>
 public static class MemoryCacheExtension
 {
-    /// <summary>Registers the options of the memory cache with the given name. The <see cref="MemoryCacheOption.SizeLimitInMB"/> value given by the caller is converted to bytes in the registered options.</summary>
+    /// <summary>Registers the options of the memory cache with the given name.</summary>
     /// <param name="services">The service collection.</param>
     /// <param name="name">The name of the cache, as used in <see cref="CachingCache.Name"/>.</param>
     /// <param name="options">The action that configures the options.</param>
@@ -24,7 +24,7 @@ public static class MemoryCacheExtension
         var action = new Action<MemoryCacheOption>(o =>
         {
             o.CompactionPercentage = rawCacheOption.CompactionPercentage;
-            o.SizeLimitInMB = rawCacheOption.SizeLimitInMB * 1024 * 1024;
+            o.SizeLimitInMB = rawCacheOption.SizeLimitInMB;
             o.SerializerName = rawCacheOption.SerializerName;
         });
 

@@ -49,7 +49,7 @@ openssl req -x509 -newkey rsa:2048 -nodes \
 ```
 
 The certificate must have an RSA key: the encryption uses the RSA public key, so an ECDSA
-certificate cannot be used (see [Troubleshooting](#ecdsa-certificate-fails-or-gives-empty-values)). To check that a certificate and a key belong together, both commands
+certificate cannot be used (see [Troubleshooting](#notsupportedexception-only-certificates-with-an-rsa-key)). To check that a certificate and a key belong together, both commands
 print the same public key:
 
 ```bash
@@ -99,8 +99,8 @@ Decrypt:C6PBLlEuyKB3aTnC77sRYvEmgXvoKqHsKlR7kjoYVppiQXfDTWj5r0Wm...
 The output is Base64 text and changes on every run (the encryption is randomized), so a different
 string for the same value is normal. A value shorter than 191 bytes is trimmed of leading and trailing whitespace and encrypted directly with the
 certificate's RSA public key (RSA-OAEP with SHA-256, for a 2048-bit key). A longer value is
-encrypted with a random AES key, and the output has the form `<key>.<iv>.<data>` where the AES key
-and IV are themselves encrypted with the certificate. Both forms decrypt the same way.
+encrypted with AES-GCM and a random AES key, and the output has the form `<key>.<data>` where the
+AES key is itself encrypted with the certificate. Both forms decrypt the same way.
 
 ### Step 3: Put the encrypted value in the configuration
 
@@ -292,15 +292,14 @@ Values that start with `Secret:` are now decrypted, and the certificate is read 
 
 ### Encrypt with an AES key instead of a certificate
 
-`AddRijndaelDecryptorConfiguration()` decrypts with an AES key and IV that you put in the
-configuration. It uses the same prefix mechanism, so values start with `Decrypt:`. The key and IV are
-Base64 strings in the `EncryptionRijndael` section (<xref:Arc4u.Security.CypherCodecConfig>):
+`AddRijndaelDecryptorConfiguration()` decrypts with an AES key that you provide to the
+configuration. It uses the same prefix mechanism, so values start with `Decrypt:`. The key is a
+Base64 string in the `EncryptionRijndael` section (<xref:Arc4u.Security.CypherCodecConfig>):
 
 ```json
 {
   "EncryptionRijndael": {
-    "Key": "<base64-key>",
-    "IV": "<base64-iv>"
+    "Key": "<base64-key>"
   }
 }
 ```
@@ -319,20 +318,26 @@ app.Run();
 
 <xref:Arc4u.Configuration.Decryptor.SecretRijndaelOptions> has the same `Prefix` and
 `SecretSectionName` properties (default `EncryptionRijndael`), and a `RijnDael` property to pass the key
-and IV in code. To generate a key and encrypt a value, use <xref:Arc4u.Security.Cryptography.CypherCodec>:
+in code. To generate a key and encrypt a value, use <xref:Arc4u.Security.Cryptography.CypherCodec>:
 
 ```csharp
 using Arc4u.Security.Cryptography;
 
-var key = CypherCodec.GenerateKeyAndIV(out var iv);   // both Base64 strings
-var cypher = CypherCodec.EncodeClearText("s3cret", Convert.FromBase64String(key), Convert.FromBase64String(iv));
+var key = CypherCodec.GenerateKey();   // a 256 bits key, Base64
+var cypher = CypherCodec.Encrypt("s3cret", Convert.FromBase64String(key));
 Console.WriteLine($"Decrypt:{cypher}");
 ```
 
+`CypherCodec.Encrypt` uses AES-GCM: each value gets its own random nonce, so one key can protect many
+values, and a modified value or a wrong key fails with a `CryptographicException` instead of returning
+garbage.
+
 > [!CAUTION]
-> The AES key sits in the configuration, next to the values it protects. This only hides values from
-> someone who reads the file but not the rest of the configuration. Prefer the certificate
-> decryptor, where the private key is kept apart from the configuration.
+> Do not put the AES key in `appsettings.json` next to the values it protects: that only hides values from
+> someone who reads one file but not the rest of the configuration. Give the key from a source kept apart,
+> such as an environment variable (`EncryptionRijndael__Key`), a Kubernetes secret or a key vault, added
+> before `AddRijndaelDecryptorConfiguration()`. Better, prefer the certificate decryptor, where the private
+> key lives in the certificate store or a protected file.
 
 ### Rotate the certificate
 
@@ -402,10 +407,9 @@ configuration built from the earlier providers and `SecretSectionName`. Returnin
   `IConfiguration`. Do not log the configuration.
 - **One key per environment.** Use a different certificate per environment so that a leak in a
   test environment does not expose production secrets. A secret is only as private as the private key that decrypts it.
-- **Start-up fails on purpose, with one exception.** The decryptor does not catch exceptions: a missing
-  certificate or a value that cannot be decrypted stops the application at startup, so the error is
-  visible. The exception is a short value decrypted with an ECDSA key pair, which silently becomes empty
-  (see [Troubleshooting](#ecdsa-certificate-fails-or-gives-empty-values)).
+- **Start-up fails on purpose.** The decryptor does not catch exceptions: a missing certificate, a
+  certificate without an RSA key or a value that cannot be decrypted stops the application at startup,
+  so the error is visible.
 - **Not a secret manager.** The encrypted values are public data. Rotating or revoking a secret means
   re-encrypting and redeploying. For secrets that change often, use a dedicated secret store and a
   configuration provider for it.
@@ -450,31 +454,25 @@ The value was encrypted with another certificate, or the certificate has no priv
 (`The certificate ... has no private key!`). The exact type and message depend on the operating
 system. Encrypt the value again with the public certificate that matches `key.pem`.
 
-### ECDSA certificate fails or gives empty values
+### NotSupportedException: only certificates with an RSA key
 
-Encryption and decryption use the RSA key of the certificate. With an ECDSA certificate:
+Encryption and decryption use the RSA key of the certificate. `Encrypt` and `Decrypt` throw a
+`NotSupportedException` naming the certificate and its key algorithm when the certificate has another
+key type, such as ECDSA. Use a certificate with an RSA key
+(`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption`) and encrypt the
+values again.
 
-- Values encrypted with an ECDSA certificate are not valid: the application stops at startup with an
-  `ArgumentNullException` (parameter `base64Cypherstring`).
-- A short value encrypted with an RSA certificate and decrypted with an ECDSA pair silently becomes an
-  empty string, with no exception.
-- A long value in the same situation throws an `ArgumentException` (parameter `rgbKey`).
+### Which earlier sources does the decryptor read?
 
-If a decrypted value is empty or one of these exceptions appears, check that the certificate has an RSA
-key (`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption`) and encrypt
-the values again.
+The decryptor reads the values of the providers registered before it, as they were already loaded: an
+earlier source is not built or loaded a second time. A stream source (`AddJsonStream`) or a remote
+provider such as Azure Key Vault can therefore be placed before the decryptor.
 
-### The decryptor reads my earlier sources a second time
-
-To find the values to decrypt, the decryptor builds a temporary configuration from all the sources
-registered before it. Those sources are therefore loaded twice.
-
-> [!WARNING]
-> Known issue: a source that cannot be read twice fails. `AddJsonStream` before the decryptor throws
-> "Stream was not readable" (the stream was consumed by the first build), and a remote provider such as
-> Azure Key Vault loads twice, doubling its calls. Files, environment variables and command-line
-> sources are not affected. Prefer file-based sources before the decryptor, and add stream or remote
-> sources after it (their values are then not decrypted).
+This needs the decryptor to be added with `AddCertificateDecryptorConfiguration` or
+`AddRijndaelDecryptorConfiguration`. On a plain `ConfigurationBuilder` (for example in
+`ConfigureAppConfiguration`), these methods wrap the earlier sources so the decryptor can reach the providers
+built from them. On a `ConfigurationManager` (`WebApplication.CreateBuilder`, `Host.CreateApplicationBuilder`),
+nothing is wrapped. A decryptor source added directly with `Add(...)` still builds the earlier sources again.
 
 ### The input is not a valid Base-64 string
 

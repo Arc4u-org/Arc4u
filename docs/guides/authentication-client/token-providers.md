@@ -122,8 +122,10 @@ API. Use it when the downstream API does not accept the token your API received.
 <xref:Arc4u.OAuth2.TokenProviders.AzureADOboTokenProvider> posts the exchange
 (`grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer`, `requested_token_use=on_behalf_of`)
 to the token endpoint of the `Default` authority, and caches the result until it expires. The
-user's token is the `BootstrapContext` of the current identity or, when there is none, the
-access token kept by the cookie authentication.
+user's token is the access token kept by the cookie authentication or, when there is none, the
+`BootstrapContext` of the current identity (the bearer token of the request). The cookie token
+comes first because `UseOpenIdBearerInjector()` replaces the `BootstrapContext` with the
+on-behalf-of token it injects.
 
 ```json
 {
@@ -155,15 +157,13 @@ already call it with the default section: do not call it a second time, see
 | `Authentication:OnBehalfOf:<name>:ClientId` | `string` | none (required) | Client ID of your application. |
 | `Authentication:OnBehalfOf:<name>:ClientSecret` | `string` | none (required) | Client secret of your application. |
 | `Authentication:OnBehalfOf:<name>:Scopes` | `string[]` | none (required) | Scopes requested for the downstream API. |
-| `Authentication:OnBehalfOf:<name>:AuthenticationType` | `string` | `Inject` | See the warning below. |
+| `Authentication:OnBehalfOf:<name>:AuthenticationType` | `string` | `Inject` | See [How a provider is selected](#how-a-provider-is-selected). |
 | `Authentication:OnBehalfOf:<name>:ProviderId` | `string` | `Obo` | Key of the token provider. |
 
-> [!WARNING]
-> Set `AuthenticationType` to the authentication type of your callers: `OAuth2` in an API,
-> `Cookies` in a web app. With the default `Inject`, the handler uses the token type as the
-> scheme, and the on-behalf-of provider returns the type `access_token`: the token is sent in a
-> header named `access_token` instead of `Authorization: Bearer`, and the downstream API
-> rejects the call (known issue).
+> [!NOTE]
+> The provider returns the token type `Bearer`: with the default `Inject`, the token is sent in
+> the `Authorization: Bearer` header. Set `AuthenticationType` to `OAuth2` (in an API) or
+> `Cookies` (in a web app) to send the token only when the caller was authenticated that way.
 
 Register the provider and the services it uses: the scoped `TokenRefreshInfo` (already registered
 by `AddOidcAuthentication`, not by `AddJwtAuthentication`), an `ICacheHelper` that gives the cache
@@ -321,28 +321,32 @@ another section). The configuration based `AddJwtAuthentication` already calls i
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `Authentication:RemoteSecrets:<name>:ClientSecret` | `string` | none (required) | The value to send. |
-| `Authentication:RemoteSecrets:<name>:HeaderKey` | `string` | `SecretKey` | The header that carries the value. `Basic` sends `Authorization: Basic <value>`. |
+| `Authentication:RemoteSecrets:<name>:HeaderKey` | `string` | `SecretKey` | The header that carries the value. `Basic` sends `Authorization: Basic <value>`: a clear `user:password` value is Base64 encoded first, a value already Base64 encoded is sent as is. |
 | `Authentication:RemoteSecrets:<name>:AuthenticationType` | `string` | `Inject` | Keep `Inject`: the header name is taken from the token type only in that mode. |
 | `Authentication:RemoteSecrets:<name>:ProviderId` | `string` | `RemoteSecret` | Key of the token provider. |
 
 ## Cache keys
 
-The providers cache the tokens they obtain, and some cache keys are not built as expected (known
-issues):
+The providers cache the tokens they obtain. A cache key contains every value that changes the
+token, and the secret parts (user token, password, client secret) are hashed with SHA-256 through
+<xref:Arc4u.OAuth2.Token.TokenCacheKey>. The hash is the same in every process, so with a
+distributed cache (Redis, SQL Server) the entries are shared between instances and survive a
+restart:
 
-- The `Obo` and `Credential` providers include `string.GetHashCode()` of the user's token or of the
-  password in the key. This value changes from one process to the next, so with a distributed
-  cache (Redis, SQL Server) the entries are never shared between instances or after a restart: each
-  process requests its own tokens.
-- The `ClientCredentials` provider builds the key from the client ID, the client secret, the scope
-  and the path of the authority, but not from the extra parameters. Two `ClientTokens` entries that
-  differ only by an extra parameter such as `resource` share the same cached token: give them
-  different scopes or client IDs.
+| Provider | Key |
+|---|---|
+| `ClientCredentials` | `ClientCredentials_<client-id>_<hash>`, the hash covers the authority URL, the scope, the client secret and the extra parameters (for example `resource`, in any order). |
+| `Credential` | `Credential_<user>_<hash>`, the hash covers the authority URL, the scope, the user and the password. |
+| `Obo` | `_Obo_<client-id>_<hash>`, the hash covers the authority URL, the user's token and the scope. |
+
+Two `ClientTokens` entries that differ only by an extra parameter such as `resource` get their
+own cached token.
 
 ## Write your own token provider
 
 Implement <xref:Arc4u.OAuth2.Token.ITokenProvider>, register it as a keyed service, and put its
-key in the `ProviderId` of the settings. `GetTokenAsync` returns a `Result<TokenInfo>`: return a
+key in the `ProviderId` of the settings. `GetTokenAsync` returns a `ValueTask<Result<TokenInfo>>`, so a
+provider that answers from a cache or from the settings completes without allocating a `Task`. Return a
 failed result rather than throwing when no token is available, the handlers then send the call
 without a token.
 
@@ -355,23 +359,54 @@ public sealed class StaticTokenProvider : ITokenProvider
 {
     public const string ProviderName = "Static";
 
-    public Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         if (settings is null || !settings.Values.TryGetValue("Token", out var token))
         {
-            return Task.FromResult(Result.Fail<TokenInfo>("No token configured."));
+            return ValueTask.FromResult(Result.Fail<TokenInfo>("No token configured."));
         }
 
-        return Task.FromResult(Result.Ok(new TokenInfo("Bearer", token, DateTime.UtcNow.AddMinutes(5))));
+        return ValueTask.FromResult(Result.Ok(new TokenInfo("Bearer", token, DateTime.UtcNow.AddMinutes(5))));
     }
-
-    public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
 }
 ```
 
 ```csharp
 builder.Services.AddKeyedSingleton<ITokenProvider, StaticTokenProvider>(StaticTokenProvider.ProviderName);
 ```
+
+When your provider keeps tokens for a user (in a cache, in memory, in a store), implement
+<xref:Arc4u.OAuth2.Token.ISignOutTokenProvider> instead and remove them in `SignOutAsync`.
+`SignOutUserAsync` of `AppPrincipalFactory` (client) and of `AppServicePrincipalFactory` (server)
+signs the user out of every keyed provider that implements it (with
+<xref:Arc4u.OAuth2.Token.SignOutTokenProviderExtensions.SignOutTokenProvidersAsync*>), once per
+instance, and logs the exceptions so one provider cannot block the others. Every provider gets
+the same settings, those given to `SignOutUserAsync`: ignore them when they are not yours, and do
+not throw. A provider that only implements `ITokenProvider` (a machine-to-machine token, a secret,
+the token of the incoming request) is skipped. Keep registering the provider as an `ITokenProvider`.
+
+`AddOidcAuthentication`, `AddHybridAuthentication`, `AddOnBehalfOf`, `AddOidcClientAuthentication` and
+`AddAuthenticationCookie` call `services.AddTokenProvidersSignOut()`: the providers are then resolved one
+by one, so a provider that cannot be resolved (a missing dependency, a scoped provider resolved from a
+singleton factory) is logged and the others are signed out. Call `AddTokenProvidersSignOut()` yourself
+when your application uses none of these methods; otherwise all the keyed providers are resolved
+together, and one that cannot be resolved prevents the sign-out of all of them.
+
+Register `AppPrincipalFactory` as transient (or scoped), not as a singleton: it resolves the providers
+from the scope it is created in, so a singleton would sign out root instances of the scoped services
+instead of the ones the application uses.
+
+| Provider | Sign-out |
+|---|---|
+| `AzureADOboTokenProvider` | Removes from the cache the on-behalf-of tokens of every API obtained for the current user, also with an access token that was refreshed since. Their keys are kept in an `OboTokenCacheIndex` per user (the registered `IUserObjectIdentifier`, as for the claims cache, otherwise the `oid` or `sub` claim) and application (`aud` claim, otherwise `azp` or `appid`), both read from the user token, so two applications sharing a cache do not remove each other's tokens: add this type to your `JsonSerializerContext` if the cache serializer uses one |
+| `ClientTokenProvider` (Blazor) | Forgets the token kept in memory, and does not keep a token requested before the sign-out. Sign out of the backend cookie in your application |
+| `BlazorMsalTokenProvider` | Clears the principal. Sign out with `NavigateToLogout` |
+| `OidcClientIdentityModelTokenProvider` | Cancels a login in progress, clears the tokens in memory and in the secure cache, then logs the user out of the authority (in the browser, bounded by `LoginTimeout`) when the user had a session. A refresh or a login in progress is not kept; concurrent calls refresh the token once |
+| `UsernamePasswordTokenProvider` | Removes the user name, the password and the token from the secure cache. Does nothing with settings without `Authority` and `ServiceApplicationId` |
+| `BlazorTokenProvider` | Removes the token from the local storage |
+| `OidcTokenProvider` | None: the tokens are in the authentication cookie. Sign out of the cookie and OpenID Connect schemes with `HttpContext.SignOutAsync` |
+| `CredentialTokenCacheTokenProvider` | None: the token is the one of a configured account, shared by all the users |
+| `RemoteClientSecretTokenProvider`, `ClientCredentialsTokenProvider`, `BootstrapContextTokenProvider`, `NullTokenProvider` | None: they hold no user session |
 
 To add a scenario to `Authentication:ClientTokens`, implement
 <xref:Arc4u.OAuth2.TokenProvider.Scenarios.IClientTokenScenario> (its validation rules and the

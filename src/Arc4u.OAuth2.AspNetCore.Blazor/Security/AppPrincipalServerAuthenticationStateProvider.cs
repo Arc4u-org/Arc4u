@@ -24,6 +24,10 @@ namespace Arc4u.Blazor;
 /// (which the Blazor endpoint seeds from <c>HttpContext.User</c>) and, whenever the authentication
 /// state is resolved inside the circuit, rebuilds the <see cref="AppPrincipal"/> and sets it on the
 /// circuit-scoped <see cref="IApplicationContext"/> — mirroring the client behaviour.
+///
+/// When the state changes (for example when the circuit reconnects with another user or without a user),
+/// Blazor forwards the new state without calling <see cref="GetAuthenticationStateAsync"/> again, so the
+/// provider also updates the <see cref="IApplicationContext"/> on <see cref="AuthenticationStateProvider.AuthenticationStateChanged"/>.
 /// </summary>
 [Export(typeof(AuthenticationStateProvider)), Scoped]
 public sealed class AppPrincipalServerAuthenticationStateProvider : ServerAuthenticationStateProvider
@@ -44,9 +48,11 @@ public sealed class AppPrincipalServerAuthenticationStateProvider : ServerAuthen
         _claimsFiller = claimsFiller;
         _authorizationFiller = authorizationFiller;
         _applicationContext = applicationContext;
+
+        AuthenticationStateChanged += OnAuthenticationStateChanged;
     }
 
-    /// <summary>Gets the authentication state and, for an authenticated user, sets the <see cref="AppPrincipal"/> in the circuit-scoped <see cref="IApplicationContext"/>.</summary>
+    /// <summary>Gets the authentication state and, for an authenticated user, sets the <see cref="AppPrincipal"/> in the circuit-scoped <see cref="IApplicationContext"/>. For an anonymous user, the principal of the <see cref="IApplicationContext"/> is cleared.</summary>
     /// <returns>The authentication state, whose user is the <see cref="AppPrincipal"/> when the user is authenticated.</returns>
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
@@ -61,9 +67,11 @@ public sealed class AppPrincipalServerAuthenticationStateProvider : ServerAuthen
             _claimsFiller,
             _applicationContext);
 
-        // Anonymous user: leave the framework state untouched.
+        // Anonymous user: the context is cleared and the framework state is returned untouched.
         return principal is null ? state : new AuthenticationState(principal);
     }
 
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+        => _ = ApplicationContextInitializer.SetPrincipalAsync(task, _authorizationFiller, _claimsFiller, _applicationContext);
 }
 #endif

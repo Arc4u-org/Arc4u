@@ -36,17 +36,11 @@ public class CategoryFilterSink : ILogEventSink, IDisposable
     /// <param name="logEvent">The event to filter.</param>
     public void Emit(LogEvent logEvent)
     {
-        if (logEvent.Properties.TryGetValue(LoggingConstants.Category, out var propertyValue))
+        if (logEvent.Properties.TryGetValue(LoggingConstants.Category, out var propertyValue)
+            && Helper.GetCategory(propertyValue) is { } category
+            && Categories.HasFlag(category))
         {
-            var iCategory = Helper.GetValue<short>(propertyValue, -1);
-            if (typeof(MessageCategory).IsEnumDefined(iCategory))
-            {
-                var category = (MessageCategory)iCategory;
-                if (Categories.HasFlag(category))
-                {
-                    Sink?.Emit(logEvent);
-                }
-            }
+            Sink?.Emit(logEvent);
         }
     }
 }

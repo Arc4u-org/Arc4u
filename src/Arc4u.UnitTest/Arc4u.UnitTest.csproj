@@ -41,6 +41,9 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+    <PackageReference Include="Microsoft.AspNetCore.OData" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" />
@@ -52,17 +55,21 @@
     <ProjectReference Include="..\Arc4u.AspNetCore.gRpc\Arc4u.AspNetCore.gRpc.csproj" />
     <ProjectReference Include="..\Arc4u.AspNetCore.Results\Arc4u.AspNetCore.Results.csproj" />
     <ProjectReference Include="..\Arc4u.Authorization\Arc4u.Authorization.csproj" />
+    <ProjectReference Include="..\Arc4u.Caching.Dapr\Arc4u.Caching.Dapr.csproj" />
     <ProjectReference Include="..\Arc4u.Caching.Memory\Arc4u.Caching.Memory.csproj" />
     <ProjectReference Include="..\Arc4u.Caching.Redis\Arc4u.Caching.Redis.csproj" />
     <ProjectReference Include="..\Arc4u.Caching.Sql\Arc4u.Caching.Sql.csproj" />
     <ProjectReference Include="..\Arc4u.Configuration.Decryptor\Arc4u.Configuration.Decryptor.csproj" />
+    <ProjectReference Include="..\Arc4u.Configuration.Store.EFCore\Arc4u.Configuration.Store.EFCore.csproj" />
     <ProjectReference Include="..\Arc4u.Dependency\Arc4u.Dependency.csproj" />
     <ProjectReference Include="..\Arc4u.Diagnostics.Serilog\Arc4u.Diagnostics.Serilog.csproj" />
+    <ProjectReference Include="..\Arc4u.Diagnostics.Serilog.Sinks.RealmDb\Arc4u.Diagnostics.Serilog.Sinks.RealmDb.csproj" />
     <ProjectReference Include="..\Arc4u.EfCore\Arc4u.EfCore.csproj" />
     <ProjectReference Include="..\Arc4u.FluentValidation\Arc4u.FluentValidation.csproj" />
     <ProjectReference Include="..\Arc4u.gRPC\Arc4u.gRPC.csproj" />
     <ProjectReference Include="..\Arc4u.MongoDB\Arc4u.MongoDB.csproj" />
     <ProjectReference Include="..\Arc4u.OAuth2.AspNetCore.Authentication\Arc4u.OAuth2.AspNetCore.Authentication.csproj" />
+    <ProjectReference Include="..\Arc4u.OAuth2.AspNetCore.Blazor\Arc4u.OAuth2.AspNetCore.Blazor.csproj" />
     <ProjectReference Include="..\Arc4u.OAuth2.Blazor\Arc4u.OAuth2.Blazor.csproj" />
     <ProjectReference Include="..\Arc4u.OAuth2.Client.Authentication\Arc4u.OAuth2.Client.Authentication.csproj" />
     <ProjectReference Include="..\Arc4u.OAuth2\Arc4u.OAuth2.csproj" />

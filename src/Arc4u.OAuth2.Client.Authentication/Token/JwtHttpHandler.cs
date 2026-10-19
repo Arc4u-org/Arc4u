@@ -2,6 +2,7 @@
 using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.Diagnostics;
+using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Token;
 using Arc4u.Security.Principal;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ namespace Arc4u.OAuth2.Client.Authentication.Token;
 
 /// <summary>
 /// A <see cref="DelegatingHandler"/> that adds the token of the client user to the requests of an <see cref="HttpClient"/>. The token provider is selected by the <c>ProviderId</c> of the settings.
-/// Nothing is added when the request already has an <c>Authorization</c> header or when no valid token is obtained. The activity id and the culture of the user are added in the <c>activityid</c> and <c>culture</c> headers.
+/// Nothing is added when the request already has an <c>Authorization</c> header or when no valid token is obtained. The culture of the user is added in the <c>culture</c> header.
 /// </summary>
 /// <typeparam name="T">The type used as category of the logger.</typeparam>
 public class JwtHttpHandler<T> : DelegatingHandler
@@ -25,7 +26,7 @@ public class JwtHttpHandler<T> : DelegatingHandler
     /// </summary>
     /// <param name="container">The scoped container</param>
     /// <param name="logger">The logger</param>
-    /// <param name="resolvingName">The name used to resolve the settings</param>
+    /// <param name="resolvingName">The name of the <see cref="SimpleKeyValueSettings"/> options holding the settings.</param>
     /// <exception cref="ConfigurationException">No settings exist with that name, or no <see cref="IApplicationContext"/> is registered in the container.</exception>
     public JwtHttpHandler(IServiceProvider container, ILogger<T> logger, string resolvingName)
     {
@@ -34,7 +35,7 @@ public class JwtHttpHandler<T> : DelegatingHandler
         _container = container ?? throw new ArgumentNullException(nameof(container));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        if (!container.TryGetService(resolvingName, out _settings))
+        if (!container.TryGetNamedSettings(resolvingName, out _settings))
         {
             _logger.Technical().LogNoHttpHandlerSettingsFound(resolvingName);
             throw new ConfigurationException($"No settings found for {resolvingName}.");
@@ -101,7 +102,12 @@ public class JwtHttpHandler<T> : DelegatingHandler
 
         _logger.Technical().LogTokenProviderIsResolved(providerName);
 
-        var provider = GetResolver().GetRequiredKeyedService<ITokenProvider>(providerName);
+        var provider = GetResolver().GetKeyedService<ITokenProvider>(providerName);
+        if (provider is null)
+        {
+            _logger.Technical().LogNoAuthenticationTokenCanBeRetrieve(providerName);
+            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        }
 
         _logger.Technical().LogRequestingAToken();
         var tokenResultInfo = await provider.GetTokenAsync(_settings, new object()).ConfigureAwait(false);
@@ -109,10 +115,16 @@ public class JwtHttpHandler<T> : DelegatingHandler
         if (tokenResultInfo.IsFailed)
         {
             _logger.Technical().LogNoAuthenticationTokenCanBeRetrieve(providerName);
+            tokenResultInfo.Log();
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
+        // A successful result without a token (the NullTokenProvider) means no token must be sent.
         var tokenInfo = tokenResultInfo.Value;
+        if (tokenInfo is null)
+        {
+            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        }
 
         // check if the token is still valid.
         // This is due to gRPC. It is possible that a gRPC streaming call is not closed and the token in the HttpContext is expired.
@@ -140,16 +152,10 @@ public class JwtHttpHandler<T> : DelegatingHandler
             request.Headers.Add(scheme, tokenInfo.Token);
         }
 
-        // Add ActivityId if founded!
+        // Add the culture of the user if any.
         if (null == _applicationContext?.Principal)
         {
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        }
-
-        if (! string.IsNullOrWhiteSpace(_applicationContext.ActivityID))
-        {
-            _logger.Technical().LogPrincipalActivityId(_applicationContext.ActivityID);
-            request.Headers.Add("activityid", _applicationContext.ActivityID);
         }
 
         _logger.Technical().LogCultureRequested(_applicationContext.Principal.Profile.CurrentCulture.TwoLetterISOLanguageName);

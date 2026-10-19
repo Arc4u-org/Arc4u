@@ -83,7 +83,6 @@ using Arc4u.Dependency;
 using Arc4u.OAuth2.Token;
 using Arc4u.OAuth2.TokenProvider;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Options;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -96,13 +95,14 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler(
         sp,
         sp.GetRequiredService<ILogger<JwtHttpHandler>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("OAuth2")));
+        "OAuth2"));
 
 await builder.Build().RunAsync();
 ```
 
 `AttachCookiesHandler` must be registered because `AddAuthenticationCookie` adds it to its
-`HttpClient`. <xref:Arc4u.Blazor.Handlers.JwtHttpHandler> sends the token in the `Authorization`
+`HttpClient`. <xref:Arc4u.Blazor.Handlers.JwtHttpHandler> resolves the settings named `OAuth2`
+(it throws `ConfigurationException` when none exist), and sends the token in the `Authorization`
 header, with the token type as the scheme; when the provider fails, it logs the error and sends
 the request without a token. `ClientTokenProvider` keeps the token until it expires, so the token
 must be a JWT (it reads its expiration).
@@ -161,7 +161,6 @@ using Arc4u.Blazor.Options;
 using Arc4u.Security.Principal;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Options;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -195,6 +194,13 @@ fills the circuit's `IApplicationContext` in two places:
 - <xref:Arc4u.Blazor.ApplicationContextCircuitHandler> does the same when the circuit connects, so
   the principal is there even before a component reads the authentication state.
 
+Both also follow the changes of the circuit's authentication state. When the circuit reconnects,
+Blazor gives it the user of the new connection: another user, or no user after a sign-out in another
+tab. A revalidating provider can also turn the state anonymous. The principal is then rebuilt for the
+new user, or cleared, so the event handlers never keep acting as the previous user. The handler does
+this with any `AuthenticationStateProvider`, including one of your own that replaces
+`AppPrincipalServerAuthenticationStateProvider`.
+
 ```csharp
 // Program.cs (server project)
 using Arc4u.Blazor;
@@ -225,31 +231,30 @@ authentication. Only the principal is set in the circuit: the tokens kept for th
 ## Hybrid rendering
 
 With the Interactive Auto render mode, a component first runs on the server and then in the
-browser, so the application needs both setups above. Hybrid rendering is tracked in
-[#171](https://github.com/Arc4u-org/Arc4u/issues/171) (open): the principal is reported missing
-in server-rendered parts of a hybrid application. Test the principal in each render mode your
-application uses.
+browser, so the application needs both setups above: on the server, the circuit's
+`IApplicationContext` is filled as described in
+[Interactive Server](#interactive-server-get-the-principal-in-the-circuit); in the browser, the
+principal is rebuilt from the serialized authentication state. Only the claims that the server
+serializes reach the browser, so the authorization built there is only as complete as those claims.
 
 ## Other WebAssembly token providers
 
 `Arc4u.OAuth2.Blazor` contains two other providers. Both are registered under the key `blazor`:
 register only one of them, because a keyed registration replaces the previous one with the same
-key (known issue).
+key.
 
 - <xref:Arc4u.OAuth2.TokenProvider.BlazorMsalTokenProvider> works with the Microsoft WebAssembly
   authentication (`AddMsalAuthentication` or `AddOidcAuthentication`), where the browser signs the
   user in and holds the tokens. It returns the token of the current principal when it is still
-  valid, otherwise the token requested from `IAccessTokenProviderAccessor`. It does not use the
+  valid, otherwise the token requested from `IAccessTokenProvider`. When that token cannot
+  be renewed silently (`AccessTokenResultStatus.RequiresRedirect`), it clears the current principal,
+  redirects the user to the login page with `NavigationManager.NavigateToLogin` and returns a failed
+  result, so the pending request is sent without a token. It does not use the
   Microsoft Authentication Library for .NET (see [MSAL status](desktop.md#msal-status)).
 - <xref:Arc4u.OAuth2.TokenProvider.BlazorTokenProvider> opens a pop-up window on the
   `BlazorController` of the server, which sends the token back to a page of the package and the
-  token is kept in the browser local storage.
-
-> [!WARNING]
-> The pop-up flow does not work in 9.0 (known issue): `BlazorController` redirects to
-> `_content/Arc4u.Standard.OAuth2.Blazor/GetToken.html`, the path of the package before it was
-> renamed, instead of `_content/Arc4u.OAuth2.Blazor/GetToken.html`, and the browser gets a 404.
-> Use `ClientTokenProvider`.
+  token is kept in the browser local storage. A stored token is reused only while it is valid for
+  at least five more minutes.
 
 ## Troubleshooting
 

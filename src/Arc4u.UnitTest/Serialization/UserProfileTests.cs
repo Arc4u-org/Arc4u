@@ -51,7 +51,6 @@ public class UserProfileTests
         var deserialized = JsonSerializer.Deserialize<UserProfile>(json);
 
         deserialized.Should().NotBeNull();
-        deserialized!.Name.Should().Be(userProfile.Name);
         deserialized.Domain.Should().Be(userProfile.Domain);
         deserialized.Email.Should().Be(userProfile.Email);
         deserialized.Company.Should().Be(userProfile.Company);

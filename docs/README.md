@@ -5,19 +5,17 @@ local dotnet tool in `.config/dotnet-tools.json`. The .NET SDK required by
 `src/global.json` must be installed, because the API reference is generated from
 the projects in `src/`.
 
-Preview locally (builds the site and serves it on http://localhost:8080):
+Preview locally with a single command from the repository root (builds the site
+and serves it on http://localhost:8080):
 
 ```bash
-cd docs
-dotnet tool restore
-dotnet docfx docfx.json --serve
+cd docs && dotnet tool restore && dotnet docfx docfx.json --serve
 ```
 
 Check the build the way CI does (any warning fails the build):
 
 ```bash
-cd docs
-dotnet docfx docfx.json --warningsAsErrors
+cd docs && dotnet tool restore && dotnet docfx docfx.json --warningsAsErrors
 ```
 
 To write a page, start from a template in `_templates/` and follow

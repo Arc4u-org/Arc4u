@@ -1,3 +1,4 @@
+﻿using Arc4u.Configuration;
 using Arc4u.Extensions;
 using Arc4u.Security.Principal;
 using AutoFixture;
@@ -20,6 +21,33 @@ public class AppPrincipalTests
 
     private static List<Operation> AllOperations => Enum.GetValues<Access>()
         .Select(o => new Operation { Name = o.GetValue(), ID = (int)o }).ToList();
+
+    [Fact]
+    public void Authorization_Operations_Without_Scope_Should_Throw_ConfigurationException()
+    {
+        var authorization = new Arc4u.Security.Principal.Authorization
+        {
+            AllOperations = AllOperations,
+            Operations = [new ScopedOperations { Operations = [(int)Access.AccessApplication] }],
+        };
+
+        var exception = Record.Exception(() => new AppAuthorization(authorization));
+
+        exception.Should().BeOfType<ConfigurationException>().Which.Message.Should().Contain("operations has no scope");
+    }
+
+    [Fact]
+    public void Authorization_Roles_Without_Scope_Should_Throw_ConfigurationException()
+    {
+        var authorization = new Arc4u.Security.Principal.Authorization
+        {
+            Roles = [new ScopedRoles { Roles = ["Admin"] }],
+        };
+
+        var exception = Record.Exception(() => new AppAuthorization(authorization));
+
+        exception.Should().BeOfType<ConfigurationException>().Which.Message.Should().Contain("roles has no scope");
+    }
 
     [Fact]
     public void Test_IsAuthorise_By_Enum_Should()
@@ -50,6 +78,33 @@ public class AppPrincipalTests
 
         appAuthorization.IsAuthorized("Specific", Access.AccessApplication, Access.CanSeeSwaggerFacadeApi).Should()
             .BeTrue();
+    }
+
+    [Fact]
+    public void Test_IsAuthorise_By_Single_Name_Should()
+    {
+        var appAuthorization = new AppAuthorization(GetAuthorization());
+
+        appAuthorization.IsAuthorized(Access.AccessApplication.GetValue()).Should().BeTrue();
+        appAuthorization.IsAuthorized(Access.CanSeeSwaggerFacadeApi.GetValue()).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Test_IsAuthorise_By_Single_Name_On_Interface_Should()
+    {
+        IAuthorization appAuthorization = new AppAuthorization(GetAuthorization());
+
+        appAuthorization.IsAuthorized(Access.AccessApplication.GetValue()).Should().BeTrue();
+        appAuthorization.IsAuthorized(Access.CanSeeSwaggerFacadeApi.GetValue()).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Test_IsAuthorise_By_Single_Name_On_Principal_Should()
+    {
+        var principal = new AppPrincipal(GetAuthorization(), new System.Security.Claims.ClaimsIdentity(), "S-1-0-0");
+
+        principal.IsAuthorized(Access.AccessApplication.GetValue()).Should().BeTrue();
+        principal.IsAuthorized(Access.CanSeeSwaggerFacadeApi.GetValue()).Should().BeFalse();
     }
 
     private static Arc4u.Security.Principal.Authorization GetAuthorization()

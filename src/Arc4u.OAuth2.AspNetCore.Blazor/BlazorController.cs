@@ -41,6 +41,9 @@ public class BlazorController : ControllerBase
     // The root service URL key
     private const string RootServiceUrlKey = "Authentication:OpenId.Settings:RootServiceUrl";
 
+    // The path of the static web asset receiving the token, served by the Arc4u.OAuth2.Blazor package.
+    private const string GetTokenPagePath = "_content/Arc4u.OAuth2.Blazor/GetToken.html";
+
     private readonly SimpleKeyValueSettings _settings;
     private readonly ILogger<BlazorController> _logger;
     private readonly string _rootServiceUrl;
@@ -67,7 +70,7 @@ public class BlazorController : ControllerBase
     /// It is sent to the Blazor application in chunks of 1024 characters: <paramref name="id"/> is the 1-based index of the chunk.
     /// </remarks>
     /// <param name="id">The 1-based index of the chunk of the token to send. The default is 1.</param>
-    /// <param name="redirectTo">The url-encoded host of the Blazor application; the redirection goes to <c>https://{redirectTo}/_content/Arc4u.Standard.OAuth2.Blazor/GetToken.html</c>.</param>
+    /// <param name="redirectTo">The url-encoded host of the Blazor application; the redirection goes to <c>https://{redirectTo}/_content/Arc4u.OAuth2.Blazor/GetToken.html</c>.</param>
     /// <param name="applicationContext">The application context giving the current principal.</param>
     /// <param name="containerResolve">The service provider used to resolve the token provider.</param>
     /// <param name="logger">The logger. It is not used: the logger of the controller is used.</param>
@@ -120,7 +123,7 @@ public class BlazorController : ControllerBase
         // The redirect URL is decoded and the redirect URI is built.
         var redirectUrl = WebUtility.UrlDecode(redirectTo);
 
-        var url = $"https://{redirectUrl.TrimEnd('/')}/_content/Arc4u.Standard.OAuth2.Blazor/GetToken.html";
+        var url = $"https://{redirectUrl.TrimEnd('/')}/{GetTokenPagePath}";
         if (!Uri.TryCreate(url, UriKind.Absolute, out var redirectUri))
         {
             return new ObjectResult(new ProblemDetails()

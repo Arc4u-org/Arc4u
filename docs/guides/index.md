@@ -19,7 +19,7 @@ documents every public type.
 | [Caching](caching/index.md) | `Arc4u.Caching`, `Arc4u.Caching.Memory`, `Arc4u.Caching.Redis`, `Arc4u.Caching.SqlServer`, `Arc4u.Caching.Dapr`, `Arc4u.Serializer`, `Arc4u.Serializer.JSon` |
 | [Results and errors](results/index.md) | `Arc4u.Results`, `Arc4u.AspNetCore.Results`, `Arc4u.FluentValidation` |
 | [gRPC and API versioning](grpc-versioning/index.md) | `Arc4u.gRPC`, `Arc4u.AspNetCore.gRpc`, `Arc4u.AspNetCore.Versioning` |
-| [Data access](data/index.md) | `Arc4u.Data`, `Arc4u.EfCore`, `Arc4u.MongoDB`, `Arc4u.OData` |
+| [Data access](data/index.md) | `Arc4u.EfCore`, `Arc4u.MongoDB`, `Arc4u.OData` |
 | [Dispatcher](dispatcher/index.md) | `Arc4u.Dispatcher` |
 
 The foundation packages `Arc4u`, `Arc4u.Core` and `Arc4u.Threading` are used by
@@ -29,6 +29,6 @@ most of the packages above and have no guide of their own: see
 `Arc4u.AspNetCore.Versioning` is not published on NuGet.org yet.
 
 The [package support](package-support.md) page lists every package with its
-support status and target frameworks, including the packages that are not shipped in 9.x
-(`Arc4u.Dependency.ComponentModel`, `Arc4u.OAuth2.Msal` and the removed NServiceBus and
-Prism.DI.Wpf packages).
+support status and target frameworks, including the package that is not shipped in 9.x
+(`Arc4u.OAuth2.Msal`) and the removed `Arc4u.Data`, `Arc4u.Dependency.ComponentModel`, NServiceBus
+and Prism.DI.Wpf packages.

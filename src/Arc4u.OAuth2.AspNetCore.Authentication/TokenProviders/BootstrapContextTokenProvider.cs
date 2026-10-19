@@ -20,7 +20,7 @@ namespace Arc4u.OAuth2.TokenProviders
         /// <param name="platformParameters">Not used.</param>
         /// <exception cref="ArgumentNullException"><paramref name="settings"/> or the current principal is <see langword="null"/>.</exception>
         /// <returns>The token, or a failed result when the identity has no token or the token is expired.</returns>
-        public Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+        public ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
         {
             ArgumentNullException.ThrowIfNull(settings);
 
@@ -34,24 +34,13 @@ namespace Arc4u.OAuth2.TokenProviders
 
                 if (jwt.ValidTo > DateTime.UtcNow)
                 {
-                    return Task.FromResult(new TokenInfo("Bearer", token!, jwt.ValidTo).ToResult());
+                    return ValueTask.FromResult(new TokenInfo("Bearer", token!, jwt.ValidTo).ToResult());
                 }
 
-                return Task.FromResult<Result<TokenInfo>>(Result.Fail("The token provided is expired."));
+                return ValueTask.FromResult<Result<TokenInfo>>(Result.Fail("The token provided is expired."));
             }
 
-            return Task.FromResult<Result<TokenInfo>>(Result.Fail("No Access token stored in the Identity."));
-        }
-
-        /// <summary>
-        /// Not supported: there is no way to sign out in this scenario.
-        /// </summary>
-        /// <param name="settings">The provider settings.</param>
-        /// <param name="cancellationToken">A token to cancel the operation.</param>
-        /// <exception cref="NotImplementedException">Always thrown.</exception>
-        public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
+            return ValueTask.FromResult<Result<TokenInfo>>(Result.Fail("No Access token stored in the Identity."));
         }
     }
 }

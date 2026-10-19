@@ -563,12 +563,11 @@ public static class FromResultToHttpResultExtension
     /// Awaits the task, then converts the result to an <see cref="IResult"/> (minimal API): <c>201 Created</c> with the given <paramref name="location"/> on success, a problem <see cref="IResult"/> built from the <see cref="Microsoft.AspNetCore.Mvc.ProblemDetails"/> on failure.
     /// </summary>
     /// <remarks>The problem details of a failed result are built by <c>ToProblemDetails</c>, see <see cref="FromResultToProblemDetailExtension"/>.</remarks>
-    /// <typeparam name="TResult">Unused, but it must be specified explicitly because it cannot be inferred.</typeparam>
     /// <param name="result">The task producing the result to convert.</param>
     /// <param name="location">The URI of the created resource, set in the <c>Location</c> header; may be <see langword="null"/>.</param>
     /// <returns>The HTTP response representing the outcome of the result.</returns>
     public static async Task<IResult>
-    ToHttpCreatedResultAsync<TResult>(this Task<Result> result, Uri? location)
+    ToHttpCreatedResultAsync(this Task<Result> result, Uri? location)
     {
         var res = await result.ConfigureAwait(false);
 
@@ -584,12 +583,11 @@ public static class FromResultToHttpResultExtension
     /// Converts the result to an <see cref="IResult"/> (minimal API): <c>201 Created</c> with the given <paramref name="location"/> on success, a problem <see cref="IResult"/> built from the <see cref="Microsoft.AspNetCore.Mvc.ProblemDetails"/> on failure.
     /// </summary>
     /// <remarks>The problem details of a failed result are built by <c>ToProblemDetails</c>, see <see cref="FromResultToProblemDetailExtension"/>.</remarks>
-    /// <typeparam name="TResult">Unused, but it must be specified explicitly because it cannot be inferred.</typeparam>
     /// <param name="result">The result to convert.</param>
     /// <param name="location">The URI of the created resource, set in the <c>Location</c> header; may be <see langword="null"/>.</param>
     /// <returns>The HTTP response representing the outcome of the result.</returns>
     public static Task<IResult>
-    ToHttpCreatedResultAsync<TResult>(this Result result, Uri? location)
+    ToHttpCreatedResultAsync(this Result result, Uri? location)
     {
         var objectResult = HttpResults.BadRequest();
         result

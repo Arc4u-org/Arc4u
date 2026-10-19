@@ -17,7 +17,10 @@ HTTP/2 hosting in [Kestrel and HTTP/2](kestrel.md). The general ideas are in the
   [token provider](../../concepts/glossary.md#token-provider) and puts it in the `authorization`
   metadata of every call, together with the user's culture.
 - **Server context.** `AuthorizationInterceptor` applies the culture header (when the application
-  context already has a principal) and sets the activity ID of the Arc4u application context, and hides unexpected exceptions behind an `Internal` status.
+  context already has a principal) and hides unexpected exceptions behind an `Internal` status.
+  It does not deal with correlation: ASP.NET Core starts a `System.Diagnostics.Activity` for each call,
+  propagated with the W3C `traceparent` header, and the Arc4u logger writes its trace id as the
+  `ActivityId` property (see [Diagnostics and logging](../diagnostics/index.md#properties-written-on-every-entry)).
 - **Consistent failures.** `AddGrpcAuthenticationControl()` turns the redirect an interactive
   authentication challenge produces into a `401`, which a gRPC client understands.
 - **Timing.** `AddGrpcMonitoringTimeElapsed()` logs how long each call took.
@@ -32,7 +35,7 @@ sequenceDiagram
     I->>I: token from the token provider
     I->>S: authorization + culture metadata
     S->>S: JWT bearer validation
-    S->>A: culture, activity ID
+    S->>A: culture
     A->>S: service method
 ```
 
@@ -95,7 +98,7 @@ app.Run();
 | Call | What it does |
 |---|---|
 | `AddApplicationContext()` | Registers the scoped <xref:Arc4u.Security.Principal.IApplicationContext> and the Arc4u logger. `AuthorizationInterceptor` needs both; the timing middleware only needs the Arc4u logger. |
-| `Interceptors.Add<AuthorizationInterceptor>()` | Applies the `culture` request header to the current thread and to the principal profile, only when the application context already has a principal (for example after JWT bearer authentication), sets `ApplicationContext.ActivityID` to `Activity.Current?.Id` (or a new GUID), logs every exception, `RpcException` included, at error level (expected `NotFound` or validation failures too), and turns any exception that is not an `RpcException` into `StatusCode.Internal` with the message "An error occurs.". |
+| `Interceptors.Add<AuthorizationInterceptor>()` | Applies the `culture` request header to the current thread and to the principal profile, only when the application context already has a principal (for example after JWT bearer authentication), logs every exception, `RpcException` included, at error level (expected `NotFound` or validation failures too), and turns any exception that is not an `RpcException` into `StatusCode.Internal` with the message "An error occurs.". |
 | `AddGrpcAuthenticationControl()` | A gRPC request (content type containing `grpc`) that ends with a `302` is answered with `401` and its headers are cleared. Add it before `UseAuthentication()`. |
 | `AddGrpcMonitoringTimeElapsed()` | Writes the service type, method name, elapsed milliseconds and response status to the technical log of every gRPC endpoint. Pass an `Action<Type, TimeSpan>` to also feed a metric. |
 
@@ -126,32 +129,24 @@ public class OrderGrpcService : OrderService.OrderServiceBase
 ### Client
 
 Register the generated client with the client factory and add the interceptor that forwards the
-token. `OAuth2Interceptor<T>` has no default constructor: derive from it and pick the token
-settings by name.
-
-```csharp
-using Arc4u.Configuration;
-using Arc4u.gRPC.Interceptors;
-using Microsoft.Extensions.Options;
-
-public class BearerInterceptor(
-    IServiceProvider serviceProvider,
-    ILogger<BearerInterceptor> logger,
-    IOptionsMonitor<SimpleKeyValueSettings> settings)
-    : OAuth2Interceptor<BearerInterceptor>(serviceProvider, logger, settings.Get("OAuth2"));
-```
+token. Build `OAuth2Interceptor<T>` with the name of the token settings: it resolves the named
+`SimpleKeyValueSettings` options and throws `ConfigurationException` when none exist with that
+name. Another constructor takes the `IKeyValueSettings` themselves.
 
 ```csharp
 // Program.cs
+using Arc4u.gRPC.Interceptors;
 using Arc4u.Security.Principal;
 using Orders.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationContext();
-builder.Services.AddTransient<BearerInterceptor>();
 builder.Services.AddGrpcClient<OrderService.OrderServiceClient>(options => options.Address = new Uri("https://orders.example.com"))
-                .AddInterceptor<BearerInterceptor>();
+                .AddInterceptor(sp => new OAuth2Interceptor<OrderService.OrderServiceClient>(
+                    sp,
+                    sp.GetRequiredService<ILogger<OrderService.OrderServiceClient>>(),
+                    "OAuth2"));
 ```
 
 `AddApplicationContext()` registers the Arc4u logger: the interceptor logs through it and throws
@@ -184,9 +179,11 @@ scheme is the token's type; otherwise the header is `Bearer <token>`. The interc
 When one of the conditions is not met, the interceptor adds nothing and lets the call go on: the
 service then answers `Unauthenticated`. Most cases log at trace level; an identity whose
 authentication type differs from the settings' returns silently, without a log entry. The interceptor
-catches token provider errors, but it throws when the Arc4u logger is not registered, and a
-`KeyNotFoundException` when an `authorization` metadata already exists and the settings have no
-`AuthenticationType`.
+catches token provider errors, but it throws when the Arc4u logger is not registered.
+
+For a unary call made with the async API, the token is requested asynchronously before the call
+starts. The blocking and the streaming calls return their call object synchronously, so for them the
+interceptor waits for the token provider.
 
 ### Route through a reverse proxy with a path prefix
 
@@ -201,7 +198,7 @@ public class OrdersPrefixInterceptor() : AddSuffixPathInterceptor("orders/");
 ```
 
 With the `orders.proto` above, `GetOrder` is then sent to `/orders/orders.v1.OrderService/GetOrder`.
-Register the class like `BearerInterceptor` with `AddInterceptor<OrdersPrefixInterceptor>()`, and
+Register the class with `AddTransient<OrdersPrefixInterceptor>()` and `AddInterceptor<OrdersPrefixInterceptor>()`, and
 add a YARP route that matches `/orders/{**catch-all}` and removes the prefix with a path transform.
 
 ### Trust a private root CA
@@ -283,23 +280,14 @@ Arc4u ones.
 
 The interceptor added no token; it usually logs why at trace level (not when the principal's authentication type differs from the
 settings'). Enable the `Trace` level for
-`ILogger<BearerInterceptor>` and look for a missing application context, principal, authentication
-type or token provider. A common cause is settings registered under another name than the one passed
-to `settings.Get(...)`.
+the logger category of the interceptor (its type parameter, `OrderService.OrderServiceClient` above)
+and look for a missing application context, principal, authentication type or token provider. When
+the settings name passed to the interceptor does not exist, its creation throws `ConfigurationException`.
 
-### `ClientErrorInterceptor` does not convert my errors
-
-`ClientErrorInterceptor` turns `StatusCode.PermissionDenied` into an `UnauthorizedAccessException`
-and rethrows any other `RpcException`, but only when the exception is raised while the call is being
-started. The failure of a unary call surfaces when you await the response, after the interceptor
-returned, so it is not converted. It does not intercept client-streaming or blocking unary calls. Catch
-the `RpcException` and use `ToResult()` instead, as shown in
-[ProblemDetails over gRPC](grpc-problem-details.md).
-
-### Culture and activity ID are not set on a client-streaming method
+### Culture is not set on a client-streaming method
 
 `AuthorizationInterceptor` overrides the unary, server-streaming and duplex handlers. Client-streaming
-calls are not intercepted: they get no culture, no activity ID and no exception mapping.
+calls are not intercepted: they get no culture and no exception mapping.
 
 ### `RootPemCertificates.GetPemFor` throws `KeyNotFoundException`
 

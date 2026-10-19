@@ -1,4 +1,4 @@
-
+﻿
 using Microsoft.Extensions.Logging;
 
 namespace Arc4u.OAuth2.AspNetCore;
@@ -52,11 +52,11 @@ public static partial class LoggerMessages
     public static partial void LogForceOpenIdConnect(this ILogger logger);
 
     /// <summary>
-    /// Logs an Error message (event id 9104): <c>No claim type found equal to: {IdentifierOptions} in the current identity.</c>
+    /// Logs an Error message (event id 9118): <c>No claim type found equal to: {IdentifierOptions} in the current identity.</c>
     /// </summary>
     /// <param name="logger">The logger to write to.</param>
     /// <param name="identifierOptions">The value substituted in the message.</param>
-    [LoggerMessage(EventId = 9104, Level = LogLevel.Error,
+    [LoggerMessage(EventId = 9118, Level = LogLevel.Error,
                    Message = "No claim type found equal to: {IdentifierOptions} in the current identity.")]
     public static partial void LogNoClaimTypeFound(this ILogger logger, string identifierOptions);
 

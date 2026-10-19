@@ -87,9 +87,6 @@ Replace the content of `appsettings.json` with:
     },
     "OAuth2.Settings": {
       "Audiences": [ "getting-started-api" ]
-    },
-    "TokenCache": {
-      "CacheName": "Volatile"
     }
   }
 }
@@ -102,7 +99,6 @@ Replace the content of `appsettings.json` with:
 | `Application.Configuration` | `AddApplicationConfig` | The application name and environment. The section and its four values are required: when a value is missing, startup fails with a `ConfigurationException` that lists the missing ones. `Environment:LoggingName` is written in every log entry as `Application`. |
 | `Authentication:DefaultAuthority:Url` | `AddJwtAuthentication` | The identity provider that issues the tokens. The placeholder is enough to start: the application contacts the identity provider only to validate a token. |
 | `Authentication:OAuth2.Settings:Audiences` | `AddJwtAuthentication` | The values accepted in the `aud` claim of a token. |
-| `Authentication:TokenCache:CacheName` | `AddJwtAuthentication` | The name of the Arc4u cache that stores tokens. It must be set, even though this application never uses it. |
 
 `Application.Configuration` and `OAuth2.Settings` are single keys that contain a dot, not nested
 sections.
@@ -153,7 +149,6 @@ using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.OAuth2.Extensions;
 using GettingStarted.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -173,10 +168,6 @@ builder.Services.RegisterGettingStartedTypes();
 
 // Validates JWT bearer tokens issued by the authority in the Authentication section.
 builder.Services.AddJwtAuthentication(builder.Configuration);
-// Known issue: AddJwtAuthentication turns issuer validation off. Turn it back on so that a token
-// signed by the authority's keys but issued by another issuer (another tenant or realm) is rejected.
-builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
-    options => options.TokenValidationParameters.ValidateIssuer = true);
 builder.Services.AddAuthorization();
 
 // Errors without a body (404, unhandled exceptions, ...) become ProblemDetails responses.
@@ -224,9 +215,7 @@ services.AddScoped<GettingStarted.Services.IGreetingService, global::GettingStar
 **Authentication.** `AddJwtAuthentication` reads the `Authentication` section and registers the
 ASP.NET Core JWT bearer handler as the default scheme, with Arc4u's `StandardBearerEvents`. When a
 request to a protected endpoint has no valid token, `StandardBearerEvents` answers `401` with a
-JSON body, and it logs why a token was rejected. `AddJwtAuthentication` turns off the validation of
-the token issuer (a known issue), so the `PostConfigure<JwtBearerOptions>` line that follows turns
-it back on; see the caution in
+JSON body, and it logs why a token was rejected. It validates the token issuer too; see the caution in
 [Call the protected endpoint with a real token](#call-the-protected-endpoint-with-a-real-token).
 `AddAuthorization` and `RequireAuthorization()` are the standard ASP.NET Core calls that protect
 `/me`.
@@ -278,9 +267,9 @@ curl -i http://localhost:5080/me
 
 ```http
 HTTP/1.1 401 Unauthorized
-Content-Type: application/json
+Content-Type: application/problem+json
 
-{"status":403}
+{"status":401}
 ```
 
 With a token that is not a valid JWT, the body also names the error:
@@ -291,9 +280,9 @@ curl -i -H "Authorization: Bearer not-a-jwt" http://localhost:5080/me
 
 ```http
 HTTP/1.1 401 Unauthorized
-Content-Type: application/json
+Content-Type: application/problem+json
 
-{"title":"invalid_token","status":403,"detail":""}
+{"title":"invalid_token","status":401,"detail":""}
 ```
 
 and the application logs the reason with the `Technical` category:
@@ -301,11 +290,6 @@ and the application logs the reason with the `Technical` category:
 ```text
 [15:04:55 ERR] Technical  Arc4u.OAuth2.Events.StandardBearerEvents: Exception: IDX14100: JWT is not well formed, there are no dots (.).
 ```
-
-> [!WARNING]
-> Known issue: the JSON body of these `401` responses contains `"status":403`, and its content type
-> is `application/json` rather than `application/problem+json`. Use the HTTP status code of the
-> response, not the `status` field of the body.
 
 You now have a running Arc4u application. Stop it with <kbd>Ctrl</kbd>+<kbd>C</kbd>.
 
@@ -348,23 +332,15 @@ the reason:
 | Token | Response |
 |---|---|
 | Expired | `401` with an `x-token-expired` response header, and `detail` "The token expired on ..." |
-| Wrong audience | `401` with `detail` "The audience '...' is invalid" |
+| Wrong audience | `401` with `detail` "The audience '...' of the token is not an audience accepted by this service." |
 
 > [!CAUTION]
-> Known issue: `AddJwtAuthentication` validates the signature, the lifetime and the audience of
-> a token, but it turns off the validation of its issuer (`iss` claim). Any token signed by one of
-> the authority's keys is then accepted, whatever its issuer. With providers whose tenants or realms
-> share signing keys (Microsoft Entra ID, for example), a token issued by another tenant for the same
-> audience would be accepted. Keep the line of `Program.cs` that turns issuer validation back on,
-> right after `AddJwtAuthentication`:
->
-> ```csharp
-> builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme,
->     options => options.TokenValidationParameters.ValidateIssuer = true);
-> ```
->
-> The issuer is then checked against the `issuer` of the provider's metadata, and a token from
-> another issuer gets `401` with `detail` "The issuer '...' is invalid".
+> `AddJwtAuthentication` validates the signature, the lifetime, the audience and the issuer (`iss`
+> claim) of a token. The issuer is checked against `DefaultAuthority:Issuer` when it is set, or against
+> the `issuer` of the provider's metadata, and a token from another issuer gets `401` with `detail`
+> "The issuer '...' is invalid". Do not turn it off with `Authentication:ValidateAuthority: false`:
+> with providers whose tenants or realms share signing keys (Microsoft Entra ID, for example), a token
+> issued by another tenant for the same audience would then be accepted.
 
 Some providers, such as Keycloak with its default settings, issue access tokens without an audience
 for your API: add one on the provider side rather than turning audience validation off. The
@@ -376,12 +352,12 @@ for your API: add one on the provider side rather than turning audience validati
 |---|---|
 | `'IServiceCollection' does not contain a definition for 'RegisterGettingStartedTypes'` | The generator did not run or the name differs. Check that `Arc4u.Dependency.Tool` is referenced, and use the last part of your assembly name (`Register<Name>Types`). |
 | `InvalidOperationException: Bad Arc4u usage.` | `AddILogger()` is not called. |
-| `ConfigurationException: TokenCacheOptions.CacheName is not defined in the configuration file.` | `Authentication:TokenCache:CacheName` is missing. |
+| `ConfigurationException: TokenCacheOptions.CacheName is not defined in the configuration file.` | The `Authentication:TokenCache` section exists without `CacheName`. This application makes no outgoing call, so remove the section. |
 | `ConfigurationException: Audiences field is not defined.` | `Authentication:OAuth2.Settings:Audiences` is missing or empty. |
 | `MissingFieldException: DefaultAuthority must be filled!` | `Authentication:DefaultAuthority` is missing. |
 | `InvalidOperationException: No section exists with name Authentication ...` | The `Authentication` section is missing. |
 | `ConfigurationException: Application environment time zone is not defined ...` (or name, logging name) | A value of `Application.Configuration` is missing. |
-| `NullReferenceException: section exists with name Application.Configuration but it is not an ApplicationConfig object.` | The `Application.Configuration` section is missing. |
+| `ConfigurationException: The section 'Application.Configuration' does not exist or is empty.` | The `Application.Configuration` section is missing or misspelled. |
 
 ## Next steps
 

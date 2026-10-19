@@ -12,28 +12,30 @@ public interface ICache : IDisposable
     /// <summary>Adds or replaces a value in the cache, without a specific expiration.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key used to identify the value in the cache.</param>
-    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/> (or the default value of <typeparamref name="T"/>). This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is saved.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="DataCacheException">The cache engine or the serialization failed (the original exception is the inner exception), or the memory cache is full.</exception>
     void Put<T>(string key, T value);
 
     /// <summary>Asynchronously adds or replaces a value in the cache, without a specific expiration.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key used to identify the value in the cache.</param>
-    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is saved.</param>
     /// <param name="cancellation">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>A task that completes when the value is saved.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>. This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="DataCacheException">The cache engine or the serialization failed (the original exception is the inner exception), or the memory cache is full.</exception>
     Task PutAsync<T>(string key, T value, CancellationToken cancellation = default);
 
     /// <summary>Adds or replaces a value in the cache with an expiration.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key used to identify the value in the cache.</param>
     /// <param name="timeout">The period of validity of the value. When it expires, the value is removed from the cache.</param>
-    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is saved.</param>
     /// <param name="isSlided"><see langword="true"/> to restart the period each time the value is read (sliding expiration); <see langword="false"/> for an absolute expiration. Not every cache supports a sliding expiration (the Dapr cache throws <see cref="NotSupportedException"/>).</param>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>. This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="NotSupportedException"><paramref name="isSlided"/> is <see langword="true"/> and the cache does not support it.</exception>
     void Put<T>(string key, TimeSpan timeout, T value, bool isSlided = false);
@@ -42,11 +44,11 @@ public interface ICache : IDisposable
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key used to identify the value in the cache.</param>
     /// <param name="timeout">The period of validity of the value. When it expires, the value is removed from the cache.</param>
-    /// <param name="value">The value to save; it cannot be <see langword="null"/>.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is saved.</param>
     /// <param name="isSlided"><see langword="true"/> to restart the period each time the value is read (sliding expiration); <see langword="false"/> for an absolute expiration. Not every cache supports a sliding expiration (the Dapr cache throws <see cref="NotSupportedException"/>).</param>
     /// <param name="cancellation">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>A task that completes when the value is saved.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>. This check is done by the distributed caches (memory, Redis, SQL), not by the Dapr cache.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="NotSupportedException"><paramref name="isSlided"/> is <see langword="true"/> and the cache does not support it.</exception>
     Task PutAsync<T>(string key, TimeSpan timeout, T value, bool isSlided = false, CancellationToken cancellation = default);
@@ -56,7 +58,7 @@ public interface ICache : IDisposable
     /// <param name="key">The key used to identify the value in the cache.</param>
     /// <returns>The value, or the default of <typeparamref name="TValue"/> when no value exists for the key.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
-    /// <exception cref="DataCacheException">The cache engine or the deserialization failed. The distributed caches (memory, Redis, SQL) wrap the error in this exception; the Dapr cache lets the exception of the Dapr client through.</exception>
+    /// <exception cref="DataCacheException">The cache engine or the deserialization failed; the original exception is the inner exception.</exception>
     TValue? Get<TValue>(string key);
 
     /// <summary>Asynchronously gets the value stored for the key.</summary>
@@ -65,14 +67,14 @@ public interface ICache : IDisposable
     /// <param name="cancellation">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>The value, or the default of <typeparamref name="TValue"/> when no value exists for the key.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
-    /// <exception cref="DataCacheException">The cache engine or the deserialization failed. The distributed caches (memory, Redis, SQL) wrap the error in this exception; the Dapr cache lets the exception of the Dapr client through.</exception>
+    /// <exception cref="DataCacheException">The cache engine or the deserialization failed; the original exception is the inner exception.</exception>
     Task<TValue?> GetAsync<TValue>(string key, CancellationToken cancellation = default);
 
     /// <summary>Tries to get the value stored for the key. Errors raised while reading or deserializing are not thrown.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key used to identify the value in the cache.</param>
     /// <param name="value">The value, or the default of <typeparamref name="TValue"/> when it is not found or could not be read.</param>
-    /// <returns><see langword="true"/> when a value was read; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> when the key exists and a non-null value was read; otherwise <see langword="false"/>.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     bool TryGetValue<TValue>(string key, out TValue? value);
 

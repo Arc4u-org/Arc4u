@@ -91,30 +91,13 @@ public abstract class BaseDistributeCache<T> : ICache
     /// <param name="key">The key of the value.</param>
     /// <returns>The value, or the default of <typeparamref name="TValue"/> when the key does not exist.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
-    /// <exception cref="DataCacheException">The cache or the deserialization failed; the message is the one of the original exception.</exception>
+    /// <exception cref="DataCacheException">The cache or the deserialization failed; the original exception is the inner exception.</exception>
     public TValue? Get<TValue>(string key)
     {
         CheckIfInitialized();
 
-        try
-        {
-            byte[]? blob = [];
-            using var activity = _activitySource?.StartActivity("Get from cache.", ActivityKind.Producer);
-            activity?.SetTag("cacheKey", key);
-
-            blob = DistributeCache?.Get(key);
-            if (null == blob)
-            {
-                return default;
-            }
-
-            using var serializerActivity = _activitySource?.StartActivity("Deserialize.", ActivityKind.Producer);
-            return SerializerFactory.Deserialize<TValue>(blob);
-        }
-        catch (Exception ex)
-        {
-            throw new DataCacheException(ex.Message);
-        }
+        TryRead<TValue>(key, out var value);
+        return value;
     }
 
     /// <summary>Asynchronously gets the value stored for the key and deserializes it.</summary>
@@ -123,18 +106,17 @@ public abstract class BaseDistributeCache<T> : ICache
     /// <param name="cancellation">A token to cancel the operation.</param>
     /// <returns>The value, or the default of <typeparamref name="TValue"/> when the key does not exist.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
-    /// <exception cref="DataCacheException">The cache or the deserialization failed; the message is the one of the original exception.</exception>
+    /// <exception cref="DataCacheException">The cache or the deserialization failed; the original exception is the inner exception.</exception>
     public async Task<TValue?> GetAsync<TValue>(string key, CancellationToken cancellation = default)
     {
         CheckIfInitialized();
 
         try
         {
-            byte[]? blob = null;
             using var activity = _activitySource?.StartActivity("Get from cache.", ActivityKind.Producer);
             activity?.SetTag("cacheKey", key);
 
-            blob = DistributeCache is null ? null : await DistributeCache.GetAsync(key, cancellation).ConfigureAwait(false);
+            var blob = DistributeCache is null ? null : await DistributeCache.GetAsync(key, cancellation).ConfigureAwait(false);
             if (null == blob)
             {
                 return default;
@@ -142,11 +124,35 @@ public abstract class BaseDistributeCache<T> : ICache
 
             using var serializerActivity = _activitySource?.StartActivity("Deserialize.", ActivityKind.Producer);
             return SerializerFactory.Deserialize<TValue>(blob);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new DataCacheException(ex.Message, ex);
+        }
+    }
 
+    // Reads the value and tells whether the key exists, so a stored default value (0, false) is distinguished from a missing key.
+    private bool TryRead<TValue>(string key, out TValue? value)
+    {
+        try
+        {
+            using var activity = _activitySource?.StartActivity("Get from cache.", ActivityKind.Producer);
+            activity?.SetTag("cacheKey", key);
+
+            var blob = DistributeCache?.Get(key);
+            if (null == blob)
+            {
+                value = default;
+                return false;
+            }
+
+            using var serializerActivity = _activitySource?.StartActivity("Deserialize.", ActivityKind.Producer);
+            value = SerializerFactory.Deserialize<TValue>(blob);
+            return true;
         }
         catch (Exception ex)
         {
-            throw new DataCacheException(ex.Message);
+            throw new DataCacheException(ex.Message, ex);
         }
     }
 
@@ -172,131 +178,49 @@ public abstract class BaseDistributeCache<T> : ICache
     /// <summary>Serializes the value and stores it with the <see cref="DefaultOption"/> (no expiration by default).</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
-    /// <param name="value">The value to store; it cannot be <see langword="null"/> or the default of its type.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is stored.</param>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/> or the default value of <typeparamref name="TValue"/>.</exception>
-    public void Put<TValue>(string key, TValue value)
-    {
-        CheckIfInitialized();
-
-        if (EqualityComparer<TValue>.Default.Equals(value, default))
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
-
-        using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
-        byte[] blob = [];
-
-        using (var serializerActivity = _activitySource?.StartActivity("Serialize.", ActivityKind.Producer))
-        {
-            blob = SerializerFactory.Serialize<TValue>(value);
-        }
-
-        activity?.SetTag("cacheKey", key);
-        DistributeCache?.Set(key, blob, DefaultOption);
-    }
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
+    public void Put<TValue>(string key, TValue value) => PutCore(key, value, DefaultOption);
 
     /// <summary>Asynchronously serializes the value and stores it with the <see cref="DefaultOption"/> (no expiration by default).</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
-    /// <param name="value">The value to store; it cannot be <see langword="null"/>.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is stored.</param>
     /// <param name="cancellation">A token to cancel the operation.</param>
     /// <returns>A task that completes when the value is stored.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
-    public async Task PutAsync<TValue>(string key, TValue value, CancellationToken cancellation = default)
-    {
-        CheckIfInitialized();
-
-        if (value == null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
-
-        using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
-        byte[] blob = [];
-
-        using (var serializerActivity = _activitySource?.StartActivity("Serialize.", ActivityKind.Producer))
-        {
-            blob = SerializerFactory.Serialize<TValue>(value);
-        }
-
-        activity?.SetTag("cacheKey", key);
-
-        if (null != DistributeCache)
-        {
-            await DistributeCache.SetAsync(key, blob, DefaultOption, cancellation).ConfigureAwait(false);
-        }
-    }
+    /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
+    public Task PutAsync<TValue>(string key, TValue value, CancellationToken cancellation = default) => PutCoreAsync(key, value, DefaultOption, cancellation);
 
     /// <summary>Serializes the value and stores it with an absolute or a sliding expiration.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
     /// <param name="timeout">The validity period of the value.</param>
-    /// <param name="value">The value to store; it cannot be <see langword="null"/>.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is stored.</param>
     /// <param name="isSlided"><see langword="true"/> to use a sliding expiration (the period restarts each time the value is read); <see langword="false"/> for an absolute expiration relative to now.</param>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
-    public void Put<TValue>(string key, TimeSpan timeout, TValue value, bool isSlided = false)
-    {
-        CheckIfInitialized();
-
-        if (value == null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
-
-        byte[] blob = [];
-
-        using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
-        using (var serializerActivity = _activitySource?.StartActivity("Serialize.", ActivityKind.Producer))
-        {
-            blob = SerializerFactory.Serialize<TValue>(value);
-        }
-
-        var dceo = new DistributedCacheEntryOptions();
-        if (isSlided)
-        {
-            dceo.SetSlidingExpiration(timeout);
-        }
-        else
-        {
-            dceo.SetAbsoluteExpiration(timeout);
-        }
-
-        activity?.SetTag("cacheKey", key);
-
-        DistributeCache?.Set(key, blob, dceo);
-    }
+    /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
+    public void Put<TValue>(string key, TimeSpan timeout, TValue value, bool isSlided = false) => PutCore(key, value, CreateEntryOptions(timeout, isSlided));
 
     /// <summary>Asynchronously serializes the value and stores it with an absolute or a sliding expiration.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
     /// <param name="timeout">The validity period of the value.</param>
-    /// <param name="value">The value to store; it cannot be <see langword="null"/>.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is stored.</param>
     /// <param name="isSlided"><see langword="true"/> to use a sliding expiration (the period restarts each time the value is read); <see langword="false"/> for an absolute expiration relative to now.</param>
     /// <param name="cancellation">A token to cancel the operation.</param>
     /// <returns>A task that completes when the value is stored.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
-    public async Task PutAsync<TValue>(string key, TimeSpan timeout, TValue value, bool isSlided = false, CancellationToken cancellation = default)
+    /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
+    public Task PutAsync<TValue>(string key, TimeSpan timeout, TValue value, bool isSlided = false, CancellationToken cancellation = default) => PutCoreAsync(key, value, CreateEntryOptions(timeout, isSlided), cancellation);
+
+    private static DistributedCacheEntryOptions CreateEntryOptions(TimeSpan timeout, bool isSlided)
     {
-        CheckIfInitialized();
-
-        if (value == null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
-
-        byte[] blob = [];
-
-        using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
-
-        using (var serializerActivity = _activitySource?.StartActivity("Serialize.", ActivityKind.Producer))
-        {
-            blob = SerializerFactory.Serialize<TValue>(value);
-        }
-
         var dceo = new DistributedCacheEntryOptions();
         if (isSlided)
         {
@@ -307,12 +231,53 @@ public abstract class BaseDistributeCache<T> : ICache
             dceo.SetAbsoluteExpiration(timeout);
         }
 
+        return dceo;
+    }
+
+    private void PutCore<TValue>(string key, TValue value, DistributedCacheEntryOptions options)
+    {
+        CheckIfInitialized();
+        ArgumentNullException.ThrowIfNull(value);
+
+        using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
         activity?.SetTag("cacheKey", key);
 
-        if (null != DistributeCache)
+        try
         {
-            await DistributeCache.SetAsync(key, blob, dceo, cancellation).ConfigureAwait(false);
+            DistributeCache?.Set(key, Serialize(value), options);
         }
+        catch (Exception ex)
+        {
+            throw new DataCacheException(ex.Message, ex);
+        }
+    }
+
+    private async Task PutCoreAsync<TValue>(string key, TValue value, DistributedCacheEntryOptions options, CancellationToken cancellation)
+    {
+        CheckIfInitialized();
+        ArgumentNullException.ThrowIfNull(value);
+
+        using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
+        activity?.SetTag("cacheKey", key);
+
+        try
+        {
+            var blob = Serialize(value);
+            if (null != DistributeCache)
+            {
+                await DistributeCache.SetAsync(key, blob, options, cancellation).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new DataCacheException(ex.Message, ex);
+        }
+    }
+
+    private byte[] Serialize<TValue>(TValue value)
+    {
+        using var serializerActivity = _activitySource?.StartActivity("Serialize.", ActivityKind.Producer);
+        return SerializerFactory.Serialize<TValue>(value);
     }
 
     /// <summary>Removes the value stored for the key.</summary>
@@ -369,7 +334,7 @@ public abstract class BaseDistributeCache<T> : ICache
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
     /// <param name="value">The value, or the default of <typeparamref name="TValue"/> when it is not found or an error occurred.</param>
-    /// <returns><see langword="true"/> when a non-null value was read; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> when the key exists and a non-null value was read; otherwise <see langword="false"/>.</returns>
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     public bool TryGetValue<TValue>(string key, out TValue? value)
     {
@@ -377,8 +342,7 @@ public abstract class BaseDistributeCache<T> : ICache
 
         try
         {
-            value = Get<TValue>(key);
-            return null != value;
+            return TryRead(key, out value) && value is not null;
         }
         catch (Exception)
         {

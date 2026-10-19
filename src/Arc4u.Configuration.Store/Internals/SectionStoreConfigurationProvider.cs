@@ -86,10 +86,11 @@ sealed class SectionStoreConfigurationProvider : ConfigurationProvider
             using var scope = _serviceScopeFactory.CreateScope();
             var sectionStore = scope.ServiceProvider.GetRequiredService<ISectionStore>();
             var existingSections = sectionStore.GetAll();
-            // this might be null if someone resetted the database
+            // The store is empty if someone reset it: re-seed it and read it back, so this poll publishes the initial data instead of an empty set.
             if (existingSections.Count == 0)
             {
                 InitializeSectionStore(sectionStore, existingSections);
+                existingSections = sectionStore.GetAll();
             }
 
             foreach (var entity in existingSections)

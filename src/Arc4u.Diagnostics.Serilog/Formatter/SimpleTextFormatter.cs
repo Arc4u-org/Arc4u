@@ -18,11 +18,8 @@ public class SimpleTextFormatter : ITextFormatter
         MessageFormatter = new MessageTemplateTextFormatter("{Message}");
         PropertyFormatter = new JsonPropertiesFormatter();
 
-        MessageCategoryMap = Enum.GetValues<MessageCategory>().ToDictionary(x => x, x => x.ToString());
         MessageLogLevelMap = Enum.GetValues<LogEventLevel>().ToDictionary(x => x, x => x.ToMessageType().ToString());
     }
-    private Dictionary<MessageCategory, string> MessageCategoryMap { get; }
-
     private Dictionary<LogEventLevel, string> MessageLogLevelMap { get; }
 
     private MessageTemplateTextFormatter MessageFormatter { get; set; }
@@ -49,7 +46,7 @@ public class SimpleTextFormatter : ITextFormatter
             output.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3} {4} {5} {6} {7} - {8} - {9} - {10}",
                                            logEvent.Timestamp.ToString("dd/MM/yyyy HH:mm:ss,fff", CultureInfo.InvariantCulture).PadRight(24),
                                            MessageLogLevelMap[logEvent.Level].PadRight(13),
-                                           MessageCategoryMap[Category].PadRight(14),
+                                           MessageCategoryRegistry.GetName(Category).PadRight(14),
                                            Identity.PadRight(15),
                                            ProcessId.ToString(CultureInfo.InvariantCulture).PadRight(6),
                                            ThreadId.ToString(CultureInfo.InvariantCulture).PadRight(6),

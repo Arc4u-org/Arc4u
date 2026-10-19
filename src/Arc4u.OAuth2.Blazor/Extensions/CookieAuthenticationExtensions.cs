@@ -67,6 +67,8 @@ public static class CookieAuthenticationExtensions
                                                               string sectionKey,
                                                               AuthenticationCookieSettingsOption authenticationCookieSettingsOption)
     {
+        services.AddTokenProvidersSignOut();
+
         // Register the settings for the cookie client token provider.
         void SettingsFiller(SimpleKeyValueSettings keyOptions)
         {
@@ -118,14 +120,14 @@ public static class CookieAuthenticationExtensions
     /// <summary>Builds and validates the <see cref="AuthenticationCookieSettingsOption"/> from a configuration section.</summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration.</param>
-    /// <param name="sectionName">The section holding the options. The default of this method is <c>Authentication:OAuth.Settings</c>, which differs from the <c>Authentication:OAuth2.Settings</c> default of <c>AddAuthenticationCookie</c>.</param>
+    /// <param name="sectionName">The section holding the options. The default is <c>Authentication:OAuth2.Settings</c>, as for <c>AddAuthenticationCookie</c>.</param>
     /// <returns>The validated options.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="sectionName"/> is empty or <paramref name="configuration"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">The section does not exist.</exception>
     /// <exception cref="MissingFieldException">The client name, provider id, token request url or base uri is empty.</exception>
     public static AuthenticationCookieSettingsOption ReadAuthenticationCookieSettingsOption(this IServiceCollection services,
                                                                                                  IConfiguration configuration,
-                                                                                                 string sectionName = "Authentication:OAuth.Settings")
+                                                                                                 string sectionName = "Authentication:OAuth2.Settings")
     {
         if (string.IsNullOrWhiteSpace(sectionName))
         {

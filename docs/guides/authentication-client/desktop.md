@@ -12,10 +12,8 @@ caches the tokens, and an `HttpClient` handler.
 
 ## MSAL status
 
-Arc4u 9 does not ship an MSAL (Microsoft Authentication Library) package. The project that
-wraps MSAL (package ID `Arc4u.OAuth2.Msal`, folder `src/Arc4u.OAuth.Msal`) still targets
-`net8.0` only, is not part of the Arc4u 9 solution, and is not published for 9.x. The 9.0
-roadmap ([#129](https://github.com/Arc4u-org/Arc4u/issues/129)) drops MSAL support and adds
+Arc4u 9 does not ship an MSAL (Microsoft Authentication Library) package: the project that
+wrapped MSAL (package ID `Arc4u.OAuth2.Msal`) is removed. The 9.0 roadmap ([#129](https://github.com/Arc4u-org/Arc4u/issues/129)) drops MSAL support and adds
 IdentityModel for WPF and MAUI apps instead: that is `Arc4u.OAuth2.Client.Authentication`.
 See [MSAL status](../../migration/8x-to-9.md#msal-status) in the migration guide and the
 [package support](../package-support.md) page.
@@ -74,6 +72,11 @@ whose full path is in the `OidcClientIdSettingsSectionPath` key of that section,
 | `Authentication:CallbackPath` | `string` | `/` | Redirect URI registered for the app. |
 | `Authentication:PostLogoutRedirectUri` | `string` | `/` | Redirect URI after sign-out. |
 | `Authentication:LoadProfile` | `bool` | `false` | Loads the claims of the user info endpoint. |
+| `Authentication:ForceRefreshTimeoutTimeSpan` | `TimeSpan` | `00:05:00` | The access token is renewed with the refresh token once it expires in less than this value. |
+| `Authentication:RefreshTokenLifetime` | `TimeSpan` | `90.00:00:00` | Assumed lifetime of a refresh token. Older than that, the user logs in again. Set it to the lifetime configured in the identity provider. |
+| `Authentication:ClockSkew` | `TimeSpan` | `00:05:00` | Tolerated clock difference when the tokens are validated. |
+| `Authentication:LoginTimeout` | `TimeSpan` | `00:05:00` | Longest time an interactive login (or the logout of a sign-out) can take in the browser. The token calls wait for the login in progress; a call that waits longer fails, and a login or logout that does not complete in time is cancelled. |
+| `Authentication:SecureCacheTimeout` | `TimeSpan` | `00:00:30` | Longest time a read, write or removal of the tokens in the secure cache can take during a sign-out or a token write. |
 
 `Application.Configuration` is read by `AddApplicationConfig` in the code below (see
 [Configuration](../configuration/index.md)). HTTPS is required for the metadata, except when the
@@ -81,12 +84,14 @@ authority is `localhost`. The `Authentication` section also
 takes the claims settings of the server authentication (`ClaimsIdentifier`, `DomainsMapping`,
 `ClaimsMiddleWare:ClaimsFiller`); see [Server authentication](../authentication-server/index.md).
 
+The extra parameters of `Authentication:OidcClient.Settings:AuthorizationEndpoint` are added to the
+authorize request (in the browser), those of `Authentication:OidcClient.Settings:TokenEndpoint` to
+the token requests (code exchange and refresh).
+
 > [!NOTE]
-> `ForceRefreshTimeoutTimeSpan`, `RefreshTokenLifetime`, `NameClaimType`, `RoleClaimType` and
-> `ValidateAuthority` are bound but not used (known issue): the access token is refreshed only
-> once expired, and the refresh token is assumed valid for 90 days. `ClockSkew` is not copied
-> from the configuration: it stays at 5 minutes unless you use the overload that takes an
-> `Action<OidcClientAuthenticationOptions>`.
+> Since 9.0, the client authentication has no `NameClaimType`, `RoleClaimType` or
+> `ValidateAuthority`: they were never used. The principal of the client is built by the
+> `AppPrincipalFactory`. Remove them from your configuration and code.
 
 ## Register the services
 
@@ -105,7 +110,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -121,7 +125,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler<InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("OidcClient")));
+        "OidcClient"));
 
 using var host = builder.Build();
 ```
@@ -131,7 +135,8 @@ environment name and logging name of `Application.Configuration`.
 
 The first call through the handler signs the user in: <xref:Arc4u.OAuth2.Client.Authentication.TokenProvider.OidcClientIdentityModelTokenProvider>
 returns the cached access token while it is valid, redeems the refresh token when the access token
-is expired, and opens the browser when there is no valid refresh token. The tokens are kept in
+expires in less than `ForceRefreshTimeoutTimeSpan`, and opens the browser when there is no valid
+refresh token or the authority rejects it. The tokens are kept in
 the `ISecureCache`.
 
 > [!CAUTION]
@@ -146,18 +151,19 @@ the `ISecureCache`.
 
 The handler (<xref:Arc4u.OAuth2.Client.Authentication.Token.JwtHttpHandler`1>) needs the
 `IApplicationContext` when it is created, and throws `ConfigurationException` without it. It uses
-the token type as the scheme and, when there is a principal, adds a `culture` header and an
-`activityid` header (when the context has an activity ID). Its constructor that takes a settings
-name resolves a keyed `IKeyValueSettings`, which `AddOidcClientAuthentication` does not register:
-pass the settings as above.
+the token type as the scheme and, when there is a principal, adds a `culture` header. The trace
+context travels in the standard W3C `traceparent` header that `HttpClient` adds. Its constructor that takes a settings
+name (for example `OidcClient`) resolves the named `SimpleKeyValueSettings` options registered by
+`AddOidcClientAuthentication` (or any `services.Configure<SimpleKeyValueSettings>(name, ...)`).
 
 ## Build the principal
 
 <xref:Arc4u.OAuth2.Client.Security.Principal.AppPrincipalFactory> builds the `AppPrincipal` of the
 user from the claims of the access token and of the claims filler, caches the claims in the
 `ISecureCache` (to work offline), and sets the principal in the `IApplicationContext`. Call
-`CreatePrincipalAsync(settings)` with the `OidcClient` settings at startup, and
-`SignOutUserAsync(settings, cancellationToken)` to sign out. It needs an `INetworkInformation`
+`CreatePrincipalAsync(settings)` with the `OidcClient` settings (or `CreatePrincipalAsync("OidcClient")`)
+at startup, and `SignOutUserAsync(settings, cancellationToken)` to sign out. The overloads without
+settings use the settings named `OAuth2`, resolved like the handler does. It needs an `INetworkInformation`
 (`AlwaysConnected` when the app has no offline mode) and an `ICacheKeyGenerator`.
 
 ## Sign in with a user name and password
@@ -175,18 +181,19 @@ multi-factor authentication.
 
 ## Troubleshooting
 
-### The call fails with an exception from the token provider
+### The API returns 401 after the sign-in window was closed
 
-`OidcClientIdentityModelTokenProvider` throws when the refresh of the access token fails
-(`Exception` with the error of the authority) and when the sign-in fails or is cancelled
-(`AccessViolationException`). The desktop `JwtHttpHandler<T>` does not catch them: the call to the
-API fails with the same exception. Catch it where you call the API, and sign the user in again.
+When the authority rejects the refresh token, `OidcClientIdentityModelTokenProvider` drops the
+tokens and signs the user in again through the browser. When the sign-in fails or is cancelled, it
+returns a failed result: the desktop `JwtHttpHandler<T>` logs the error in the `Technical` category
+and sends the request without a token, so the API answers 401. Sign the user in again and retry.
 
 ### ConfigurationException: No settings found for OidcClient
 
-You used the constructor of `JwtHttpHandler<T>` that takes a settings name. Pass the settings
-themselves, as in [Register the services](#register-the-services). For the same reason,
-`AppPrincipalFactory.CreatePrincipalAsync("OidcClient")` returns a failed result: pass the settings.
+No named `SimpleKeyValueSettings` options are registered with that name (a keyed
+`IKeyValueSettings` is not used). Check the `settingsKey` given to `AddOidcClientAuthentication` (the
+default is `OidcClient`). For the same reason, `AppPrincipalFactory.CreatePrincipalAsync(name)`
+returns a failed result.
 
 ## See also
 

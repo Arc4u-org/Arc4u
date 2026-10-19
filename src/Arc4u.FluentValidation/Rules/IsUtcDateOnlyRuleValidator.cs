@@ -23,4 +23,9 @@ internal sealed class IsUtcDateOnlyRuleValidator<T, TProperty> : PropertyValidat
         return dt.HasValue && dt.Value.TimeOfDay.Equals(TimeSpan.Zero);
 
     }
+
+    protected override string GetDefaultMessageTemplate(string errorCode)
+    {
+        return Localized(errorCode, Name);
+    }
 }

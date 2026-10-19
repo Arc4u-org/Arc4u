@@ -9,6 +9,27 @@ using Internals;
 public sealed class SectionEntity
 {
     /// <summary>
+    /// Creates an empty entity. Used by the configuration provider and by object mappers such as EF Core.
+    /// </summary>
+    public SectionEntity()
+    {
+    }
+
+    /// <summary>
+    /// Creates an entity from its persisted representation, typically in a custom <see cref="ISectionStore"/> that reads its own storage.
+    /// </summary>
+    /// <param name="key">The name of the section.</param>
+    /// <param name="value">The persisted Json representation of the value, exactly as found in <see cref="Value"/> of an entity received in <see cref="ISectionStore.Add"/>.</param>
+    public SectionEntity(string key, string value)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(value);
+
+        Key = key;
+        Value = value;
+    }
+
+    /// <summary>
     /// The name of the section holding the value.
     /// This is determined at initialization time and cannot be changed
     /// </summary>

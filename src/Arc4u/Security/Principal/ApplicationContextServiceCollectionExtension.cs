@@ -13,6 +13,8 @@ public static class ApplicationContextServiceCollectionExtension
 {
     /// <summary>
     /// Add the default logger and properties contexted with the scoped instance application context.
+    /// To add the identity of the <see cref="IApplicationContext"/> to the entries of a logger resolved in a scope, register <see cref="DefaultLoggingProperties"/>
+    /// as <see cref="IAddPropertiesToLog"/> under the key <c>"Scoped"</c> (it is exported with that key for the Arc4u source generators).
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection, to chain calls.</returns>
@@ -23,8 +25,6 @@ public static class ApplicationContextServiceCollectionExtension
     /// </example>
     public static IServiceCollection AddApplicationContext(this IServiceCollection services)
     {
-        services.TryAddScoped<IAddPropertiesToLog, DefaultLoggingProperties>();
-
         // register the logger infrastructure as Scoped.
         services.AddILogger();
         services.TryAddScoped<IApplicationContext, ApplicationInstanceContext>();

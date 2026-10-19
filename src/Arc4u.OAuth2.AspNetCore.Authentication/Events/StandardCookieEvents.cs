@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Claims;
 using Arc4u.Diagnostics;
 using Arc4u.OAuth2.Options;
 using Arc4u.OAuth2.Token;
@@ -14,6 +15,7 @@ namespace Arc4u.OAuth2.Events
     /// <summary>
     /// The default <see cref="CookieAuthenticationEvents"/> of the OpenID Connect authentication. On each request it loads the access and refresh tokens stored in the cookie ticket into the scoped
     /// <see cref="TokenRefreshInfo"/> and, when the access token expires in less than <see cref="OidcAuthenticationOptions.ForceRefreshTimeoutTimeSpan"/>, refreshes it and renews the cookie.
+    /// The access token is also stored in the <see cref="ClaimsIdentity.BootstrapContext"/> of the identity, like the bearer authentication does.
     /// The principal is rejected and the user signed out when the cookie is expired or the token cannot be refreshed.
     /// </summary>
     public class StandardCookieEvents : CookieAuthenticationEvents
@@ -113,8 +115,14 @@ namespace Arc4u.OAuth2.Events
 
                     cookieCtx.RejectPrincipal();
                     await cookieCtx.HttpContext.SignOutAsync().ConfigureAwait(false);
+                    return;
                 }
 
+            }
+
+            if (cookieCtx.Principal?.Identity is ClaimsIdentity identity && !string.IsNullOrWhiteSpace(tokensInfo.AccessToken?.Token))
+            {
+                identity.BootstrapContext = tokensInfo.AccessToken.Token;
             }
         }
     }

@@ -101,4 +101,29 @@ public class SettingsOptionTests
         sut.CurrentValue.Environment.LoggingName.Should().Be("Arc4u.UnitTest");
         sut.CurrentValue.Environment.TimeZone.Should().Be("Romance Standard Time");
     }
+
+    [Fact]
+    public void ApplicationConfigFromMissingSectionShouldThrowConfigurationException()
+    {
+        IServiceCollection services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
+
+        var act = () => services.AddApplicationConfig(configuration);
+
+        act.Should().Throw<ConfigurationException>().WithMessage("*Application.Configuration*");
+    }
+
+    [Fact]
+    public void ApplicationConfigWithEmptyValuesShouldListEveryMissingValue()
+    {
+        IServiceCollection services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Application.Configuration:ApplicationName"] = "Arc4u.UnitTest" })
+            .Build();
+
+        var act = () => services.AddApplicationConfig(configuration);
+
+        act.Should().Throw<ConfigurationException>()
+           .Where(e => !e.Message.Contains("Application name") && e.Message.Contains("initialization") && e.Message.Contains("time zone"));
+    }
 }

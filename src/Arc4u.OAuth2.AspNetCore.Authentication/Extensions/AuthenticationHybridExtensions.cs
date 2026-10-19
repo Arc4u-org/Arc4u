@@ -2,6 +2,7 @@
 using Arc4u.OAuth2.Events;
 using Arc4u.OAuth2.Middleware;
 using Arc4u.OAuth2.Options;
+using Arc4u.OAuth2.Token;
 using Arc4u.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -30,6 +31,8 @@ namespace Arc4u.OAuth2.Extensions
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(authenticationOptions);
 
+            services.AddTokenProvidersSignOut();
+
             var oidcOptions = new HybridAuthenticationOptions();
             authenticationOptions(oidcOptions);
 
@@ -55,6 +58,8 @@ namespace Arc4u.OAuth2.Extensions
                 options.ClaimsIdentifierOptions = oidcOptions.ClaimsIdentifierOptions!;
                 options.NameClaimType = oidcOptions.NameClaimType;
                 options.RoleClaimType = oidcOptions.RoleClaimType;
+                options.ValidateAudience = oidcOptions.ValidateAudience;
+                options.ValidateAuthority = oidcOptions.ValidateAuthority;
             });
             var openIdOptions = ConfigureOidcServices(services, oidcOptions, out var securityKey);
             services.TryAddTransient<JwtBearerEvents, StandardBearerEvents>();
@@ -133,9 +138,6 @@ namespace Arc4u.OAuth2.Extensions
         ///   }
         /// }
         /// </code>
-        /// <para>
-        /// Known issue: the <c>ValidateAudience</c> and <c>ValidateAuthority</c> values of <see cref="OidcAuthenticationOptions"/> are not copied by the hybrid registrations and stay <see langword="true"/>.
-        /// </para>
         /// </remarks>
         /// <example>
         /// <code language="csharp">

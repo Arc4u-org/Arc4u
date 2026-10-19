@@ -6,7 +6,7 @@ public class LogMessage
     /// <summary>Gets or sets the time at which the message was logged.</summary>
     public DateTimeOffset Timestamp { get; set; }
 
-    /// <summary>Gets or sets the name of the Arc4u <see cref="Arc4u.Diagnostics.MessageCategory"/> (Technical, Business or Monitoring).</summary>
+    /// <summary>Gets or sets the name of the Arc4u <see cref="Arc4u.Diagnostics.MessageCategory"/> (Technical, Business, Monitoring or a name registered with <see cref="Arc4u.Diagnostics.MessageCategoryRegistry"/>).</summary>
     public string MessageCategory { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the rendered message text.</summary>

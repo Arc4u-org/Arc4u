@@ -18,7 +18,7 @@ Arc4u replaces the `ILogger<T>` registration with a wrapper that adds these prop
 ```mermaid
 flowchart LR
     App["Your code<br/>ILogger#lt;T#gt;.Technical().Add(...).LogInformation(...)"] --> Wrapper["Arc4u logger wrapper<br/>adds category and standard properties"]
-    Provider["IAddPropertiesToLog<br/>(user, activity id, ...)"] --> Wrapper
+    Provider["IAddPropertiesToLog<br/>(user, tenant, ...)"] --> Wrapper
     Wrapper --> Factory["ILoggerFactory"]
     Factory --> Serilog["Serilog<br/>(console, Seq, file, ...)"]
     Factory --> Otel["OpenTelemetry logging"]
@@ -95,21 +95,17 @@ app.Run();
 `AddILogger` (namespace `Arc4u.Dependency`) removes the existing `ILogger<>` registration and registers:
 
 - `ILogger<T>` as a transient `LoggerWrapper<T>`;
-- `IScopedLogger<T>` as a scoped `ScopedLoggerWrapper<T>`, for code that wants the properties shared during a scope such as an HTTP request;
 - the non-generic `ILogger` as a transient `ILogger<DefaultLogger>`, for [static classes](#log-from-a-static-class);
-- a `NullLoggerProperties` under the keys `"Scoped"` and `"Transient"` (see [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry)), unless you registered your own.
+- a `NullLoggerProperties` under the keys `"Scoped"` and `"Transient"` (see [Add the user to every entry](#add-the-user-to-every-entry)), unless you registered your own.
 
-Calling `GET /orders/7` writes these two lines (the `RequestId`, `RequestPath` and `ConnectionId` come from the ASP.NET Core logging scope; the long padding of the fixed columns is shortened here):
+Calling `GET /orders/7` writes these two lines (the `RequestId`, `RequestPath` and `ConnectionId` come from the ASP.NET Core logging scope, and the 32-character `ActivityId` is the trace id of the request; the long padding of the fixed columns is shortened here):
 
 ```text
-29/09/2026 14:53:26,030  Information   Technical   27153  7   Program - <Main>$ - Reading order 7 - {"OrderId":7,"RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
-29/09/2026 14:53:26,044  Information   Technical   27153  7   Program - <Main>$ - Order shipped - {"OrderId":7,"Customer":"contoso","RequestId":"0HNOU52JGMDCV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNOU52JGMDCV"}
+17/10/2026 10:27:15,904  Information   Technical   24918  10   6e0460a043e459729ef37849c797cd9d   Program - <Main>$ - Reading order 7 - {"OrderId":7,"RequestId":"0HNPC51POMDHV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNPC51POMDHV"}
+17/10/2026 10:27:15,912  Information   Business    24918  10   6e0460a043e459729ef37849c797cd9d   Program - <Main>$ - Order shipped - {"Customer":"contoso","RequestId":"0HNPC51POMDHV:00000001","RequestPath":"/orders/7","ConnectionId":"0HNPC51POMDHV"}
 ```
 
-Two things in this output are known issues, described in [Troubleshooting](#troubleshooting):
-
-- the second entry is a Business entry but the text formatter prints `Technical` (the category is not read correctly by the Arc4u Serilog formatters and stores, although the entry itself carries the right value);
-- `OrderId`, which was only a template argument of the first entry, is written again on the second one.
+Each property belongs to one entry: `OrderId` (a template argument of the first entry) and `Customer` (added to the second) are not written on any other entry. See [Properties belong to one entry](#properties-belong-to-one-entry).
 
 ### Properties written on every entry
 
@@ -117,12 +113,13 @@ The logger adds these properties to each entry (the names are constants of <xref
 
 | Property | Value |
 |---|---|
-| `Category` | `Technical`, `Business` or `Monitoring` (<xref:Arc4u.Diagnostics.MessageCategory>), written as a string. |
+| `Category` | `Technical`, `Business`, `Monitoring` (<xref:Arc4u.Diagnostics.MessageCategory>) or the name of [your own category](#add-your-own-category), written as a string. |
 | `Application` | The `LoggingName` described above. |
 | `SourceContext` | Full name of the class that logs (the `T` of `ILogger<T>`, or the type you pass for a non-generic `ILogger`). |
 | `Method` | Name of the calling member, filled in by the compiler (`[CallerMemberName]`). |
 | `Pid`, `Tid` | Id of the process and of the managed thread. |
-| `Identity`, `ActivityId` | Only when an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> provider supplies them. |
+| `ActivityId` | The `TraceId` of `System.Diagnostics.Activity.Current`, the same in every service of a distributed trace. Missing when there is no current activity. |
+| `Identity` | Only when an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> provider supplies it. |
 | `Stacktrace` | Only after `AddStackTrace()`. |
 
 ## Common scenarios
@@ -171,12 +168,45 @@ A `null` or white-space key throws `ArgumentNullException`, and a reserved key t
 
 The values of the message template (`{Duration}` above) are also written as properties, as with any structured logger. What `Add` gives you is a property that is not in the message text.
 
-> [!WARNING]
-> Known issue: properties are not cleared after an entry is written. Read [Properties added with Add stay on later entries](#properties-added-with-add-stay-on-later-entries) before you add personal data.
+> [!NOTE]
+> The properties are written with the next entry only. See [Properties belong to one entry](#properties-belong-to-one-entry).
+
+### Add your own category
+
+A category is a `short` flag: `Technical` is 1, `Business` 2 and `Monitoring` 4. Your application can use the other bits (8, 16, ... up to 16384) for its own categories. Give the value a name with <xref:Arc4u.Diagnostics.MessageCategoryRegistry>, and write an extension method that calls `Category(...)`:
+
+```csharp
+using System.Runtime.CompilerServices;
+using Arc4u.Diagnostics;
+using Microsoft.Extensions.Logging;
+
+public static class SecurityLoggerExtensions
+{
+    public const MessageCategory SecurityCategory = (MessageCategory)8;
+
+    static SecurityLoggerExtensions() => MessageCategoryRegistry.Register("Security", SecurityCategory);
+
+    public static ILoggerWrapper<T> Security<T>(this ILogger<T> logger, [CallerMemberName] string methodName = "") =>
+        logger.Category(SecurityCategory, methodName);
+}
+```
+
+`logger.Security().Add("User", user).LogWarning("Access denied")` then writes `Category` with the value `Security`, and works with everything that handles the predefined categories:
+
+- `WriteTo.CategoryFilter(MessageCategory.Business | SecurityLoggerExtensions.SecurityCategory, sink)` forwards it (see [Serilog](serilog.md#filter-by-category)), and so does the expression filter `Category = 'Security'`.
+- `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB` show `Security`.
+
+Keep these rules in mind:
+
+- Forward `methodName` to `Category(...)`, otherwise the `Method` property is the name of your extension method.
+- Register the name before the first entry is written. The static constructor above runs the first time `Security()` is called, which is early enough. A process that only reads the entries (a log viewer reading the RealmDB store) must register the name too; otherwise it reads the category as `Technical`, or as its number when it comes from the RealmDB store.
+- `Register` throws an `ArgumentException` for a predefined value or name, a numeric name, a value that is not positive, or a name or value already registered with another value or name. Registering the same name and value again does nothing.
+- Without registration, `Category((MessageCategory)8)` still works, and the category is written as `8`.
+- For a non-generic `ILogger`, use `Category(category, typeof(MyClass))`.
 
 ### Log from a static class
 
-A static class cannot take an `ILogger<T>`. Inject or resolve the non-generic `ILogger`, and pass the type that should appear as the `SourceContext`. The overloads on `ILogger` exist for the Technical and Monitoring categories only. `Technical<T>()` is the generic form of `Technical(typeof(T))`; C# does not accept a static class as `T`, which is why the sample uses `typeof`.
+A static class cannot take an `ILogger<T>`. Inject or resolve the non-generic `ILogger`, and pass the type that should appear as the `SourceContext`. The overloads on `ILogger` exist for the Technical and Monitoring categories, plus `Category(category, type)` for any other. `Technical<T>()` is the generic form of `Technical(typeof(T))`; C# does not accept a static class as `T`, which is why the sample uses `typeof`.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -193,7 +223,7 @@ public static class Helpers
 
 ### Log an exception
 
-`LogException` is an extension of `ILogger` (namespace `Arc4u.Diagnostics`). It writes an Error entry with the message `Exception: {Message}` (see [Event ids are not forwarded](#event-ids-are-not-forwarded)). Use the standard `LogError(exception, ...)` when you need your own message.
+`LogException` is an extension of `ILogger` (namespace `Arc4u.Diagnostics`). It writes an Error entry with the message `Exception: {Message}`. Use the standard `LogError(exception, ...)` when you need your own message.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -218,7 +248,7 @@ When the exception is an `AggregateException`, the wrapper also writes one entry
 
 ### Log with high-performance messages
 
-The [`LoggerMessage`](https://learn.microsoft.com/dotnet/core/extensions/logger-message-generator) source generator works on top of the fluent API: define the message as an extension method of `ILogger` and call it at the end of the chain. Arc4u uses this pattern for its own messages (for example `LogMonitoring`). The `EventId` you declare is not forwarded to the logging providers, see [Event ids are not forwarded](#event-ids-are-not-forwarded).
+The [`LoggerMessage`](https://learn.microsoft.com/dotnet/core/extensions/logger-message-generator) source generator works on top of the fluent API: define the message as an extension method of `ILogger` and call it at the end of the chain. Arc4u uses this pattern for its own messages (for example `LogMonitoring`). The `EventId` you declare is forwarded to the logging providers.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -235,16 +265,18 @@ public class Shipper(ILogger<Shipper> logger)
 }
 ```
 
-### Add the user and activity id to every entry
+### Add the user to every entry
 
-The wrapper asks an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> for extra properties each time it writes an entry. It resolves that service by key:
+The wrapper asks an <xref:Arc4u.Diagnostics.IAddPropertiesToLog> for extra properties each time it writes an entry. When the logger is created, it picks the provider by key, depending on where it is resolved:
 
-| Logger | Key |
-|---|---|
-| `ILogger<T>` (transient wrapper) | `"Transient"` |
-| `IScopedLogger<T>` (scoped wrapper) | `"Scoped"` |
+| The logger is resolved | Key | Examples |
+|---|---|---|
+| In a scope | `"Scoped"` | A controller, a minimal API handler, a gRPC service, a scoped or transient service of a request, the timing middlewares, a `CreateScope()` in a background job. |
+| From the root | `"Transient"` | A singleton (a cache, a hosted service such as `SystemResources`) and its dependencies, even when the singleton is first requested during a request. |
 
-`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` and no `ActivityId` until you register a provider**. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user name and `ActivityID` from the scoped `IApplicationContext`. It is exported with the key `"Scoped"`; `AddApplicationContext()` registers it without a key, which the wrappers do not use. Register it with the key yourself (or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes` when you use the [Arc4u source generators](../dependency-injection/index.md)), and inject `IScopedLogger<T>`. Call `AddApplicationContext()` (namespace `Arc4u.Security.Principal`, package `Arc4u`), which registers `IApplicationContext` and calls `AddILogger()` for you; with `AddILogger()` alone the provider cannot be created and the first resolve of the logger throws an `InvalidOperationException`.
+`AddILogger` registers a `NullLoggerProperties` (no property) under both keys, so **entries have no `Identity` until you register a provider**.
+
+A `"Scoped"` provider can depend on scoped services. The `Arc4u` package contains `DefaultLoggingProperties`, which reads the user from the scoped `IApplicationContext`. Register it under `"Scoped"`, after `AddApplicationContext()` (namespace `Arc4u.Security.Principal`, package `Arc4u`), which registers `IApplicationContext` and calls `AddILogger()`. With the [Arc4u source generators](../dependency-injection/index.md), you can instead list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes`: it is exported with the key `"Scoped"`.
 
 ```csharp
 using Arc4u.Diagnostics;
@@ -259,7 +291,7 @@ public static class LoggingRegistration
     }
 }
 
-public class Handler(IScopedLogger<Handler> logger)
+public class Handler(ILogger<Handler> logger)
 {
     public void Handle() => logger.Technical().LogInformation("Handled");
 }
@@ -267,8 +299,9 @@ public class Handler(IScopedLogger<Handler> logger)
 
 `DefaultLoggingProperties` only returns properties when the application context has data:
 
-- `Identity` is the user name of the `IApplicationContext.Principal` (its profile name, or the identity name when there is no profile). The principal is set by Arc4u authentication (see the [server authentication guide](../authentication-server/index.md)); without one, the provider returns nothing.
-- `ActivityId` is the `IApplicationContext.ActivityID`, an empty string unless something sets it. In the Arc4u packages only the `AuthorizationInterceptor` of `Arc4u.gRPC` does; set it yourself if you want it in the logs.
+- `Identity` is the email of the profile of the `IApplicationContext.Principal` (the `email` claim, see [Claims and authorization](../authentication-server/claims-and-authorization.md)), or the name of its identity when the identity provider gives no email. An email is personal data: remove it from the sinks that do not need it with the [anonymizer](serilog.md#hide-the-user-identity). The principal is set by Arc4u authentication (see the [server authentication guide](../authentication-server/index.md)); without one, the provider returns nothing.
+
+`ActivityId` does not come from a provider: the wrapper writes the `TraceId` of the current `System.Diagnostics.Activity` itself. ASP.NET Core and gRPC start an activity for each request and propagate it to the services you call through the W3C `traceparent` header.
 
 To add your own properties, implement `IAddPropertiesToLog`. Values that are `null` are ignored, and the keys of `LoggingConstants` such as `Identity` and `ActivityId` are the ones the Arc4u formatters read.
 
@@ -295,14 +328,33 @@ public static class TenantRegistration
 }
 ```
 
-With that provider, an entry written by an `IScopedLogger<T>` looks like this:
+With that provider, an entry written by a logger resolved in a scope looks like this:
 
 ```text
 29/09/2026 14:53:47,920  Information   Technical  alice  28853  1   Program - <Main>$ - hello - {"Tenant":"contoso"}
 ```
 
-> [!NOTE]
-> A transient `ILogger<T>` uses the `"Transient"` key, so it does not get the properties of a `"Scoped"` provider. You can register a keyed transient provider for it, but only one without scoped dependencies (such as `TenantProperties`). `DefaultLoggingProperties` depends on the scoped `IApplicationContext`: registered as `"Transient"`, the host fails to start in the Development environment (`Cannot consume scoped service 'Arc4u.Security.Principal.IApplicationContext' from singleton ...`, also for the `SystemResources` hosted service).
+#### Loggers of singletons in an ASP.NET Core host
+
+A `"Transient"` provider must not depend on scoped services: a singleton's logger is created once from the root, so `DefaultLoggingProperties` registered as `"Transient"` makes the host fail to start in the Development environment (`Cannot consume scoped service 'Arc4u.Security.Principal.IApplicationContext' from singleton ...`), and in Production every singleton would log the principal of the first request.
+
+In an ASP.NET Core host, `AddHttpContextLoggingProperties()` (namespace `Arc4u.OAuth2.AspNetCore.Diagnostics`, package `Arc4u.OAuth2.AspNetCore`) registers `HttpContextLoggingProperties` under `"Transient"`. It has no scoped dependency: each time an entry is written, it asks the `"Scoped"` provider of the current HTTP request (`HttpContext.RequestServices`) for its properties. A singleton's logger then writes the identity of the request it runs in. Outside a request (a background service, startup), it adds nothing.
+
+It only registers `HttpContextLoggingProperties` when no provider is registered under `"Transient"` yet. `AddILogger()`, which `AddApplicationContext()` calls, registers a `NullLoggerProperties` under that key, so **call `AddHttpContextLoggingProperties()` before `AddApplicationContext()` (or `AddILogger()`)**: called after them, it does nothing and the loggers of singletons write no `Identity`.
+
+```csharp
+using Arc4u.Diagnostics;
+using Arc4u.OAuth2.AspNetCore.Diagnostics;
+using Arc4u.Security.Principal;
+
+builder.Services.AddHttpContextLoggingProperties();
+builder.Services.AddApplicationContext();
+builder.Services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped");
+```
+
+The Arc4u authentication extensions (`AddJwtAuthentication`, `AddOidcAuthentication`, `AddHybridAuthentication`) do not register it: call `AddHttpContextLoggingProperties()` yourself, before `AddApplicationContext()`.
+
+A provider you registered under `"Transient"` before is kept; it must not have scoped dependencies (such as `TenantProperties` above).
 
 ### Log CPU and memory usage
 
@@ -334,9 +386,9 @@ Send these entries to their own sink, or exclude them from the console, with the
 
 Arc4u.Diagnostics has no dependency on OpenTelemetry. The two work side by side through standard .NET mechanisms, and this is what the code supports:
 
-- **Logs.** The wrapper hands the properties to the `ILoggerFactory` as the log state. An OpenTelemetry logging provider (`builder.Logging.AddOpenTelemetry(...)`) therefore receives `Category`, `Application`, `SourceContext`, `Method`, `Pid`, `Tid` and your `Add` properties as log record attributes, and OpenTelemetry adds the `TraceId` and `SpanId` of the current activity itself.
+- **Logs.** The wrapper hands the properties to the `ILoggerFactory` as the log state. An OpenTelemetry logging provider (`builder.Logging.AddOpenTelemetry(...)`) therefore receives `Category`, `Application`, `SourceContext`, `Method`, `Pid`, `Tid`, `ActivityId` (when there is a current activity) and your `Add` properties as log record attributes, and OpenTelemetry adds the `TraceId` and `SpanId` of the current activity itself.
 - **Traces.** Arc4u components that trace their work (token providers, principal creation, middleware) start activities on an `ActivitySource` named `Arc4u`. <xref:Arc4u.Diagnostics.IActivitySourceFactory> returns that source (and any other you ask for by name and version) as a singleton, and `AddApplicationContext()` registers it. Subscribe to the source with the OpenTelemetry SDK: `WithTracing(t => t.AddSource("Arc4u"))`.
-- **Ids.** The Arc4u `ActivityId` property is the `ActivityID` of the Arc4u `IApplicationContext`, not `System.Diagnostics.Activity.Current.Id`. Use the `TraceId` of the log record to correlate with traces.
+- **Ids.** The Arc4u `ActivityId` property is the `TraceId` of the current activity, the same value as the `TraceId` OpenTelemetry adds to the log record.
 
 A log record written with this setup, as printed by the OpenTelemetry console exporter (the `OrderId` and the Arc4u properties are the attributes):
 
@@ -354,6 +406,7 @@ LogRecord.Attributes (Key:Value):
     Application: App
     Tid: 1
     Pid: 30603
+    ActivityId: e043c555c72709ccc77e2c854a69a99e
 ```
 
 The <xref:Arc4u.Diagnostics.OpenTelemetrySettings> class (`Address`, `Attributes`, `Sources`) exists in the package, but no Arc4u code reads it. Configure the OpenTelemetry SDK with its own options.
@@ -397,47 +450,21 @@ The key you passed to `Add` is one of `Application`, `Pid`, `Tid`, `Method`, `So
 
 ### Entries have no Identity or ActivityId
 
-Check, in this order: an `IAddPropertiesToLog` provider is registered under the key of the logger you use (`"Scoped"` for `IScopedLogger<T>`, `"Transient"` for `ILogger<T>`); `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal); something sets `IApplicationContext.ActivityID` (`ActivityId` is empty otherwise). See [Add the user and activity id to every entry](#add-the-user-and-activity-id-to-every-entry).
+Check, in this order: a provider such as `DefaultLoggingProperties` is registered under `"Scoped"` (`AddApplicationContext()` does not register one); for the logger of a singleton, `HttpContextLoggingProperties` is registered under `"Transient"` (`AddHttpContextLoggingProperties()` called before `AddApplicationContext()`, see [Loggers of singletons in an ASP.NET Core host](#loggers-of-singletons-in-an-aspnet-core-host)) and the entry is written during an HTTP or gRPC request; `IApplicationContext.Principal` is set (`Identity` is missing when there is no authenticated principal). `ActivityId` is missing when the entry is written outside a `System.Diagnostics.Activity` (for example in a background service that starts none). See [Add the user to every entry](#add-the-user-to-every-entry).
 
-### Properties added with Add stay on later entries
+### Properties belong to one entry
 
-Known issue. The properties you add (`Add`, `AddIf`, ...), the values of message template arguments (including the `Message` property that `LogException` writes with the exception message, which often contains data) and the `AddStackTrace()` setting are stored in the logger instance and are not cleared once the entry is written. Every later entry written by the same logger instance carries them, even when it uses another category. The lifetime of the instance follows its consumer: a transient `ILogger<T>` injected in a singleton service lives as long as the application, and an `IScopedLogger<T>` lives as long as its scope.
+`Technical()`, `Business()`, `Monitoring()` and `Category(...)` return a new logger for the entry you are writing; the injected `ILogger<T>` is never modified. The properties you add (`Add`, `AddIf`, ...), the values of the message template arguments and the `AddStackTrace()` request are written with the next entry and cleared once it is written. They never appear on a later entry, even when the `ILogger<T>` lives as long as the application (injected in a singleton) or is used by several threads at the same time.
 
-This output comes from one `ILogger<Program>` that logs three entries, only the first with `Add("Ssn", ...)` (the fixed columns are shortened):
-
-```text
-Information  Technical  Program - first - {"Ssn":"123-45-6789"}
-Information  Technical  Program - second (no Add) - {"Ssn":"123-45-6789"}
-Information  Technical  Program - third (plain ILogger call) - {"Ssn":"123-45-6789"}
-```
-
-Until this is fixed:
-
-- do not `Add` personal or secret data (names, e-mail addresses, tokens) on a logger that lives longer than the operation you log;
-- put per-call data in the message template of a short-lived logger, or clear the logger yourself before you log, as below.
+If you keep the logger returned by `Technical()` in a variable, each entry it writes starts again with no property:
 
 ```csharp
-using Arc4u.Diagnostics;
-
-public class Cleaner(ILogger<Cleaner> logger)
-{
-    public void Log()
-    {
-        var entry = logger.Technical();
-        entry.AdditionalFields.Clear();
-        entry.IncludeStackTrace = false;
-        entry.LogInformation("Starts with no property from a previous entry");
-    }
-}
+var entry = logger.Technical();
+entry.Add("OrderId", 7).LogInformation("Order read");   // OrderId = 7
+entry.LogInformation("Order processed");                // no OrderId
 ```
 
-### Event ids are not forwarded
-
-Known issue. The Arc4u logger writes every entry with event id 0: it ignores the `EventId` it receives, so the `EventId` of a `[LoggerMessage]` method, of `LogException` or of the Arc4u monitoring messages never reaches Serilog, OpenTelemetry or any other provider. Entries written by the framework itself keep their event id. Do not filter, count or alert on the event ids of entries written through the Arc4u logger; use the message template or a property instead.
-
-### The category is always Technical
-
-Known issue. The logger writes `Category` as a string (`Business`), but the Arc4u helper that reads it for `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB` expects a number and falls back to `Technical`. Sinks that read the property as it is (the Serilog Expressions filter, the JSON formatter, OpenTelemetry) see the right value. The same mismatch makes `WriteTo.CategoryFilter` forward nothing, see [Serilog](serilog.md#filter-by-category).
+Versions of 9.x before this fix kept these properties on the logger instance and wrote them on every later entry (Arc4u-org/Arc4u#273).
 
 ## See also
 

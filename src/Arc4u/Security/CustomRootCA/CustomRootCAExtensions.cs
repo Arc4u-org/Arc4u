@@ -10,21 +10,11 @@ namespace Arc4u.Security.CustomRootCA;
 
 /// <summary>
 /// Extension methods to register custom root certificate authorities (CA) that must be trusted, for example when calling a service
-/// whose certificate is signed by a private CA. Each root CA is registered as a named <see cref="CARootOption"/>.
+/// whose certificate is signed by a private CA. Each root CA is registered as a named <see cref="CARootOption"/>,
+/// and its name is added to the <see cref="CARootOptionKeys"/> of the service collection.
 /// </summary>
 public static class CustomRootCaExtensions
 {
-    static CustomRootCaExtensions()
-    {
-        CertificateOptionKeys = [];
-    }
-
-    /// <summary>
-    /// Gets the names of the <see cref="CARootOption"/> registered with <c>AddCustomRootCA</c>.
-    /// The names allow to enumerate the named options, which cannot otherwise be listed.
-    /// </summary>
-    public static List<string> CertificateOptionKeys { get; }
-
     extension(IServiceCollection services)
     {
         /// <summary>
@@ -59,7 +49,13 @@ public static class CustomRootCaExtensions
                 throw new ConfigurationException($"The certificate {name} has more than one CA source defined.");
             }
 
-            CertificateOptionKeys.Add(name);
+            services.Configure<CARootOptionKeys>(keys =>
+            {
+                if (!keys.Keys.Contains(name))
+                {
+                    keys.Keys.Add(name);
+                }
+            });
             services.Configure(name, configureOptions);
             return services;
         }

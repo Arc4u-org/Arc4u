@@ -17,7 +17,7 @@ public class SecretRijndaelOptions
     public string SecretSectionName { get; set; } = SecretRijndaelConfigurationSource.SecretSectionNameDefault;
 
     /// <summary>
-    /// The config used to decrypt => Key and IV.
+    /// The config used to decrypt => Key.
     /// </summary>
     public CypherCodecConfig? RijnDael { get; set; }
 

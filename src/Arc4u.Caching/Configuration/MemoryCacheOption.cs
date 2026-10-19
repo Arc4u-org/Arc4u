@@ -6,6 +6,8 @@ public class MemoryCacheOption
     public double CompactionPercentage { get; set; } = 0.2;
     /// <summary>Gets or sets the maximum size of the cache, in megabytes. Default is 100.</summary>
     public long SizeLimitInMB { get; set; } = 100;
+    /// <summary>Gets the maximum size of the cache, in bytes: <see cref="SizeLimitInMB"/> times 1,048,576.</summary>
+    public long SizeLimitInBytes => SizeLimitInMB * 1024 * 1024;
     /// <summary>Gets or sets the name of the <see cref="Arc4u.Serializer.IObjectSerialization"/> registered with this key to use; when empty or not found, the default serializer is used.</summary>
     public string? SerializerName { get; set; }
 }

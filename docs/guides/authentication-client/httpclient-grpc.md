@@ -33,13 +33,15 @@ the Arc4u source generator registers the exported ones (see
 ## Add the handler to an HttpClient
 
 Build a <xref:Arc4u.OAuth2.Token.JwtHttpHandler`1> with the service provider, a logger and the
-named settings, in `AddHttpMessageHandler`. The type parameter only sets the logger category.
+name of the settings, in `AddHttpMessageHandler`: the handler resolves the named
+`SimpleKeyValueSettings` options and throws `ConfigurationException` when none exist with that
+name. Another constructor takes the `IKeyValueSettings` themselves. The type parameter only sets
+the logger category.
 
 ```csharp
 // Program.cs
 using Arc4u.Configuration;
 using Arc4u.OAuth2.Token;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +51,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler<InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("Inventory")));
+        "Inventory"));
 
 var app = builder.Build();
 app.Run();
@@ -81,7 +83,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
 static JwtHttpHandler<InventoryClient> CreateHandler(IServiceProvider sp, string settingsName)
     => new(sp,
            sp.GetRequiredService<ILogger<InventoryClient>>(),
-           sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get(settingsName));
+           settingsName);
 ```
 
 A handler whose token provider sends a custom header (a remote secret with a `HeaderKey` other
@@ -95,14 +97,16 @@ For each request, <xref:Arc4u.OAuth2.Token.JwtHttpHandler`1>:
    set for the current async flow, otherwise the `HttpContext.RequestServices` of the current
    request, otherwise the service provider given to the constructor.
 2. Sends the request unchanged when no `IApplicationContext` is registered, or when the settings
-   have no `AuthenticationType` (for example when the settings name does not exist).
+   have no `AuthenticationType` (for example empty settings, given to the constructor that takes
+   the `IKeyValueSettings`).
 3. When `AuthenticationType` is not `Inject` and the current user has an identity, sends the
    request unchanged unless the settings value contains the identity's authentication type
    (case-insensitive).
 4. Sends the request unchanged when it already has an `Authorization` header.
 5. Resolves the keyed `ITokenProvider` named by `ProviderId`, and sends the request unchanged when
-   there is none, when the provider returns a failed result or when the token is expired. Settings
-   with an `AuthenticationType` but no `ProviderId` throw `KeyNotFoundException`.
+   the settings have no `ProviderId`, when no provider is registered under it, when the provider
+   returns a failed result or no token (<xref:Arc4u.OAuth2.Token.NullTokenProvider>), or when the
+   token is expired.
 6. Sets the header: with `Inject`, the scheme is the token type (`Bearer` and `Basic` go in
    `Authorization`, any other type is the name of a custom header); otherwise the scheme is
    `Bearer`.
@@ -120,7 +124,6 @@ client factory (`Grpc.Net.ClientFactory` package):
 // Program.cs
 using Arc4u.Configuration;
 using Arc4u.gRPC.Interceptors;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -130,7 +133,7 @@ builder.Services.AddGrpcClient<Inventory.InventoryClient>(options => options.Add
     .AddInterceptor(sp => new OAuth2Interceptor<Inventory.InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<Inventory.InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("Inventory")));
+        "Inventory"));
 
 var app = builder.Build();
 app.Run();
@@ -144,8 +147,9 @@ differs from the HttpClient handler on these points:
 - When `AuthenticationType` is not `Inject`, the settings value must be equal to the identity's
   authentication type (case-insensitive), not only contain it.
 - It passes the current `ClaimsIdentity` to the token provider as `platformParameters`.
-- It waits synchronously for the token provider, and logs and ignores the exceptions the provider
-  throws: the call is then sent without a token.
+- For an asynchronous unary call, it awaits the token provider before the call starts; for a
+  blocking or streaming call, it waits synchronously for it. It logs and ignores the exceptions the
+  provider throws: the call is then sent without a token.
 
 Status codes and ProblemDetails returned by gRPC services are covered in
 [gRPC and versioning](../grpc-versioning/index.md).
@@ -174,35 +178,25 @@ public sealed class StockSynchronizer(IServiceScopeFactory scopeFactory, IScoped
 
 The accessor keeps the scope for the rest of the async flow, even after the scope is disposed: set
 it again for each new scope, otherwise the next call fails with `ObjectDisposedException`. Without
-a scope, the HttpClient handler falls back to the service provider it was created with, while the
-gRPC interceptor throws a `NullReferenceException` (known issue).
+a scope, the HttpClient handler and the gRPC interceptor fall back to the service provider they
+were created with.
 
 ## Troubleshooting
 
 ### The downstream API returns 401 and the request has no Authorization header
 
-- The settings name passed to the handler does not exist: `IOptionsMonitor.Get` then returns empty
-  settings and the handler does nothing. Check the entry name in `appsettings.json`.
+- The settings given to the handler are empty: `IOptionsMonitor.Get` returns empty settings for a
+  name that does not exist, and the handler then does nothing. Check the entry name in
+  `appsettings.json`. The constructors that take the settings name throw `ConfigurationException`
+  instead.
 - The `AuthenticationType` of the settings does not match the caller (step 3 above). Use
   `Inject` for an application identity.
 - The token provider is not registered under the `ProviderId` key, or it returned a failed
   result: the handler logs it in the `Technical` category.
 - For gRPC, the `IApplicationContext` has no principal.
-
-### The token is sent in an access_token header
-
-The settings use the on-behalf-of provider with `AuthenticationType` `Inject`. Set
-`AuthenticationType` to `OAuth2` or `Cookies`, see
-[Call an API on behalf of the user](token-providers.md#call-an-api-on-behalf-of-the-user).
-
-### NullReferenceException in the handler
-
 - The `ProviderId` is the string `"null"` (<xref:Arc4u.OAuth2.Token.NullTokenProvider>): the
-  provider returns a success without a token (known issue). The service `JwtHttpHandler<T>` and the
-  desktop `JwtHttpHandler<T>` then throw `NullReferenceException`. `OAuth2Interceptor<T>` logs the
-  exception and sends the call with the `culture` entry only, and the Blazor `JwtHttpHandler` logs
-  it and sends no header. Do not add a handler to a client that must not send a token.
-- gRPC call outside a request: see [Call an API outside a request](#call-an-api-outside-a-request).
+  provider returns a success without a token, and the handlers and the interceptor send the
+  request without one. This is by design.
 
 ## See also
 

@@ -31,7 +31,7 @@ using Arc4u.Security.Principal;
 app.MapGet("/orders", (IApplicationContext context) =>
 {
     var principal = context.Principal!;
-    return principal.IsAuthorized(string.Empty, "ReadOrders")
+    return principal.IsAuthorized("ReadOrders")
         ? Results.Ok($"Orders of {principal.Profile.DisplayName}")
         : Results.Forbid();
 }).RequireAuthorization();
@@ -55,7 +55,8 @@ type is listed in `Authentication:ClaimsIdentifier` (by default the object ident
 `http://schemas.microsoft.com/identity/claims/objectidentifier` and `oid`).
 
 > [!IMPORTANT]
-> When the token has none of the `ClaimsIdentifier` claim types, every authenticated request fails with a 500
+> When the token has none of the `ClaimsIdentifier` claim types, every bearer request fails with a 401 and the
+> log says `The token has no claim identifying the user`; a cookie (OpenID Connect) request fails with a 500
 > (`NullReferenceException: No distinguish key found for the identity`). The default claim types are Microsoft
 > identity platform claims; other providers usually identify the user with `sub`: set the identifier, for
 > example `"ClaimsIdentifier": [ "sub" ]`.
@@ -136,9 +137,10 @@ scope): an entry without scope makes the creation of the principal fail. The cla
 
 Only the operations listed in `AllOperations` are granted. In code, `AppPrincipal.IsAuthorized` accepts
 operation identifiers or names, with or without a scope, and enum values (default scope);
-`IsInRole(scope, role)` checks a role in a scope. To check a single operation name, pass the scope
-(`IsAuthorized(string.Empty, "ReadOrders")`): `IsAuthorized("ReadOrders")` does not compile, because it matches
-two overloads.
+`IsInRole(scope, role)` checks a role in a scope. `IsAuthorized("ReadOrders")` checks a single operation name
+in the default scope. When you pass two or more names, the first one is the scope:
+`IsAuthorized("ReadOrders", "WriteOrders")` checks `WriteOrders` in the scope `ReadOrders`, so pass the scope
+explicitly (`IsAuthorized(string.Empty, "ReadOrders", "WriteOrders")`).
 
 ### Roles and IsInRole
 
@@ -217,11 +219,17 @@ app.MapPost("/orders", async (IApplicationAuthorizationPolicy policy) =>
 }).RequireAuthorization();
 ```
 
-> [!WARNING]
-> Known issue: `ManageExceptionsFilter` of `Arc4u.OAuth2.AspNetCore` is meant to turn this exception into a 403
-> `ProblemDetails` in MVC controllers, but in an HTTP application it throws `ReservedLoggingKeyException:
-> ActivityId` while logging (`IApplicationContext.ActivityID` is only set by the gRPC authorization interceptor),
-> and the request ends with a 500. Do not rely on it; handle `UnauthorizedAccessException` yourself.
+> [!NOTE]
+> In MVC controllers, `ManageExceptionsFilter` of `Arc4u.OAuth2.AspNetCore`
+> (`AddControllers(o => o.Filters.Add<ManageExceptionsFilter>())`) turns this exception into a 403
+> `ProblemDetails`. It logs the exception with the trace id of the current activity as `ActivityId` and the
+> request context (HTTP method, path, action and route values); for any other exception it answers a 500
+> whose detail gives that id. For minimal APIs and middlewares, which the filter does not see, call
+> `services.AddManageExceptionsHandler()` and `app.UseExceptionHandler()` to get the same responses.
+> `ManageExceptionsFilterOptions` controls the `exception` extension with the exception details
+> (`IncludeExceptionDetails`, by default only in the `Development` environment) and the logging of the action
+> arguments (`LogActionArguments`, off by default, truncated to `MaxActionArgumentLength`). Never return
+> exception details to untrusted callers, and log action arguments only when they carry no sensitive data.
 
 ### Protect resource paths from configuration
 
@@ -255,16 +263,15 @@ app.UseAuthorization();
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `ResourcesPolicies:<name>:Path` | string | none (required) | Request path, compared ignoring case and leading or trailing slashes. The entry name is only a label. |
+| `ResourcesPolicies:<name>:Path` | string | none (required) | Request path, compared ignoring case and leading or trailing slashes. The same path with another extension is protected too (`swagger.yaml` for `swagger.json`), since Swashbuckle serves the document in YAML and, up to 6.5, for any extension. The entry name is only a label. |
 | `ResourcesPolicies:<name>:AuthorizationPolicy` | string | none (required) | Policy the principal must satisfy. |
 | `ResourcesPolicies:<name>:ContentToDisplay` | string | `DefaultContent` | Content returned when access is denied. |
 | `DefaultContent` | string | an empty Swagger 2.0 document | Default content returned when access is denied. |
 
 The method reads `Authentication:ResourcesRights`; pass `sectionName` to use another section.
 
-> [!NOTE]
-> Known issue: when the section does not exist, `UseResourcesRightValidationFor` adds nothing and does not
-> report it. Check the path of the section if the resources are not protected.
+When the section does not exist, `UseResourcesRightValidationFor` throws a `ConfigurationException` at startup,
+so a misspelled section path is reported instead of leaving the resources unprotected.
 
 ## User profile
 
@@ -279,7 +286,6 @@ the given name, the surname, the email and the `upn`, the long claim types of
 | `Email` | `email` |
 | `PrincipalName` | `upn` |
 | `SamAccountName`, `Domain` | Derived from `upn` (`user@domain` or `DOMAIN\user`). The domain is mapped with `Authentication:DomainsMapping`. Otherwise, for `user@domain` the first label of the domain is used (`contoso` for `contoso.com`), and for `DOMAIN\user` the domain is kept as is. |
-| `Name` | `<Domain>\<SamAccountName>` |
 | `Sid` | The Arc4u `sid` claim, `S-1-0-0` when absent |
 | `Company`, `Culture` | The Arc4u `company` and `culture` claims |
 
@@ -291,7 +297,7 @@ Replace `IClaimProfileFiller` to build the profile differently.
 
 See [Roles and IsInRole](#roles-and-isinrole): the roles come from the Arc4u authorization claim.
 
-### 500 "No distinguish key found for the identity"
+### 401 "The token has no claim identifying the user"
 
 Set `Authentication:ClaimsIdentifier` to a claim type present in the tokens, see
 [Claims filler options](#claims-filler-options).

@@ -44,6 +44,9 @@ public class OnBehalfOfTests
 
         services.AddOnBehalfOf(configuration);
 
+        // The token providers are resolved one by one at the sign-out.
+        services.Should().ContainSingle(d => d.ServiceType == typeof(SignOutTokenProviderKeys));
+
         var app = services.BuildServiceProvider();
 
         var oboSettings = app.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("Obo1");

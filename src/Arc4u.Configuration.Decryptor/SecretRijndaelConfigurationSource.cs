@@ -12,7 +12,7 @@ public class SecretRijndaelConfigurationSource : IConfigurationSource
     /// </summary>
     public const string PrefixDefault = "Decrypt:";
     /// <summary>
-    /// The default name (<c>EncryptionRijndael</c>) of the configuration section that contains the Rijndael <c>Key</c> and <c>IV</c> (both base64 encoded).
+    /// The default name (<c>EncryptionRijndael</c>) of the configuration section that contains the AES <c>Key</c> (base64 encoded).
     /// </summary>
     public const string SecretSectionNameDefault = "EncryptionRijndael";
 
@@ -42,13 +42,6 @@ public class SecretRijndaelConfigurationSource : IConfigurationSource
     /// <returns>A <see cref="SecretRijndaelConfigurationProvider"/></returns>
     public IConfigurationProvider Build(IConfigurationBuilder builder)
     {
-        return new SecretRijndaelConfigurationProvider(_options, GetSources(builder));
-    }
-
-    private IList<IConfigurationSource> GetSources(IConfigurationBuilder builder)
-    {
-        var sources = builder.Sources.ToList();
-        var index = sources.IndexOf(this);
-        return sources.Take(index).Where(s => s.GetType() != GetType()).ToList();
+        return new SecretRijndaelConfigurationProvider(_options, PreviousProviders.From(builder, this));
     }
 }

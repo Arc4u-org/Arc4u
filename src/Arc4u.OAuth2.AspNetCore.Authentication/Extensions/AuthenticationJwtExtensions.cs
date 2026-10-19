@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
+using Arc4u.OAuth2.AspNetCore.Diagnostics;
 using Arc4u.OAuth2.Events;
 using Arc4u.OAuth2.Options;
 using Arc4u.Security.Cryptography;
@@ -33,7 +34,12 @@ namespace Arc4u.OAuth2.Extensions
             option.TokenValidationParameters.RoleClaimType = hybridOptions.RoleClaimType;
             option.TokenValidationParameters.SaveSigninToken = false;
             option.TokenValidationParameters.AuthenticationType = Constants.BearerAuthenticationType;
-            option.TokenValidationParameters.ValidateIssuer = false;
+            // When no issuer is configured, the handler accepts the issuer of the metadata.
+            option.TokenValidationParameters.ValidateIssuer = hybridOptions.ValidateAuthority;
+            if (hybridOptions.ValidateAuthority && hybridOptions.DefaultAuthority.Issuer is not null)
+            {
+                option.TokenValidationParameters.ValidIssuer = hybridOptions.DefaultAuthority.Issuer.ToString();
+            }
             option.TokenValidationParameters.ValidateAudience = oauth2Options.ValidateAudience;
             option.TokenValidationParameters.ValidAudiences = oauth2Options.Audiences;
             if (securityKey is not null)
@@ -108,9 +114,16 @@ namespace Arc4u.OAuth2.Extensions
                         option.MetadataAddress = options.DefaultAuthority.MetaDataAddress.ToString();
                         option.SaveToken = true;
                         option.MapInboundClaims = false;
+                        option.TokenValidationParameters.NameClaimType = options.NameClaimType;
+                        option.TokenValidationParameters.RoleClaimType = options.RoleClaimType;
                         option.TokenValidationParameters.SaveSigninToken = false;
                         option.TokenValidationParameters.AuthenticationType = Constants.BearerAuthenticationType;
-                        option.TokenValidationParameters.ValidateIssuer = false;
+                        // When no issuer is configured, the handler accepts the issuer of the metadata.
+                        option.TokenValidationParameters.ValidateIssuer = options.ValidateAuthority;
+                        if (options.ValidateAuthority && options.DefaultAuthority.Issuer is not null)
+                        {
+                            option.TokenValidationParameters.ValidIssuer = options.DefaultAuthority.Issuer.ToString();
+                        }
                         option.TokenValidationParameters.ValidateAudience = oauth2Options.ValidateAudience;
                         option.TokenValidationParameters.ValidAudiences = oauth2Options.Audiences;
                         option.EventsType = typeof(JwtBearerEvents);
@@ -138,6 +151,10 @@ namespace Arc4u.OAuth2.Extensions
         /// Besides the JWT bearer scheme, the method registers, from the sections named by <see cref="JwtAuthenticationSectionOptions"/>: the OAuth2 settings, the claim identifiers, the domain mappings, the token cache,
         /// the claims filler, the client tokens (<c>Authentication:ClientTokens</c>) and the remote secrets (<c>Authentication:RemoteSecrets</c>).
         /// </para>
+        /// <para>
+        /// The token cache section (<c>Authentication:TokenCache</c>) is optional: an API that only validates inbound tokens can omit it, and the default cache is then used.
+        /// <c>User.Identity.Name</c> is read from the <see cref="JwtAuthenticationSectionOptions.NameClaimType"/> claim (<c>name</c> by default).
+        /// </para>
         /// <para>A minimal configuration:</para>
         /// <code language="json">
         /// {
@@ -145,8 +162,7 @@ namespace Arc4u.OAuth2.Extensions
         ///     "DefaultAuthority": { "Url": "https://login.example.com/tenant/v2.0" },
         ///     "OAuth2.Settings": {
         ///       "Audiences": [ "api://my-api" ]
-        ///     },
-        ///     "TokenCache": { "CacheName": "Default" }
+        ///     }
         ///   }
         /// }
         /// </code>
@@ -183,6 +199,16 @@ namespace Arc4u.OAuth2.Extensions
                 throw new MissingFieldException("We need a setting section to configure OAuth2.");
             }
 
+            if (string.IsNullOrWhiteSpace(settings.NameClaimType))
+            {
+                throw new MissingFieldException("NameClaimType must be filled!");
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.RoleClaimType))
+            {
+                throw new MissingFieldException("RoleClaimType must be filled!");
+            }
+
             X509Certificate2? certSecurityKey;
 
             if (string.IsNullOrWhiteSpace(settings.CertSecurityKeyPath))
@@ -204,6 +230,8 @@ namespace Arc4u.OAuth2.Extensions
             {
                 options.DefaultAuthority = settings.DefaultAuthority;
                 options.ValidateAuthority = settings.ValidateAuthority;
+                options.NameClaimType = settings.NameClaimType;
+                options.RoleClaimType = settings.RoleClaimType;
                 options.OAuth2SettingsOptions =
                     OAuth2SettingsExtension.PrepareAction(configuration, settings.OAuth2SettingsSectionPath);
                 options.CertSecurityKey = certSecurityKey;
@@ -212,7 +240,11 @@ namespace Arc4u.OAuth2.Extensions
             }
 
             services.AddDomainMapping(configuration, settings.DomainMappingsSectionPath);
-            services.AddTokenCache(configuration, settings.TokenCacheSectionPath);
+            // An API that only validates inbound tokens does not need a token cache: the section is optional.
+            if (configuration.GetSection(settings.TokenCacheSectionPath).Exists())
+            {
+                services.AddTokenCache(configuration, settings.TokenCacheSectionPath);
+            }
             services.AddClaimsFiller(configuration, settings.ClaimsFillerSectionPath);
             services.AddClientTokens(configuration, settings.ClientTokensSectionPath);
             services.AddRemoteSecretsAuthentication(configuration, settings.RemoteSecretSectionPath);

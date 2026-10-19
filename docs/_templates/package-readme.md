@@ -51,14 +51,12 @@ The package ID (title, install command) is the <PackageId> of the .csproj, not t
   Arc4u.gRPC                               guides/grpc-versioning/        api/Arc4u.gRPC.html
   Arc4u.AspNetCore.gRpc                    guides/grpc-versioning/        api/Arc4u.AspNetCore.gRpc.html
   Arc4u.AspNetCore.Versioning              guides/grpc-versioning/        api/Arc4u.AspNetCore.Versioning.html   (not on NuGet.org yet)
-  Arc4u.Data                               guides/data/                   api/Arc4u.Data.html
   Arc4u.EfCore                             guides/data/                   api/Arc4u.EfCore.html
   Arc4u.MongoDB                            guides/data/                   api/Arc4u.MongoDB.html
   Arc4u.OData                              guides/data/                   api/Arc4u.OData.html
   Arc4u.Dispatcher                         guides/dispatcher/             api/Arc4u.Dispatcher.Notification.html
 
-Not shipped in 9.x (not in src/Arc4u.slnx, net8.0/net9.0 only): Arc4u.Dependency.ComponentModel,
-Arc4u.OAuth2.Msal (project folder src/Arc4u.OAuth.Msal), and the removed NServiceBus and
+Not shipped in 9.x: the removed Arc4u.OAuth2.Msal, Arc4u.Dependency.ComponentModel, NServiceBus and
 Prism.DI.Wpf packages. Their status is on the Package support page (#189); do not write a
 README from this template for them unless #189 decides they ship.
 -->

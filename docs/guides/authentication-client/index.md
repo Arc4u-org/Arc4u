@@ -158,7 +158,6 @@ using Arc4u.OAuth2.Token;
 using Arc4u.OAuth2.TokenProvider;
 using Arc4u.Security.Principal;
 using Arc4u.Serializer;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -171,7 +170,7 @@ builder.Services.AddScoped<IApplicationContext, ApplicationInstanceContext>();
 // The token cache: an Arc4u memory cache (see the Caching guide).
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
+builder.Services.AddMemoryCacheKind();
 builder.Services.AddTokenCache(builder.Configuration);
 builder.Services.AddSingleton<ICacheHelper, CacheHelper>();
 builder.Services.AddSingleton<ITokenCache, ApplicationCache>();
@@ -186,7 +185,7 @@ builder.Services.AddHttpClient<InventoryClient>(client => client.BaseAddress = n
     .AddHttpMessageHandler(sp => new JwtHttpHandler<InventoryClient>(
         sp,
         sp.GetRequiredService<ILogger<InventoryClient>>(),
-        sp.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("Inventory")));
+        "Inventory"));
 
 var app = builder.Build();
 app.Run();
@@ -201,7 +200,7 @@ public sealed class InventoryClient(HttpClient httpClient)
 Every request of `InventoryClient` now carries `Authorization: Bearer <token>`. The token is
 requested once and reused until one minute before it expires. When you use the configuration based
 `AddJwtAuthentication` of [Server authentication](../authentication-server/index.md), it already
-calls `AddClientTokens` and `AddTokenCache`.
+calls `AddClientTokens`, and `AddTokenCache` when the `Authentication:TokenCache` section exists.
 
 ## Common scenarios
 
@@ -270,24 +269,6 @@ wrote the same settings name. Common causes:
   to `AddRemoteSecretsAuthentication` with the configuration based `AddJwtAuthentication`.
 - An entry named like a settings name that Arc4u uses, for example a `ClientTokens` entry named
   `OAuth2` or `Cookies`. Give each entry a unique name.
-
-### Known issues
-
-- On-behalf-of with the default `AuthenticationType` `Inject` sends the token in an `access_token`
-  header. Set `AuthenticationType` explicitly, see
-  [Call an API on behalf of the user](token-providers.md#call-an-api-on-behalf-of-the-user).
-- A gRPC call made outside an HTTP request throws `NullReferenceException` unless a scope is set,
-  see [Call an API outside a request](httpclient-grpc.md#call-an-api-outside-a-request).
-- `NullTokenProvider` (`ProviderId` `"null"`) makes the service and desktop `JwtHttpHandler<T>`
-  throw `NullReferenceException`, see
-  [HttpClient and gRPC clients](httpclient-grpc.md#nullreferenceexception-in-the-handler).
-- The token caches of the `Obo` and `Credential` providers, and the client credentials cache with
-  extra parameters, are not keyed as expected, see
-  [Token providers](token-providers.md#cache-keys).
-- In Blazor, `BlazorTokenProvider` and `BlazorMsalTokenProvider` share the key `blazor`, and the
-  pop-up flow of `BlazorController` ends on a 404, see [Blazor](blazor.md#other-webassembly-token-providers).
-- In desktop apps, several options of `AddOidcClientAuthentication` are not used, see
-  [Desktop and mobile clients](desktop.md#configuration).
 
 ## See also
 

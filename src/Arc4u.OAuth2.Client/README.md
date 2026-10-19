@@ -11,7 +11,8 @@ dotnet add package Arc4u.OAuth2.Client --prerelease
 ## Usage
 
 ```csharp
-builder.Services.AddSingleton<IAppPrincipalFactory, AppPrincipalFactory>();
+// Transient (as its [Export] attribute registers it), not a singleton: the token providers are resolved, and signed out, from the scope the factory is created in.
+builder.Services.AddTransient<IAppPrincipalFactory, AppPrincipalFactory>();
 
 // Once the host is built: sign the user in and set the principal in the IApplicationContext.
 var settings = host.Services.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>().Get("OidcClient");

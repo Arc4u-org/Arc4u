@@ -113,9 +113,6 @@ a `ProblemHttpResult`; `ValidationProblem` is part of the type but is never the 
 | `Result<T>` succeeded with a value | `To...CreatedResult(location)` | `201 Created`, `Location` header | The value, or the value returned by the mapper |
 | `Result<T>` succeeded with `null` | `To...CreatedResult(location)` | `201 Created`, no `Location` header | Empty |
 
-For a `Result` (without a value), the `To...CreatedResultAsync` methods (not the synchronous ones) have a type parameter
-that the compiler cannot infer and that is not used. Write `result.ToActionCreatedResultAsync<Order>(location)` with any type.
-
 ### Map the value
 
 Every method with a value has an overload taking a mapper, so that the business type does not leave the API.
@@ -210,7 +207,7 @@ the controller headers). Requests with a successful result never go through
 this mapping.
 
 The `type` URIs of rows 1 and 2 are constants in the library that point to the page
-`https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes` of the Arc4u wiki. Treat them as identifiers. The `expected-error` URI is used only by the `ToGenericMessage` overload that honors
+`https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes` of the Arc4u wiki. Treat them as identifiers. The `expected-error` URI is used only when `ToGenericMessage` is called with
 `unexpectedType: false`. Keep the wiki page (or at least its headings) available while responses carry these URIs.
 
 ### Unexpected error: an exception
@@ -222,11 +219,10 @@ that the support team searches in the logs:
 HTTP/1.1 500 Internal Server Error
 Content-Type: application/problem+json; charset=utf-8
 
-{"type":"https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes#unexpected-error","title":"A technical error occured!","status":500,"detail":"Contact the application owner. A message has been logged with id: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00."}
+{"type":"https://github.com/Arc4u-org/Arc4u/wiki/StatusCodes#unexpected-error","title":"A technical error occurred!","status":500,"detail":"Contact the application owner. A message has been logged with id: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00."}
 ```
 
 The exception is written to the log only if you registered the result logger (see [Configuration](index.md#configuration)).
-The typo "occured" is part of the current message.
 
 ### Business problem: ProblemDetailError
 
@@ -279,20 +275,12 @@ To report a denied action from the business layer, return a `ProblemDetailError`
 `ToGenericMessage` builds the `500` (or `400`) generic body. `ToProblemDetails` calls it for exceptions. It also
 calls `LogIfFailed` on the result.
 
-| Overload | Honors `unexpectedType` |
-|---|---|
-| `ToGenericMessage(Result, bool)` | No |
-| `ToGenericMessage(Result, string? activityId, bool)` | Yes |
-| `ToGenericMessage<T>(Result<T>, bool)` | No |
-| `ToGenericMessage<T>(Result<T>, string? activityId, bool)` | No |
+All four overloads (`Result` or `Result<T>`, with or without an explicit `activityId`) honor `unexpectedType`.
+With the default `true` you get the "unexpected" `500` message; with `unexpectedType: false` you get `400` and
+the `expected-error` type.
 
-> [!WARNING]
-> Known issue: only `ToGenericMessage(Result, string?, bool)` uses `unexpectedType`. With the other three
-> overloads you always get the "unexpected" `500` message, whatever value you pass. With `unexpectedType: false`
-> the honored overload returns `400` and the `expected-error` type.
-
-Calling `ToProblemDetails` on a result that succeeded does not make sense. The library adds an `ExceptionalError`
-to that result, which is then failed, and returns the generic `500`, so that the mistake is visible.
+Calling `ToProblemDetails` on a result that succeeded does not make sense. The library returns the generic `500`, built from an
+`ExceptionalError`, so that the mistake is visible. The result itself is not modified and stays successful.
 
 ## Change the mapping
 
@@ -301,36 +289,40 @@ to that result, which is then failed, and returns the generic `500`, so that the
 errors of the failed result and returns the `ProblemDetails`; set its `Status`, because the response status code is
 read from `ProblemDetails.Status`.
 
-The default rules are not reusable from inside your function. This sample keeps the exception protection by calling
-`ToGenericMessage`, and maps a `ProblemDetailError` itself:
+To change the mapping of some errors only, use the overload whose function receives a second argument: the default
+mapping described above. Call it for the errors you do not handle yourself. This sample maps its own `NotFoundError` to
+a `404` and keeps the default mapping, including the exception protection, for every other error:
 
 ```csharp
-using System.Diagnostics;
 using Arc4u.AspNetCore.Results;
-using Arc4u.Results;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-FromResultToProblemDetailExtension.SetFromErrorFactory(errors =>
+FromResultToProblemDetailExtension.SetFromErrorFactory((errors, defaultFromError) =>
 {
-    if (errors.OfType<IExceptionalError>().Any())
+    if (errors.OfType<NotFoundError>().FirstOrDefault() is { } notFound)
     {
-        return Result.Fail(errors).ToGenericMessage(Activity.Current?.Id, true);
+        return new ProblemDetails()
+            .WithTitle("Not found.")
+            .WithDetail(notFound.Message)
+            .WithStatusCode(StatusCodes.Status404NotFound);
     }
 
-    var error = errors.First();
-    return new ProblemDetails()
-        .WithTitle(error is ProblemDetailError { Title: not null } p ? p.Title : "Request failed")
-        .WithDetail(error.Message)
-        .WithStatusCode(error is ProblemDetailError { StatusCode: not null } s ? s.StatusCode.Value : StatusCodes.Status400BadRequest);
+    return defaultFromError(errors);
 });
 ```
 
+To add information to every response instead, decorate the default result:
+`(errors, defaultFromError) => defaultFromError(errors).WithMetadata("application", "billing")`.
+To restore the default mapping, pass `(errors, defaultFromError) => defaultFromError(errors)`.
+
+To replace the whole mapping, pass a function that takes only the errors: `SetFromErrorFactory(errors => ...)`.
+
 > [!CAUTION]
 > Do not call `FromError` from inside your factory to reuse the default mapping. `FromError` calls the factory that is
-> currently registered, which is yours, so the call recurses until the process dies with a stack overflow. Capturing
-> `FromError` in a variable before calling `SetFromErrorFactory` does not help: the value is a delegate that reads the
-> current factory when it runs.
+> currently registered, which is yours, so the call recurses until the process dies with a stack overflow. Use the
+> `defaultFromError` argument instead.
 
 ### Build a ProblemDetails by hand
 

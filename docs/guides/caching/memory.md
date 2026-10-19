@@ -18,7 +18,7 @@ changing the object after `Put` does not change what `Get` returns, and the size
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Caching.Memory` | The `MemoryCache` class. |
+| `Arc4u.Caching.Memory` | The `MemoryCache` class and `AddMemoryCacheKind()`. |
 | `Arc4u.Caching` | `ICacheContext`, `AddCacheContext`, and `AddMemoryCache` with `MemoryCacheOption` (namespace `Arc4u.Configuration.Memory`). |
 | `Arc4u.Serializer.JSon` | The serializer (any `IObjectSerialization` works). |
 
@@ -63,13 +63,9 @@ The settings bind to <xref:Arc4u.Configuration.Memory.MemoryCacheOption>:
 | `Caching:Caches:n:Settings:SerializerName` | `string` | none | Key of the `IObjectSerialization` to use. When empty or not registered, the unkeyed `IObjectSerialization` is used. |
 
 > [!NOTE]
-> The registered `MemoryCacheOption.SizeLimitInMB` holds a number of bytes (the megabytes of the configuration times
-> 1,048,576). Read the option back with care if you inspect it.
-
-> [!WARNING]
-> Known issue, reproduced on `develop/9.0.0`: a `Memory` cache declared without a `Settings` section is created with a
-> limit of 100 bytes instead of 100 MB, because the default value is not converted to bytes. `Put` succeeds but
-> the value is not kept, and `Get` returns `null`. Declare `Settings` (even `{ "SizeLimitInMB": 100 }`) on every memory cache.
+> `MemoryCacheOption.SizeLimitInMB` keeps the value in megabytes, as configured. The limit given to the underlying
+> cache is `MemoryCacheOption.SizeLimitInBytes` (`SizeLimitInMB` times 1,048,576). A `Memory` cache declared without
+> a `Settings` section uses the default of 100 MB.
 
 ### Code
 
@@ -85,7 +81,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddILogger();
 builder.Services.AddCacheContext(builder.Configuration);
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
-builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
+builder.Services.AddMemoryCacheKind();
 
 var app = builder.Build();
 
@@ -117,21 +113,22 @@ Each name has its own store and limit. Give a small, short-lived cache its own n
 ### Expire and evict
 
 `Put` with a `TimeSpan` expires the value (absolute, or sliding with `isSlided: true`). When the size limit is reached,
-the cache removes `CompactionPercentage` of its entries, and the entry being written when the limit is hit can be dropped too
-(`Get` then returns `null`). Values are never shared with another process: after a restart, or
+the cache removes `CompactionPercentage` of its entries in the background, and the `Put` that hits the limit throws
+`DataCacheException` (the value is not stored, and the previous value of the key is removed). Values are never shared with another process: after a restart, or
 in a second instance of the service, the cache is empty.
 
 ## Extensibility points
 
-`MemoryCache` is registered under the key `Memory`. Register your own `ICache` under that key to replace it, or under
+`AddMemoryCacheKind()` registers `MemoryCache` under the key `Memory` with `TryAddKeyedTransient`. Register your own `ICache`
+under that key before calling it (or instead of it) to replace it, or under
 another key for a new kind (see [Caching](index.md#extensibility-points)).
 
 ## Troubleshooting
 
 ### `Get` returns `null` right after `Put`
 
-Check, in this order: the cache declares a `Settings` section (the known issue above), the value fits in `SizeLimitInMB`,
-and the timeout passed to `Put` is not already over.
+Check that the timeout passed to `Put` is not already over. A value that does not fit in `SizeLimitInMB` is not
+silently dropped: `Put` throws `DataCacheException` with a message about the size limit.
 
 ### `CacheNotInitializedException` mentioning `IObjectSerialization`
 

@@ -20,16 +20,22 @@ public class SecretRijndaelConfigurationProvider : ConfigurationProvider
         ArgumentNullException.ThrowIfNull(options);
 
         _rijndaelOptions = options;
-        _sources = sources;
+        _previousProviders = PreviousProviders.Build(sources);
     }
 
-    private readonly IList<IConfigurationSource> _sources;
+    internal SecretRijndaelConfigurationProvider(SecretRijndaelOptions options, PreviousProviders previousProviders)
+    {
+        _rijndaelOptions = options;
+        _previousProviders = previousProviders;
+    }
+
+    private readonly PreviousProviders _previousProviders;
     private readonly SecretRijndaelOptions _rijndaelOptions;
 
     /// <summary>
     /// The Load method does the different steps.
-    /// - Check if a configuration section exists defining the key/iv to use.
-    /// - Fetch the key/iv in the configuration providers.
+    /// - Check if a configuration section exists defining the key to use.
+    /// - Fetch the key in the configuration providers.
     /// - Parse the dictionary of item from the providers, and if one value starts with the profix keyword, decrypt it.
     /// - Add the decrypted data to the Data dictionary. So the final Configuration will contains the decrypted value.
     /// - No exception are catched by purpose. So the eror is visible on any logging system or console.
@@ -38,12 +44,7 @@ public class SecretRijndaelConfigurationProvider : ConfigurationProvider
     {
         Dictionary<string, string?> data = new(StringComparer.OrdinalIgnoreCase);
 
-        var tempBuilder = new ConfigurationBuilder();
-        foreach (var source in _sources)
-        {
-            tempBuilder.Add(source);
-        }
-        var tempRoot = tempBuilder.Build();
+        var tempRoot = _previousProviders.ToConfiguration();
 
         if (_rijndaelOptions.RijnDael is null)
         {
@@ -57,7 +58,7 @@ public class SecretRijndaelConfigurationProvider : ConfigurationProvider
             }
         }
 
-        var rijndaelkeys = SecretRijndaelConfigurationProvider.ConvertTo(_rijndaelOptions.RijnDael);
+        var key = Convert.FromBase64String(_rijndaelOptions.RijnDael.Key);
 
         // Parse the temproot Data collection of each provider
         foreach (var item in tempRoot.AsEnumerable())
@@ -66,16 +67,11 @@ public class SecretRijndaelConfigurationProvider : ConfigurationProvider
             {
                 var cypher = item.Value.Substring(_rijndaelOptions.Prefix.Length);
 
-                data.Add(item.Key, CypherCodec.DecodeCypherstring(cypher, rijndaelkeys.Item1, rijndaelkeys.Item2));
+                data.Add(item.Key, CypherCodec.Decrypt(cypher, key));
             }
         }
 
         Data = data;
-    }
-
-    private static (byte[], byte[]) ConvertTo(CypherCodecConfig rijndaelConfig)
-    {
-        return (Convert.FromBase64String(rijndaelConfig.Key), Convert.FromBase64String(rijndaelConfig.IV));
     }
 }
 

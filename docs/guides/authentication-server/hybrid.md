@@ -100,10 +100,11 @@ app.UseAuthorization();
 The code overload `AddHybridAuthentication(Action<HybridAuthenticationOptions>)` takes the options of the OpenID
 Connect code overload plus `OAuth2SettingsOptions`, which is required.
 
-> [!WARNING]
-> Known issue: both `AddHybridAuthentication` overloads ignore `ValidateAudience` and `ValidateAuthority` of the
-> options; the OpenID Connect checks stay enabled. Use the `PostConfigure<OidcAuthenticationOptions>` workaround
-> of [Disable the audience check](oidc-cookie.md#disable-the-audience-check).
+`ValidateAudience` and `ValidateAuthority` of the options (or of the `Authentication` section) control the
+checks of the OpenID Connect access token, see [Disable the audience check](oidc-cookie.md#disable-the-audience-check).
+`ValidateAuthority` (`true` by default) also validates the issuer of the bearer tokens, as
+[`AddJwtAuthentication` does](jwt-bearer.md#what-is-validated). The audience of the bearer tokens is controlled by
+`OAuth2.Settings:ValidateAudience`.
 
 ## Common scenarios
 
@@ -125,9 +126,9 @@ Call `UseForceOpenId()` after `UseAuthentication()`. It also works with `AddOidc
 ### Call the API from the browser session
 
 A page served by the application can call its own API with the session cookie: without a `Bearer` header,
-the request uses the cookie. Code written for bearer tokens can get the token from the `BootstrapContext`
-when `app.UseOpenIdBearerInjector()` runs after `UseAuthentication()` (see
-[Use the user's access token](oidc-cookie.md#use-the-users-access-token)).
+the request uses the cookie. The access token is in the `BootstrapContext` of the identity, as with JWT
+bearer; `app.UseOpenIdBearerInjector()` after `UseAuthentication()` also puts it in the `Authorization`
+header (see [Use the user's access token](oidc-cookie.md#use-the-users-access-token)).
 
 ## Troubleshooting
 

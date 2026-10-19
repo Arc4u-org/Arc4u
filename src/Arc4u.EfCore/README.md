@@ -1,6 +1,6 @@
 # Arc4u.EfCore
 
-Saves a whole entity graph with Entity Framework Core by turning the `PersistChange` of each Arc4u entity into an `EntityState`, and applies `Graph<T>` includes to queries.
+Applies the includes of a `Graph<T>` to Entity Framework Core queries.
 
 ## Install
 
@@ -11,17 +11,14 @@ dotnet add package Arc4u.EfCore --prerelease
 ## Usage
 
 ```csharp
+using Arc4u;
 using Arc4u.EfCore;
 using Microsoft.EntityFrameworkCore;
 
-static async Task SaveAsync(DbContext db, object root)   // root: an entity implementing IPersistEntity
-{
-    db.ChangeTracker.TrackGraph(root, ChangeGraphTracker.Tracker);
-    await db.SaveChangesAsync();
-}
-```
+var graph = new Graph<Order>().Include(o => o.Customer).Include(o => o.Lines);
 
-The model must ignore the `PersistChange` property of the entities (`entity.Ignore(e => e.PersistChange)`).
+var orders = await graph.ApplySetReferences(db.Orders).ToListAsync();
+```
 
 ## Documentation
 

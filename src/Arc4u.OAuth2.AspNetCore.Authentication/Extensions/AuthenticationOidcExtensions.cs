@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
 using Arc4u.Configuration;
+using Arc4u.OAuth2.AspNetCore.Diagnostics;
 using Arc4u.OAuth2.DataProtection;
 using Arc4u.OAuth2.Events;
 using Arc4u.OAuth2.Middleware;
@@ -65,6 +66,8 @@ namespace Arc4u.OAuth2.Extensions
         {
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(authenticationOptions);
+
+            services.AddTokenProvidersSignOut();
 
             var oidcOptions = new OidcAuthenticationOptions();
             authenticationOptions(oidcOptions);
@@ -280,6 +283,8 @@ namespace Arc4u.OAuth2.Extensions
                 ClaimsidentifierExtension.PrepareAction(configuration, settings.ClaimsIdentifierSectionPath);
             options.NameClaimType = settings.NameClaimType;
             options.RoleClaimType = settings.RoleClaimType;
+            options.ValidateAudience = settings.ValidateAudience;
+            options.ValidateAuthority = settings.ValidateAuthority;
         }
 
         private static string? ValidateOidcConfiguration(OidcAuthenticationSectionOptions settings)

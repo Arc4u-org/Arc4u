@@ -16,7 +16,7 @@ Whatever the provider, check these values first. They explain most sign-in failu
 
 | Setting | Why it depends on the provider |
 |---|---|
-| `DefaultAuthority:Url` | For OpenID Connect it must be equal to the `iss` claim of the access tokens (see [Token checks](oidc-cookie.md#token-checks)). |
+| `DefaultAuthority:Issuer` | The `iss` claim of the access tokens must be this value, or the `issuer` of the metadata when it is not set (see [Token checks](oidc-cookie.md#token-checks)). Set it when your provider issues access tokens with another issuer than its metadata. |
 | `DefaultAuthority:MetaDataAddress` | Needed when the metadata document is not at `<Url>/.well-known/openid-configuration`. |
 | `OpenId.Settings:Scopes` | Arc4u adds no scope. Request `openid`, the scope that issues a refresh token, and a scope of your API so that the access token has its audience. |
 | `OpenId.Settings:Audiences`, `OAuth2.Settings:Audiences` | The `aud` claim of the access tokens. Some providers issue none by default. |
@@ -32,7 +32,8 @@ Whatever the provider, check these values first. They explain most sign-in failu
 - **General guidance**: with the v2.0 endpoint, set `Url` to
   `https://login.microsoftonline.com/<tenant-id>/v2.0`. The `iss` of access tokens issued for your API is that
   URL when the API application accepts v2 access tokens (`accessTokenAcceptedVersion: 2` in the manifest);
-  v1 access tokens have the issuer `https://sts.windows.net/<tenant-id>/` and fail the Arc4u issuer check.
+  v1 access tokens have the issuer `https://sts.windows.net/<tenant-id>/` and fail the Arc4u issuer check
+  unless `DefaultAuthority:Issuer` is set to it.
 - **General guidance**: expose a scope on the API registration and request it
   (`api://<api-client-id>/<scope>`); add `offline_access` to get a refresh token. The audience of a v2 access
   token is the client id of the API.
@@ -56,7 +57,7 @@ Whatever the provider, check these values first. They explain most sign-in failu
 - Use the `code` response type (default).
 - **General guidance**: the B2C metadata document depends on the user flow (policy), for example
   `https://<tenant>.b2clogin.com/<tenant>.onmicrosoft.com/<policy>/v2.0/.well-known/openid-configuration`. Set
-  `DefaultAuthority:MetaDataAddress` to it, and `Url` to the issuer of the tokens given by that document.
+  `DefaultAuthority:MetaDataAddress` to it; the issuer of the tokens is then read from that document.
 - **General guidance**: B2C does not support the resource owner password grant for every account type; do not
   rely on [Basic credentials](jwt-bearer.md#accept-basic-credentials) with B2C.
 
@@ -65,7 +66,7 @@ Whatever the provider, check these values first. They explain most sign-in failu
 - Use the `code` response type (default).
 - Set `ClaimsIdentifier` to a claim of your ADFS tokens, for example `[ "upn" ]`. The default identifier, `oid`,
   is a Microsoft Entra ID claim (**general guidance**: ADFS does not issue it); without an identifier every
-  request fails with a 500 (see [Troubleshooting](troubleshooting.md#500-no-distinguish-key-found-for-the-identity)).
+  bearer request fails with a 401 (see [Troubleshooting](troubleshooting.md#401-the-token-has-no-claim-identifying-the-user)).
 - A `upn` claim of the form `user@domain` or `DOMAIN\user` fills `SamAccountName` and `Domain` of the
   profile. Map the domain with `Authentication:DomainsMapping`:
 
@@ -85,7 +86,7 @@ Whatever the provider, check these values first. They explain most sign-in failu
 
 - Keycloak does not add your API to the audience of access tokens by default. Either add an audience mapper to
   the client in Keycloak (**general guidance**), or disable the audience check: `OAuth2.Settings:ValidateAudience: false`
-  for JWT bearer, and the workaround of [Disable the audience check](oidc-cookie.md#disable-the-audience-check)
+  for JWT bearer, and the settings of [Disable the audience check](oidc-cookie.md#disable-the-audience-check)
   for OpenID Connect.
 - Set `ClaimsIdentifier` to a claim of your tokens, for example `[ "sub" ]` (**general guidance**: Keycloak does
   not issue the default `oid` claim).
@@ -113,7 +114,7 @@ The Arc4u code has nothing specific to ForgeRock. Apply the [provider-dependent 
 - Check that the access tokens are JWTs: the cookie session reads the expiration from the access token and fails
   with an opaque token.
 - **General guidance**: the authority is the realm URL of ForgeRock Access Management
-  (`https://<host>/am/oauth2/realms/root/realms/<realm>`); make `Url` equal to the issuer given by its metadata.
+  (`https://<host>/am/oauth2/realms/root/realms/<realm>`); the issuer is read from its metadata.
 
 ## See also
 

@@ -76,7 +76,7 @@ public class CacheContextTests
 
         // assert
         sut.CompactionPercentage.Should().Be(memorySettings.CompactionPercentage);
-        sut.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB * 1024 * 1024);
+        sut.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB);
         sut.SerializerName.Should().Be(memorySettings.SerializerName);
     }
 
@@ -157,7 +157,7 @@ public class CacheContextTests
         // memory
         sutMemory.Should().NotBeNull();
         sutMemory!.SerializerName.Should().Be(memorySettings.SerializerName);
-        sutMemory.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB * 1024 * 1024);
+        sutMemory.SizeLimitInMB.Should().Be(memorySettings.SizeLimitInMB);
         sutMemory.CompactionPercentage.Should().Be(memorySettings.CompactionPercentage);
         // dapr
         sutDapr.Should().NotBeNull();
@@ -224,5 +224,104 @@ public class CacheContextTests
         cacheInstance.Put("key", "value");
 
         cacheInstance.Get<string>("key").Should().Be("value");
+    }
+
+    [Theory]
+    [InlineData("memory", CacheContext.Memory)]
+    [InlineData("REDIS", CacheContext.Redis)]
+    [InlineData("redissentinel", CacheContext.RedisSentinel)]
+    [InlineData("sql", CacheContext.Sql)]
+    [InlineData("DaPr", CacheContext.Dapr)]
+    [InlineData("MyKind", "MyKind")]
+    public void NormalizeKindShould(string kind, string expected)
+    {
+        CacheContext.NormalizeKind(kind).Should().Be(expected);
+    }
+
+    [Fact]
+    public void AddCacheContextWithCustomSectionAndLowerCaseKindShould()
+    {
+        // arrange
+        var services = BuildMemoryCacheServices("MyCaching", "memory", isAutoStart: true);
+        services.AddMemoryCacheKind();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        // act
+        var sut = serviceProvider.GetRequiredService<ICacheContext>();
+
+        // assert
+        services.Count(s => s.ServiceType == typeof(ICache)).Should().Be(1);
+        sut.Exist("Volatile").Should().BeTrue();
+
+        sut.Default.Put("key", "value");
+        sut.Default.Get<string>("key").Should().Be("value");
+    }
+
+    [Fact]
+    public void FirstAccessToANotAutoStartedCacheShould()
+    {
+        // arrange
+        var serviceProvider = BuildMemoryCacheServices("Caching", CacheContext.Memory, isAutoStart: false).BuildServiceProvider();
+        var sut = serviceProvider.GetRequiredService<ICacheContext>();
+
+        // act
+        var first = sut["Volatile"];
+        var second = sut["Volatile"];
+
+        // assert
+        sut.Exist("Volatile").Should().BeTrue();
+        second.Should().BeSameAs(first);
+
+        first.Put("key", "value");
+        second.Get<string>("key").Should().Be("value");
+    }
+
+    [Fact]
+    public async Task ConcurrentFirstAccessToANotAutoStartedCacheShould()
+    {
+        // arrange
+        var serviceProvider = BuildMemoryCacheServices("Caching", CacheContext.Memory, isAutoStart: false).BuildServiceProvider();
+        var sut = serviceProvider.GetRequiredService<ICacheContext>();
+
+        // act
+        var caches = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => Task.Run(() => sut["Volatile"])));
+
+        // assert
+        caches.Should().AllSatisfy(c => c.Should().BeSameAs(caches[0]));
+    }
+
+    private static IServiceCollection BuildMemoryCacheServices(string sectionName, string kind, bool isAutoStart)
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    [$"{sectionName}:Default"] = "Volatile",
+                    [$"{sectionName}:Caches:0:Name"] = "Volatile",
+                    [$"{sectionName}:Caches:0:Kind"] = kind,
+                    [$"{sectionName}:Caches:0:IsAutoStart"] = isAutoStart.ToString(),
+                    [$"{sectionName}:Caches:0:Settings:SizeLimitInMB"] = "10"
+                }).Build();
+
+        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton(configuration);
+        services.AddCacheContext(configuration, sectionName);
+        services.AddMemoryCacheKind();
+        services.AddTransient<IObjectSerialization, JsonSerialization>();
+
+        var mockLoggerWrapper = new Mock<ILoggerWrapper<CacheContext>>();
+        mockLoggerWrapper.Setup(m => m.SetContext(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Type?>()))
+            .Returns(mockLoggerWrapper.Object);
+        services.AddTransient<ILogger<CacheContext>>(_ => mockLoggerWrapper.Object);
+
+        var mockLoggerWrapperMemoryCache = new Mock<ILoggerWrapper<MemoryCache>>();
+        mockLoggerWrapperMemoryCache.Setup(m => m.SetContext(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Type?>()))
+            .Returns(mockLoggerWrapperMemoryCache.Object);
+        services.AddTransient<ILogger<MemoryCache>>(_ => mockLoggerWrapperMemoryCache.Object);
+
+        return services;
     }
 }

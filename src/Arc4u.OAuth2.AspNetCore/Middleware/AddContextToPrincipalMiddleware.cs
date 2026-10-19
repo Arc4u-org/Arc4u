@@ -40,13 +40,11 @@ public class AddContextToPrincipalMiddleware
             using var activity = _activitySource?.StartActivity("Add context to Arc4u Principal", ActivityKind.Producer);
 
             // Ensure we have a traceparent.
-            if (!context.Request.Headers.ContainsKey("traceparent"))
+            // Activity.Current can be null when no listener samples the activity (for example in integration tests).
+            if (!context.Request.Headers.ContainsKey("traceparent") && Activity.Current?.Id is { } activityId)
             {
-                // Activity.Current is not null just because we are in the context of an activity.
-                context.Request.Headers.Append("traceparent", Activity.Current!.Id);
+                context.Request.Headers.Append("traceparent", activityId);
             }
-
-            activity?.SetTag(LoggingConstants.ActivityId, Activity.Current!.Id);
 
             // Check for a culture.
             var cultureHeader = context.Request?.Headers?.FirstOrDefault(h => h.Key.Equals("culture", StringComparison.InvariantCultureIgnoreCase));

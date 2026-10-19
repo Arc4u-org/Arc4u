@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using Arc4u.Configuration;
 using Arc4u.Dependency;
 using Arc4u.Diagnostics;
 using Arc4u.OAuth2;
+using Arc4u.OAuth2.Extensions;
 using Arc4u.OAuth2.Token;
 using Arc4u.Security.Principal;
 using Grpc.Core;
@@ -35,6 +37,28 @@ public class OAuth2Interceptor<T> : Interceptor
         _settings = keyValuesSettings ?? throw new ArgumentNullException(nameof(keyValuesSettings));
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OAuth2Interceptor{T}"/> class with the settings registered by name.
+    /// </summary>
+    /// <param name="serviceProvider"><see cref="IServiceProvider"/>, also used to resolve the settings.</param>
+    /// <param name="logger"><see cref="ILogger"/></param>
+    /// <param name="resolvingName">The name of the <see cref="SimpleKeyValueSettings"/> options holding the property bag for the token provider.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="serviceProvider"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ConfigurationException">No settings exist with that name.</exception>
+    public OAuth2Interceptor(IServiceProvider serviceProvider, ILogger<T> logger, string resolvingName)
+        : this(serviceProvider, logger, ResolveSettings(serviceProvider, resolvingName))
+    {
+    }
+
+    private static IKeyValueSettings ResolveSettings(IServiceProvider serviceProvider, string resolvingName)
+    {
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
+        return serviceProvider.TryGetNamedSettings(resolvingName, out var settings)
+            ? settings
+            : throw new ConfigurationException($"No settings found for {resolvingName}.");
+    }
+
     private readonly IKeyValueSettings _settings;
     private readonly ILogger<T> _logger;
     private readonly IScopedServiceProviderAccessor? _serviceProviderAccessor;
@@ -43,21 +67,57 @@ public class OAuth2Interceptor<T> : Interceptor
 
     private IServiceProvider GetResolver()
     {
-        var serviceProvider = _serviceProviderAccessor?.ServiceProvider;
-
-        if (serviceProvider is null)
+        // The scoped accessor throws when there is no current scope (a call made outside of an HTTP request): use the root provider.
+        try
         {
-            return _serviceProvider ?? throw new InvalidOperationException("The service provider is not defined. Use the other constructor");
+            var serviceProvider = _serviceProviderAccessor?.ServiceProvider;
+            if (serviceProvider is not null)
+            {
+                return serviceProvider;
+            }
+        }
+        catch (NullReferenceException)
+        {
         }
 
-        return serviceProvider;
+        return _serviceProvider ?? throw new InvalidOperationException("The service provider is not defined. Use the other constructor");
     }
+
     /// <inheritdoc/>
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
     {
-        AddBearerTokenCallerMetadata(ref context);
+        var headers = EnsureHeaders(ref context);
+
+        // The token is retrieved asynchronously: the call is started once the metadata is completed.
+        var callTask = StartAsyncUnaryCallAsync(request, context, continuation, headers);
+
+        return new AsyncUnaryCall<TResponse>(
+            GetResponseAsync(callTask),
+            GetResponseHeadersAsync(callTask),
+            () => callTask.GetAwaiter().GetResult().GetStatus(),
+            () => callTask.GetAwaiter().GetResult().GetTrailers(),
+            () => callTask.ContinueWith(t => t.Result.Dispose(), CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default));
+    }
+
+    private async Task<AsyncUnaryCall<TResponse>> StartAsyncUnaryCallAsync<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation, Metadata headers)
+        where TRequest : class
+        where TResponse : class
+    {
+        await AddBearerTokenCallerMetadataAsync(headers).ConfigureAwait(false);
 
         return continuation(request, context);
+    }
+
+    private static async Task<TResponse> GetResponseAsync<TResponse>(Task<AsyncUnaryCall<TResponse>> callTask)
+    {
+        var call = await callTask.ConfigureAwait(false);
+        return await call.ResponseAsync.ConfigureAwait(false);
+    }
+
+    private static async Task<Metadata> GetResponseHeadersAsync<TResponse>(Task<AsyncUnaryCall<TResponse>> callTask)
+    {
+        var call = await callTask.ConfigureAwait(false);
+        return await call.ResponseHeadersAsync.ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -91,7 +151,8 @@ public class OAuth2Interceptor<T> : Interceptor
 
         return continuation(context);
     }
-    private void AddBearerTokenCallerMetadata<TRequest, TResponse>(ref ClientInterceptorContext<TRequest, TResponse> context)
+
+    private static Metadata EnsureHeaders<TRequest, TResponse>(ref ClientInterceptorContext<TRequest, TResponse> context)
                 where TRequest : class
                 where TResponse : class
     {
@@ -106,10 +167,25 @@ public class OAuth2Interceptor<T> : Interceptor
             context = new ClientInterceptorContext<TRequest, TResponse>(context.Method, context.Host, options);
         }
 
+        return headers;
+    }
+
+    // The streaming and blocking calls return synchronously: the token retrieval cannot be awaited there.
+    private void AddBearerTokenCallerMetadata<TRequest, TResponse>(ref ClientInterceptorContext<TRequest, TResponse> context)
+                where TRequest : class
+                where TResponse : class
+    {
+        var headers = EnsureHeaders(ref context);
+
+        AddBearerTokenCallerMetadataAsync(headers).GetAwaiter().GetResult();
+    }
+
+    private async Task AddBearerTokenCallerMetadataAsync(Metadata headers)
+    {
         // if we have already an "Authorization" defined, we can skip the code here.
         if (null != headers.GetValue("authorization"))
         {
-            _logger.Technical().LogSkipAddingBearerToken(_settings.Values[TokenKeys.AuthenticationTypeKey]);
+            _logger.Technical().LogSkipAddingBearerToken(_settings.Values.TryGetValue(TokenKeys.AuthenticationTypeKey, out var type) ? type : string.Empty);
             return;
         }
 
@@ -143,7 +219,7 @@ public class OAuth2Interceptor<T> : Interceptor
             &&
             claimsIdentity.AuthenticationType != null
             &&
-            !claimsIdentity.AuthenticationType.Equals(_settings.Values[TokenKeys.AuthenticationTypeKey], StringComparison.InvariantCultureIgnoreCase))
+            !claimsIdentity.AuthenticationType.Equals(authenticationType, StringComparison.InvariantCultureIgnoreCase))
         {
             return;
         }
@@ -154,9 +230,15 @@ public class OAuth2Interceptor<T> : Interceptor
             return;
         }
 
+        if (!_settings.Values.TryGetValue(TokenKeys.ProviderIdKey, out var providerId))
+        {
+            _logger.Technical().LogNoTokenProviderIsDefined(GetType().Name);
+            return;
+        }
+
         try
         {
-            var provider = containerResolve.GetKeyedService<ITokenProvider>(_settings.Values[TokenKeys.ProviderIdKey]);
+            var provider = containerResolve.GetKeyedService<ITokenProvider>(providerId);
 
             if (provider is null)
             {
@@ -164,7 +246,7 @@ public class OAuth2Interceptor<T> : Interceptor
                 return;
             }
 
-            var tokenInfoResult = provider.GetTokenAsync(_settings, claimsIdentity).Result;
+            var tokenInfoResult = await provider.GetTokenAsync(_settings, claimsIdentity).ConfigureAwait(false);
 
             if (tokenInfoResult.IsFailed)
             {
@@ -173,7 +255,14 @@ public class OAuth2Interceptor<T> : Interceptor
                 return;
             }
 
+            // A successful result without a token (the NullTokenProvider) means no token must be sent.
             var tokenInfo = tokenInfoResult.Value;
+            if (tokenInfo is null)
+            {
+                _logger.Technical().LogNoTokenIsProvided(GetType().Name);
+                return;
+            }
+
             if (tokenInfo.ExpiresOnUtc < DateTime.UtcNow)
             {
                 _logger.Technical().LogGrpcTokenIsExpired();

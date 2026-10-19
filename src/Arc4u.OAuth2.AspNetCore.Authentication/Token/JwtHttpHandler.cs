@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
+using Arc4u.Configuration;
 using Arc4u.Diagnostics;
+using Arc4u.OAuth2.Extensions;
 using Arc4u.Security.Principal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,6 +40,33 @@ namespace Arc4u.OAuth2.Token
             _logger = logger;
 
             _settings = keyValuesSettings ?? throw new ArgumentNullException(nameof(keyValuesSettings));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JwtHttpHandler{T}"/> class with the settings registered by name. To use in a backend scenario, where no platform parameters are used.
+        /// No inner handler is defined because this will be done via the AddHttpClient method in a service!
+        /// </summary>
+        /// <param name="serviceProvider">The service provider, used to resolve the settings and when no scoped service provider is available (for example outside of a request).</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="resolvingName">The name of the <see cref="SimpleKeyValueSettings"/> options selecting the token provider (<c>ProviderId</c>) and the authentication type.</param>
+        /// <exception cref="ConfigurationException">No settings exist with that name.</exception>
+        public JwtHttpHandler(IServiceProvider serviceProvider, ILogger<T> logger, string resolvingName)
+            : this(serviceProvider, logger, ResolveSettings(serviceProvider, logger, resolvingName))
+        {
+        }
+
+        private static IKeyValueSettings ResolveSettings(IServiceProvider serviceProvider, ILogger<T> logger, string resolvingName)
+        {
+            ArgumentNullException.ThrowIfNull(serviceProvider);
+            ArgumentNullException.ThrowIfNull(logger);
+
+            if (serviceProvider.TryGetNamedSettings(resolvingName, out var settings))
+            {
+                return settings;
+            }
+
+            logger.Technical().LogResolvingIssueSettingsByName(resolvingName);
+            throw new ConfigurationException($"No settings found for {resolvingName}.");
         }
 
         private readonly IKeyValueSettings? _settings;
@@ -117,7 +146,13 @@ namespace Arc4u.OAuth2.Token
 
             _logger.Technical().LogGetTheTokenProvider(GetType().Name);
 
-            var provider = containerResolve.GetKeyedService<ITokenProvider>(_settings.Values[TokenKeys.ProviderIdKey]);
+            if (!_settings.Values.TryGetValue(TokenKeys.ProviderIdKey, out var providerId))
+            {
+                _logger.Technical().LogNoTokenProvider(GetType().Name);
+                return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+
+            var provider = containerResolve.GetKeyedService<ITokenProvider>(providerId);
             if (provider is null)
             {
                 _logger.Technical().LogNoTokenProvider(GetType().Name);
@@ -131,6 +166,13 @@ namespace Arc4u.OAuth2.Token
             {
                 _logger.Technical().LogNoTokenProvider(GetType().Name);
                 tokenInfoResult.Log();
+                return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+
+            // A successful result without a token (the NullTokenProvider) means no token must be sent.
+            if (tokenInfoResult.Value is null)
+            {
+                _logger.Technical().LogNoTokenProvider(GetType().Name);
                 return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
             }
 
@@ -158,7 +200,7 @@ namespace Arc4u.OAuth2.Token
                 request.Headers.Add(scheme, tokenInfoResult.Value.Token);
             }
 
-            // Add ActivityId if founded!
+            // Add the culture of the user if any.
             if (applicationContext?.Principal is not null)
             {
                 var culture = applicationContext!.Principal?.Profile?.CurrentCulture?.TwoLetterISOLanguageName;

@@ -10,7 +10,7 @@ This page lists every package of the Arc4u framework, whether it is supported in
 | Status | Meaning |
 |---|---|
 | **Supported** | Built from `src/Arc4u.slnx` on `develop/9.0.0`, published to NuGet.org and maintained. |
-| **Deprecated** | Published on NuGet.org for 8.x, no longer maintained, and being removed from the repository. It has no 9.x build. Use the replacement. |
+| **Deprecated** | Built only for Arc4u 8.x (source on the `release/8.3.2` branch), which is no longer supported, and not continued in 9.x: the source was removed from `develop/9.0.0` and there is no 9.x build. All versions are marked as deprecated (reason *Legacy*) on NuGet.org, with a message that links to the replacement. Use the replacement. |
 | **Not shipped in 9.x** | The source folder still exists but is not part of `src/Arc4u.slnx`, so no 9.x package is built. |
 | **Removed** | The package and its source no longer exist in 9.x. Older versions stay on NuGet.org. |
 
@@ -105,7 +105,6 @@ These packages are used by many of the others and have no guide of their own. Se
 
 | Package | Status | Target frameworks | Guide |
 |---|---|---|---|
-| `Arc4u.Data` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |
 | `Arc4u.EfCore` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |
 | `Arc4u.MongoDB` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |
 | `Arc4u.OData` | Supported | `net10.0`, `net11.0` | [Data access](data/index.md) |
@@ -122,11 +121,11 @@ None of these packages has a 9.x build.
 
 | Package | Status | Last version on NuGet | Replacement | More |
 |---|---|---|---|---|
-| `Arc4u.Standard.NServiceBus` | Deprecated | `8.3.2` | Use Dapr pub/sub directly. Arc4u has no Dapr messaging package. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
-| `Arc4u.Standard.NServiceBus.Core` | Deprecated | `8.3.2` | Use Dapr pub/sub directly. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
-| `Arc4u.Standard.NServiceBus.RabbitMQ` | Deprecated | `8.3.2` | Use Dapr pub/sub directly. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
-| `Arc4u.Prism.DI.Wpf` | Deprecated | `8.3.2` | Use `Prism.DryIoc`, Prism's own DryIoc container package. | [Prism.DI.Wpf replaced by Prism.DryIoc](../migration/8x-to-9.md#prismdiwpf-replaced-by-prismdryioc) |
-| `Arc4u.Dependency.ComponentModel` (8.x ID `Arc4u.Standard.Dependency.ComponentModel`) | Not shipped in 9.x | `8.3.2` | `Arc4u.Dependency`, which registers services on `IServiceCollection`. | [Dependency injection](dependency-injection/index.md) |
+| `Arc4u.Standard.NServiceBus` | Deprecated | `8.3.2` | In 9: use Dapr pub/sub directly. Arc4u has no Dapr messaging package. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
+| `Arc4u.Standard.NServiceBus.Core` | Deprecated | `8.3.2` | In 9: use Dapr pub/sub directly. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
+| `Arc4u.Standard.NServiceBus.RabbitMQ` | Deprecated | `8.3.2` | In 9: use Dapr pub/sub directly. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
+| `Arc4u.Prism.DI.Wpf` | Deprecated | `8.3.2` | In 9: use `Prism.DryIoc`, Prism's own DryIoc container package. | [Prism.DI.Wpf replaced by Prism.DryIoc](../migration/8x-to-9.md#prismdiwpf-replaced-by-prismdryioc) |
+| `Arc4u.Dependency.ComponentModel` (8.x ID `Arc4u.Standard.Dependency.ComponentModel`) | Removed | `8.3.2` | `Arc4u.Dependency`, which registers services on `IServiceCollection`. | [Dependency injection](dependency-injection/index.md) |
 | `Arc4u.OAuth2.Msal` (8.x ID `Arc4u.Standard.OAuth2.Msal`, folder `src/Arc4u.OAuth.Msal`) | Not shipped in 9.x | `8.3.2` | None in Arc4u 9. | [MSAL status](../migration/8x-to-9.md#msal-status) |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api` | Removed | `8.3.2` | None. The project was deleted from 9.x. For server authentication see `Arc4u.OAuth2.AspNetCore`. | [Server authentication](authentication-server/index.md) |
 | `Arc4u.Standard.OAuth2.Adal`, `Arc4u.Standard.OAuth2.AspNetCore.Adal` | Removed | `6.0.6.1-preview02`, `8.3.0-preview01` | None. ADAL is retired by Microsoft. | [ADAL and Protobuf removed](../migration/8x-to-9.md#adal-and-protobuf-removed) |

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using Arc4u.Caching;
 using Arc4u.Configuration;
 using Arc4u.Dependency;
@@ -444,7 +445,7 @@ public class GRpcInterceptorTests
         // Assert
         mockClientInterceptorContext.Options.Headers.Should().NotBeNull();
         mockClientInterceptorContext.Options.Headers!.GetValue("authorization").Should()
-            .Be($"Basic {options.ClientSecret}");
+            .Be($"Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes(options.ClientSecret))}");
     }
 
     [Fact]

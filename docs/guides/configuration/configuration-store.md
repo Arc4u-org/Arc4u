@@ -142,7 +142,7 @@ What each call does:
 | `AddSectionStoreConfiguration` | Adds the configuration provider (<xref:Arc4u.Configuration.Store.ConfigurationBuilderExtensions>). Call it **after** the providers that hold the initial values. |
 | `options.Add<T>(key)` | Persists the section `key`. The initial value is `section.Get<T>()` from the providers registered before. The section must exist, otherwise the build throws `InvalidOperationException`. |
 | `options.Add<T>(key, value)` | Persists the section `key` with an initial value you pass in code. |
-| `AddILogger` | Registers the Arc4u logger. The polling service logs through it and fails at host start without it (see [Troubleshooting](#bad-arc4u-usage-when-the-host-starts)). |
+| `AddILogger` | Optional. Registers the Arc4u logger; the polling service then writes its entries in the Technical category. Without it, the service logs through the standard `ILogger`. |
 | `AddDbContextSectionStore<TDbContext>` | Registers `ISectionStore` as a scoped service backed by your context. |
 | `AddSectionStoreService` | Registers the singleton that reloads providers and a hosted service that polls. The parameterless overload polls every 15 seconds; pass a `TimeSpan` to change it. |
 | `UseSectionStoreConfiguration` | Call it on `app.Services` after the database schema exists. It inserts the sections that are missing in the database, then starts the reloads. |
@@ -157,7 +157,7 @@ is the case for `builder.Configuration` in `WebApplication` and the generic host
 | Before `UseSectionStoreConfiguration` | The initial data (from `appsettings.json` or the value passed in code). The database is not read yet. |
 | At `UseSectionStoreConfiguration` | Sections that have no row are inserted with the initial data. Existing rows are never overwritten by the initial data. The configuration is **not** refreshed yet. |
 | First and every later poll | Values stored in the database appear at the first poll, not at `UseSectionStoreConfiguration`: an `IOptions<T>` resolved before `app.Run` keeps the `appsettings.json` value. The hosted service reads all rows. If the resulting values differ from the current ones, the provider reloads and the configuration change token fires. If nothing changed, nothing fires. |
-| After `ISectionStore.ResetAsync` | All rows are deleted. At the next poll the initial data is inserted again, but that poll publishes an empty set: the sections declared in code with `Add(key, value)` vanish for one interval, and `OnChange` fires twice. Sections seeded from `appsettings.json` show the `appsettings.json` value instead, because the earlier providers show through. At the following poll the startup values are back. See the known issue below. |
+| After `ISectionStore.ResetAsync` | All rows are deleted. At the next poll the initial data is inserted again and published: the sections return to their startup values, and `OnChange` fires once if those differ from the current values. |
 
 So a change in the database is visible after at most one polling interval, in every instance of the
 application. `IOptionsMonitor<T>.OnChange` fires at that poll, and `CurrentValue` returns the new values.
@@ -169,13 +169,6 @@ Which options interface sees the change:
 | `IOptionsMonitor<T>` | Yes, `CurrentValue` and `OnChange`. |
 | `IOptionsSnapshot<T>` | Yes, at the next scope (for example the next HTTP request). |
 | `IOptions<T>` | No, it keeps the value read at first use. |
-
-> [!WARNING]
-> Known issue: after `ResetAsync`, the first poll finds no rows, re-inserts the initial data but publishes
-> an empty set. For one polling interval, sections declared in code with `Add(key, value)` disappear from
-> the configuration (consumers of `IOptionsMonitor<T>` see default values), and sections declared with
-> `Add<T>(key)` show their `appsettings.json` value.
-> Avoid `ResetAsync` on a live application, or restart the instances afterwards.
 
 A poll that throws (for example when the database is unreachable) is logged and the next poll runs
 after the interval; the application keeps the last values.
@@ -253,10 +246,11 @@ Complex values are flattened like JSON configuration: the `Limit` property of `F
 |---|---|---|
 | <xref:Arc4u.Configuration.Store.ISectionStore> | `DbContextSectionStore<TDbContext>` (internal, scoped) | Use a store other than EF Core. |
 
-`AddDbContextSectionStore` uses `TryAdd`, so a registration you make before it wins. Note that
-`SectionEntity.Key` and `SectionEntity.Value` have internal setters: a store can keep and return the
-instances it receives in `ISectionStore.Add`, but building entities from its own data requires
-reflection, as EF Core does. The interface is usable for wrapping or decorating the EF Core store.
+`AddDbContextSectionStore` uses `TryAdd`, so a registration you make before it wins. A custom store
+persists `SectionEntity.Key` and `SectionEntity.Value` as it receives them in `ISectionStore.Add`, and
+rebuilds entities from its own data with `new SectionEntity(key, value)`. `ISectionStore.Add` must throw
+when the insert fails; the EF Core store only tolerates the case where every section already exists
+because another instance inserted it first.
 
 ## Security notes
 
@@ -269,17 +263,6 @@ reflection, as EF Core does. The interface is usable for wrapping or decorating 
   wrong edit is not silent.
 
 ## Troubleshooting
-
-### Bad Arc4u usage when the host starts
-
-`AddILogger()` was not called. The polling service logs with the Arc4u logger extensions, and the
-host fails to start with an `InvalidOperationException` ("Bad Arc4u usage.") from
-`SectionStoreMonitor.StartAsync`. Add `builder.Services.AddILogger();` from the `Arc4u.Dependency`
-namespace, as in the setup above.
-
-> [!WARNING]
-> Known issue: the requirement for `AddILogger()` is not enforced or reported by
-> `AddSectionStoreService()`. The failure only shows when the host starts.
 
 ### no such table: SectionEntity
 
@@ -304,11 +287,13 @@ registered before `AddSectionStoreConfiguration`. Register the store after `apps
 - `UseSectionStoreConfiguration` was not called: polling only starts after it.
 - The polling interval has not elapsed yet.
 
-### Adding the initial SectionEntities failed
+### The initial insert fails
 
-Logged as an error by the EF Core store when the initial insert fails, for example when two
-instances start at the same time and both insert the same key. The failure is swallowed
-by design and the values are read on the next poll.
+`UseSectionStoreConfiguration` throws the `DbUpdateException` of the EF Core store when the missing
+sections cannot be inserted (constraint, permissions, schema). When two instances start at the same
+time and insert the same keys, the instance that loses the race finds all the sections in the table,
+logs the warning "The initial SectionEntities were inserted concurrently by another instance." and
+continues.
 
 ## See also
 

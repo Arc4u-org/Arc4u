@@ -1,4 +1,3 @@
-using System.Globalization;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Diagnostics;
 using Arc4u.OAuth2.AspNetCore;
@@ -38,23 +37,13 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
     /// keys present in <paramref name="settings"/> (the client-token scenario path).
     /// </para>
     /// </summary>
-    public async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
         var credential = platformParameters as CredentialsResult ?? BuildCredential(settings);
 
         return await GetTokenAsync(settings, credential).ConfigureAwait(false);
-    }
-
-    /// <summary>Not supported.</summary>
-    /// <param name="settings">The provider settings.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotImplementedException">Always thrown.</exception>
-    public ValueTask SignOutAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
     }
 
     private static CredentialsResult BuildCredential(IKeyValueSettings settings)
@@ -65,7 +54,7 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
         return new CredentialsResult(hasUser && hasPassword, user, password);
     }
 
-    private async Task<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings settings, CredentialsResult credential)
+    private async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings settings, CredentialsResult credential)
     {
         var result = GetContext(settings, out var authority, out var scope);
 
@@ -144,7 +133,7 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
     /// <param name="settings">The provider settings.</param>
     /// <param name="credential">The user credentials.</param>
     /// <returns>The token, or a failed result when the credential token provider is not registered or the request fails.</returns>
-    protected async Task<Result<TokenInfo>> CreateBasicTokenInfoAsync(IKeyValueSettings settings, CredentialsResult credential)
+    protected async ValueTask<Result<TokenInfo>> CreateBasicTokenInfoAsync(IKeyValueSettings settings, CredentialsResult credential)
     {
         var basicTokenProvider = container.GetKeyedService<ICredentialTokenProvider>(CredentialTokenProvider.ProviderName);
 
@@ -163,7 +152,9 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
         {
             throw new InvalidOperationException("The password cannot be null.");
         }
-        return authority.Url + "_" + audience + "_Password_" + credential.Upn + "_" + credential.Password.GetHashCode().ToString(CultureInfo.InvariantCulture);
+        // The password is part of the hash so a second call with the same upn but a wrong password does not get the cached token.
+        // The upn and the authority are hashed with it so the same password gives a different key for each user.
+        return "Credential_" + credential.Upn + "_" + TokenCacheKey.Hash(authority.Url.ToString(), audience, credential.Upn, credential.Password);
     }
 
     private Result GetContext(IKeyValueSettings settings, out AuthorityOptions? authority, out string scope)

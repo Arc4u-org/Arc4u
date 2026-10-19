@@ -56,8 +56,8 @@ Reference both packages in every project that contains `[Export]` classes. On `d
 `Microsoft.Extensions.Hosting`, which brings the `Microsoft.Extensions.DependencyInjection` API that
 the generated code calls.
 
-`Arc4u.Dependency.ComponentModel`, which held the `IContainer` implementation, is not built or
-shipped in Arc4u 9. See [Package support](../package-support.md).
+`Arc4u.Dependency.ComponentModel`, which held the `IContainer` implementation, is removed from
+Arc4u 9. See [Package support](../package-support.md).
 
 ## Install
 
@@ -170,9 +170,9 @@ The second generator reads the `Application.Dependency` section of the file
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `Application.Dependency:RegisterTypes` | array of strings | empty | Types to register, each written `Namespace.Type, AssemblyName`. The assembly must be referenced by the project and the type must carry `[Export]`; entries that do not match are skipped. |
+| `Application.Dependency:RegisterTypes` | array of strings | empty | Types to register, each written `Namespace.Type, AssemblyName`. The assembly must be referenced by the project and the type must carry `[Export]`; entries that do not match are skipped with a warning. |
 
-The file is parsed with strict JSON rules: no comments and no trailing commas. Key names are
+Comments and trailing commas are accepted, as in any `appsettings.json`. Key names are
 case-sensitive. The 8.x keys `Assemblies` and `RejectedTypes` are no longer read. The
 [source generator reference](source-generators.md#generateregisteredtypes) lists every matching rule.
 
@@ -190,7 +190,14 @@ case-sensitive. The 8.x keys `Assemblies` and `RejectedTypes` are no longer read
 | `[Export("key")]` | `services.AddKeyedTransient<TClass>("key")` |
 
 `[Shared]` and `[Scoped]` combine with every form of `[Export]` (for example
-`[Export("key", typeof(IService)), Scoped]` gives `AddKeyedScoped`). Use one of them, not both.
+`[Export("key", typeof(IService)), Scoped]` gives `AddKeyedScoped`). Use one of them, not both: a
+class with both is registered as scoped, with warning `ARC4UDEP005`.
+
+An open generic class is registered with `typeof`: `[Export(typeof(IRepository<>)), Scoped]` on
+`Repository<T> : IRepository<T>` gives
+`services.AddScoped(typeof(IRepository<>), typeof(Repository<>))`. The class must implement the
+contract with its own type parameters, in the same order; otherwise the build reports error
+`ARC4UDEP006`.
 
 ### Register and resolve keyed services
 
@@ -265,9 +272,13 @@ does not find `StripeGateway`.
 ### Register Arc4u implementations from other packages
 
 Some Arc4u implementations are registered only through their `[Export]` attribute. For example,
-no `Add...` method registers `Arc4u.Caching.Memory.MemoryCache`: it is exported as
-`[Export("Memory", typeof(ICache))]`, and the cache context resolves the `ICache` keyed by the
-`Kind` of each configured cache (see [Caching](../caching/index.md)). List such types in `Configs/appsettings.json` (see
+no `Add...` method registers `Arc4u.AppSettings`: it is exported as
+`[Export(typeof(IAppSettings)), Shared]`. Others also have an `Add...` method: the cache
+implementations, such as `Arc4u.Caching.Memory.MemoryCache` exported as
+`[Export("Memory", typeof(ICache))]`, are registered by `AddMemoryCacheKind()` and the similar
+methods of the other cache packages (see [Caching](../caching/index.md)). For those, the method is
+enough and a `RegisterTypes` entry is not needed. Avoid listing them as well: the generated
+registration is not a `TryAdd`, so when `RegisterTypes` runs after your own `ICache` registration for the same kind, it replaces it. List the types to register in `Configs/appsettings.json` (see
 [appsettings.json](#appsettingsjson)) and call `RegisterTypes`:
 
 ```csharp
@@ -298,8 +309,8 @@ listed.
 
 ### Register the services of several projects
 
-Each project that references `Arc4u.Dependency.Tool` gets its own method, named after its assembly.
-The host calls all of them:
+Each project that references `Arc4u.Dependency.Tool` gets its own method, named after the last
+segment of its assembly name. The host calls all of them:
 
 ```csharp
 // Program.cs of Contoso.Api, which references Contoso.Billing.Business and Contoso.Billing.Data
@@ -312,11 +323,19 @@ builder.Services.RegisterApiTypes();
 builder.Services.RegisterTypes();
 ```
 
-- Give each project a different last segment in its assembly name. Two referenced projects named
-  `Contoso.Billing.Business` and `Contoso.Shipping.Business` both produce `RegisterBusinessTypes`,
-  and the call is ambiguous (error `CS0121`).
-- Declare `Configs/appsettings.json` as an additional file in one project only, usually the host,
-  for the same reason: each such project produces a `RegisterTypes` method.
+The method names follow the Arc4u solution layout: a microservice has one host and one project
+per layer (`Domain`, `Business`, `Data`, `Facade`...). The last segment of the assembly name is the
+layer, and each layer exists once in a service, so `RegisterBusinessTypes` names the business layer
+of *this* service.
+
+> [!IMPORTANT]
+> A host references the layers of one service only. Two referenced projects whose names end with
+> the same layer, such as `Contoso.Billing.Business` and `Contoso.Shipping.Business`, both produce
+> `RegisterBusinessTypes`, and the call is ambiguous (error `CS0121`). This means that two services
+> are being hosted as one: give each service its own host, and let them talk through their APIs.
+> Likewise, declare `Configs/appsettings.json` as an additional file in the host only: each project
+> that declares it produces a `RegisterTypes` method.
+
 - The generated methods use `Add...`, not `TryAdd...`. A class registered by its own project and
   also listed in `RegisterTypes` is registered twice.
 
@@ -368,7 +387,7 @@ warnings.
 ### Register what the attributes cannot express
 
 The attributes cover one class and one contract. For anything else, use the `IServiceCollection`
-methods of .NET next to the generated call: open generic types, factories, existing instances and
+methods of .NET next to the generated call: factories, existing instances and
 `TryAdd...` registrations.
 
 ```csharp
@@ -419,65 +438,76 @@ The `GenerateRegisteredTypes` generator did not find the file. Check that:
 - the file is at `Configs/appsettings.json` (or `wwwroot/appsettings.json` for `RegisterWwwTypes`)
   relative to the project folder; an `appsettings.json` at the root of the project is not read;
 - the file is declared with `<AdditionalFiles Include="Configs/appsettings.json" />`;
-- at least one `.cs` file sits directly in the project folder (usually `Program.cs`). The generator
-  locates `Configs` relative to the shortest folder path that contains source files;
-- the build output has no `CS8785` warning (next section).
+- the build output has no `ARC4UDEP007` warning: the project folder is read from the `ProjectDir`
+  MSBuild property, which every project using the .NET SDK sets.
+
+A file that cannot be read still produces `RegisterTypes`, empty, with error `ARC4UDEP001` (next
+section).
 
 The same error for `Register<Name>Types` means that the file lacks `using Arc4u.Dependency;`, that
 the project does not reference `Arc4u.Dependency.Tool`, or that the name does not match the last
 segment of the assembly name.
 
-### CS8785: Generator 'GenerateRegisteredTypes' failed to generate source
+### ARC4UDEP001: The appsettings.json file cannot be read
 
-The file cannot be read as the expected JSON. The message says why:
+The error points at the line of `appsettings.json` where reading stopped (or at the
+`Application.Dependency` key when the section itself is invalid), and the generated method
+registers no type. The message says why, for example:
 
-- `JsonReaderException ... '/' is invalid after a value`: the file contains comments. Remove them.
-- `JsonReaderException ... The JSON array contains a trailing comma at the end which is not
-  supported in this mode`: the file contains a trailing comma. Remove it.
-- `JsonException: The JSON value could not be converted to System.String. Path: $.RegisterTypes[0]`:
-  the entries use the old object form (`{ "Type": "..." }`). Write each entry as a string.
+- `'"' is invalid after a value. Expected either ',', '}', or ']'`: a comma is missing between two
+  entries.
+- `The JSON value could not be converted to System.String. Path: $.RegisterTypes[0]`: the entries
+  use the old object form (`{ "Type": "..." }`). Write each entry as a string.
+- `the 'Application.Dependency' section must be an object whose RegisterTypes property is an array of
+  strings`: `RegisterTypes` is missing, `null` or a single string.
 
 ### A type listed in RegisterTypes is not registered
 
-The generator skips an entry without warning when:
+Each skipped entry produces a warning that points at the entry in `appsettings.json`:
 
-- the assembly name after the comma does not match a referenced assembly file (`<Name>.dll`);
-- the entry contains a `Version=` part that does not appear in the path of the referenced assembly.
-  A four-part version such as `Version=9.0.0.0` never matches a NuGet folder such as
-  `9.0.0-preview37`. Leave `Version=` out;
-- the assembly name is an 8.x name such as `Arc4u.Standard.Configuration` (see
-  [Package renames](../../migration/8x-to-9.md#package-renames));
-- the type name is misspelled, the type is nested in another type, or it has no `[Export]`
-  attribute.
+| Warning | Cause |
+|---|---|
+| `ARC4UDEP002` | The entry is not written `Namespace.Type, AssemblyName`, or its `Version=` is not a version number. |
+| `ARC4UDEP003` | The project does not reference the assembly, for example because the entry uses an 8.x name such as `Arc4u.Standard.Configuration` (see [Package renames](../../migration/8x-to-9.md#package-renames)), or the referenced assembly has another version than `Version=`. |
+| `ARC4UDEP004` | The assembly has no public, non-nested type of that name with the `[Export]` attribute: the name is misspelled, the type is nested in another type, or it has no `[Export]`. |
 
 Inspect the generated `GeneratedTypes.g.cs` file (see
 [Inspect the generated code](#inspect-the-generated-code)).
 
 ### A class marked [Export] is not registered
 
-> [!WARNING]
-> Known issues of the `DependencyToolGenerator` on `develop/9.0.0`:
->
-> - The attribute is recognized by its exact spelling `[Export(...)]`. A class marked
->   `[ExportAttribute(...)]` or `[Arc4u.Dependency.Attribute.Export(...)]` is silently skipped.
-> - `[Export]` accepts several instances on a class, but only the first one is registered.
-> - `[Export]` on a `record` is ignored.
-> - A class with both `[Shared]` and `[Scoped]` is registered as scoped, but the same class listed
->   in `RegisterTypes` is registered as a singleton.
+The `DependencyToolGenerator` registers every class and record class with an `[Export]` attribute,
+whatever its spelling (`[Export]`, `[ExportAttribute]`, a fully qualified name or a `using` alias),
+once for each `[Export]`. When a class is still missing, check that the project references
+`Arc4u.Dependency.Tool` and that the type is not a struct, then
+[inspect the generated code](#inspect-the-generated-code). See
+[What is registered](source-generators.md#what-is-registered).
 
-Write the attribute as `[Export(...)]` with `using Arc4u.Dependency.Attribute;`, and register the
-other contracts of a multi-contract class yourself.
+### ARC4UDEP005: A type has both [Shared] and [Scoped]
 
-### Build errors in Dependencies.g.cs for a generic class
+Both generators register the type as scoped and report this warning, at the class or at its entry in
+`appsettings.json`. Remove the attribute that does not apply.
 
-The generator does not support open generic types: `[Export(typeof(IRepository<>))]` on
-`Repository<T>` produces code that does not compile (`CS7003`, `CS0246`). Remove the attribute and
-register the type with `services.AddScoped(typeof(IRepository<>), typeof(Repository<>))`. Closed
-generic contracts such as `[Export(typeof(IRepository<Order>))]` work.
+### ARC4UDEP006: Generic exported type cannot be registered
+
+The class is skipped, and the message says why:
+
+- an open generic class (`Repository<T>`) is exported with a closed or non-generic contract such as
+  `typeof(IRepository<Order>)`: export it with `typeof(IRepository<>)`;
+- the contract is open (`typeof(IRepository<>)`) but the class is not generic: export it with a
+  closed contract such as `typeof(IRepository<Order>)`;
+- the class does not implement the open contract with its own type parameters in the same order
+  (`Map<TKey, TValue> : IMap<TValue, TKey>`), so the container cannot build it;
+- the class is nested in a generic class;
+- the entry of `RegisterTypes` names a generic type (``Namespace.Type`1``): register it in code with
+  `services.Add...(typeof(...), typeof(...))`.
 
 ### CS0121: The call is ambiguous between the following methods or properties
 
-Two referenced projects generate a method with the same name. See
+Two referenced projects generate a method with the same name: either they belong to two services
+(for example `Contoso.Billing.Business` and `Contoso.Shipping.Business`), or two projects declare
+`Configs/appsettings.json` as an additional file. A host references the layers of one service only,
+and only the host declares the settings file. See
 [Register the services of several projects](#register-the-services-of-several-projects).
 
 ### InvalidOperationException: No service for type 'X' has been registered

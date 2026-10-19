@@ -68,9 +68,9 @@ without it the first cache created fails with `InvalidOperationException: Bad Ar
 
 ## Configuration
 
-`AddCacheContext(configuration, sectionName = "Caching")` reads the `Caching` section to register the options of each cache.
-<xref:Arc4u.Caching.CacheContext>, the `ICacheContext` implementation, always reads the section named `Caching`
-to create the caches, whatever the `sectionName` argument. Keep the default name.
+`AddCacheContext(configuration, sectionName = "Caching")` reads the section to register the options of each cache, and
+<xref:Arc4u.Caching.CacheContext>, the `ICacheContext` implementation, reads the same section to create the caches.
+The examples below use the default name `Caching`.
 
 ### appsettings.json
 
@@ -106,8 +106,8 @@ to create the caches, whatever the `sectionName` argument. Keep the default name
 | `Caching:Default` | `string` | empty | Name of the cache returned by `ICacheContext.Default`. When it is empty, no cache is created at all. |
 | `Caching:Caches` | array | empty | The declared caches. |
 | `Caching:Caches:n:Name` | `string` | empty | Name used to get the cache from `ICacheContext`. Also the name of its options. |
-| `Caching:Caches:n:Kind` | `string` | empty | `Memory`, `Redis`, `RedisSentinel`, `Sql` or `Dapr`. Must match, with the same casing, the key of the keyed `ICache` service that implements it. |
-| `Caching:Caches:n:IsAutoStart` | `bool` | `false` | `true` creates and initializes the cache when the `ICacheContext` is first resolved. See [the known issue](#the-first-access-to-a-cache-with-isautostart-false-throws) with `false`. |
+| `Caching:Caches:n:Kind` | `string` | empty | `Memory`, `Redis`, `RedisSentinel`, `Sql` or `Dapr`, case-insensitive. Any other value is a custom kind and must match, with the same casing, the key of the keyed `ICache` service that implements it. |
+| `Caching:Caches:n:IsAutoStart` | `bool` | `false` | `true` creates and initializes the cache when the `ICacheContext` is first resolved; `false` does it on the first access to the cache. |
 | `Caching:Caches:n:Settings` | object | none | Settings of the kind. The keys are in the page of each kind. |
 
 The section replaces the format of the 8.x documentation: `Memory.Settings`, `SizeLimit`, `SizeLimitInMegaBytes` and a
@@ -115,8 +115,9 @@ The section replaces the format of the 8.x documentation: `Memory.Settings`, `Si
 
 ### Code
 
-`AddCacheContext` registers `ICacheContext` and the options of each declared cache. It does not register the cache
-implementations nor the serializer: register them yourself, as keyed services whose key is the `Kind`.
+`AddCacheContext` registers `ICacheContext` and the options of each declared cache. Each `Arc4u.Caching.*` package
+registers its cache implementations with its own extension: `AddMemoryCacheKind()`, `AddRedisCacheKinds()` (`Redis` and
+`RedisSentinel`), `AddSqlCacheKind()` and `AddDaprCacheKind()`. Register the serializer yourself.
 
 ```csharp
 // Program.cs
@@ -134,15 +135,15 @@ builder.Services.AddCacheContext(builder.Configuration);
 // The serializer used by the caches (the Memory, Redis and Sql kinds).
 builder.Services.AddSingleton<IObjectSerialization, JsonSerialization>();
 
-// One keyed ICache per Kind you use.
-builder.Services.AddKeyedTransient<ICache, MemoryCache>(CacheContext.Memory);
-builder.Services.AddKeyedTransient<ICache, RedisCache>(CacheContext.Redis);
+// The ICache implementations of the kinds you use.
+builder.Services.AddMemoryCacheKind();
+builder.Services.AddRedisCacheKinds();
 
 var app = builder.Build();
 app.Run();
 ```
 
-The constants `CacheContext.Memory`, `Redis`, `RedisSentinel`, `Sql` and `Dapr` hold the kind names. The
+The constants `CacheContext.Memory`, `Redis`, `RedisSentinel`, `Sql` and `Dapr` hold the kind names; the extensions register each implementation as a keyed `ICache` service with that key. The
 `[Export]` attributes on the cache classes let the Arc4u code generator write the same registrations
 (see [Dependency injection](../dependency-injection/index.md)).
 
@@ -173,8 +174,13 @@ public class Catalog(ICacheContext caches)
 public record Product(string Id, string Name);
 ```
 
-`Get` returns `default` when the key does not exist. `Put` without a timeout keeps the value until it is removed or evicted
-by the store; with a timeout, the value expires after it.
+`Get` returns `default` when the key does not exist; `TryGetValue` returns `false` for a missing key, so it tells a stored `0`
+or `false` apart from no value. `Put` without a timeout keeps the value until it is removed or evicted by the store; with a
+timeout, the value expires after it. Every kind behaves the same way:
+
+- `Put` and `PutAsync` reject `null` with `ArgumentNullException` and store the default of a value type (`0`, `false`).
+- An error of the store or of the serializer is thrown as `DataCacheException`, with the original exception as
+  `InnerException`, by `Get` and `Put`. `TryGetValue` and `Remove` return `false` instead.
 
 ### Use several caches
 
@@ -286,27 +292,6 @@ that `Kind`. `Default` fails the same way when `Caching:Default` is empty or is 
 
 The cache exists but could not finish its initialization. For the Memory, Redis and Sql kinds, the message says that an
 `IObjectSerialization` cannot be resolved: register one (see [Serialization](serialization.md)).
-
-### The first access to a cache with `IsAutoStart` false throws
-
-> [!WARNING]
-> Known issue, reproduced on `develop/9.0.0`. The first use of a cache declared with `"IsAutoStart": false` through the
-> `ICacheContext` indexer logs `An item with the same key has already been added` and throws
-> `InvalidOperationException: There is no cache configured with the name ...`. The cache is initialized anyway and the
-> next access works. Until it is fixed, set `"IsAutoStart": true` (the recommended setting for now), or catch the first
-> exception. `Caching:Caches:n:IsAutoStart` defaults to `false`, so set it explicitly.
-
-### A memory cache silently stores nothing
-
-> [!WARNING]
-> Known issue, reproduced on `develop/9.0.0`. A `Memory` cache declared without a `Settings` section gets a size limit
-> of 100 bytes instead of the documented 100 MB, so values larger than that are not stored (`Put` succeeds, `Get`
-> returns `null`). Always declare `Settings` with a `SizeLimitInMB`. See [Memory cache](memory.md).
-
-### `ArgumentNullException` on `Put` with `0` or `false`
-
-The synchronous `Put(key, value)` (without a timeout) of the Memory, Redis and Sql caches rejects `default(T)`, so
-`Put("k", 0)` throws `ArgumentNullException`, while `PutAsync("k", 0)` and the overloads with a timeout store the value.
 
 ## See also
 

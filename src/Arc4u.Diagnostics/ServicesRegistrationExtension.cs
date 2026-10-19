@@ -10,9 +10,9 @@ public static class ServicesRegistrationExtension
 {
     /// <summary>
     /// Registers the Arc4u logging: <see cref="ILogger{TCategoryName}"/> is replaced by <see cref="LoggerWrapper{T}"/> (transient),
-    /// the non-generic <see cref="ILogger"/> resolves to <c>ILogger&lt;DefaultLogger&gt;</c> (transient), and <see cref="IScopedLogger{T}"/> resolves to
-    /// <see cref="ScopedLoggerWrapper{T}"/> (scoped). Any existing <see cref="ILogger{TCategoryName}"/> registration is removed first.
-    /// Unless already registered, a <see cref="NullLoggerProperties"/> is registered as <see cref="IAddPropertiesToLog"/> under the keys <c>"Scoped"</c> and <c>"Transient"</c>.
+    /// and the non-generic <see cref="ILogger"/> resolves to <c>ILogger&lt;DefaultLogger&gt;</c> (transient). Any existing <see cref="ILogger{TCategoryName}"/> registration is removed first.
+    /// Unless already registered, a <see cref="NullLoggerProperties"/> is registered as <see cref="IAddPropertiesToLog"/> under the keys <c>"Scoped"</c> and <c>"Transient"</c>:
+    /// a logger resolved in a scope uses the <c>"Scoped"</c> provider, a logger resolved from the root (for a singleton) the <c>"Transient"</c> one.
     /// The registered loggers expose the fluent API of <see cref="ILoggerExtensions"/> (<c>Technical()</c>, <c>Business()</c>, <c>Monitoring()</c>), which also works on the
     /// non-generic <see cref="ILogger"/> so that static classes can log by passing the type with <c>Technical(Type)</c> or <c>Technical&lt;T&gt;()</c>.
     /// </summary>
@@ -30,8 +30,10 @@ public static class ServicesRegistrationExtension
         services.TryAddKeyedScoped<IAddPropertiesToLog, NullLoggerProperties>("Scoped");
         services.TryAddKeyedTransient<IAddPropertiesToLog, NullLoggerProperties>("Transient");
 
+        // Lets LoggerWrapper<T> know whether it is resolved in a scope.
+        services.TryAddSingleton<RootServiceProvider>();
+
         // Add the Arc4u Logger<T> implementation.
-        services.TryAddScoped(typeof(IScopedLogger<>), typeof(ScopedLoggerWrapper<>));
         services.TryAddTransient(typeof(ILogger<>), typeof(LoggerWrapper<>));
 
         services.AddTransient<ILogger>((serviceProvider) => serviceProvider.GetRequiredService<ILogger<DefaultLogger>>());

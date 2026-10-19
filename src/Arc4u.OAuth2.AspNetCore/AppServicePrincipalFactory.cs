@@ -89,7 +89,6 @@ public class AppServicePrincipalFactory : IAppPrincipalFactory
             return Result.Fail("No principal can be created: the claims transformation did not produce an AppPrincipal.");
         }
 
-        activity?.SetTag(LoggingConstants.ActivityId, Activity.Current?.Id ?? Guid.NewGuid().ToString());
         return appPrincipal;
     }
 
@@ -161,14 +160,42 @@ public class AppServicePrincipalFactory : IAppPrincipalFactory
         }
     }
 
-    /// <summary>Removes the cached claims of the current user of the <see cref="IApplicationContext"/>.</summary>
+    /// <summary>
+    /// Removes the cached claims of the current user of the <see cref="IApplicationContext"/> and signs the user out of every token provider that holds a user session
+    /// (<see cref="ISignOutTokenProvider"/>), giving them empty settings.
+    /// </summary>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A task that completes when the cache entry is removed.</returns>
-    public ValueTask SignOutUserAsync(CancellationToken cancellationToken) => RemoveCacheFromUserAsync(cancellationToken);
+    /// <returns>A task that completes when the user is signed out.</returns>
+    public ValueTask SignOutUserAsync(CancellationToken cancellationToken) => SignOutUserAsync(new SimpleKeyValueSettings(), cancellationToken);
 
-    /// <summary>Removes the cached claims of the current user of the <see cref="IApplicationContext"/>. The settings are not used.</summary>
-    /// <param name="settings">The token provider settings, which are ignored.</param>
+    /// <summary>
+    /// Removes the cached claims of the current user of the <see cref="IApplicationContext"/> and signs the user out of every token provider that holds a user session
+    /// (<see cref="ISignOutTokenProvider"/>), giving them <paramref name="settings"/>.
+    /// An exception thrown while removing the claims or by a token provider is logged and not rethrown.
+    /// </summary>
+    /// <param name="settings">The settings given to the token providers.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A task that completes when the cache entry is removed.</returns>
-    public ValueTask SignOutUserAsync(IKeyValueSettings settings, CancellationToken cancellationToken) => RemoveCacheFromUserAsync(cancellationToken);
+    /// <returns>A task that completes when the user is signed out.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
+    public async ValueTask SignOutUserAsync(IKeyValueSettings settings, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+
+        try
+        {
+            await RemoveCacheFromUserAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // The token providers are signed out even when the claims cannot be removed (cache unavailable),
+            // and logging must not prevent it whatever the logger registered by the application.
+            _logger.LogTechnicalException(ex, "The cached claims of the user cannot be removed.");
+        }
+
+        await _container.SignOutTokenProvidersAsync(settings, _logger, cancellationToken).ConfigureAwait(false);
+    }
 }

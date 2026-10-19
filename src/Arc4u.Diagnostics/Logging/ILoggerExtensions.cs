@@ -18,6 +18,8 @@ namespace Arc4u.Diagnostics;
 /// </example>
 public static class ILoggerExtensions
 {
+    private const string BadUsageMessage = "Bad Arc4u usage. The logger is not an Arc4u logger: register it with services.AddILogger() from Arc4u.Diagnostics.";
+
     /// <summary>Starts a log entry in the <see cref="MessageCategory.Technical"/> category (messages for IT people).</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
     /// <param name="logger">The logger, which must be an <see cref="ILoggerWrapper{T}"/>.</param>
@@ -25,7 +27,7 @@ public static class ILoggerExtensions
     /// <returns>The logger wrapper positioned on the Technical category.</returns>
     /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/>.</exception>
     public static ILoggerWrapper<T> Technical<T>(this ILogger<T> logger, [CallerMemberName] string methodName = "") =>
-        logger is ILoggerWrapper<T> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Technical), methodName) : throw new InvalidOperationException("Bad Arc4u usage.");
+        logger is ILoggerWrapper<T> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Technical), methodName) : throw new InvalidOperationException(BadUsageMessage);
 
     /// <summary>Starts a log entry in the <see cref="MessageCategory.Business"/> category (messages for IT and business people).</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
@@ -34,7 +36,7 @@ public static class ILoggerExtensions
     /// <returns>The logger wrapper positioned on the Business category.</returns>
     /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/>.</exception>
     public static ILoggerWrapper<T> Business<T>(this ILogger<T> logger, [CallerMemberName] string methodName = "") =>
-        logger is ILoggerWrapper<T> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Business), methodName) : throw new InvalidOperationException("Bad Arc4u usage.");
+        logger is ILoggerWrapper<T> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Business), methodName) : throw new InvalidOperationException(BadUsageMessage);
 
     /// <summary>Starts a log entry in the <see cref="MessageCategory.Monitoring"/> category (monitoring purposes).</summary>
     /// <typeparam name="T">The category type of the logger.</typeparam>
@@ -43,7 +45,7 @@ public static class ILoggerExtensions
     /// <returns>The logger wrapper positioned on the Monitoring category.</returns>
     /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/>.</exception>
     public static ILoggerWrapper<T> Monitoring<T>(this ILogger<T> logger, [CallerMemberName] string methodName = "") =>
-        logger is ILoggerWrapper<T> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Monitoring), methodName) : throw new InvalidOperationException("Bad Arc4u usage.");
+        logger is ILoggerWrapper<T> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Monitoring), methodName) : throw new InvalidOperationException(BadUsageMessage);
 
     /// <summary>Starts a log entry in the <see cref="MessageCategory.Technical"/> category for a non-generic <see cref="ILogger"/>, using <paramref name="specificType"/> as the source context.</summary>
     /// <param name="logger">The non-generic logger, which must be an <see cref="ILoggerWrapper{T}"/> of <see cref="DefaultLogger"/>.</param>
@@ -52,7 +54,7 @@ public static class ILoggerExtensions
     /// <returns>The logger wrapper positioned on the Technical category.</returns>
     /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/> of <see cref="DefaultLogger"/>.</exception>
     public static ILoggerWrapper<DefaultLogger> Technical(this ILogger logger, Type specificType, [CallerMemberName] string methodName = "") =>
-        logger is ILoggerWrapper<DefaultLogger> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Technical), methodName, specificType) : throw new InvalidOperationException("Bad Arc4u usage.");
+        logger is ILoggerWrapper<DefaultLogger> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Technical), methodName, specificType) : throw new InvalidOperationException(BadUsageMessage);
 
     /// <summary>Starts a log entry in the <see cref="MessageCategory.Technical"/> category for a non-generic <see cref="ILogger"/>, using <typeparamref name="T"/> as the source context.</summary>
     /// <typeparam name="T">The type written in the <see cref="LoggingConstants.Class"/> property.</typeparam>
@@ -61,7 +63,7 @@ public static class ILoggerExtensions
     /// <returns>The logger wrapper positioned on the Technical category.</returns>
     /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/> of <see cref="DefaultLogger"/>.</exception>
     public static ILoggerWrapper<DefaultLogger> Technical<T>(this ILogger logger, [CallerMemberName] string methodName = "") =>
-        logger is ILoggerWrapper<DefaultLogger> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Technical), methodName, typeof(T)) : throw new InvalidOperationException("Bad Arc4u usage.");
+        logger is ILoggerWrapper<DefaultLogger> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Technical), methodName, typeof(T)) : throw new InvalidOperationException(BadUsageMessage);
 
     /// <summary>Starts a log entry in the <see cref="MessageCategory.Monitoring"/> category for a non-generic <see cref="ILogger"/>, using <paramref name="specificType"/> as the source context.</summary>
     /// <param name="logger">The non-generic logger, which must be an <see cref="ILoggerWrapper{T}"/> of <see cref="DefaultLogger"/>.</param>
@@ -70,6 +72,44 @@ public static class ILoggerExtensions
     /// <returns>The logger wrapper positioned on the Monitoring category.</returns>
     /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/> of <see cref="DefaultLogger"/>.</exception>
     public static ILoggerWrapper<DefaultLogger> Monitoring(this ILogger logger, Type specificType, [CallerMemberName] string methodName = "") =>
-        logger is ILoggerWrapper<DefaultLogger> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Monitoring), methodName, specificType) : throw new InvalidOperationException("Bad Arc4u usage.");
+        logger is ILoggerWrapper<DefaultLogger> loggerWraper ? loggerWraper.SetContext(nameof(MessageCategory.Monitoring), methodName, specificType) : throw new InvalidOperationException(BadUsageMessage);
 
+    /// <summary>
+    /// Starts a log entry in any category, predefined or invented by the application. The <see cref="LoggingConstants.Category"/> property
+    /// is written with the name given by <see cref="MessageCategoryRegistry.GetName(MessageCategory)"/>.
+    /// Use it to write your own category extension methods.
+    /// </summary>
+    /// <typeparam name="T">The category type of the logger.</typeparam>
+    /// <param name="logger">The logger, which must be an <see cref="ILoggerWrapper{T}"/>.</param>
+    /// <param name="category">The category: a predefined value or a value registered with <see cref="MessageCategoryRegistry.Register(string, MessageCategory)"/>.</param>
+    /// <param name="methodName">The name of the calling member; filled in by the compiler. An extension method that calls this one must forward its own <c>[CallerMemberName]</c> parameter.</param>
+    /// <returns>The logger wrapper positioned on <paramref name="category"/>.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/>.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// public static class SecurityLoggerExtensions
+    /// {
+    ///     public const MessageCategory SecurityCategory = (MessageCategory)8;
+    ///
+    ///     static SecurityLoggerExtensions() => MessageCategoryRegistry.Register("Security", SecurityCategory);
+    ///
+    ///     public static ILoggerWrapper&lt;T&gt; Security&lt;T&gt;(this ILogger&lt;T&gt; logger, [CallerMemberName] string methodName = "") =>
+    ///         logger.Category(SecurityCategory, methodName);
+    /// }
+    ///
+    /// _logger.Security().Add("User", user).LogWarning("Access denied.");
+    /// </code>
+    /// </example>
+    public static ILoggerWrapper<T> Category<T>(this ILogger<T> logger, MessageCategory category, [CallerMemberName] string methodName = "") =>
+        logger is ILoggerWrapper<T> loggerWraper ? loggerWraper.SetContext(MessageCategoryRegistry.GetName(category), methodName) : throw new InvalidOperationException(BadUsageMessage);
+
+    /// <summary>Starts a log entry in any category for a non-generic <see cref="ILogger"/>, using <paramref name="specificType"/> as the source context.</summary>
+    /// <param name="logger">The non-generic logger, which must be an <see cref="ILoggerWrapper{T}"/> of <see cref="DefaultLogger"/>.</param>
+    /// <param name="category">The category: a predefined value or a value registered with <see cref="MessageCategoryRegistry.Register(string, MessageCategory)"/>.</param>
+    /// <param name="specificType">The type written in the <see cref="LoggingConstants.Class"/> property.</param>
+    /// <param name="methodName">The name of the calling member; filled in by the compiler.</param>
+    /// <returns>The logger wrapper positioned on <paramref name="category"/>.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="logger"/> is not an Arc4u <see cref="ILoggerWrapper{T}"/> of <see cref="DefaultLogger"/>.</exception>
+    public static ILoggerWrapper<DefaultLogger> Category(this ILogger logger, MessageCategory category, Type specificType, [CallerMemberName] string methodName = "") =>
+        logger is ILoggerWrapper<DefaultLogger> loggerWraper ? loggerWraper.SetContext(MessageCategoryRegistry.GetName(category), methodName, specificType) : throw new InvalidOperationException(BadUsageMessage);
 }

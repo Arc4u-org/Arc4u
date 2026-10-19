@@ -18,6 +18,10 @@ packages. It contains breaking changes: follow the
 
 ### Added
 
+- `Arc4u.Diagnostics`: categories defined by the application. `MessageCategoryRegistry.Register("Security",
+  (MessageCategory)8)` names a flag, and `logger.Category(category)` starts an entry in any category, so
+  an application can write its own `logger.Security()` extension method. The name is written in the
+  `Category` property and read back by `CategoryFilter`, `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB`.
 - `Arc4u.Dependency.Tool`: source generators that turn `[Export]` attributes and the
   `Application.Dependency` section into `IServiceCollection` registrations at compile time.
 - `Arc4u.OAuth2.Client.Authentication`: OpenID Connect sign-in for desktop and mobile clients with
@@ -49,9 +53,23 @@ packages. It contains breaking changes: follow the
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
   `JsonSerialization` accepts a `JsonSerializerContext`.
+- Sign-out of the token providers: `ISignOutTokenProvider` for the providers that hold tokens for a
+  user session, `SignOutTokenProvidersAsync` (signs out every registered one), `AddTokenProvidersSignOut()`
+  and `SignOutTokenProviderKeys` (resolve each provider separately), `SignOutGeneration` (a token requested
+  before a sign-out is not kept after it), `TechnicalLoggerExtensions.LogTechnicalException` (logs with or
+  without an Arc4u logger) and `OboTokenCacheIndex`
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `LoginTimeout` and `SecureCacheTimeout` settings of the OpenID Connect sign-in of desktop and mobile
+  clients (`OidcClientAuthenticationOptions`) ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `Arc4u.MongoDB`: `AddMongoDatabase<TContext>(configuration, connectionStringKey, options)` completes the
+  `MongoClientSettings` read from the connection string with a delegate, for the settings a connection
+  string cannot carry (`TranslationOptions` of the LINQ3 provider, `ServerApi`, `ClusterConfigurator`)
+  ([#54](https://github.com/Arc4u-org/Arc4u/issues/54)).
 
 ### Changed
 
+- Packages are now licensed under `Apache-2.0` in their NuGet metadata, matching the `LICENSE`
+  file; earlier versions declared `MIT`.
 - Packages renamed from `Arc4u.Standard.*` to `Arc4u.*` (assembly names too). See
   [Package renames](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#package-renames).
 - Target frameworks: `net10.0` and `net11.0` (the previews up to `9.0.0-preview37` target `net8.0`,
@@ -61,8 +79,9 @@ packages. It contains breaking changes: follow the
   instead of `IContainer`. See
   [IContainer replaced by keyed services](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#icontainer-replaced-by-keyed-services).
 - Errors are returned as FluentResults `Result` values instead of `Messages` and `AppException`:
-  `ITokenProvider.GetTokenAsync` returns `Result<TokenInfo>`, `IAppPrincipalFactory.CreatePrincipalAsync`
-  returns `Result<AppPrincipal>`, `PersistEntity.TryValidate` returns `Result`. See
+  `ITokenProvider.GetTokenAsync` and `ICredentialTokenProvider.GetTokenAsync` return
+  `ValueTask<Result<TokenInfo>>`, `IAppPrincipalFactory.CreatePrincipalAsync` returns
+  `Result<AppPrincipal>`, `PersistEntity.TryValidate` returns `Result`. See
   [Message and Messages replaced by ProblemDetails](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#message-and-messages-replaced-by-problemdetails).
 - Authentication settings: the OpenID Connect settings are registered under the name `Cookies`,
   the `AuthenticationType` and settings-key configuration entries are removed, events classes are
@@ -91,15 +110,44 @@ packages. It contains breaking changes: follow the
 - The authentication cookie expires after the shorter of `AuthenticationTicketTtl` and
   `RefreshTokenLifetime`, and its maximum age is `RefreshTokenLifetime`.
 - Dapr packages updated to 1.18.
-
-### Deprecated
-
-- `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core`, `Arc4u.Standard.NServiceBus.RabbitMQ`
-  and `Arc4u.Prism.DI.Wpf`: no 9.0 version
-  ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)). Use Dapr pub/sub and `Prism.DryIoc`.
+- `MemoryLogMessages` (`MemoryLogDbSink.LogMessages`) is a thread-safe `IReadOnlyCollection<LogMessage>`
+  instead of a `List<LogMessage>`: use `Add`, `Clear`, `Count` and `GetPage`, and enumerate it to
+  read a snapshot ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).
+- `AddNotificationHandlersAsScoped` no longer takes a `ServiceLifetime`, which registered the
+  services as scoped for any value but `Transient`. Call `AddNotificationHandlersAsScoped()` or the
+  new `AddNotificationHandlersAsTransient()`
+  ([#260](https://github.com/Arc4u-org/Arc4u/issues/260)).
+- `IApplicationContext.Principal` is an `AppPrincipal?` and `SetPrincipal` accepts `null` to clear
+  the principal, so the compiler warns when the principal is used without a null check
+  ([#125](https://github.com/Arc4u-org/Arc4u/issues/125)).
+- `ITokenProvider.SignOutAsync` moved to the new `ISignOutTokenProvider` interface, implemented only
+  by the providers that hold tokens for a user session. `RemoteClientSecretTokenProvider`,
+  `ClientCredentialsTokenProvider`, `BootstrapContextTokenProvider`, `NullTokenProvider`,
+  `OidcTokenProvider` (its tokens are in the authentication cookie) and `CredentialTokenCacheTokenProvider`
+  (a configured account, not a user session) no longer have a sign-out. `SignOutUserAsync` of
+  `AppPrincipalFactory` and of `AppServicePrincipalFactory` signs the user out of every registered
+  `ISignOutTokenProvider`, not only the provider of the `ProviderId`, and logs their exceptions instead of
+  rethrowing them; `AppServicePrincipalFactory` only removed the cached claims before.
+  `AddOidcAuthentication`, `AddHybridAuthentication`, `AddOnBehalfOf`, `AddOidcClientAuthentication` and
+  `AddAuthenticationCookie` call `AddTokenProvidersSignOut()`, so a provider that cannot be resolved does
+  not prevent the sign-out of the others. `AzureADOboTokenProvider` keeps an `OboTokenCacheIndex` in the
+  cache: add it to your `JsonSerializerContext` if the cache serializer uses one. See
+  [Other API changes](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#other-api-changes)
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `BlazorMsalTokenProvider` takes the public `IAccessTokenProvider` instead of
+  `IAccessTokenProviderAccessor`, an internal API of `Microsoft.AspNetCore.Components.WebAssembly.Authentication`
+  that can change in any release. Its registration does not change; code that creates it must pass an
+  `IAccessTokenProvider` ([#83](https://github.com/Arc4u-org/Arc4u/issues/83)).
 
 ### Removed
 
+- `IApplicationContext.ActivityID`: the `ActivityId` log property is the trace id of the current
+  `System.Diagnostics.Activity` (OpenTelemetry), added by the logger when an activity exists
+  ([#222](https://github.com/Arc4u-org/Arc4u/issues/222)).
+- `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core`, `Arc4u.Standard.NServiceBus.RabbitMQ`
+  and `Arc4u.Prism.DI.Wpf`: no 9.0 version
+  ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)). They are deprecated on NuGet.org
+  ([#272](https://github.com/Arc4u-org/Arc4u/issues/272)). In 9, use Dapr pub/sub and `Prism.DryIoc`.
 - .NET 8 and .NET 9 targets, and the .NET Standard 2.0 target of every package except
   `Arc4u.Dependency` and `Arc4u.Dependency.Tool`.
 - ADAL (`Arc4u.Standard.OAuth2.AspNetCore.Adal`), Protobuf serializers
@@ -118,17 +166,118 @@ packages. It contains breaking changes: follow the
 - The `DataContractSerializer`, `DataContractJsonSerializer` and `XmlSerializer` string helpers, and
   `Arc4u.Utils.Enum<T>` / `EnumUtil`.
 - The AutoMapper dependency of `Arc4u.Diagnostics.Serilog.Sinks.RealmDb`.
+- The change-tracking concept, obsolete with a domain-centric approach
+  ([#266](https://github.com/Arc4u-org/Arc4u/issues/266)): the `Arc4u.Standard.Data` package
+  (`IdEntity`, `PersistEntity`, the audit entities, `EntitySet<TEntity>`, `EntityItem<TEntity>`,
+  `RelationAttribute`, `Validate<T>`, `ValidateAll`), `IPersistEntity` and `PersistChange`,
+  `ChangeGraphTracker` and `PersisteChangeExtension` in `Arc4u.EfCore`, and the `IsInsert`,
+  `IsUpdate`, `IsDelete`, `IsNone` rules and `ValidatorPredicates` in `Arc4u.FluentValidation`.
+  `Graph<T>` and `GraphExtension` are kept. See
+  [Arc4u.Data and change tracking removed](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#arc4udata-and-change-tracking-removed).
+- `Arc4u.gRPC`: `ClientErrorInterceptor`. With `Grpc.Net.Client` it converted almost nothing, since a
+  call fails when it is awaited, after the interceptor returned. Catch the `RpcException` and use
+  `ToResult()` to get the server's ProblemDetails back.
 
 ### Fixed
 
+- Signing out threw a `NotImplementedException` with `AzureADOboTokenProvider` and `ClientTokenProvider`.
+  `AzureADOboTokenProvider` now removes from the cache the tokens of every API obtained for the user, also
+  with a user access token refreshed since: the index is kept per user (the registered
+  `IUserObjectIdentifier`, otherwise the `oid` or `sub` claim) and application (`aud`, otherwise `azp` or
+  `appid`), both read from the user token ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `ClientTokenProvider` forgets the token kept in memory at the sign-out, also a token requested before
+  it, and renews a token expiring in less than one minute
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `BlazorMsalTokenProvider` clears the principal at the sign-out, and `UsernamePasswordTokenProvider` also
+  removes the cached user name ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider` kept returning the access token after the sign-out. The sign-out
+  now clears the tokens in memory, cancels a login in progress and does not keep the tokens of a refresh or
+  login in progress. It opens the browser logout only when the user had a session, sends the identity token
+  of the login as `id_token_hint` (kept in the new `TokenRefreshInfo.IdentityToken`), bounds the logout by
+  `LoginTimeout`, and still logs the user out of the authority when the secure cache fails
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider`: concurrent calls refresh the token (or log the user in) once,
+  since with refresh token rotation a second refresh failed and started an interactive login. The calls
+  waiting for a login get its result: when the user cancels it, they fail instead of opening the browser
+  again. `LoginTimeout` (5 minutes) bounds a login the user does not complete and the calls waiting for it
+  ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider`: a network error during a refresh keeps the session (the access
+  token is still returned until it expires); only `invalid_grant`, `invalid_scope` and the interaction
+  errors log the user in again ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `OidcClientIdentityModelTokenProvider` and its secure cache: an entry that cannot be decoded is removed
+  and the user logs in again, instead of making every call fail; a transient read failure fails the call
+  and keeps the entry; an inaccessible cache, or a serializer that does not support `TokenRefreshInfo`,
+  keeps the entry and logs the user in; a failing write no longer fails the call that obtained the tokens.
+  `SecureCacheTimeout` (30 seconds) bounds the secure-cache operations of a sign-out or a token write, and
+  the failures are logged with an optional logger ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- The access token was not in the `BootstrapContext` of the identity in a cookie session, so the `Bootstrap`
+  token provider and code written for bearer tokens did not work without `UseOpenIdBearerInjector()`.
+  `StandardCookieEvents` now puts it there on each request, after refreshing it when needed (#90, #158).
+- With `UseOpenIdBearerInjector()` and on-behalf-of settings, `AzureADOboTokenProvider` used the
+  on-behalf-of token that the injector puts in the `BootstrapContext` as the user's token: another
+  on-behalf-of exchange in the same request sent a token whose audience is not the application, and the
+  sign-out looked for the cached tokens of the user in another index, so the token of the injector stayed
+  in the cache. In a cookie session it now uses the access token of the cookie (`TokenRefreshInfo`), and
+  the `BootstrapContext` only when there is none ([#275](https://github.com/Arc4u-org/Arc4u/issues/275)).
+- Blazor Interactive Server: the `AppPrincipal` of a circuit was set once, when the circuit connected,
+  and never followed its authentication state. When the circuit reconnected with another user or without
+  a user (for example after a sign-out in another tab), or a revalidating provider turned the state
+  anonymous, the event handlers kept acting as the previous user. `ApplicationContextCircuitHandler` and
+  `AppPrincipalServerAuthenticationStateProvider` now update the `IApplicationContext` of the circuit on
+  `AuthenticationStateChanged`, and clear its principal for an anonymous user
+  ([#171](https://github.com/Arc4u-org/Arc4u/issues/171)).
+- `OidcTokenProvider` and `RefreshTokenProvider` threw a `NullReferenceException` when the user was not
+  logged in yet (the `AccessToken` and `RefreshToken` of `TokenRefreshInfo` are null). `OidcTokenProvider`
+  now returns a failed result, or refreshes when only the refresh token is there, and `RefreshTokenProvider`
+  throws an `InvalidOperationException` (#161).
 - JWT bearer events missing in hybrid authentication.
 - `TimeZoneContext` conversion from a specific local time.
 - Anonymous calls through service discovery.
 - Scope injection in `ILogger<T>`.
+- `FlagsEnum.TryPowerOfTwo` and `TryPowerOfTwoExponent` accepted values that are not powers of two,
+  so `FlagValues<T>()` also returned `None` and composite values
+  ([#261](https://github.com/Arc4u-org/Arc4u/issues/261)).
+- `MemoryLogStore.GetLogs` never matched a criteria against a message with capital letters; the
+  comparison now ignores case. Reading the memory log store while the sink wrote to it could throw
+  `Collection was modified` ([#238](https://github.com/Arc4u-org/Arc4u/issues/238)).
+- `RealmLoggingDbCtx`, the singleton `ILogStore` registered by `AddRealmDBLog`, opened its `Realm` in
+  its constructor, so `GetLogs` and `RemoveAll` threw `Realm accessed from incorrect thread` from any
+  other thread (every ASP.NET Core request). It now opens a `Realm` for each call. The constructor no
+  longer takes the unused `ILoggerFactory`, and the `Realm` property is removed
+  ([#239](https://github.com/Arc4u-org/Arc4u/issues/239)).
+- `RealmDBSink` opened a `Realm` for every batch and never closed it, so instances and their native
+  handles piled up until the garbage collector finalized them, and it wrote each event in its own
+  transaction. It now opens and closes one `Realm` per batch, without a synchronization context, and
+  writes the batch in one transaction
+  ([#267](https://github.com/Arc4u-org/Arc4u/issues/267)).
+- `StandardBearerEvents.Challenge` answered a 401 with a `ProblemDetails` body saying `"status": 403`
+  and the `application/json` content type; the body now says 401 and the content type is
+  `application/problem+json` ([#221](https://github.com/Arc4u-org/Arc4u/issues/221)).
+- `WriteTo.CategoryFilter` forwarded no event, and `SimpleTextFormatter`, `MemoryLogDB` and `RealmDB`
+  labelled every entry `Technical`: they read the `Category` property as a number while the logger
+  writes it as a string. The new `Helper.GetCategory` reads the enum, its name, a registered name or
+  its number, and keeps a category defined by the application instead of replacing it with
+  `Technical`; `SimpleTextFormatter` writes such a category instead of failing
+  ([#235](https://github.com/Arc4u-org/Arc4u/issues/235)).
 
 ### Security
 
 - Vulnerable dependencies upgraded ([#130](https://github.com/Arc4u-org/Arc4u/issues/130)).
+- `UseResourcesRightValidationFor` and `AddValidateSwaggerRightFor` only protected the exact path, so a user
+  without the right got the OpenAPI document by changing its extension: Swashbuckle serves it for
+  `swagger.yaml` and `swagger.yml`, and up to 6.5 for any extension (`swagger.jsonx`). The same path with
+  another extension is now protected too ([#112](https://github.com/Arc4u-org/Arc4u/issues/112)).
+- `CypherCodec` encrypts with AES-GCM and a random nonce for each value (`GenerateKey`, `Encrypt`,
+  `Decrypt`), so a modified value or a wrong key is detected. `GenerateKeyAndIV`, `EncodeClearText`,
+  `DecodeCypherstring` and `CypherCodecConfig.IV` are removed: the `EncryptionRijndael` section only has a
+  `Key`. Long values encrypted with a certificate now have the form `<key>.<data>`. Values encrypted
+  with 8.x must be encrypted again ([#114](https://github.com/Arc4u-org/Arc4u/issues/114)).
+- The authentication cookie of `AddOidcAuthentication` and `AddHybridAuthentication`, with or without a
+  ticket store, is always `Secure`, `HttpOnly` and `SameSite=Lax`. It was only `Secure` when the request
+  was in HTTPS, so not behind a proxy that ends TLS ([#110](https://github.com/Arc4u-org/Arc4u/issues/110)).
+- `Arc4u.Caching.SqlServer`: `System.Security.Cryptography.Pkcs`, a dependency of
+  `Microsoft.Data.SqlClient`, raised from 9.0.18 to 9.0.21 (CVE-2026-84008, high;
+  CVE-2026-70162, moderate; both denial of service).
 
 ## [8.3.2] - 2025-07-18
 

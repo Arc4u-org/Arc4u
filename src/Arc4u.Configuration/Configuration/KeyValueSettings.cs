@@ -17,7 +17,8 @@ public abstract class KeyValueSettings : IKeyValueSettings
     /// <param name="configuration">The configuration that contains the section.</param>
     public KeyValueSettings(string sectionName, IConfiguration configuration)
     {
-        _properties = configuration.GetSection(sectionName)?.GetChildren()?.ToDictionary(x => x.Key, x => x.Value!) ?? throw new ArgumentException($"Section {sectionName} does not exist or doesn't contain a usable value", nameof(sectionName));
+        // GetSection never returns null: a missing section has no children, so the settings are empty.
+        _properties = configuration.GetSection(sectionName).GetChildren().ToDictionary(x => x.Key, x => x.Value!);
     }
 
     /// <inheritdoc/>

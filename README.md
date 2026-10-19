@@ -9,7 +9,7 @@ logging, authentication, caching, results, gRPC and data access. It selects tech
 from the .NET ecosystem and adds what applications in an enterprise usually need on top of
 them. It has been used in production for many years.
 
-Arc4u 9 is in preview on the `develop/9.0.0` branch: the packages are published as `9.0.0-previewNN` (the previews on NuGet target `net8.0`, `net9.0` and `net10.0`; the code on the branch targets `net10.0` and `net11.0`), so install them with `--prerelease`. See [Versioning](https://arc4u-org.github.io/Arc4u/concepts/versioning.html) for how versions and package names work.
+Arc4u 9 is in preview on the `develop/9.0.0` branch: the packages are published as `9.0.0-previewNN` (the previews on NuGet target `net8.0`, `net9.0` and `net10.0`; the code on the branch targets `net10.0` and `net11.0`), so install them with `--prerelease`. Previews can change at any time, including breaking changes, and are not supported: see [SECURITY.md](SECURITY.md). See [Versioning](https://arc4u-org.github.io/Arc4u/concepts/versioning.html) for how versions and package names work.
 
 ## Quick start
 
@@ -78,8 +78,7 @@ Each package ID below is the name you pass to `dotnet add package`. The area nam
 | [gRPC and versioning](https://arc4u-org.github.io/Arc4u/guides/grpc-versioning/) | `Arc4u.gRPC` | [![Arc4u.gRPC](https://img.shields.io/nuget/vpre/Arc4u.gRPC?label=)](https://www.nuget.org/packages/Arc4u.gRPC) |
 |  | `Arc4u.AspNetCore.gRpc` | [![Arc4u.AspNetCore.gRpc](https://img.shields.io/nuget/vpre/Arc4u.AspNetCore.gRpc?label=)](https://www.nuget.org/packages/Arc4u.AspNetCore.gRpc) |
 |  | `Arc4u.AspNetCore.Versioning` | not on NuGet yet |
-| [Data access](https://arc4u-org.github.io/Arc4u/guides/data/) | `Arc4u.Data` | [![Arc4u.Data](https://img.shields.io/nuget/vpre/Arc4u.Data?label=)](https://www.nuget.org/packages/Arc4u.Data) |
-|  | `Arc4u.EfCore` | [![Arc4u.EfCore](https://img.shields.io/nuget/vpre/Arc4u.EfCore?label=)](https://www.nuget.org/packages/Arc4u.EfCore) |
+| [Data access](https://arc4u-org.github.io/Arc4u/guides/data/) | `Arc4u.EfCore` | [![Arc4u.EfCore](https://img.shields.io/nuget/vpre/Arc4u.EfCore?label=)](https://www.nuget.org/packages/Arc4u.EfCore) |
 |  | `Arc4u.MongoDB` | [![Arc4u.MongoDB](https://img.shields.io/nuget/vpre/Arc4u.MongoDB?label=)](https://www.nuget.org/packages/Arc4u.MongoDB) |
 |  | `Arc4u.OData` | [![Arc4u.OData](https://img.shields.io/nuget/vpre/Arc4u.OData?label=)](https://www.nuget.org/packages/Arc4u.OData) |
 | [Dispatcher](https://arc4u-org.github.io/Arc4u/guides/dispatcher/) | `Arc4u.Dispatcher` | [![Arc4u.Dispatcher](https://img.shields.io/nuget/vpre/Arc4u.Dispatcher?label=)](https://www.nuget.org/packages/Arc4u.Dispatcher) |

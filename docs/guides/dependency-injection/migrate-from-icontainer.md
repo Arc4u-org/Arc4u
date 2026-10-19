@@ -22,14 +22,10 @@ to the source generators and keyed services. The full list of 8.x to 9 changes i
 | `DependencyContext.Current` (static access to the container) | Constructor injection, or an injected `IServiceProvider`. |
 
 `[Export]`, `[Shared]` and `[Scoped]` are still in the `Arc4u.Dependency.Attribute` namespace, and
-a class with one `[Export]` gets the same lifetime as in 8.x. Two behaviors changed, and neither
-produces a warning:
-
-- **Several `[Export]` on one class.** 8.x registered every `[Export]` of a class. Arc4u 9 registers
-  only the first one. Register the other contracts yourself with `IServiceCollection`.
-- **The `[ExportAttribute(...)]` spelling.** 8.x found the attribute by reflection, whatever its
-  spelling. Arc4u 9 only recognizes `[Export(...)]`; `[ExportAttribute(...)]` and
-  `[Arc4u.Dependency.Attribute.Export(...)]` are skipped. Rename them to `[Export(...)]`.
+a class gets the same lifetime as in 8.x. As in 8.x, every `[Export]` of a class is registered, and
+the attribute is recognized whatever its spelling (`[Export]`, `[ExportAttribute]`, a fully
+qualified name or a `using` alias); see
+[What is registered](source-generators.md#what-is-registered).
 
 ## Steps
 
@@ -66,15 +62,13 @@ produces a warning:
      you do not want registered.
    - Keep `RegisterTypes` for the types of other packages. Put the section in
      `Configs/appsettings.json` of the host project, declare that file as `AdditionalFiles`, and
-     write each entry as a string without comments in the file (see
+     write each entry as a string (see
      [appsettings.json](index.md#appsettingsjson)).
    - Rename the assembly part of each entry to its 9 name: 8.x entries name 8.x assemblies, for
      example `"Arc4u.AppSettings, Arc4u.Standard.Configuration"` becomes
      `"Arc4u.AppSettings, Arc4u.Configuration"` (see
      [Package renames](../../migration/8x-to-9.md#package-renames)). An entry that still names an
-     8.x assembly is skipped without a warning.
-   - Replace any `[ExportAttribute(...)]` spelling with `[Export(...)]`, and register yourself the
-     contracts of classes that have several `[Export]` attributes (see [What changed](#what-changed)).
+     8.x assembly is skipped with warning `ARC4UDEP003`.
 4. Replace `IContainerResolve` with `IServiceProvider`, or better, inject the services themselves
    (see the table below).
 5. Replace `IContainerRegistry` calls with the `IServiceCollection` methods of .NET (see the table
@@ -154,11 +148,9 @@ The type no longer exists. Inject the service itself, or `IServiceProvider`, as 
 - It came from the `Assemblies` list of `Application.Dependency`, which is no longer read.
 - Its `RegisterTypes` entry still names the 8.x assembly (`Arc4u.Standard.*`). Use the 9 assembly
   name (see [Package renames](../../migration/8x-to-9.md#package-renames)).
-- It is the second (or later) `[Export]` of its class: only the first one is registered now.
-- Its class uses the `[ExportAttribute(...)]` or namespace-qualified spelling, which the generator
-  skips.
-- It was listed in `RegisterTypes` in the object form or with a `Version=`; see
-  [Troubleshooting](index.md#troubleshooting) in the dependency injection guide.
+- It was listed in `RegisterTypes` in the object form, or with a `Version=` that does not match the
+  referenced assembly; see [Troubleshooting](index.md#troubleshooting) in the dependency injection
+  guide.
 
 ## See also
 

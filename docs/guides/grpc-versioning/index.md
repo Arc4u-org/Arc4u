@@ -37,7 +37,7 @@ flowchart LR
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.gRPC` | Client and shared side: `OAuth2Interceptor<T>`, `AddSuffixPathInterceptor`, `ClientErrorInterceptor`, the server `AuthorizationInterceptor`, `RpcException.ToResult()` and the `arc4u.grpc.v1` proto. |
+| `Arc4u.gRPC` | Client and shared side: `OAuth2Interceptor<T>`, `AddSuffixPathInterceptor`, the server `AuthorizationInterceptor`, `RpcException.ToResult()` and the `arc4u.grpc.v1` proto. |
 | `Arc4u.AspNetCore.gRpc` | Server side: `Result.ToRpcException()`, the gRPC middleware and `ConfigureLocalCaCertificateForGrpc`. References `Arc4u.gRPC`. |
 | `Arc4u.AspNetCore.Versioning` | `AddServiceApiVersioning()` for REST endpoints. Independent of the two gRPC packages. |
 
@@ -139,7 +139,7 @@ Use one HTTP/2 endpoint for gRPC and a plain HTTP/1 endpoint for the probes. See
 
 | Service | Default implementation | Replace it to |
 |---|---|---|
-| `OAuth2Interceptor<T>` | none (you derive from it) | Pick the token settings by name, or change how a call is authenticated. |
+| `OAuth2Interceptor<T>` | none (built with a settings name) | Change how a call is authenticated. |
 | `AddSuffixPathInterceptor` | none (abstract) | Prefix the path of every call so a reverse proxy can route it. |
 | `IRootCertificateExtractor` | `RootCertificateExtractor` | Fetch the server certificate another way. |
 

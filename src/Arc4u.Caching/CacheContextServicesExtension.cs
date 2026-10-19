@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Arc4u.Configuration.Redis;
 using Arc4u.Configuration.Sql;
 using Arc4u.Configuration.Dapr;
+using Microsoft.Extensions.Logging;
 
 namespace Arc4u.Caching;
 
@@ -14,7 +15,8 @@ public static class CacheContextServicesExtension
     /// <summary>
     /// Registers the <see cref="ICacheContext"/> and the options of every cache declared in the configuration section. For the cache at position <c>n</c> of the <c>Caches</c> array,
     /// the options are read from <c>{sectionName}:Caches:n:Settings</c> and registered according to its <c>Kind</c> (<c>Memory</c>, <c>Redis</c>, <c>RedisSentinel</c>, <c>Sql</c> or <c>Dapr</c>, case-insensitive; other kinds are ignored).
-    /// The <see cref="ICache"/> implementations themselves are provided by the <c>Arc4u.Caching.*</c> packages.
+    /// The <see cref="ICache"/> implementations themselves are provided by the <c>Arc4u.Caching.*</c> packages and registered with their own extension
+    /// (<c>AddMemoryCacheKind()</c>, <c>AddRedisCacheKinds()</c>, <c>AddSqlCacheKind()</c>, <c>AddDaprCacheKind()</c>); an <see cref="Arc4u.Serializer.IObjectSerialization"/> must also be registered.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The application configuration.</param>
@@ -36,6 +38,8 @@ public static class CacheContextServicesExtension
     /// the caches are registered in Program.cs with:
     /// <code language="csharp">
     /// builder.Services.AddCacheContext(builder.Configuration);
+    /// builder.Services.AddMemoryCacheKind();
+    /// builder.Services.AddTransient&lt;IObjectSerialization, JsonSerialization&gt;();
     /// </code>
     /// </example>
     public static void AddCacheContext(this IServiceCollection services, IConfiguration configuration, string sectionName = "Caching")
@@ -46,7 +50,7 @@ public static class CacheContextServicesExtension
 
         var config = section.Get<Configuration.Caching>() ?? throw new InvalidOperationException("Configuration for caching is missing.");
 
-        services.TryAddSingleton<ICacheContext, CacheContext>();
+        services.TryAddSingleton<ICacheContext>(sp => new CacheContext(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<CacheContext>>(), sp, sectionName));
 
         for (var idx = 0; idx < config.Caches.Count; idx++)
         {

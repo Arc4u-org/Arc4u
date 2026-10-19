@@ -29,6 +29,7 @@ public static class SecretDecryptorConfiguratorExtensions
     /// <returns>The <see cref="IConfigurationBuilder"/>.</returns>
     public static IConfigurationBuilder AddCertificateDecryptorConfiguration(this IConfigurationBuilder configurationBuilder)
     {
+        PreviousProviders.Capture(configurationBuilder);
         configurationBuilder.Add(new SecretCertificateConfigurationSource(new SecretCertificateOptions()));
         return configurationBuilder;
     }
@@ -44,6 +45,7 @@ public static class SecretDecryptorConfiguratorExtensions
         var config = new SecretCertificateOptions();
         options(config);
 
+        PreviousProviders.Capture(configurationBuilder);
         configurationBuilder.Add(new SecretCertificateConfigurationSource(config));
         return configurationBuilder;
     }
@@ -55,6 +57,7 @@ public static class SecretDecryptorConfiguratorExtensions
     /// <returns>The <see cref="IConfigurationBuilder"/>.</returns>
     public static IConfigurationBuilder AddRijndaelDecryptorConfiguration(this IConfigurationBuilder configurationBuilder)
     {
+        PreviousProviders.Capture(configurationBuilder);
         configurationBuilder.Add(new SecretRijndaelConfigurationSource(new SecretRijndaelOptions()));
         return configurationBuilder;
     }
@@ -70,6 +73,7 @@ public static class SecretDecryptorConfiguratorExtensions
         var config = new SecretRijndaelOptions();
         options(config);
 
+        PreviousProviders.Capture(configurationBuilder);
         configurationBuilder.Add(new SecretRijndaelConfigurationSource(config));
         return configurationBuilder;
     }

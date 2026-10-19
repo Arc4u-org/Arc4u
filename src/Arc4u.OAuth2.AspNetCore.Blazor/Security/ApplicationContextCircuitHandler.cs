@@ -20,9 +20,14 @@ namespace Arc4u.Blazor;
 /// connection is up and builds the <see cref="AppPrincipal"/> into the circuit-scoped
 /// <see cref="IApplicationContext"/>, so it is available for the whole lifetime of the circuit —
 /// independent of whether/when the render pipeline re-invokes <c>GetAuthenticationStateAsync</c>.
+///
+/// It also follows the changes of the circuit's authentication state: when the circuit reconnects,
+/// Blazor sets the user of the new connection after the <see cref="OnConnectionUpAsync"/> handlers ran,
+/// and a revalidating provider can turn the state anonymous. Nothing reads the state again after such
+/// a change, so the handler rebuilds the principal from the new state, or clears it for an anonymous user.
 /// </summary>
 [Export(typeof(CircuitHandler)), Scoped]
-public sealed class ApplicationContextCircuitHandler : CircuitHandler
+public sealed class ApplicationContextCircuitHandler : CircuitHandler, IDisposable
 {
     private readonly AuthenticationStateProvider _authenticationStateProvider;
     private readonly IClaimAuthorizationFiller _authorizationFiller;
@@ -44,9 +49,11 @@ public sealed class ApplicationContextCircuitHandler : CircuitHandler
         _authorizationFiller = authorizationFiller;
         _profileFiller = profileFiller;
         _applicationContext = applicationContext;
+
+        _authenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
     }
 
-    /// <summary>Builds the <see cref="AppPrincipal"/> of the authenticated user and sets it in the circuit-scoped <see cref="IApplicationContext"/> when the circuit connection is up. An anonymous user leaves the context untouched.</summary>
+    /// <summary>Builds the <see cref="AppPrincipal"/> of the authenticated user and sets it in the circuit-scoped <see cref="IApplicationContext"/> when the circuit connection is up. For an anonymous user, the principal is cleared.</summary>
     /// <param name="circuit">The circuit.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task that completes when the principal is set.</returns>
@@ -63,4 +70,13 @@ public sealed class ApplicationContextCircuitHandler : CircuitHandler
             _profileFiller,
             _applicationContext);
     }
+
+    /// <summary>Stops following the authentication state of the circuit.</summary>
+    public void Dispose()
+    {
+        _authenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+        => _ = ApplicationContextInitializer.SetPrincipalAsync(task, _authorizationFiller, _profileFiller, _applicationContext);
 }

@@ -18,7 +18,7 @@ Input validation is a failure the caller can fix, so it is not an exception. `Ar
 | `Create(errorMessage)` | `string` | none (required) | The message returned to the client. |
 | `WithSeverity` / `Severity` | <xref:Arc4u.Results.Validation.Severity> | `Error` | `Error`, `Warning` or `Info`. |
 | `WithCode` / `Code` | `string` | Empty string | A code for your logs. It is not part of the HTTP response. |
-| `WithMetadata(key, value)` | `string`, `object` | none | Adds metadata. Throws if the key already exists. |
+| `WithMetadata(key, value)` | `string`, `object` | none | Adds metadata. An existing key is kept: the call is then ignored. |
 
 `ValidationError` converts implicitly to a failed `Result`. The `WithValidationError` extensions add one to an
 existing `Result` or `Result<T>`, with an optional code and severity:
@@ -127,46 +127,32 @@ answers `422`.
 > `Arc4u.Results.Validation.Severity` and `FluentValidation.Severity` have the same name. A file that imports both
 > namespaces must qualify the one it uses.
 
-## Rules for persisted entities
+## Rules for DateTime properties
 
-`Arc4u.FluentValidation` also contains rules for entities that carry a `PersistChange` (the `IPersistEntity` interface
-of `Arc4u`, used by the [data guide](../data/index.md)). They check that the state of the entity matches the operation
-you are validating.
+`Arc4u.FluentValidation` also contains rules for `DateTime` properties.
 
 | Rule | Passes when the property is |
 |---|---|
-| `IsInsert()` | `PersistChange.Insert` |
-| `IsUpdate()` | `PersistChange.Update` |
-| `IsDelete()` | `PersistChange.Delete` |
-| `IsNone()` | `PersistChange.None` |
 | `IsUtcDateTime()` | A `DateTime` whose `Kind` is `Utc` |
 | `IsDateOnly()` | A `DateTime` whose time of day is zero |
 
 ```csharp
-using Arc4u.Data;
 using Arc4u.Validation;
 using FluentValidation;
 
-public class CustomerInsertValidator : AbstractValidator<Customer>
+public class CustomerValidator : AbstractValidator<Customer>
 {
-    public CustomerInsertValidator()
+    public CustomerValidator()
     {
-        RuleFor(x => x.PersistChange).IsInsert();
         RuleFor(x => x.CreatedOn).IsUtcDateTime();
     }
 }
 
-public class Customer : PersistEntity
+public class Customer
 {
     public DateTime CreatedOn { get; set; }
 }
 ```
-
-`IsUtcDateTime()` and `IsDateOnly()` have no default message: add `WithMessage(...)`, otherwise the failure message is
-"No default error message has been specified".
-
-`ValidatorPredicates` in the namespace `Arc4u.FluentValidation` offers the same tests as predicates for
-`When(...)`: `IsInsert`, `IsUpdate`, `IsDelete` and `IsNonet` (the name of the last one is a misspelling of "IsNone").
 
 ## Troubleshooting
 
@@ -179,13 +165,9 @@ That is the current format, see [The HTTP response](#the-http-response).
 Every `ValidationError` fails the result, including warnings and `Info`. If a rule is only advisory, do not report
 it through the result.
 
-### `WithMetadata` throws `ArgumentException`
-
-`ValidationError.WithMetadata` uses `Dictionary.Add`. Use each key once per error.
-
 ## See also
 
 - [Results and errors](index.md)
 - [Results to HTTP responses](http-mapping.md)
 - [FluentValidation documentation](https://docs.fluentvalidation.net/)
-- <xref:Arc4u.Results.Validation> and <xref:Arc4u.FluentValidation> in the API reference
+- <xref:Arc4u.Results.Validation> and <xref:Arc4u.Validation> in the API reference

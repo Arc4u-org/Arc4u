@@ -1,4 +1,3 @@
-using Arc4u.Data;
 using Arc4u.FluentValidation.Rules;
 using Arc4u.Results.Validation;
 using FluentResults;
@@ -9,7 +8,7 @@ using Severity = FluentValidation.Severity;
 namespace Arc4u.Validation;
 
 /// <summary>
-/// FluentValidation extensions for Arc4u: rules on the <see cref="PersistChange"/> state of an <see cref="IPersistEntity"/>, rules on <see cref="DateTime"/> properties,
+/// FluentValidation extensions for Arc4u: rules on <see cref="DateTime"/> properties,
 /// and the bridge between a FluentValidation validation and a FluentResults <see cref="Result{TValue}"/>.
 /// </summary>
 /// <example>
@@ -18,7 +17,6 @@ namespace Arc4u.Validation;
 /// {
 ///     public OrderValidator()
 ///     {
-///         RuleFor(o =&gt; o.PersistChange).IsInsert();
 ///         RuleFor(o =&gt; o.CreatedOn).IsUtcDateTime();
 ///     }
 /// }
@@ -28,54 +26,6 @@ namespace Arc4u.Validation;
 /// </example>
 public static class DefaultValidatorExtensions
 {
-    /// <summary>
-    /// Requires the property, which holds a <see cref="PersistChange"/>, to be <see cref="PersistChange.Insert"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the validated object.</typeparam>
-    /// <typeparam name="TProperty">The enum type of the property.</typeparam>
-    /// <param name="ruleBuilder">The rule builder.</param>
-    /// <returns>The rule builder options, to chain further configuration.</returns>
-    public static IRuleBuilderOptions<T, TProperty> IsInsert<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder) where T : IPersistEntity where TProperty : Enum
-    {
-        return ruleBuilder.SetValidator(new IsInsertEntityRuleValidator<T, TProperty>());
-    }
-
-    /// <summary>
-    /// Requires the property, which holds a <see cref="PersistChange"/>, to be <see cref="PersistChange.Update"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the validated object.</typeparam>
-    /// <typeparam name="TProperty">The enum type of the property.</typeparam>
-    /// <param name="ruleBuilder">The rule builder.</param>
-    /// <returns>The rule builder options, to chain further configuration.</returns>
-    public static IRuleBuilderOptions<T, TProperty> IsUpdate<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder) where T : IPersistEntity where TProperty : Enum
-    {
-        return ruleBuilder.SetValidator(new IsUpdateEntityRuleValidator<T, TProperty>());
-    }
-
-    /// <summary>
-    /// Requires the property, which holds a <see cref="PersistChange"/>, to be <see cref="PersistChange.Delete"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the validated object.</typeparam>
-    /// <typeparam name="TProperty">The enum type of the property.</typeparam>
-    /// <param name="ruleBuilder">The rule builder.</param>
-    /// <returns>The rule builder options, to chain further configuration.</returns>
-    public static IRuleBuilderOptions<T, TProperty> IsDelete<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder) where T : IPersistEntity where TProperty : Enum
-    {
-        return ruleBuilder.SetValidator(new IsDeleteEntityRuleValidator<T, TProperty>());
-    }
-
-    /// <summary>
-    /// Requires the property, which holds a <see cref="PersistChange"/>, to be <see cref="PersistChange.None"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the validated object.</typeparam>
-    /// <typeparam name="TProperty">The enum type of the property.</typeparam>
-    /// <param name="ruleBuilder">The rule builder.</param>
-    /// <returns>The rule builder options, to chain further configuration.</returns>
-    public static IRuleBuilderOptions<T, TProperty> IsNone<T, TProperty>(this IRuleBuilder<T, TProperty> ruleBuilder) where T : IPersistEntity where TProperty : Enum
-    {
-        return ruleBuilder.SetValidator(new IsNoneEntityRuleValidator<T, TProperty>());
-    }
-
     /// <summary>
     /// Requires the property to be a <see cref="DateTime"/> whose <see cref="DateTime.Kind"/> is <see cref="DateTimeKind.Utc"/>.
     /// </summary>

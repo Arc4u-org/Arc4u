@@ -49,7 +49,7 @@ public class MemoryTest
 
         // assert
         sut.CompactionPercentage.Should().Be(option1.CompactionPercentage);
-        sut.SizeLimitInMB.Should().Be(option1.SizeLimitInMB * 1024 * 1024);
+        sut.SizeLimitInMB.Should().Be(option1.SizeLimitInMB);
         sut.SerializerName.Should().Be(option1.SerializerName);
     }
 
@@ -83,7 +83,7 @@ public class MemoryTest
 
         // assert
         sut.CompactionPercentage.Should().Be(option1.CompactionPercentage);
-        sut.SizeLimitInMB.Should().Be(option1.SizeLimitInMB * 1024 * 1024);
+        sut.SizeLimitInMB.Should().Be(option1.SizeLimitInMB);
         sut.SerializerName.Should().Be(option1.SerializerName);
     }
 
@@ -129,6 +129,40 @@ public class MemoryTest
 
         // assert
         value.Should().Be("test");
+    }
+
+    [Fact]
+    public void MemoryCacheWithoutSettingsShouldUseDefaultSizeLimitInMegabytes()
+    {
+        // arrange
+        IServiceCollection services = new ServiceCollection();
+        services.AddOptions();
+        services.AddTransient<IObjectSerialization, JsonSerialization>();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        var options = serviceProvider.GetRequiredService<IOptionsMonitor<MemoryCacheOption>>();
+
+        var mockLoggerWrapperMemoryCache = new Mock<ILoggerWrapper<MemoryCache>>();
+        mockLoggerWrapperMemoryCache.Setup(m => m.SetContext(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Type?>()))
+            .Returns(mockLoggerWrapperMemoryCache.Object);
+
+        _fixture.Inject<ILogger<MemoryCache>>(mockLoggerWrapperMemoryCache.Object);
+        _fixture.Inject<IServiceProvider>(serviceProvider);
+        _fixture.Inject(options);
+
+        var cache = _fixture.Create<MemoryCache>();
+        var expected = new string('x', 300);
+
+        // act
+        cache.Initialize("Store");
+        cache.Put("test", expected);
+        var value = cache.Get<string>("test");
+
+        // assert
+        options.Get("Store").SizeLimitInMB.Should().Be(100);
+        options.Get("Store").SizeLimitInBytes.Should().Be(100L * 1024 * 1024);
+        value.Should().Be(expected);
     }
 
     [Fact]

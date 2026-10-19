@@ -20,7 +20,7 @@ public class MemoryLogDbSink : IBatchedLogEventSink
     private JsonPropertiesFormatter PropertyFormatter { get; set; }
 
     /// <summary>Gets the in-memory collection, shared by all the instances, that receives the log messages.</summary>
-    public static MemoryLogMessages LogMessages { get; } = [];
+    public static MemoryLogMessages LogMessages { get; } = new();
 
     /// <summary>Converts each event of the batch to a <see cref="LogMessage"/> and adds it to <see cref="LogMessages"/>. Events that cannot be converted are ignored.</summary>
     /// <param name="events">The batch of events.</param>
@@ -49,7 +49,7 @@ public class MemoryLogDbSink : IBatchedLogEventSink
                     ProcessId = ProcessId,
                     ThreadId = ThreadId,
                     Stacktrace = Stacktrace,
-                    MessageCategory = Category.ToString(),
+                    MessageCategory = MessageCategoryRegistry.GetName(Category),
                     MessageType = _event.Level.ToMessageType().ToString(),
                     Application = Application,
                     Identity = Identity,

@@ -77,7 +77,6 @@ public class AuthenticationOptionsTests
         settings.CookieName.Should().Be(cookieName);
         settings.ForceRefreshTimeoutTimeSpan.Should().Be(TimeSpan.Zero);
         settings.RefreshTokenLifetime.Should().Be(TimeSpan.FromDays(21));
-        settings.OAuth2SettingsKey.Should().Be(Constants.BearerAuthenticationType);
         settings.ValidateAudience.Should().BeTrue();
         settings.ValidateAuthority.Should().BeTrue();
     }

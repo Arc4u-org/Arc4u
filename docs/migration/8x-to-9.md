@@ -94,7 +94,6 @@ Steps:
 | `Arc4u.Standard.Configuration.Decryptor` | `Arc4u.Configuration.Decryptor` |
 | `Arc4u.Standard.Configuration.Store` | `Arc4u.Configuration.Store` |
 | `Arc4u.Standard.Core` | `Arc4u.Core` |
-| `Arc4u.Standard.Data` | `Arc4u.Data` |
 | `Arc4u.Standard.Dependency` | `Arc4u.Dependency` |
 | `Arc4u.Standard.Diagnostics` | `Arc4u.Diagnostics` |
 | `Arc4u.Standard.Diagnostics.Serilog` | `Arc4u.Diagnostics.Serilog` |
@@ -128,16 +127,12 @@ following 8.x packages have no Arc4u 9 version:
 | `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core`, `Arc4u.Standard.NServiceBus.RabbitMQ` | [NServiceBus replaced by Dapr pub/sub](#nservicebus-replaced-by-dapr-pubsub) |
 | `Arc4u.Prism.DI.Wpf` | [Prism.DI.Wpf replaced by Prism.DryIoc](#prismdiwpf-replaced-by-prismdryioc) |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api` | [Other removed APIs](#other-removed-apis) |
+| `Arc4u.Standard.Data` | [Arc4u.Data and change tracking removed](#arc4udata-and-change-tracking-removed) |
 
 Arc4u 9 also adds packages that have no 8.x equivalent: `Arc4u.Dependency.Tool` (source
 generators for dependency registration), `Arc4u.OAuth2.Client.Authentication` (OpenID Connect
 for desktop and mobile clients) and `Arc4u.AspNetCore.Versioning` (not published on NuGet yet).
 The [package support matrix](../guides/package-support.md) lists the status of every package.
-
-> [!WARNING]
-> Known issue: `BlazorController` (`Arc4u.OAuth2.AspNetCore.Blazor`) still redirects to
-> `_content/Arc4u.Standard.OAuth2.Blazor/GetToken.html`, which no longer exists after the rename,
-> so that redirect returns 404.
 
 ## Target frameworks
 
@@ -309,8 +304,7 @@ Steps:
 
 Arc4u 9 does not ship MSAL support ([#135](https://github.com/Arc4u-org/Arc4u/issues/135)).
 `Arc4u.Standard.OAuth2.Msal` (`MsalTokenProvider` and `PublicClientApp`, for desktop clients) has
-no 9 package: its last version is 8.3.2. The source code is still in the repository
-(`src/Arc4u.OAuth.Msal`), but it is not part of the solution and is not built or published.
+no 9 package: its last version is 8.3.2, and its source code is removed from the repository.
 
 | 8.x client | Arc4u 9 |
 |---|---|
@@ -364,15 +358,15 @@ Steps:
 2. Implement `IBrowser` for your UI technology and move the client settings to the `Authentication`
    section, as described in the [client authentication guide](../guides/authentication-client/index.md).
 
-> [!WARNING]
-> Known issue: `BlazorTokenProvider` and `BlazorMsalTokenProvider` are both registered under the
-> provider name `blazor`, so only one of them can be resolved by name in the same application.
+> [!NOTE]
+> `BlazorTokenProvider` and `BlazorMsalTokenProvider` are both registered under the provider name
+> `blazor`: register only one of them in an application.
 
 ## NServiceBus replaced by Dapr pub/sub
 
 `Arc4u.Standard.NServiceBus`, `Arc4u.Standard.NServiceBus.Core` and
-`Arc4u.Standard.NServiceBus.RabbitMQ` are deprecated and removed in Arc4u 9
-([#135](https://github.com/Arc4u-org/Arc4u/issues/135), [#189](https://github.com/Arc4u-org/Arc4u/issues/189)).
+`Arc4u.Standard.NServiceBus.RabbitMQ` are not continued in Arc4u 9 and are deprecated on NuGet.org
+([#135](https://github.com/Arc4u-org/Arc4u/issues/135), [#189](https://github.com/Arc4u-org/Arc4u/issues/189), [#272](https://github.com/Arc4u-org/Arc4u/issues/272)).
 They targeted `net8.0` only and depended on NServiceBus 7.8. Arc4u 9 has no messaging package:
 use [Dapr pub/sub](https://docs.dapr.io/developing-applications/building-blocks/pubsub/howto-publish-subscribe/)
 directly with the `Dapr.AspNetCore` package. The broker (RabbitMQ, Azure Service Bus, Kafka and
@@ -470,9 +464,9 @@ Steps:
 
 ## Prism.DI.Wpf replaced by Prism.DryIoc
 
-`Arc4u.Prism.DI.Wpf` adapted Prism 7.2 to the Arc4u `IContainer`. It is deprecated and removed in
-Arc4u 9 ([#189](https://github.com/Arc4u-org/Arc4u/issues/189)): it targeted `net8.0-windows` and
-`net9.0-windows`, and `IContainer` no longer exists in Arc4u 9 (see
+`Arc4u.Prism.DI.Wpf` adapted Prism 7.2 to the Arc4u `IContainer`. It is not
+continued in Arc4u 9 and is deprecated on NuGet.org ([#189](https://github.com/Arc4u-org/Arc4u/issues/189), [#272](https://github.com/Arc4u-org/Arc4u/issues/272)): it
+targeted `net8.0-windows` and `net9.0-windows`, and `IContainer` no longer exists in Arc4u 9 (see
 [IContainer replaced by keyed services](#icontainer-replaced-by-keyed-services)). Use Prism's own
 DryIoc container, `Prism.DryIoc`.
 
@@ -636,7 +630,8 @@ validation problem details response through `ToActionOkResult`.
 | `Messages.LogAndThrowIfNecessary(logger)` | `result.LogIfFailed()` and return the result |
 | `PersistEntity.TryValidate()` returning `Messages` | `PersistEntity.TryValidate()` returning `Result` |
 | `ValidateAll<T>(logger)` throwing | `ValidateAll<T>(logger)` returning `Result` |
-| `ITokenProvider.GetTokenAsync` returning `TokenInfo?` | Returns `Result<TokenInfo>` |
+| `ITokenProvider.GetTokenAsync` returning `Task<TokenInfo?>` | Returns `ValueTask<Result<TokenInfo>>`: replace `Task.FromResult` with `ValueTask.FromResult` (or `async`) in your providers, and await the call only once |
+| `ICredentialTokenProvider.GetTokenAsync` | Returns `ValueTask<Result<TokenInfo>>`, like `ITokenProvider`. `CredentialTokenCacheTokenProvider.CreateBasicTokenInfoAsync` (protected) also returns a `ValueTask` |
 | `IAppPrincipalFactory.CreatePrincipalAsync(Messages messages, ...)` | `CreatePrincipalAsync(...)` without `Messages`, returns `Result<AppPrincipal>` |
 | `Arc4u.ServiceModel.MessageCategory` | `Arc4u.Diagnostics.MessageCategory` |
 
@@ -809,6 +804,7 @@ they have no effect any more. Remove them to avoid confusion.
 | Section | Key | Change in Arc4u 9 |
 |---|---|---|
 | `Authentication` | `OpenIdSettingsKey`, `OAuth2SettingsKey` | No longer used: the settings names are fixed (see [Settings names](#settings-names)). |
+| `Authentication` (JWT bearer) | `ValidateAudience` | Removed: it was never read by `AddJwtAuthentication`. Use `Authentication:OAuth2.Settings:ValidateAudience`. |
 | `Authentication` | `JwtBearerEventsType`, `CookieAuthenticationEventsType`, `OpenIdConnectEventsType` | Removed: register your events class in the service collection (see [Custom events](#custom-events)). |
 | `Authentication` | `CookiesConfigureOptionsType` | Removed: register your own `IPostConfigureOptions<CookieAuthenticationOptions>` before the `Add…Authentication` call; Arc4u registers its own only if none is registered. |
 | `Authentication:AuthenticationCacheTicketStore` | `TicketStore` | Removed: Arc4u registers `CacheTicketStore` as `ITicketStore` only if none is registered, so register your own `ITicketStore` in the service collection. |
@@ -994,11 +990,17 @@ Steps:
 3. Replace the `OpenId` settings name with `Cookies`, and `OAuth2Bearer` with `OAuth2`.
 4. Update your `IClaimsFiller` implementations and your `JwtHttpHandler` subclasses.
 
-> [!WARNING]
-> Known issue: the configuration overloads of `AddOidcAuthentication` and `AddHybridAuthentication`
-> do not apply `ValidateAudience` and `ValidateAuthority` from the `Authentication` section, and
-> setting `ValidateAudience` to `false` in `OpenId.Settings` makes the sign-in fail with a
-> `KeyNotFoundException` on `Audiences`.
+> [!NOTE]
+> The configuration overloads of `AddOidcAuthentication` and `AddHybridAuthentication` apply
+> `ValidateAudience` and `ValidateAuthority` from the `Authentication` section
+> ([#220](https://github.com/Arc4u-org/Arc4u/issues/220)). Check that these keys hold the values you want:
+> they were ignored before.
+>
+> `AddJwtAuthentication` and the bearer scheme of `AddHybridAuthentication` now validate the token issuer
+> (`Authentication:ValidateAuthority`, `true` by default). The OpenID Connect sign-in uses the same rule
+> instead of comparing with `DefaultAuthority:Url`: the `iss` claim must be `DefaultAuthority:Issuer`, or the issuer of the provider's metadata.
+> If your tokens have another issuer (for example Entra ID v1 tokens with a v2 authority), set
+> `DefaultAuthority:Issuer` to it, or `ValidateAuthority` to `false`.
 
 ## Client secrets replaced by client tokens
 
@@ -1103,10 +1105,9 @@ Steps:
 4. `LoggerContext` is removed: use `ILogger.BeginScope` or an `IAddPropertiesToLog` implementation to
    add properties to every entry. The [diagnostics guide](../guides/diagnostics/index.md) covers both.
 
-> [!WARNING]
-> Known issue: the properties added with `Add` are not cleared after the entry is written. They are
-> added to every later entry written by the same `ILogger<T>` instance, which can leak data between
-> requests when that instance is shared.
+> [!NOTE]
+> The properties added with `Add` (and the message template arguments) are written with that entry
+> only: `Technical()`, `Business()` and `Monitoring()` return a logger dedicated to the entry.
 
 ## Result extension methods
 
@@ -1216,6 +1217,76 @@ The FluentValidation helpers moved as well: `ValidateWithResult` and `ValidateWi
 now in `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), next to the rules `IsInsert`,
 `IsUpdate`, `IsDelete`, `IsNone`, `IsDateOnly` and `IsUtcDateTime`. `ToFluentResultErrors` is
 renamed `ToResultErrors`, and `ToMessages` and `ToMessageType` (which produced `Messages`) are removed.
+The predicate `ValidatorPredicates.IsNonet` is renamed `IsNone`.
+
+A few smaller changes may also need attention:
+
+- `ToActionCreatedResultAsync`, `ToHttpCreatedResultAsync` and `ToTypedCreatedResultAsync` on a `Result` without a
+  value (or a task of it) lost their unused type parameter: write `result.ToActionCreatedResultAsync(location)`
+  instead of `result.ToActionCreatedResultAsync<Order>(location)`.
+- `ValidationError.WithMetadata` no longer throws on a duplicate key: the first value is kept, as with
+  `ProblemDetailError.WithMetadata`.
+- The title of the generic `500` problem details is now "A technical error occurred!" (the typo "occured" is fixed).
+  Update any client or test that matches on that text.
+- `ToProblemDetails` called on a successful result no longer adds an error to that result: it stays successful.
+
+## Arc4u.Data and change tracking removed
+
+With a domain-centric approach, the domain model decides what changes in an aggregate, and the data
+access layer persists the aggregate with the API of Entity Framework Core. The entities no longer carry
+the change to persist, so Arc4u 9 removes the change-tracking concept
+([#266](https://github.com/Arc4u-org/Arc4u/issues/266)):
+
+| 8.x | Replacement |
+|---|---|
+| The `Arc4u.Standard.Data` package: `IdEntity`, `PersistEntity`, the audit entities (`CreateAuditEntity`, `UpdateAuditEntity`, `DeleteAuditEntity`, `AuditEntity` and their interfaces), `EntitySet<TEntity>`, `EntityItem<TEntity>`, `PersistChangeActions`, `RelationAttribute`, `Validate<T>` and `ValidateAll` | Define the entities in your domain model with your own base classes, and validate them with FluentValidation and `ValidateWithResult` from `Arc4u.FluentValidation` |
+| `Arc4u.Data.IPersistEntity` and `Arc4u.Data.PersistChange` (package `Arc4u`) | None: remove the `PersistChange` property and its `entity.Ignore(e => e.PersistChange)` mapping |
+| `Arc4u.EfCore`: `ChangeGraphTracker` (`Tracker`, `TrackPersistGraph`, `SavePersistChangesAsync`, `SavePersistChanges`) and `PersisteChangeExtension.Convert` | The Entity Framework Core API: load the aggregate tracked, call its domain methods, then `SaveChangesAsync`. For a detached aggregate use `Add`, `Update`, `Remove` or `ChangeTracker.TrackGraph` with your own callback |
+| `Arc4u.FluentValidation`: the `IsInsert()`, `IsUpdate()`, `IsDelete()` and `IsNone()` rules and `ValidatorPredicates` | Validate the operation in the domain model, or write a separate validator for each operation |
+
+`Graph<T>` and the `GraphExtension` methods of `Arc4u.EfCore` that apply its include paths to a
+query are kept.
+
+**Before (8.x)**
+
+```csharp
+using Arc4u.Data;
+using Arc4u.EfCore;
+using Microsoft.EntityFrameworkCore;
+
+public class OrderRepository(ShopContext db)
+{
+    public async Task SaveAsync(Order order, CancellationToken cancellationToken)
+    {
+        db.ChangeTracker.TrackGraph(order, ChangeGraphTracker.Tracker);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+}
+```
+
+**After (9)**
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class OrderService(ShopContext db)
+{
+    public async Task AddLineAsync(Guid orderId, string label, CancellationToken cancellationToken)
+    {
+        var order = await db.Orders.Include(o => o.Lines)
+                                   .SingleAsync(o => o.Id == orderId, cancellationToken);
+
+        order.AddLine(label);                          // the domain model changes the aggregate
+
+        await db.SaveChangesAsync(cancellationToken);  // EF Core detects the changes
+    }
+}
+```
+
+1. Remove the `Arc4u.Standard.Data` package reference and the `using Arc4u.Data;` directives.
+2. Replace the Arc4u entity base classes with your own (for example a base class with a `Guid Id`).
+3. Remove the `PersistChange` properties, their `Ignore` mappings, and the code that sets them.
+4. Persist the aggregates with the Entity Framework Core API instead of `ChangeGraphTracker`.
 
 ## Other API changes
 
@@ -1278,12 +1349,21 @@ public static class Security
 | `Arc4u.OAuth2.AspNetCore.Options.ValidateResourceRightMiddlewareOptions` | `Arc4u.OAuth2.Options.ValidateResourceRightMiddlewareOptions` |
 | `Arc4u.OAuth2.Security.Principal.AppServicePrincipalFactory` | `Arc4u.OAuth2.AppServicePrincipalFactory` |
 | `Arc4u.Utils.Enum<T>`, `EnumUtil` | The generic methods of `System.Enum` (`Enum.GetValues<T>()`, `Enum.TryParse<T>()`) |
+| `IApplicationContext.Principal` as an `AppPrincipal`, `SetPrincipal(AppPrincipal)` | `AppPrincipal? Principal` and `SetPrincipal(AppPrincipal?)`: check the principal for `null` before using it (nobody authenticated), and pass `null` to clear it |
+| `ITokenProvider.SignOutAsync(settings, cancellationToken)` | Moved to <xref:Arc4u.OAuth2.Token.ISignOutTokenProvider>. Implement it only when your provider holds tokens for a user session; otherwise remove your `SignOutAsync` method. `SignOutUserAsync` of `AppPrincipalFactory` and `AppServicePrincipalFactory` signs out every registered provider that implements it, with the same settings: ignore the settings that are not yours. `OidcTokenProvider` and `CredentialTokenCacheTokenProvider` have no sign-out; sign out of the cookie with `HttpContext.SignOutAsync` |
+| `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
 
 ### Other removed APIs
 
 | 8.x | Replacement |
 |---|---|
+| `CypherCodec.GenerateKeyAndIV`, `EncodeClearText`, `DecodeCypherstring`, `CypherCodecConfig.IV` (AES-CBC with a shared IV) | `CypherCodec.GenerateKey`, `Encrypt` and `Decrypt` (AES-GCM with a random nonce per value). Remove `EncryptionRijndael:IV` and encrypt the `Decrypt:` values again. Long values encrypted with a certificate (`<key>.<iv>.<data>`) must also be encrypted again |
+| `IApplicationContext.ActivityID` (set by the gRPC interceptors and the HTTP handlers) | `Activity.Current?.TraceId` (OpenTelemetry). The logger adds it as the `ActivityId` property when an activity exists |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api`: `ServiceAspectAttribute`, `OperationCheckAttribute` (already obsolete in 8.x) | ASP.NET Core authorization policies from `AddScopedOperationsPolicy` (`[Authorize("<operation>")]`), `ManageExceptionsFilter` and `SetCultureActionFilter` |
 | `SecretBasicExtension.AddSecretAuthentication`, `CredentialSecretTokenProvider` | `AddClientTokens` (see [Client secrets replaced by client tokens](#client-secrets-replaced-by-client-tokens)) |
 | `LoggerContext`, `CommonLoggerProperties`, `LoggerBase` | See [Fluent logging API](#fluent-logging-api) |
 | `RealmLoggingDbCtx.CreateMapping()` (AutoMapper) | Removed with the AutoMapper dependency |
+| `RealmLoggingDbCtx(RealmConfiguration, ILoggerFactory)` and `RealmLoggingDbCtx.Realm` | `RealmLoggingDbCtx(RealmConfiguration)`. The store opens a `Realm` for each call, so it no longer exposes one: open your own with `Realm.GetInstance(config)` on the thread that uses it |
+| `CustomRootCaExtensions.CertificateOptionKeys` (static, shared by every service collection of the process) | The names registered with `AddCustomRootCA` in a service collection: `serviceProvider.GetRequiredService<IOptions<CARootOptionKeys>>().Value.Keys` |
+| `Arc4u.gRPC`: `ClientErrorInterceptor` | Catch the `RpcException` and call `ToResult()` (see [ProblemDetails over gRPC](../guides/grpc-versioning/grpc-problem-details.md)). A 403 returned by the service arrives as `PermissionDenied` with status 403 in its ProblemDetails. The interceptor only converted exceptions raised while a call was started, which almost never happens with `Grpc.Net.Client`, so removing it barely changes what your code receives |
+| `Arc4u.OAuth2.Client.Authentication`: `OidcClientAuthenticationOptions` and `OidcClientAuthenticationSectionOptions` `NameClaimType`, `RoleClaimType` and `ValidateAuthority` (`Authentication:NameClaimType`, `Authentication:RoleClaimType`, `Authentication:ValidateAuthority` in a client application) | None: the client authentication never read them. Delete the assignments; the configuration keys are ignored. The client principal is built by the `AppPrincipalFactory` |
