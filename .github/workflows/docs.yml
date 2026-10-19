@@ -49,6 +49,10 @@ jobs:
         working-directory: docs
         run: dotnet tool restore
 
+      # docfx.json lowers FailedToLoadAnalyzer to info: the Razor generator of the
+      # .NET 11 SDK needs a newer Roslyn than the one bundled with DocFX
+      # (https://github.com/dotnet/docfx/issues/11171). Harmless while
+      # Arc4u.OAuth2.Blazor has no .razor component; remove once DocFX catches up.
       - name: Build site (warnings are errors)
         working-directory: docs
         run: dotnet docfx docfx.json --warningsAsErrors

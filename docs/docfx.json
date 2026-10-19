@@ -1,4 +1,7 @@
 {
+  "rules": {
+    "FailedToLoadAnalyzer": "info"
+  },
   "metadata": [
     {
       "src": [
