@@ -29,6 +29,5 @@ most of the packages above and have no guide of their own: see
 `Arc4u.AspNetCore.Versioning` is not published on NuGet.org yet.
 
 The [package support](package-support.md) page lists every package with its
-support status and target frameworks, including the package that is not shipped in 9.x
-(`Arc4u.OAuth2.Msal`) and the removed `Arc4u.Data`, `Arc4u.Dependency.ComponentModel`, NServiceBus
-and Prism.DI.Wpf packages.
+support status and target frameworks, including the removed `Arc4u.OAuth2.Msal`, `Arc4u.Data` and
+`Arc4u.Dependency.ComponentModel` packages and the deprecated NServiceBus and Prism.DI.Wpf packages.
