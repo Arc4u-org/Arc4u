@@ -6,8 +6,7 @@ description: "Configure Kestrel endpoints for gRPC over HTTP/2: Windows service,
 gRPC needs HTTP/2, and HTTP/2 needs either TLS or a client that speaks it without negotiation.
 Arc4u has no code for this: it is Kestrel configuration, and the same service can be deployed as a
 Windows service or in Kubernetes with only its `appsettings.json` changing. This page gives the
-configuration for the deployments Arc4u services usually run in. The architecture behind it, a reverse
-proxy in front of the services, is described in the [architecture concept](../../concepts/architecture.md).
+configuration for the deployments Arc4u services usually run in.
 
 ## What it solves
 
@@ -304,5 +303,4 @@ gRPC destination: gRPC requires HTTP/2.
 
 - [gRPC and API versioning](index.md)
 - [gRPC services and clients](grpc.md)
-- [Architecture](../../concepts/architecture.md)
 - [Kestrel web server in ASP.NET Core](https://learn.microsoft.com/aspnet/core/fundamentals/servers/kestrel)

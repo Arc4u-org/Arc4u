@@ -3,7 +3,7 @@ description: "Apply Graph<T> includes to Entity Framework Core queries, map Mong
 ---
 # Data access
 
-Arc4u does not replace Entity Framework Core, the MongoDB driver or ASP.NET Core OData. It adds a small layer on top of them for the [data access layer](../../concepts/glossary.md#data-access-layer) of a service: include paths (`Graph<T>`) applied to Entity Framework Core queries, a `DbContext`-like abstraction for MongoDB, and the two settings OData needs behind a reverse proxy. The pieces build on the layering described in the [architecture concept](../../concepts/architecture.md).
+Arc4u does not replace Entity Framework Core, the MongoDB driver or ASP.NET Core OData. It adds a small layer on top of them for the data access layer of a service: include paths (`Graph<T>`) applied to Entity Framework Core queries, a `DbContext`-like abstraction for MongoDB, and the two settings OData needs behind a reverse proxy.
 
 ## What it solves
 
@@ -102,5 +102,4 @@ Symptoms specific to one package are on its page: [Entity Framework Core](efcore
 ## See also
 
 - [Entity Framework Core](efcore.md), [MongoDB](mongodb.md), [OData](odata.md)
-- [Glossary: data access layer](../../concepts/glossary.md#data-access-layer)
 - <xref:Arc4u.EfCore> in the API reference

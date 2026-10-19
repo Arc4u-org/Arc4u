@@ -192,6 +192,5 @@ attributes and the source generators in detail.
 
 ## See also
 
-- [Architecture](architecture.md)
 - [Glossary](glossary.md)
 - [Dependency injection](../guides/dependency-injection/index.md)

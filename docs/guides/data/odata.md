@@ -3,7 +3,7 @@ description: "What Arc4u.OData provides: two extension methods that make the URL
 ---
 # OData
 
-`Arc4u.OData` is not an OData implementation. OData itself (the Entity Data Model, query options such as `$filter` and `$top`, the controllers) comes from [Microsoft.AspNetCore.OData](https://learn.microsoft.com/odata/webapi-8/overview), which the package references. What `Arc4u.OData` adds is two extension methods that solve one problem: an OData service running behind a reverse proxy such as YARP, in the setup described in the [architecture concept](../../concepts/architecture.md). The [overview](index.md) shows how it relates to the other data packages.
+`Arc4u.OData` is not an OData implementation. OData itself (the Entity Data Model, query options such as `$filter` and `$top`, the controllers) comes from [Microsoft.AspNetCore.OData](https://learn.microsoft.com/odata/webapi-8/overview), which the package references. What `Arc4u.OData` adds is two extension methods that solve one problem: an OData service running behind a reverse proxy such as YARP. The [overview](index.md) shows how it relates to the other data packages.
 
 ## What it solves
 

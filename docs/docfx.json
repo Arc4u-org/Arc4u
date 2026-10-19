@@ -63,7 +63,7 @@
     ],
     "resource": [
       {
-        "files": [ "**/images/**" ],
+        "files": [ "**/images/**", "logo.png" ],
         "exclude": [ "_site/**", "obj/**", "_templates/**", "contributing/**" ]
       }
     ],
@@ -72,6 +72,8 @@
     "globalMetadata": {
       "_appTitle": "Arc4u",
       "_appName": "Arc4u",
+      "_appLogoPath": "logo.png",
+      "_appFaviconPath": "logo.png",
       "_enableSearch": true,
       "_gitContribute": {
         "repo": "https://github.com/Arc4u-org/Arc4u",
@@ -81,6 +83,6 @@
     "sitemap": {
       "baseUrl": "https://arc4u-org.github.io/Arc4u/"
     },
-    "template": [ "default", "modern" ]
+    "template": [ "default", "modern", "template" ]
   }
 }

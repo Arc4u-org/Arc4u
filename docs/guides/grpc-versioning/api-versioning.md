@@ -6,8 +6,7 @@ description: "Version Arc4u REST endpoints with AddServiceApiVersioning: three w
 Every Arc4u service that exposes REST endpoints versions them the same way. `Arc4u.AspNetCore.Versioning`
 is a thin wrapper around [Asp.Versioning](https://github.com/dotnet/aspnet-api-versioning) that fixes
 the readers, the header names, the default version and the rule on what happens when a caller gives
-no version. Versioning the interface layer is a core idea of Arc4u's layering, described in the
-[architecture concept](../../concepts/architecture.md).
+no version.
 
 ## What it solves
 
@@ -276,6 +275,5 @@ version, for example when the version comes from the header or the query string.
 ## See also
 
 - [gRPC and API versioning](index.md)
-- [Architecture](../../concepts/architecture.md)
 - [Asp.Versioning documentation](https://github.com/dotnet/aspnet-api-versioning/wiki)
 - <xref:Arc4u.AspNetCore.Versioning> in the API reference

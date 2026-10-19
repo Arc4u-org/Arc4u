@@ -3,7 +3,7 @@ description: "Apply the include paths of a Graph<T> to Entity Framework Core que
 ---
 # Entity Framework Core
 
-`Arc4u.EfCore` applies a <xref:Arc4u.Graph`1> (a list of include paths) to an Entity Framework Core query. It sits in the [data access layer](../../concepts/glossary.md#data-access-layer) next to your `DbContext`; the [overview](index.md) shows where it fits.
+`Arc4u.EfCore` applies a <xref:Arc4u.Graph`1> (a list of include paths) to an Entity Framework Core query. It sits in the data access layer next to your `DbContext`; the [overview](index.md) shows where it fits.
 
 Arc4u does not track changes on your entities. Persist your aggregates with the Entity Framework Core API (`Add`, `Update`, `Remove`, `SaveChangesAsync`), driven by the behavior of your domain model.
 

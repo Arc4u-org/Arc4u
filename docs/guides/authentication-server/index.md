@@ -11,8 +11,7 @@ a web application that must authenticate users against an identity provider such
 Azure AD B2C, ADFS, Keycloak or ForgeRock. The principal is stored in the
 [application context](../../concepts/glossary.md#application-context), described in
 [Concepts](../../concepts/index.md). The services are registered through dependency injection, as described in
-[Design principles](../../concepts/design-principles.md); where authentication sits in the layers of an Arc4u
-application is shown in [Architecture](../../concepts/architecture.md).
+[Design principles](../../concepts/design-principles.md).
 
 ## What it solves
 

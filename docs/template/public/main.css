@@ -1,0 +1,6 @@
+/* Shows the top bar logo (logo.png, 128x128) at the navbar height. */
+#logo {
+  height: 40px;
+  width: auto;
+  margin-right: .5rem;
+}

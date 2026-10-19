@@ -3,7 +3,7 @@ description: "Register a MongoDB database with Arc4u.MongoDB, map entity types t
 ---
 # MongoDB
 
-`Arc4u.MongoDB` gives MongoDB the same shape as Entity Framework Core in the [data access layer](../../concepts/glossary.md#data-access-layer): one context class per database, in which you map entity types to collections, and one registration call. The queries themselves stay plain `MongoDB.Driver` code. The [overview](index.md) explains how it relates to the other data packages.
+`Arc4u.MongoDB` gives MongoDB the same shape as Entity Framework Core in the data access layer: one context class per database, in which you map entity types to collections, and one registration call. The queries themselves stay plain `MongoDB.Driver` code. The [overview](index.md) explains how it relates to the other data packages.
 
 ## What it solves
 

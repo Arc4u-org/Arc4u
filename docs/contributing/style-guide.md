@@ -15,7 +15,7 @@ docs/
   index.md                    landing page
   toc.yml                     top navigation: one entry per section
   getting-started/            install and first app (tutorials)
-  concepts/                   architecture, principles, versioning, glossary
+  concepts/                   principles, versioning, glossary
   guides/                     one folder per feature area
     <area>/index.md           the guide (full guide template)
     <area>/<topic>.md         optional sub-pages of that guide
@@ -64,11 +64,11 @@ your stub, replace every `<...>` placeholder and delete the comment.
 ### Glossary outline
 
 - One `##` heading per term, in alphabetical order. The heading is the term, as written in
-  the docs (`## Facade`, `## Service agent`).
+  the docs (`## Cache context`, `## Token provider`).
 - One to three sentences of definition, then a link to the page that covers the term.
 - The headings that already exist are [frozen anchors](#frozen-anchors). New terms can be added.
 - Other pages link to a term with a path relative to their own folder: from a guide,
-  `../../concepts/glossary.md#facade`; from another concept page, `glossary.md#facade`.
+  `../../concepts/glossary.md#appprincipal`; from another concept page, `glossary.md#appprincipal`.
 
 ### Package support matrix outline
 
@@ -316,7 +316,7 @@ merged.
 | Page | Anchors |
 |---|---|
 | `migration/8x-to-9.md` | `#before-you-start`, `#package-renames`, `#target-frameworks`, `#newtonsoftjson-replaced-by-systemtextjson`, `#adal-and-protobuf-removed`, `#tracelisteners-removed`, `#msal-status`, `#nservicebus-replaced-by-dapr-pubsub`, `#prismdiwpf-replaced-by-prismdryioc`, `#message-and-messages-replaced-by-problemdetails`, `#icontainer-replaced-by-keyed-services`, `#authentication-settings-refactoring` |
-| `concepts/glossary.md` | `#application-context`, `#appprincipal`, `#business-layer`, `#cache-context`, `#claims-filler`, `#data-access-layer`, `#domain-model`, `#facade`, `#interface-layer`, `#named-cache`, `#problemdetails`, `#result-pattern`, `#service-agent`, `#token-provider` |
+| `concepts/glossary.md` | `#application-context`, `#appprincipal`, `#cache-context`, `#claims-filler`, `#named-cache`, `#problemdetails`, `#result-pattern`, `#token-provider` |
 
 For example, from `docs/guides/diagnostics/index.md`:
 `[TraceListeners were removed](../../migration/8x-to-9.md#tracelisteners-removed)`.

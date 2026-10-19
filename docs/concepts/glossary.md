@@ -19,12 +19,6 @@ also carries the user's authorization (roles, operations and scopes) and profile
 it is built from the claims of the authenticated identity. See
 [Server authentication](../guides/authentication-server/index.md).
 
-## Business layer
-
-The layer that holds the rules of the application. It is called by the facade and the
-interface layer, and calls the data access layer and the service agents. See
-[Architecture](architecture.md).
-
 ## Cache context
 
 The <xref:Arc4u.Caching.ICacheContext> singleton that gives access to the
@@ -38,17 +32,6 @@ for an identity from another source, such as a backend service, while the
 [AppPrincipal](#appprincipal) is built. The claims it returns are cached. See
 [Server authentication](../guides/authentication-server/index.md).
 
-## Data access layer
-
-A service agent dedicated to databases. It reads and writes the domain model and hides the
-database technology from the business layer. See [Architecture](architecture.md) and
-[Data access](../guides/data/index.md).
-
-## Domain model
-
-The plain classes (entities and value objects) that the layers of an application exchange.
-Facades and interfaces map them to DTOs. See [Architecture](architecture.md).
-
 ## Export attribute
 
 The `[Export]` attribute of `Arc4u.Dependency` marks a class to register in dependency
@@ -56,19 +39,6 @@ injection, optionally under a key. `[Shared]` makes the registration a singleton
 `[Scoped]` a scoped service; without either, it is transient. The Arc4u source generators
 write the registration code. See
 [Dependency injection](../guides/dependency-injection/index.md).
-
-## Facade
-
-The service layer dedicated to your own user interfaces. Its REST or gRPC endpoints return
-what the screens need and are not versioned, because the UI and its facade are deployed
-together. See [Architecture](architecture.md).
-
-## Interface layer
-
-The service layer that other applications call. Unlike the facade, it is versioned: a
-contract change is published as a new version while the previous versions keep working.
-See [Architecture](architecture.md) and
-[gRPC and API versioning](../guides/grpc-versioning/index.md).
 
 ## Keyed service
 
@@ -98,13 +68,6 @@ Returning a `Result` or `Result<T>` from FluentResults, which is either a succes
 value or a failure with errors, instead of throwing exceptions for expected failures.
 `Arc4u.Results` adds extension methods and error types for it. See
 [Results and errors](../guides/results/index.md).
-
-## Service agent
-
-A component that handles the communication with one external system, such as another
-service, files or FTP. It hides the protocol and adds the access token when needed. See
-[Architecture](architecture.md) and
-[Client authentication and Blazor](../guides/authentication-client/index.md).
 
 ## Token provider
 
