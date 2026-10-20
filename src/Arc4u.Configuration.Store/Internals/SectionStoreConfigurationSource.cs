@@ -8,5 +8,5 @@ sealed class SectionStoreConfigurationSource : IConfigurationSource
 
     public SectionStoreConfigurationSource(SectionStoreConfigurationOptions options) => _options = options;
 
-    public IConfigurationProvider Build(IConfigurationBuilder builder) => new SectionStoreConfigurationProvider(_options.GetInitialData(builder));
+    public IConfigurationProvider Build(IConfigurationBuilder builder) => new SectionStoreConfigurationProvider(_options.GetInitialData(builder, this));
 }

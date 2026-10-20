@@ -65,6 +65,9 @@ packages. It contains breaking changes: follow the
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
   `JsonSerialization` accepts a `JsonSerializerContext`.
+- `Arc4u.Configuration.Store`: `AddFromConfiguration(key, section => section.Get<T>())`, which lets the
+  application's configuration binding generator bind a persisted section. `Add<T>(key)` binds with
+  reflection and is now marked `RequiresUnreferencedCode` and `RequiresDynamicCode`.
 - Sign-out of the token providers: `ISignOutTokenProvider` for the providers that hold tokens for a
   user session, `SignOutTokenProvidersAsync` (signs out every registered one), `AddTokenProvidersSignOut()`
   and `SignOutTokenProviderKeys` (resolve each provider separately), `SignOutGeneration` (a token requested
@@ -273,6 +276,9 @@ packages. It contains breaking changes: follow the
 
 ### Fixed
 
+- `Arc4u.Configuration.Store`: `Add<T>(key)` crashed with a stack overflow when the section store was added
+  to a `ConfigurationBuilder` (not to `WebApplicationBuilder.Configuration`): reading the initial value built
+  the section store again. It now reads the section from the providers registered before the section store.
 - Blazor: the login popup of `BlazorTokenProvider` waited forever when the user closed it; it now throws a
   `TimeoutException` after 5 minutes. When the popup cannot be opened (`CreatePopupWindow.js` not loaded),
   an `InvalidOperationException` says so instead of a bare `JSException`.

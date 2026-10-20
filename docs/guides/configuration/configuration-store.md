@@ -141,6 +141,7 @@ What each call does:
 |---|---|
 | `AddSectionStoreConfiguration` | Adds the configuration provider (<xref:Arc4u.Configuration.Store.ConfigurationBuilderExtensions>). Call it **after** the providers that hold the initial values. |
 | `options.Add<T>(key)` | Persists the section `key`. The initial value is `section.Get<T>()` from the providers registered before. The section must exist, otherwise the build throws `InvalidOperationException`. |
+| `options.AddFromConfiguration(key, section => section.Get<T>())` | Same as `Add<T>(key)`, but the binding is written in your application, so its configuration binding generator handles it. Use it when the application is trimmed or published with native AOT: `Add<T>(key)` binds with reflection and is marked `RequiresUnreferencedCode`. |
 | `options.Add<T>(key, value)` | Persists the section `key` with an initial value you pass in code. |
 | `AddILogger` | Optional. Registers the Arc4u logger; the polling service then writes its entries in the Technical category. Without it, the service logs through the standard `ILogger`. |
 | `AddDbContextSectionStore<TDbContext>` | Registers `ISectionStore` as a scoped service backed by your context. |

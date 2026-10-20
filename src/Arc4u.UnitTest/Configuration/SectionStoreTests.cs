@@ -104,6 +104,39 @@ public class SectionStoreTests
         configuration.GetSection("Feature").Get<FeatureOptions>().Should().BeEquivalentTo(new FeatureOptions { Enabled = false, Limit = 7 });
     }
 
+    [Fact]
+    public void AddFromConfiguration_Should_Persist_The_Section_Read_By_The_Binding_Function()
+    {
+        var store = new DictionarySectionStore();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Feature:Enabled"] = "true", ["Feature:Limit"] = "5" })
+            .AddSectionStoreConfiguration(options => options.AddFromConfiguration("Feature", section => section.Get<FeatureOptions>()))
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddSingleton<ISectionStore>(store);
+        services.AddSectionStoreService();
+        using var serviceProvider = services.BuildServiceProvider();
+
+        serviceProvider.UseSectionStoreConfiguration();
+
+        store.Rows.Should().ContainKey("Feature");
+        configuration.GetSection("Feature").Get<FeatureOptions>().Should().BeEquivalentTo(new FeatureOptions { Enabled = true, Limit = 5 });
+    }
+
+    [Fact]
+    public void Add_Should_Read_The_Section_From_A_ConfigurationManager()
+    {
+        // WebApplicationBuilder.Configuration is a ConfigurationManager.
+        var configuration = new ConfigurationManager();
+        configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["Feature:Enabled"] = "true", ["Feature:Limit"] = "5" });
+        configuration.AddSectionStoreConfiguration(options => options.Add<FeatureOptions>("Feature"));
+
+        configuration.GetSection("Feature").Get<FeatureOptions>().Should().BeEquivalentTo(new FeatureOptions { Enabled = true, Limit = 5 });
+    }
+
     #endregion
 
     #region DbContextSectionStore.Add
