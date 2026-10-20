@@ -1,4 +1,5 @@
 ﻿using Arc4u.Configuration;
+using Arc4u.IdentityModel.Claims;
 using Arc4u.OAuth2.Client.Authentication.Options;
 using Arc4u.OAuth2.Client.Authentication.TokenProvider;
 using Arc4u.OAuth2.Extensions;
@@ -136,6 +137,27 @@ public class OidcClientAuthenticationOptionsTests
         Assert.Single(services, d => d.ServiceType == typeof(TokenRefreshInfo));
         Assert.Single(services, d => d.ServiceType == typeof(SignOutTokenProviderKeys));
         Assert.Equal(["sub"], services.BuildServiceProvider().GetRequiredService<IOptions<ClaimsIdentifierOption>>().Value);
+    }
+
+    [Fact]
+    public void AddOidcClientAuthentication_Without_ClaimsIdentifierOptions_Should_Use_The_Object_Identifier_Claim_Types()
+    {
+        var oidcOptions = _fixture.Create<OidcClientSettingsOption>();
+        var authority = _fixture.Build<AuthorityOptions>().With(p => p.Url, new Uri("http://localhost:3000/")).Create();
+        var services = new ServiceCollection();
+
+        services.AddOidcClientAuthentication(new Mock<IBrowser>().Object, NullLoggerFactory.Instance, config =>
+        {
+            config.DefaultAuthority = authority;
+            config.OidcClientSettingsOption = oidc =>
+            {
+                oidc.ClientId = oidcOptions.ClientId;
+                oidc.Scopes = oidcOptions.Scopes;
+                oidc.ProviderId = oidcOptions.ProviderId;
+            };
+        });
+
+        Assert.Equal([ClaimTypes.ObjectIdentifier, ClaimTypes.OID], services.BuildServiceProvider().GetRequiredService<IOptions<ClaimsIdentifierOption>>().Value);
     }
 
     [Fact]

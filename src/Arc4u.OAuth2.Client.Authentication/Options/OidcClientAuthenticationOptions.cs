@@ -15,7 +15,7 @@ namespace Arc4u.OAuth2.Client.Authentication.Options;
         /// <summary>Gets or sets the action that fills the <see cref="Options.OidcClientSettingsOption"/> (client id and scopes). Required.</summary>
         public Action<OidcClientSettingsOption>? OidcClientSettingsOption { get; set; }
 
-        /// <summary>Gets or sets the action that fills the claim types identifying a user.</summary>
+        /// <summary>Gets or sets the action that fills the claim types identifying a user. When <see langword="null"/>, the object identifier claim types (<c>ObjectIdentifier</c> and <c>OID</c> of <c>ClaimTypes</c>) are used.</summary>
         public Action<ClaimsIdentifierOption>? ClaimsIdentifierOptions { get; set; }
 
         /// <summary>Gets or sets the redirect uri sent to the authority after the sign-in. The default is <c>/</c>.</summary>

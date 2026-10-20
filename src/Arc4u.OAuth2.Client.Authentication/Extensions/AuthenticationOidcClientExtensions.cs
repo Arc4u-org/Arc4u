@@ -1,4 +1,5 @@
 ﻿using Arc4u.Configuration;
+using Arc4u.IdentityModel.Claims;
 using Arc4u.OAuth2.Client.Authentication.Options;
 using Arc4u.OAuth2.Token;
 using Duende.IdentityModel.Client;
@@ -106,7 +107,9 @@ namespace Arc4u.OAuth2.Extensions
         private static void ConfigureOidcServices(IServiceCollection services,
             OidcClientAuthenticationOptions oidcClientOptions)
         {
-            services.AddClaimsIdentifier(oidcClientOptions.ClaimsIdentifierOptions);
+            // Same default as the configuration based overload: the object identifier claim types.
+            services.AddClaimsIdentifier(oidcClientOptions.ClaimsIdentifierOptions
+                                         ?? (o => o.AddRange([ClaimTypes.ObjectIdentifier, ClaimTypes.OID])));
             services.AddSingleton<TokenRefreshInfo>();
 
             services.AddDefaultAuthority(options =>
