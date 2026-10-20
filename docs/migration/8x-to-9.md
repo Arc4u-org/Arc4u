@@ -1355,6 +1355,7 @@ public static class Security
 | `Identity` log property: `UserProfile.Name` (`Domain\SamAccountName`) or the identity name | The email of the user profile, or the identity name when there is no email. Update the log queries and dashboards that filter on it |
 | `AddApplicationContext()` registered `DefaultLoggingProperties`, so the entries had the `Identity` property | `AddApplicationContext()` registers no provider: add `services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped")`, or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes`. See [Diagnostics and logging](../guides/diagnostics/index.md) |
 | `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
+| `Arc4u.OAuth2.Blazor`: the login popup of `BlazorTokenProvider` (`WindowInterop.OpenWindowAsync`) waited forever when the user closed it, and let a `JSException` through when `CreatePopupWindow.js` was not loaded | A `TimeoutException` when the login is not completed within 5 minutes, and an `InvalidOperationException` (the `JSException` as inner exception) when the popup cannot be opened. Both come from the token request, so from the HTTP calls that need a token: catch them there to show a message or let the user retry |
 
 ### Other removed APIs
 

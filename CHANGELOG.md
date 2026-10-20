@@ -59,6 +59,9 @@ packages. It contains breaking changes: follow the
   `ValidationError` and `ProblemDetailError` to `Result`; mappers with an asynchronous function;
   `ProblemDetails.WithInstance`.
 - `Issuer` in `AuthorityOptions`.
+- `EndSessionEndpoint` and `GetEndSessionEndpointAsync` in `AuthorityOptions`: the sign-out endpoint of the
+  identity provider, read from its metadata, or `null` when the identity provider publishes none. The
+  metadata is downloaded once.
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
   `JsonSerialization` accepts a `JsonSerializerContext`.
@@ -270,6 +273,9 @@ packages. It contains breaking changes: follow the
 
 ### Fixed
 
+- Blazor: the login popup of `BlazorTokenProvider` waited forever when the user closed it; it now throws a
+  `TimeoutException` after 5 minutes. When the popup cannot be opened (`CreatePopupWindow.js` not loaded),
+  an `InvalidOperationException` says so instead of a bare `JSException`.
 - Signing out threw a `NotImplementedException` with `AzureADOboTokenProvider` and `ClientTokenProvider`.
   `AzureADOboTokenProvider` now removes from the cache the tokens of every API obtained for the user, also
   with a user access token refreshed since: the index is kept per user (the registered
@@ -300,6 +306,9 @@ packages. It contains breaking changes: follow the
   keeps the entry and logs the user in; a failing write no longer fails the call that obtained the tokens.
   `SecureCacheTimeout` (30 seconds) bounds the secure-cache operations of a sign-out or a token write, and
   the failures are logged with an optional logger ([#113](https://github.com/Arc4u-org/Arc4u/issues/113)).
+- `AddOidcClientAuthentication` with an action threw an `ArgumentNullException` (parameter `options`) at
+  startup when `ClaimsIdentifierOptions` was not set. It now uses the object identifier claim types
+  (`ObjectIdentifier` and `OID` of `ClaimTypes`), the default of the configuration based overload.
 - The access token was not in the `BootstrapContext` of the identity in a cookie session, so the `Bootstrap`
   token provider and code written for bearer tokens did not work without `UseOpenIdBearerInjector()`.
   `StandardCookieEvents` now puts it there on each request, after refreshing it when needed (#90, #158).
