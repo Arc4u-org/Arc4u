@@ -54,12 +54,42 @@ public class Graph<T> where T : class
     // An IEnumerable implemented by the type, not the non-generic IEnumerable interface itself.
     private static bool IsCollection(Type type) => type != typeof(IEnumerable) && typeof(IEnumerable).IsAssignableFrom(type);
 
+    // True when the include is the path itself or one of its sub paths: "Departments.Manager" is under "Departments" but not under "Department".
+    private static bool IsSameOrUnder(string include, string path, StringComparison comparison)
+    {
+        if (path.Length == 0)
+        {
+            return true;
+        }
+
+        return include.StartsWith(path, comparison) && (include.Length == path.Length || include[path.Length] == '.');
+    }
+
+    // The type the paths start from: the item type for a graph of a collection (like the one GetGraph returns for a collection property), otherwise T.
+    private static Type RootType => ItemType(typeof(T));
+
+    // Unwraps arrays and generic collections, also nested ones like IEnumerable<Employee[]>, down to their item type.
+    private static Type ItemType(Type type)
+    {
+        if (type.IsArray)
+        {
+            return ItemType(type.GetElementType()!);
+        }
+
+        if (IsCollection(type) && type.IsGenericType && type.GenericTypeArguments.Length == 1)
+        {
+            return ItemType(type.GenericTypeArguments[0]);
+        }
+
+        return type;
+    }
+
     [RequiresUnreferencedCode(PathsUseReflection)]
     private static void ValidatePaths(IEnumerable<string> paths)
     {
         foreach (var path in paths)
         {
-            var type = typeof(T);
+            var type = RootType;
             var properties = path.Split('.');
             foreach (var property in properties)
             {
@@ -278,9 +308,7 @@ public class Graph<T> where T : class
             stringPath = stringPath.Substring(1);
         }
 
-        return (from s in _includes
-                where s.StartsWith(stringPath, StringComparison.OrdinalIgnoreCase)
-                select s).Any();
+        return _includes.Exists(s => IsSameOrUnder(s, stringPath, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -325,7 +353,10 @@ public class Graph<T> where T : class
     {
         ArgumentNullException.ThrowIfNull(instance);
 
-        return shouldHaveElement ? new Graph<T>(ParseObject2(instance)) : new Graph<T>(ParseObject(instance));
+        // The instances being parsed, from the root to the current one: a back reference to one of them is not followed, otherwise a cyclic graph never ends.
+        var ancestors = new HashSet<object>(ReferenceEqualityComparer.Instance);
+
+        return shouldHaveElement ? new Graph<T>(ParseObject2(instance, typeof(T), ancestors)) : new Graph<T>(ParseObject(instance, typeof(T), ancestors));
     }
 
     /// <summary>
@@ -346,14 +377,14 @@ public class Graph<T> where T : class
         }
 
         // remove from the Includes, all the includes containig the path.
-        var l = (from i in Includes where !i.StartsWith(stringPath) select i).ToList();
+        var l = _includes.Where(i => !IsSameOrUnder(i, stringPath, StringComparison.Ordinal)).ToList();
 
         // A subset of paths already validated: no need to check them again with reflection.
         return FromValidatedPaths(l);
     }
 
     [RequiresUnreferencedCode(ParseUsesReflection)]
-    private static IEnumerable<string> ParseObject(object o)
+    private static IEnumerable<string> ParseObject(object o, Type type, HashSet<object> ancestors)
     {
         var result = new List<string>();
 
@@ -364,7 +395,7 @@ public class Graph<T> where T : class
             throw new InvalidOperationException("Collection is not allowed");
         }
 
-        var type = o.GetType();
+        // The declared type, not the runtime one: the properties a subclass adds are not part of the paths the graph can validate.
 
         if (!type.GetTypeInfo().IsClass)
         {
@@ -377,6 +408,8 @@ public class Graph<T> where T : class
         }
 
         var properties = type.GetRuntimeProperties();
+
+        ancestors.Add(o);
 
         foreach (var property in properties)
         {
@@ -410,7 +443,13 @@ public class Graph<T> where T : class
                     continue;
                 }
 
-                var children = ParseObject(array.GetValue(0)!);
+                var item = array.GetValue(0)!;
+                if (ancestors.Contains(item))
+                {
+                    continue;
+                }
+
+                var children = ParseObject(item, property.PropertyType.GetElementType()!, ancestors);
                 if (null == children || !children.Any())
                 {
                     result.Add(property.Name);
@@ -428,7 +467,13 @@ public class Graph<T> where T : class
 
             if (IsCollection(property.PropertyType))
             {
-                if (!property.PropertyType.GetTypeInfo().IsGenericType)
+                if (!property.PropertyType.GetTypeInfo().IsGenericType || property.PropertyType.GenericTypeArguments.Length != 1)
+                {
+                    continue;
+                }
+
+                var itemType = property.PropertyType.GenericTypeArguments[0];
+                if (itemType == typeof(string) || !itemType.GetTypeInfo().IsClass)
                 {
                     continue;
                 }
@@ -438,9 +483,9 @@ public class Graph<T> where T : class
                 if (null != enumerable)
                 {
                     var enumerator = enumerable.GetEnumerator();
-                    if (enumerator.MoveNext())
+                    if (enumerator.MoveNext() && !ancestors.Contains(enumerator.Current))
                     {
-                        var children = ParseObject(enumerator.Current);
+                        var children = ParseObject(enumerator.Current, itemType, ancestors);
                         if (!children.Any())
                         {
                             result.Add(property.Name);
@@ -474,9 +519,9 @@ public class Graph<T> where T : class
             // Check if type instance is not null.
             oProperty = property.GetValue(o, null);
 
-            if (null != oProperty)
+            if (null != oProperty && !ancestors.Contains(oProperty))
             {
-                var children = ParseObject(oProperty);
+                var children = ParseObject(oProperty, property.PropertyType, ancestors);
                 if (!children.Any())
                 {
                     result.Add(property.Name);
@@ -489,14 +534,15 @@ public class Graph<T> where T : class
                     }
                 }
             }
-            //var child = ParseObject()
         }
+
+        ancestors.Remove(o);
 
         return result;
     }
 
     [RequiresUnreferencedCode(ParseUsesReflection)]
-    private static IEnumerable<string> ParseObject2(object o)
+    private static IEnumerable<string> ParseObject2(object o, Type type, HashSet<object> ancestors)
     {
         var result = new List<string>();
 
@@ -507,7 +553,7 @@ public class Graph<T> where T : class
             throw new InvalidOperationException("Collection is not allowed");
         }
 
-        var type = o.GetType();
+        // The declared type, not the runtime one: the properties a subclass adds are not part of the paths the graph can validate.
 
         if (!type.GetTypeInfo().IsClass)
         {
@@ -520,6 +566,8 @@ public class Graph<T> where T : class
         }
 
         var properties = type.GetRuntimeProperties();
+
+        ancestors.Add(o);
 
         foreach (var property in properties)
         {
@@ -551,7 +599,13 @@ public class Graph<T> where T : class
                     continue;
                 }
 
-                var children = ParseObject2(array.GetValue(0)!);
+                var item = array.GetValue(0)!;
+                if (ancestors.Contains(item))
+                {
+                    continue;
+                }
+
+                var children = ParseObject2(item, property.PropertyType.GetElementType()!, ancestors);
                 if (null == children || !children.Any())
                 {
                     result.Add(property.Name);
@@ -569,7 +623,13 @@ public class Graph<T> where T : class
 
             if (IsCollection(property.PropertyType))
             {
-                if (!property.PropertyType.GetTypeInfo().IsGenericType)
+                if (!property.PropertyType.GetTypeInfo().IsGenericType || property.PropertyType.GenericTypeArguments.Length != 1)
+                {
+                    continue;
+                }
+
+                var itemType = property.PropertyType.GenericTypeArguments[0];
+                if (itemType == typeof(string) || !itemType.GetTypeInfo().IsClass)
                 {
                     continue;
                 }
@@ -579,9 +639,9 @@ public class Graph<T> where T : class
                 if (null != enumerable)
                 {
                     var enumerator = enumerable.GetEnumerator();
-                    if (enumerator.MoveNext())
+                    if (enumerator.MoveNext() && !ancestors.Contains(enumerator.Current))
                     {
-                        var children = ParseObject2(enumerator.Current);
+                        var children = ParseObject2(enumerator.Current, itemType, ancestors);
                         if (!children.Any())
                         {
                             result.Add(property.Name);
@@ -612,9 +672,9 @@ public class Graph<T> where T : class
             // Check if type instance is not null.
             oProperty = property.GetValue(o, null);
 
-            if (null != oProperty)
+            if (null != oProperty && !ancestors.Contains(oProperty))
             {
-                var children = ParseObject2(oProperty);
+                var children = ParseObject2(oProperty, property.PropertyType, ancestors);
                 if (!children.Any())
                 {
                     result.Add(property.Name);
@@ -628,6 +688,8 @@ public class Graph<T> where T : class
                 }
             }
         }
+
+        ancestors.Remove(o);
 
         return result;
     }
