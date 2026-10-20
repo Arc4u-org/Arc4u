@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.Serialization;
 using System.Xml;
 using System.Xml.Serialization;
 using System.Text.Json.Serialization;
@@ -11,7 +10,6 @@ namespace Arc4u.Security.Principal;
 /// retrieve from the AD but can be constructed from any other sources.
 /// The class is binay and xml serialisable.
 /// </summary>
-//  [DataContract]
 public sealed class UserProfile : IXmlSerializable
 {
     /// <summary>
@@ -142,7 +140,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the display name.
     /// </summary>
     /// <value>The display name.</value>
-    [DataMember]
     [JsonInclude]
     public string DisplayName { get; private set; }
 
@@ -150,7 +147,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the email.
     /// </summary>
     /// <value>The email.</value>
-    [DataMember]
     [JsonInclude]
     public string Email { get; private set; }
 
@@ -158,7 +154,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the department.
     /// </summary>
     /// <value>The department.</value>
-    [DataMember]
     [JsonInclude]
     public string Department { get; private set; }
 
@@ -166,7 +161,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the company.
     /// </summary>
     /// <value>The company.</value>
-    [DataMember]
     [JsonInclude]
     public string Company { get; private set; }
 
@@ -174,7 +168,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the name of the given.
     /// </summary>
     /// <value>The name of the given.</value>
-    [DataMember]
     [JsonInclude]
     public string GivenName { get; private set; }
 
@@ -182,7 +175,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the surname.
     /// </summary>
     /// <value>The surname.</value>
-    [DataMember]
     [JsonInclude]
     public string SurName { get; private set; }
 
@@ -190,7 +182,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the sid.
     /// </summary>
     /// <value>The sid.</value>
-    [DataMember]
     [JsonInclude]
     public string Sid { get; private set; }
 
@@ -198,7 +189,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the state.
     /// </summary>
     /// <value>The state.</value>
-    [DataMember]
     [JsonInclude]
     public string State { get; private set; }
 
@@ -206,84 +196,72 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the mobile.
     /// </summary>
     /// <value>The mobile.</value>
-    [DataMember]
     [JsonInclude]
     public string Mobile { get; private set; }
     /// <summary>
     /// Gets the telephone.
     /// </summary>
     /// <value>The telephone.</value>
-    [DataMember]
     [JsonInclude]
     public string Telephone { get; private set; }
     /// <summary>
     /// Gets the internal phone.
     /// </summary>
     /// <value>The internal phone.</value>
-    [DataMember]
     [JsonInclude]
     public string InternalPhone { get; private set; }
     /// <summary>
     /// Gets the fax.
     /// </summary>
     /// <value>The fax.</value>
-    [DataMember]
     [JsonInclude]
     public string Fax { get; private set; }
     /// <summary>
     /// Gets the name of the principal.
     /// </summary>
     /// <value>The name of the principal.</value>
-    [DataMember]
     [JsonInclude]
     public string PrincipalName { get; private set; }
     /// <summary>
     /// Gets the postal code.
     /// </summary>
     /// <value>The postal code.</value>
-    [DataMember]
     [JsonInclude]
     public string PostalCode { get; private set; }
 
     /// <summary>
     /// Get the Street defined in the address.
     /// </summary>
-    [DataMember]
     [JsonInclude]
     public string Street { get; private set; }
     /// <summary>
     /// Gets the room.
     /// </summary>
     /// <value>The room.</value>
-    [DataMember]
     [JsonInclude]
     public string Room { get; private set; }
     /// <summary>
     /// Gets the initials.
     /// </summary>
     /// <value>The initials.</value>
-    [DataMember]
     [JsonInclude]
     public string Initials { get; private set; }
     /// <summary>
     /// Gets the name of the sam account.
     /// </summary>
     /// <value>The name of the sam account.</value>
-    [DataMember]
     [JsonInclude]
     public string SamAccountName { get; private set; }
 
     /// <summary>
     /// Get the domain.
     /// </summary>
-    [DataMember]
     [JsonInclude]
     public string Domain { get; private set; }
     /// <summary>
     /// Gets the culture.
     /// </summary>
     /// <value>The culture.</value>
-    [DataMember(Name = "Culture")]
     [JsonInclude]
     [JsonPropertyName("Culture")]
     private string _culture;
@@ -292,7 +270,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the culture of the user.
     /// </summary>
     /// <value>The culture.</value>
-    [IgnoreDataMember]
     [XmlIgnore]
     [JsonIgnore]
     public CultureInfo Culture
@@ -304,7 +281,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets or sets the current culture.
     /// </summary>
     /// <value>The current culture.</value>
-    [DataMember(Name = "CurrentCulture")]
     [JsonPropertyName("CurrentCulture")]
     [JsonInclude]
     private string _currentCulture;
@@ -313,7 +289,6 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets or sets the culture currently used by the user (initially the same as <see cref="Culture"/>).
     /// </summary>
     /// <value>The current culture.</value>
-    [IgnoreDataMember]
     [XmlIgnore]
     [JsonIgnore]
     public CultureInfo CurrentCulture
@@ -326,14 +301,12 @@ public sealed class UserProfile : IXmlSerializable
     /// Gets the name of the common.
     /// </summary>
     /// <value>The name of the common.</value>
-    [DataMember]
     [JsonInclude]
     public string CommonName { get; private set; }
     /// <summary>
     /// Gets the description.
     /// </summary>
     /// <value>The description.</value>
-    [DataMember]
     [JsonInclude]
     public string Description { get; private set; }
 

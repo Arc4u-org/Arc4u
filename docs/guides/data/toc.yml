@@ -1,5 +1,7 @@
 - name: Overview
   href: index.md
+- name: Include graphs
+  href: graph.md
 - name: Entity Framework Core
   href: efcore.md
 - name: MongoDB

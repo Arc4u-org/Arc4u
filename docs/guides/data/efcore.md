@@ -9,7 +9,7 @@ Arc4u does not track changes on your entities. Persist your aggregates with the 
 
 ## What it solves
 
-A caller decides which parts of an aggregate it needs (an order with its lines, or with its customer). `Graph<T>` lets it express that as a list of paths built from expressions, and because `Graph<T>` is a data contract it can be sent between processes. At the data layer, one call turns the paths into `Include` and `ThenInclude` calls.
+A caller decides which parts of an aggregate it needs (an order with its lines, or with its customer). `Graph<T>` lets it express that as a list of paths built from expressions, and because `Graph<T>` serializes with `System.Text.Json` it can be sent between processes. At the data layer, one call turns the paths into `Include` and `ThenInclude` calls. [Include graphs](graph.md) explains how to build and use a graph.
 
 ## Install
 
@@ -85,5 +85,6 @@ The path expression goes deeper than one property, for example `o => o.Customer.
 ## See also
 
 - [Data access](index.md)
+- [Include graphs](graph.md)
 - [Configuration store on EF Core](../configuration/index.md) for the separate `Arc4u.Configuration.Store.EfCore` package
 - <xref:Arc4u.EfCore> in the API reference

@@ -430,6 +430,15 @@ packages. It contains breaking changes: follow the
   ([#254](https://github.com/Arc4u-org/Arc4u/issues/254)).
 - `GraphExtension.ApplyReferences(graph, query, path)` always threw, and matched include paths by prefix
   instead of by segment ([#253](https://github.com/Arc4u-org/Arc4u/issues/253)).
+- `Graph<T>`: `Exist` and `RemoveGraph` matched include paths by prefix instead of by segment
+  (`Department` matched `Departments.Manager`), and `Exist` ignored the casing that `GetGraph` and
+  `RemoveGraph` respect. `GetGraph` on a collection property threw a `MissingMemberException` when the graph
+  had paths below it. `Parse` crashed with a stack overflow on an object graph with back references, threw
+  on a non-empty collection of strings or value types, and returned paths for properties declared only by a
+  subclass, which then failed validation. `Include` built wrong paths with `Where`, `OrderBy`, `Take` or `First`
+  (`Lines.Active.Product`) and accepted value types inside `Select`; these operators now keep the path of their
+  collection, and value types throw a `MemberAccessException`. `Parse` no longer reads non-public or static
+  properties and indexers, and a property hidden with `new` no longer throws an `AmbiguousMatchException`.
 - Configuration store: after `ResetAsync`, the first poll published an empty data set
   ([#244](https://github.com/Arc4u-org/Arc4u/issues/244)); a concurrent insert of the initial sections
   by another instance is accepted, insert errors are no longer swallowed, and the section store

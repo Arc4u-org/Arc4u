@@ -26,7 +26,7 @@ Arc4u deliberately leaves the following to the underlying libraries: choosing an
 | `Arc4u.MongoDB` | Registering a MongoDB database context and getting collections mapped to entity types. See [MongoDB](mongodb.md). |
 | `Arc4u.OData` | Rewriting the URLs in OData responses behind a reverse proxy. See [OData](odata.md). |
 
-The packages do not reference each other. `Graph<T>` lives in the base `Arc4u` package, which `Arc4u.EfCore` references, so a caller can build a graph without referencing EF Core.
+The packages do not reference each other. `Graph<T>` lives in the base `Arc4u` package, which `Arc4u.EfCore` references, so a caller can build a graph without referencing EF Core. See [Include graphs](graph.md).
 
 ## Install
 
@@ -101,5 +101,5 @@ Symptoms specific to one package are on its page: [Entity Framework Core](efcore
 
 ## See also
 
-- [Entity Framework Core](efcore.md), [MongoDB](mongodb.md), [OData](odata.md)
+- [Include graphs](graph.md), [Entity Framework Core](efcore.md), [MongoDB](mongodb.md), [OData](odata.md)
 - <xref:Arc4u.EfCore> in the API reference

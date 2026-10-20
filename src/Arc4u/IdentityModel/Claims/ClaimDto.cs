@@ -1,12 +1,10 @@
 using System.Globalization;
-using System.Runtime.Serialization;
 
 namespace Arc4u.IdentityModel.Claims;
 
 /// <summary>
 /// A serializable representation of a claim: its type and its value.
 /// </summary>
-[DataContract]
 public class ClaimDto
 {
     /// <summary>
@@ -31,15 +29,13 @@ public class ClaimDto
     }
 
     /// <summary>
-    /// Gets or sets the claim type. It is serialized as <c>claimType</c>.
+    /// Gets or sets the claim type.
     /// </summary>
-    [DataMember(Name = "claimType")]
     public string ClaimType { get; set; }
 
     /// <summary>
-    /// Gets or sets the claim value. It is serialized as <c>value</c>.
+    /// Gets or sets the claim value.
     /// </summary>
-    [DataMember(Name = "value")]
     public string Value { get; set; }
 
     /// <summary>

@@ -1,12 +1,11 @@
 using System.Globalization;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Arc4u;
 
 /// <summary>
 /// Represents a period. This class cannot be inherited.
 /// </summary>
-[DataContract]
 public sealed class Period
     : Interval<DateTimeOffset?>
     , IFormattable
@@ -63,6 +62,7 @@ public sealed class Period
     /// </summary>
     /// <param name="lowerBound">The lower bound.</param>
     /// <param name="upperBound">The upper bound.</param>
+    [JsonConstructor]
     public Period(Bound<DateTimeOffset?> lowerBound, Bound<DateTimeOffset?> upperBound)
         : base(lowerBound, upperBound)
     {

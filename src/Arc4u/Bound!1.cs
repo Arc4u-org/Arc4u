@@ -1,7 +1,8 @@
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Arc4u
 {
@@ -9,7 +10,6 @@ namespace Arc4u
     /// Represents a bound of an <see cref="Interval&lt;T&gt;"/>. This class cannot be inherited.
     /// </summary>
     /// <typeparam name="T">The <see cref="Value"/> type of the bound.</typeparam>
-    [DataContract(Name = "BoundOf{0}")]
     public sealed class Bound<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>
         : IEquatable<Bound<T>>
         , IComparable<Bound<T>>
@@ -21,7 +21,6 @@ namespace Arc4u
         /// </summary>
         /// <remarks>The set operation is not private to let the Silverlight runtime
         /// accessing the property during serializing/deserializing operations.</remarks>
-        [DataMember(EmitDefaultValue = false)]
         public BoundType Type { get; internal set; }
 
         /// <summary>
@@ -29,7 +28,6 @@ namespace Arc4u
         /// </summary>
         /// <remarks>The set operation is not private to let the Silverlight runtime
         /// accessing the property during serializing/deserializing operations.</remarks>
-        [DataMember(EmitDefaultValue = false)]
         public BoundDirection Direction { get; internal set; }
 
         /// <summary>
@@ -37,7 +35,6 @@ namespace Arc4u
         /// </summary>
         /// <remarks>The set operation is not private to let the Silverlight runtime
         /// accessing the property during serializing/deserializing operations.</remarks>
-        [DataMember(EmitDefaultValue = false)]
         public T Value { get; internal set; }
 
         private static T _lowestValue = default!;
@@ -129,6 +126,23 @@ namespace Arc4u
         /// <exception cref="ArgumentException">An infinity bound must define an <see cref="P:Direction.Opened"/> direction.</exception>
         public Bound(BoundType type, BoundDirection direction, T value)
             : this(type, direction, value, true)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Bound&lt;T&gt;"/> class from its JSON form. Use <see cref="Bound{T}(BoundType, BoundDirection, T)"/> in code.
+        /// </summary>
+        /// <param name="direction">The bound direction.</param>
+        /// <param name="type">The bound type.</param>
+        /// <param name="value">The bound value.</param>
+        /// <remarks>
+        /// The empty interval of a nullable or reference type has closed infinity (<see langword="null"/>) bounds (see <see cref="Interval.Empty{T}"/>),
+        /// which the other constructor rejects: this one accepts them, so that an empty interval survives a round trip.
+        /// </remarks>
+        [JsonConstructor]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public Bound(BoundDirection direction, BoundType type, T value)
+            : this(type, direction, value, checkArguments: false)
         {
         }
 

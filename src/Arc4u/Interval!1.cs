@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Arc4u;
 
@@ -11,8 +11,6 @@ namespace Arc4u;
 /// </summary>
 /// <typeparam name="T">The type of the interval.</typeparam>
 
-[DataContract(Name = "IntervalOf{0}")]
-[KnownType(typeof(Period))]
 public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>
     : IEquatable<Interval<T>>
     , IComparable<Interval<T>>
@@ -25,7 +23,6 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// <value>The lower bound.</value>
     /// <remarks>The set operation is not private to let the Silverlight runtime
     /// accessing the property during serializing/deserializing operations.</remarks>
-    [DataMember(EmitDefaultValue = false)]
     public Bound<T> LowerBound { get; internal set; }
 
     /// <summary>
@@ -34,7 +31,6 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// <value>The upper bound.</value>
     /// <remarks>The set operation is not private to let the Silverlight runtime
     /// accessing the property during serializing/deserializing operations.</remarks>
-    [DataMember(EmitDefaultValue = false)]
     public Bound<T> UpperBound { get; internal set; }
 
     /// <summary>
@@ -42,6 +38,7 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// </summary>
     /// <value>An <see cref="IntervalCollection&lt;T&gt;"/> that contains elements not in this instance.</value>
     /// <seealso href="http://en.wikipedia.org/wiki/Complement_(set_theory)">Complement (set theory)</seealso>
+    [JsonIgnore]
     public IntervalCollection<T> Complement
     {
         get { return Interval.ComplementOf(this); }
@@ -56,6 +53,7 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// <seealso cref="IsSingletonOf"/>
     /// <seealso cref="Interval.SingletonOf"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Singleton_(mathematics)">Singleton (mathematics)</seealso>
+    [JsonIgnore]
     public bool IsSingleton
     {
         get
@@ -89,6 +87,7 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// <value><c>true</c> if this instance contains no element; otherwise, <c>false</c>.</value>
     /// <seealso cref="Interval.Empty{T}"/>
     /// <seealso href="http://en.wikipedia.org/wiki/Empty_set">Empty Set (set theory)</seealso>
+    [JsonIgnore]
     public bool IsEmpty
     {
         get
@@ -123,6 +122,7 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// </summary>
     /// <value><c>true</c> if this instance represents an universe; otherwise, <c>false</c>.</value>
     /// <seealso href="http://en.wikipedia.org/wiki/Universe_(mathematics)">Universe (mathematics)</seealso>
+    [JsonIgnore]
     public bool IsUniverse
     {
         get
@@ -166,7 +166,8 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// </summary>
     /// <param name="lowerBound">The lower bound.</param>
     /// <param name="upperBound">The upper bound.</param>
-    protected internal Interval(Bound<T>? lowerBound, Bound<T>? upperBound)
+    [JsonConstructor]
+    public Interval(Bound<T>? lowerBound, Bound<T>? upperBound)
     {
 #if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(lowerBound);

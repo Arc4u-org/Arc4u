@@ -1,5 +1,4 @@
-using System.Runtime.Serialization;
-using System.Text;
+using System.Text.Json;
 using AwesomeAssertions;
 using Xunit;
 
@@ -95,13 +94,27 @@ public class GraphTests
         public Trailer Trailer { get; set; } = null!;
     }
 
-    public sealed class Fleet
+    public interface IFleet
+    {
+        Vehicle Leader { get; }
+    }
+
+    public sealed class Fleet : IFleet
     {
         public List<Vehicle> Vehicles { get; set; } = null!;
         public Vehicle[] Reserve { get; set; } = null!;
         public Vehicle Leader { get; set; } = null!;
         public List<string> Plates { get; set; } = null!;
         public List<int> Mileages { get; set; } = null!;
+    }
+
+    // An entity that is also a collection of its items, with navigation properties of its own.
+    public sealed class Page<TItem> : IEnumerable<TItem>
+    {
+        public Company Owner { get; set; } = null!;
+        public List<TItem> Items { get; set; } = [];
+        public IEnumerator<TItem> GetEnumerator() => Items.GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     [Fact]
@@ -212,13 +225,7 @@ public class GraphTests
     public void Exist_Should_Be_Case_Sensitive_Like_GetGraph_And_RemoveGraph()
     {
         // Deserialization does not validate the paths: the only way to get one not cased like the property.
-        var graph = new Graph<Company>(["Headquarter"]);
-        var serializer = new DataContractSerializer(typeof(Graph<Company>));
-        using var stream = new MemoryStream();
-        serializer.WriteObject(stream, graph);
-        var xml = Encoding.UTF8.GetString(stream.ToArray()).Replace(">Headquarter<", ">headquarter<", StringComparison.Ordinal);
-        using var lowerCased = new MemoryStream(Encoding.UTF8.GetBytes(xml));
-        var copy = (Graph<Company>)serializer.ReadObject(lowerCased)!;
+        var copy = JsonSerializer.Deserialize<Graph<Company>>("""{"Includes":["headquarter"]}""")!;
 
         copy.Includes.Should().Equal("headquarter");
         copy.Exist(c => c.Headquarter).Should().BeFalse();
@@ -348,6 +355,15 @@ public class GraphTests
 
         var act = () => new Graph<List<Department>>(["Count"]);
         act.Should().Throw<MissingMemberException>();
+    }
+
+    [Fact]
+    public void Graph_Of_An_Entity_Implementing_IEnumerable_Should_Keep_Its_Own_Properties()
+    {
+        // Owner is declared by Page<T> itself, Address by its items.
+        var graph = new Graph<Page<Employee>>(["Owner.Headquarter", "Address.Country"]);
+
+        graph.Includes.Should().Equal("Owner.Headquarter", "Address.Country");
     }
 
     [Fact]
@@ -496,6 +512,28 @@ public class GraphTests
     }
 
     [Fact]
+    public void Parse_Should_Read_The_Properties_Declared_By_An_Interface()
+    {
+        var fleet = new Fleet { Leader = BuildTruck(), Vehicles = [BuildTruck()] };
+
+        // Vehicles is not part of IFleet.
+        Graph<IFleet>.Parse(fleet).Includes.Should().Equal("Leader.Engine");
+        Graph<IFleet>.Parse(fleet, shouldHaveElement: true).Includes.Should().Equal("Leader.Engine");
+    }
+
+    [Fact]
+    public void Parse_Should_Not_Follow_A_Back_Reference_Through_A_List()
+    {
+        var company = new Company();
+        var department = new Department { Company = company };
+        company.Departments = [department];
+
+        // Company.Departments starts with the department being parsed: skipped like a back reference through an array or a reference.
+        Graph<Department>.Parse(department).Includes.Should().Equal("Company");
+        Graph<Department>.Parse(department, shouldHaveElement: true).Includes.Should().Equal("Company");
+    }
+
+    [Fact]
     public void Parse_Should_Ignore_Collections_Of_Strings_And_Value_Types()
     {
         var filled = new Fleet { Plates = ["1-ABC-123"], Mileages = [42] };
@@ -517,24 +555,115 @@ public class GraphTests
         graph.GetGraph(c => c.Headquarter).Includes.Should().Equal("Country");
     }
 
-    [Fact]
-    public void Graph_Should_Survive_A_DataContract_Round_Trip()
+    // Members that are not navigation properties: non-public, static, an indexer, and a collection of collections.
+    public sealed class Holder
     {
-        var graph = new Graph<Company>(
-        [
-            "Departments.Employees.Address.Country",
-            "Departments.Manager",
-            "Headquarter",
-        ]);
+        public static Address Shared { get; } = new();
+        public Address Home { get; set; } = null!;
+        private Address Hidden { get; set; } = new();
+        internal Address Internal { get; set; } = new();
+        public List<Employee[]> Shifts { get; set; } = null!;
+        public Address this[int index] => Hidden;
+    }
 
-        var serializer = new DataContractSerializer(typeof(Graph<Company>));
-        using var stream = new MemoryStream();
-        serializer.WriteObject(stream, graph);
-        stream.Position = 0;
+    public class BaseHolder
+    {
+        public Address Place { get; set; } = null!;
+    }
 
-        var copy = (Graph<Company>)serializer.ReadObject(stream)!;
+    // Hides Place with another type.
+    public sealed class DerivedHolder : BaseHolder
+    {
+        public new Country Place { get; set; } = null!;
+    }
 
-        copy.Includes.Should().Equal(graph.Includes);
-        copy.GetGraph(c => c.Headquarter).Includes.Should().BeEmpty();
+    [Fact]
+    public void Include_Should_Reject_A_Value_Type_Inside_A_Select()
+    {
+        var act = () => new Graph<Company>().Include(c => c.Departments.Select(d => d.Employees.Select(e => e.Age)));
+
+        act.Should().Throw<MemberAccessException>();
+    }
+
+    [Fact]
+    public void Include_Should_Keep_The_Path_Of_A_Filtered_Or_Ordered_Collection()
+    {
+        var take = 3;
+
+        var graph = new Graph<Company>()
+            .Include(c => c.Departments.Where(d => d.Manager != null).OrderBy(d => d.Company.Name).Take(take).Select(d => d.Manager))
+            .Include(c => c.Departments.First().Company)
+            .Include(c => c.Departments.SelectMany(d => d.Employees).Where(e => e.Age > 30).Select(e => e.Skills));
+
+        graph.Includes.Should().Equal("Departments.Manager", "Departments.Company", "Departments.Employees.Skills");
+    }
+
+    [Fact]
+    public void Parse_Should_Only_Follow_Public_Instance_Properties()
+    {
+        var holder = new Holder { Home = new Address(), Shifts = [[new Employee()]] };
+
+        Graph<Holder>.Parse(holder).Includes.Should().Equal("Home");
+        Graph<Holder>.Parse(holder, shouldHaveElement: true).Includes.Should().Equal("Home");
+    }
+
+    [Fact]
+    public void Graph_Should_Pick_The_Property_Hiding_A_Base_Property()
+    {
+        new Graph<DerivedHolder>(["Place"]).Includes.Should().Equal("Place");
+        Graph<DerivedHolder>.Parse(new DerivedHolder { Place = new Country() }).Includes.Should().Equal("Place");
+
+        // Place is a Country here, which has no Country property.
+        var act = () => new Graph<DerivedHolder>(["Place.Country"]);
+        act.Should().Throw<MissingMemberException>();
+    }
+
+    [Fact]
+    public void Collections_Of_Collections_Should_Not_Be_Included()
+    {
+        var include = () => new Graph<Holder>().Include(h => h.Shifts);
+        var constructor = () => new Graph<Holder>(["Shifts"]);
+
+        include.Should().Throw<MemberAccessException>();
+        constructor.Should().Throw<MissingMemberException>();
+    }
+
+    [Fact]
+    public void Constructor_Should_Report_A_String_As_A_Simple_Type()
+    {
+        var act = () => new Graph<Company>(["Headquarter.Street"]);
+
+        act.Should().Throw<MissingMemberException>().WithMessage("*Street is a simple type*");
+    }
+
+    [Fact]
+    public void Deserialized_Graph_Should_Not_Keep_Null_Includes()
+    {
+        var graph = JsonSerializer.Deserialize<Graph<Company>>("""{"Includes":null}""")!;
+
+        graph.Includes.Should().BeEmpty();
+        graph.Include(c => c.Headquarter).Includes.Should().Equal("Headquarter");
+    }
+
+    [Fact]
+    public void Deserialization_Should_Skip_Unknown_Properties_And_Follow_The_Case_Option()
+    {
+        JsonSerializer.Deserialize<Graph<Company>>("""{"Version":2,"Extra":{"A":[1]},"Includes":["Headquarter"]}""")!
+                      .Includes.Should().Equal("Headquarter");
+
+        JsonSerializer.Deserialize<Graph<Company>>("""{"includes":["Headquarter"]}""")!.Includes.Should().BeEmpty();
+        JsonSerializer.Deserialize<Graph<Company>>("""{"includes":["Headquarter"]}""", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!
+                      .Includes.Should().Equal("Headquarter");
+    }
+
+    [Theory]
+    [InlineData("""["Headquarter"]""")]
+    [InlineData("""{"Includes":"Headquarter"}""")]
+    [InlineData("""{"Includes":[1]}""")]
+    public void Deserialization_Should_Reject_A_Malformed_Graph(string json)
+    {
+        var act = () => JsonSerializer.Deserialize<Graph<Company>>(json);
+
+        act.Should().Throw<JsonException>();
     }
 }

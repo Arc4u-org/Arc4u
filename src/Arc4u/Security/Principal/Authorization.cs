@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
 namespace Arc4u.Security.Principal;
@@ -7,7 +6,6 @@ namespace Arc4u.Security.Principal;
 /// <summary>
 /// An operation is the atomic entity defining what a user can do.
 /// </summary>
-[DataContract(Namespace = "urn:arc4u.profile.operation")]
 public class Operation
 {
     /// <summary>
@@ -39,7 +37,6 @@ public class Operation
 /// <summary>
 /// The scopedRoles are the roles defined for a specific scope.
 /// </summary>
-[DataContract(Namespace = "urn:arc4u.profile.scopedroles")]
 public class ScopedRoles
 {
     /// <summary>
@@ -61,7 +58,6 @@ public class ScopedRoles
 /// <summary>
 ///  The ScopedOperations are the operations defined for a specific scope.
 /// </summary>
-[DataContract(Namespace = "urn:arc4u.profile.scopedoperations")]
 public class ScopedOperations
 {
     /// <summary>
@@ -84,7 +80,6 @@ public class ScopedOperations
 /// <summary>
 /// The Authorization class is the class designed to contains the authority information filled by a AuthorizationFiller and is serializable. 
 /// </summary>
-[DataContract(Namespace = "urn:arc4u.profile.authorization")]
 public class Authorization
 {
     /// <summary>

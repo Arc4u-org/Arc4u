@@ -78,30 +78,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Configs\appsettings.RejectedTypes.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Configs\Basic.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Configs\cert.pem">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
 
-    <None Update="Configs\EmptyAssemblies.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-
     <None Update="Configs\key.pem">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-
-    <None Update="Configs\TestParser.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-
-    <None Update="Configs\TestScopedParser.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>
