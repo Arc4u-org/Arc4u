@@ -249,6 +249,12 @@ packages. It contains breaking changes: follow the
 - `LoggerContext` and the `Log()`-terminated logging API.
 - The `DataContractSerializer`, `DataContractJsonSerializer` and `XmlSerializer` string helpers, and
   `Arc4u.Utils.Enum<T>` / `EnumUtil`.
+- The `[DataContract]`, `[DataMember]` and `[EnumMember]` attributes of `TokenInfo`, `ClaimDto`,
+  `MessageCategory`, `UserProfile`, `Authorization`, `Operation`, `ScopedRoles`, `ScopedOperations`,
+  `Graph<T>`, `Bound<T>`, `Interval<T>`, `Period`, `BoundType` and `BoundDirection`: these types are
+  serialized with System.Text.Json, including with a source-generated `JsonSerializerContext`
+  ([#278](https://github.com/Arc4u-org/Arc4u/issues/278)). See
+  [Newtonsoft.Json replaced by System.Text.Json](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#newtonsoftjson-replaced-by-systemtextjson).
 - The AutoMapper dependency of `Arc4u.Diagnostics.Serilog.Sinks.RealmDb`.
 - The change-tracking concept, obsolete with a domain-centric approach
   ([#266](https://github.com/Arc4u-org/Arc4u/issues/266)): the `Arc4u.Standard.Data` package

@@ -214,6 +214,15 @@ Steps:
    or add an explicit reference: `dotnet add package Newtonsoft.Json`.
 3. If you stored Arc4u objects serialized with Newtonsoft.Json (for example in a cache), check that
    System.Text.Json reads them, or clear them.
+4. If you serialized Arc4u types with `DataContractSerializer` or `DataContractJsonSerializer` (for
+   example in a WCF or CoreWCF contract), serialize them with System.Text.Json instead. `TokenInfo`,
+   `ClaimDto`, `MessageCategory`, `UserProfile`, `Authorization`, `Operation`, `ScopedRoles`,
+   `ScopedOperations`, `Graph<T>`, `Bound<T>`, `Interval<T>`, `Period`, `BoundType` and `BoundDirection`
+   no longer carry `[DataContract]`, `[DataMember]` or `[EnumMember]` attributes
+   ([#278](https://github.com/Arc4u-org/Arc4u/issues/278)). Without them, the `DataContractSerializer`
+   loses the members that have no public setter, such as the include paths of a `Graph<T>` and the
+   bounds of an `Interval<T>`. Data written by the `DataContractSerializer` cannot be read back with
+   System.Text.Json: clear it or convert it.
 
 ## ADAL and Protobuf removed
 
