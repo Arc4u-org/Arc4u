@@ -32,8 +32,6 @@ using Authorization = Arc4u.Security.Principal.Authorization;
 
 namespace Arc4u.UnitTest.Security;
 
-#pragma warning disable CS0618
-
 public class JwtHandlerToTest(
     IServiceProvider serviceProvider,
     ILogger<JwtHandlerToTest> logger,
@@ -61,7 +59,6 @@ public class JwtHandlerToTest(
 ///     9) Chain 3 Handlers: Oauth2Bearer + Cookies + Inject but inject is not occuring because a OAuth2Bearer is already
 ///     available.
 /// </summary>
-#pragma warning disable CS0618
 [Trait("Category", "CI")]
 public class JwtHttpHandlerTests
 {

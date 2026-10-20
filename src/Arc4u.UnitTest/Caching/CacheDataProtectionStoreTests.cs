@@ -22,7 +22,6 @@ using Xunit;
 namespace Arc4u.UnitTest.Caching;
 
 [Trait("Category", "CI")]
-#pragma warning disable CS0618
 public class CacheDataProtectionStoreTests
 {
     private readonly Fixture _fixture;
