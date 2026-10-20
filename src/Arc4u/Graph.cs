@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -19,6 +20,8 @@ public class Graph<T> where T : class
     private const string stringTypeNotAllowed = "Including a type of string is not allowed when you try to define a graph path.";
     private const string StructTypeNotAllowed = "Including a struct type is not allowed when you try to define a graph path.";
     private const string OnlyLevelOneIsAllowed = "It is not allowed to check more than one level!";
+    private const string PathsUseReflection = "The include paths are checked by looking up the properties by name with reflection: trimming can remove them.";
+    private const string ParseUsesReflection = "Parse reads the properties of the instance with reflection: trimming can remove them.";
 
     [DataMember(Name = "Includes")]
     private List<string> _includes;
@@ -35,6 +38,7 @@ public class Graph<T> where T : class
     /// Create a Graph instance based on the typeof(T).
     /// </summary>
     /// <param name="paths">The list of initials includes you want to predefined!</param>
+    [RequiresUnreferencedCode(PathsUseReflection)]
     public Graph(IEnumerable<string> paths)
     {
         ArgumentNullException.ThrowIfNull(paths);
@@ -44,6 +48,13 @@ public class Graph<T> where T : class
         _includes = new List<string>(paths);
     }
 
+    // For a subset of the paths of this graph, which were validated when they were added.
+    private static Graph<T> FromValidatedPaths(List<string> paths) => new() { _includes = paths };
+
+    // An IEnumerable implemented by the type, not the non-generic IEnumerable interface itself.
+    private static bool IsCollection(Type type) => type != typeof(IEnumerable) && typeof(IEnumerable).IsAssignableFrom(type);
+
+    [RequiresUnreferencedCode(PathsUseReflection)]
     private static void ValidatePaths(IEnumerable<string> paths)
     {
         foreach (var path in paths)
@@ -79,7 +90,7 @@ public class Graph<T> where T : class
                     continue;
                 }
 
-                if (!propertyInfo.PropertyType.GetTypeInfo().ImplementedInterfaces.All(t => t != typeof(IEnumerable)))
+                if (IsCollection(propertyInfo.PropertyType))
                 {
                     if (!propertyInfo.PropertyType.GetTypeInfo().IsGenericType)
                     {
@@ -210,7 +221,7 @@ public class Graph<T> where T : class
                     throw new MemberAccessException(StructTypeNotAllowed);
                 }
             }
-            if (!memberExpression.Type.GetTypeInfo().ImplementedInterfaces.All(t => t != typeof(IEnumerable)))
+            if (IsCollection(memberExpression.Type))
             {
                 var types = memberExpression.Type.GenericTypeArguments;
 
@@ -278,6 +289,7 @@ public class Graph<T> where T : class
     /// <typeparam name="TProperty">The member where wee need to extract the graph.</typeparam>
     /// <param name="path">The <see cref="MemberExpression"/> used to retrieve the name and the type used for the new Graph.</param>
     /// <returns>A new Graph instance with the type of the property selected in the path parameter.</returns>
+    [RequiresUnreferencedCode(PathsUseReflection)]
     public Graph<TProperty> GetGraph<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -308,6 +320,7 @@ public class Graph<T> where T : class
     /// <param name="instance">The object to parse.</param>
     /// <param name="shouldHaveElement"></param>
     /// <returns>The Graph for the dedicated object parsed.</returns>
+    [RequiresUnreferencedCode(ParseUsesReflection)]
     public static Graph<T> Parse(T instance, bool shouldHaveElement = false)
     {
         ArgumentNullException.ThrowIfNull(instance);
@@ -335,9 +348,11 @@ public class Graph<T> where T : class
         // remove from the Includes, all the includes containig the path.
         var l = (from i in Includes where !i.StartsWith(stringPath) select i).ToList();
 
-        return new Graph<T>(l);
+        // A subset of paths already validated: no need to check them again with reflection.
+        return FromValidatedPaths(l);
     }
 
+    [RequiresUnreferencedCode(ParseUsesReflection)]
     private static IEnumerable<string> ParseObject(object o)
     {
         var result = new List<string>();
@@ -411,7 +426,7 @@ public class Graph<T> where T : class
                 continue;
             }
 
-            if (!property.PropertyType.GetTypeInfo().ImplementedInterfaces.All(t => t != typeof(IEnumerable)))
+            if (IsCollection(property.PropertyType))
             {
                 if (!property.PropertyType.GetTypeInfo().IsGenericType)
                 {
@@ -480,6 +495,7 @@ public class Graph<T> where T : class
         return result;
     }
 
+    [RequiresUnreferencedCode(ParseUsesReflection)]
     private static IEnumerable<string> ParseObject2(object o)
     {
         var result = new List<string>();
@@ -551,7 +567,7 @@ public class Graph<T> where T : class
                 continue;
             }
 
-            if (!property.PropertyType.GetTypeInfo().ImplementedInterfaces.All(t => t != typeof(IEnumerable)))
+            if (IsCollection(property.PropertyType))
             {
                 if (!property.PropertyType.GetTypeInfo().IsGenericType)
                 {
@@ -627,6 +643,7 @@ public class Graph<T> where T : class
             // Clone it before.
             return new List<string>(_includes);
         }
+        [RequiresUnreferencedCode(PathsUseReflection)]
         set
         {
             ArgumentNullException.ThrowIfNull(value);

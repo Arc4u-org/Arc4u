@@ -41,6 +41,29 @@ public class IntervalTests
         interval.IsUniverse.Should().BeTrue();
     }
 
+    public enum Color { Red = 2, Green = -1, Blue = 5 }
+
+    [Flags]
+    public enum Rights { None = 0, Read = 1, Write = 2, ReadWrite = 3, Execute = 4 }
+
+    [Fact]
+    public void Universe_Of_An_Enum_Should_Go_From_Its_Lowest_To_Its_Highest_Value()
+    {
+        var interval = Interval.Universe<Color>();
+
+        interval.LowerBound.Value.Should().Be(Color.Green);
+        interval.UpperBound.Value.Should().Be(Color.Blue);
+    }
+
+    [Fact]
+    public void Universe_Of_A_Flags_Enum_Should_End_At_The_Combination_Of_All_Flags()
+    {
+        var interval = Interval.Universe<Rights>();
+
+        interval.LowerBound.Value.Should().Be(Rights.None);
+        interval.UpperBound.Value.Should().Be(Rights.Read | Rights.Write | Rights.Execute);
+    }
+
     [Fact]
     public void Test_Contains()
     {

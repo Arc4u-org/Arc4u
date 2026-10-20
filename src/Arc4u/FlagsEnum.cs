@@ -197,8 +197,10 @@ public static class FlagsEnum
     static IEnumerable<TEnum> FlagValues<TEnum>(Type type)
         where TEnum : struct
     {
-        foreach (TEnum value in Enum.GetValues(type))
+        // GetValuesAsUnderlyingType instead of GetValues(Type): it needs no array of TEnum built at runtime (native AOT).
+        foreach (var underlyingValue in Enum.GetValuesAsUnderlyingType(type))
         {
+            var value = (TEnum)Enum.ToObject(type, underlyingValue);
             if (TryPowerOfTwoExponent(value, out _))
             {
                 yield return value;
@@ -260,8 +262,10 @@ public static class FlagsEnum
     static IEnumerable<TEnum> FlaggedValues<TEnum>(Type type)
         where TEnum : struct
     {
-        foreach (TEnum value in Enum.GetValues(type))
+        // GetValuesAsUnderlyingType instead of GetValues(Type): it needs no array of TEnum built at runtime (native AOT).
+        foreach (var underlyingValue in Enum.GetValuesAsUnderlyingType(type))
         {
+            var value = (TEnum)Enum.ToObject(type, underlyingValue);
             if (!TryPowerOfTwoExponent(value, out _))
             {
                 yield return value;

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,8 @@ namespace Arc4u.EfCore;
 public static class GraphExtension
 {
     private const string OnlyLevelOneIsAllowed = "It is not allowed to check more than one level!";
+    private const string IncludesUseReflection = "The include paths are turned into Include and ThenInclude calls by looking up the properties by name with reflection: trimming can remove them.";
+    private const string IncludesBuildCode = "The Include and ThenInclude calls are built at runtime (generic methods and expression trees), which native AOT may not support.";
 
     /// <summary>
     /// Will apply the includes on the IQueryable&lt;T&gt; but the types having an association based on <see cref="IEnumerable"/>.
@@ -20,6 +23,7 @@ public static class GraphExtension
     /// <param name="query">The query to complete.</param>
     /// <returns>The query with the single-valued includes applied.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
+    [RequiresUnreferencedCode(IncludesUseReflection)]
     public static IQueryable<T> ApplySingleReferences<T>(this Graph<T> graph, IQueryable<T> query) where T : class
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -78,6 +82,8 @@ public static class GraphExtension
     /// <param name="graph">The graph holding the include paths.</param>
     /// <param name="query">The query to complete.</param>
     /// <returns>The query with every include of the graph applied.</returns>
+    [RequiresUnreferencedCode(IncludesUseReflection)]
+    [RequiresDynamicCode(IncludesBuildCode)]
     public static IQueryable<T> ApplySetReferences<T>(this Graph<T> graph, IQueryable<T> query) where T : class
     {
         return graph.Includes.Aggregate<string, IQueryable<T>>(query, (queryable, i) => queryable.BuildInclude(i) ?? queryable);
@@ -94,6 +100,8 @@ public static class GraphExtension
     /// <returns>The query with the matching includes (and their <c>ThenInclude</c>s) applied.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException"><paramref name="path"/> goes deeper than one level.</exception>
+    [RequiresUnreferencedCode(IncludesUseReflection)]
+    [RequiresDynamicCode(IncludesBuildCode)]
     public static IQueryable<T> ApplyReferences<TProperty, T>(this Graph<T> graph, IQueryable<T> query, Expression<Func<T, TProperty>> path) where TProperty : class where T : class
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -118,6 +126,8 @@ public static class GraphExtension
     /// <param name="queryable">Queryable object to include(s).</param>
     /// <param name="propertyPath">A dot path structure to build the Include and ThenIncludes.</param>
     /// <returns></returns>
+    [RequiresUnreferencedCode(IncludesUseReflection)]
+    [RequiresDynamicCode(IncludesBuildCode)]
     private static IQueryable<T>? BuildInclude<T>(this IQueryable<T> queryable, string propertyPath) where T : class
     {
         var properties = propertyPath.Split(new[] { '.' });
@@ -134,6 +144,8 @@ public static class GraphExtension
 
     }
 
+    [RequiresUnreferencedCode(IncludesUseReflection)]
+    [RequiresDynamicCode(IncludesBuildCode)]
     private static object BuildInternalInclude<T>(IQueryable<T> queryable, string property, out Type propertyType) where T : class
     {
         propertyType = typeof(T).GetProperty(property)!.PropertyType;
@@ -156,6 +168,8 @@ public static class GraphExtension
         return result;
     }
 
+    [RequiresUnreferencedCode(IncludesUseReflection)]
+    [RequiresDynamicCode(IncludesBuildCode)]
     private static object BuildThenInclude(object queryable, Type parentType, Type propertyType, string subProperty, out Type subPropertyType)
     {
         var basePropertyType = propertyType.IsGenericType ? propertyType.GetGenericArguments().First() : propertyType;

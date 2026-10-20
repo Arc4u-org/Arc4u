@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -9,7 +10,7 @@ namespace Arc4u
     /// </summary>
     /// <typeparam name="T">The <see cref="Value"/> type of the bound.</typeparam>
     [DataContract(Name = "BoundOf{0}")]
-    public sealed class Bound<T>
+    public sealed class Bound<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>
         : IEquatable<Bound<T>>
         , IComparable<Bound<T>>
     {
@@ -363,14 +364,16 @@ namespace Arc4u
 
         private static void InitializeEnumBounds(out T lowestValue, out T upmostValue)
         {
-            var values = Enum.GetValues(typeof(T));
+            // GetValuesAsUnderlyingType instead of GetValues(Type): it needs no array of T built at runtime (native AOT).
+            var values = Enum.GetValuesAsUnderlyingType(typeof(T));
             var hasFlag = (typeof(T).GetTypeInfo().GetCustomAttributes(typeof(FlagsAttribute), true).Length != 0);
             lowestValue = default!;
             upmostValue = default!;
             var sum = default(ulong);
             var firstValue = true;
-            foreach (Enum value in values)
+            foreach (var underlyingValue in values)
             {
+                var value = (Enum)Enum.ToObject(typeof(T), underlyingValue);
                 if (firstValue)
                 {
                     lowestValue = (T)Enum.ToObject(typeof(T), value);

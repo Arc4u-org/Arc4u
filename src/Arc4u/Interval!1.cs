@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.Serialization;
 
@@ -12,7 +13,7 @@ namespace Arc4u;
 
 [DataContract(Name = "IntervalOf{0}")]
 [KnownType(typeof(Period))]
-public class Interval<T>
+public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>
     : IEquatable<Interval<T>>
     , IComparable<Interval<T>>
 {
