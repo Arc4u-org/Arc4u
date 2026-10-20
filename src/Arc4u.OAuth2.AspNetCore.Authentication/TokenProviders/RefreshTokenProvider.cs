@@ -122,7 +122,7 @@ namespace Arc4u.OAuth2.TokenProviders
 
             if (tokenResponse.IsSuccessStatusCode)
             {
-                using var payload = JsonDocument.Parse(await tokenResponse.Content.ReadAsStringAsync().ConfigureAwait(false));
+                using var payload = JsonDocument.Parse(await tokenResponse.Content.ReadAsStringAsync(CancellationToken.None).ConfigureAwait(false));
                 // Persist the new acess token
                 var refresh_token = payload!.RootElement!.GetString("refresh_token");
                 var access_token = payload!.RootElement!.GetString("access_token")!;

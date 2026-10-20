@@ -268,7 +268,7 @@ namespace Arc4u.OAuth2.Extensions
             options.AuthenticationCacheTicketStoreOption = ticketStoreAction!;
             options.OpenIdSettingsOptions =
                 OpenIdSettingsExtension.PrepareAction(configuration, settings.OpenIdSettingsSectionPath);
-            options.DataProtectionCertificate = dataProtectionCertificate;
+            options.DataProtectionCertificate = dataProtectionCertificate!;
             options.CallbackPath = settings.CallbackPath;
             options.DefaultKeyLifetime = settings.DefaultKeyLifetime;
             options.ApplicationName = configuration[settings.ApplicationNameSectionPath]!;
@@ -380,7 +380,7 @@ namespace Arc4u.OAuth2.Extensions
         private static void ConfigureOpenIdConnectOptions(IServiceCollection services, OpenIdConnectOptions options,
             OidcAuthenticationOptions hybridOptions, OpenIdSettingsOption openIdOptions, SecurityKey? securityKey)
         {
-            ArgumentNullException.ThrowIfNull(hybridOptions.DefaultAuthority.GetMetaDataAddress());
+            var metadataAddress = hybridOptions.DefaultAuthority.GetMetaDataAddress();
 
             options.UsePkce = true;
             options.UseTokenLifetime = false;
@@ -389,9 +389,9 @@ namespace Arc4u.OAuth2.Extensions
                 ? hybridOptions.DefaultAuthority.Url.ToString()
                 : openIdOptions.Authority.Url.ToString();
             options.RequireHttpsMetadata =
-                hybridOptions.DefaultAuthority.MetaDataAddress.Scheme.Equals(Uri.UriSchemeHttps,
+                metadataAddress.Scheme.Equals(Uri.UriSchemeHttps,
                     StringComparison.InvariantCultureIgnoreCase);
-            options.MetadataAddress = hybridOptions.DefaultAuthority.MetaDataAddress.ToString();
+            options.MetadataAddress = metadataAddress.ToString();
             options.ResponseType = hybridOptions.ResponseType;
             options.CallbackPath = hybridOptions.CallbackPath;
             options.Scope.Clear();

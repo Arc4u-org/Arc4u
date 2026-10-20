@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 namespace Arc4u.OAuth2.Security.Principal;
 
 [JsonSerializable(typeof(IEnumerable<ClaimDto>))]
-internal partial class ClaimsBearerTokenContext : JsonSerializerContext
+internal sealed partial class ClaimsBearerTokenContext : JsonSerializerContext
 {
 }
 

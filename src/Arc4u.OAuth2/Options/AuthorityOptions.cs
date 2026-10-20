@@ -5,7 +5,7 @@ namespace Arc4u.OAuth2.Options;
 
 [JsonSerializable(typeof(OpenIdConfiguration))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-internal partial class OpenIdConfigurationJsonContext : JsonSerializerContext
+internal sealed partial class OpenIdConfigurationJsonContext : JsonSerializerContext
 {
 }
 

@@ -6,7 +6,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Caching.SqlServer" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="System.Text.Json" />
     <PackageReference Include="Azure.Identity" />
     <PackageReference Include="Microsoft.Data.SqlClient" />
     <!-- Lifts the transitive dependency of Microsoft.Data.SqlClient above CVE-2026-84008 and CVE-2026-70162. Remove once SqlClient depends on 9.0.21 or later. -->

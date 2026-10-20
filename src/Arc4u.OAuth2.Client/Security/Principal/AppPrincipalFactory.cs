@@ -37,7 +37,7 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
     /// <summary>The name (<c>platformParameters</c>) of the platform specific parameters.</summary>
     public const string PlatformParameters = "platformParameters";
 
-    private static readonly string tokenExpirationClaimType = "exp";
+    private const string TokenExpirationClaimType = "exp";
     private static readonly string[] ClaimsToExclude = [ "aud", "iss", "iat", "nbf", "acr", "aio", "appidacr", "ipaddr", "scp", "tid", "uti", "unique_name", "apptype", "appid", "ver" ];
     private readonly ICache _claimsCache = claimsCache;
 
@@ -140,7 +140,7 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
             // The token has claims filled by the STS.
             // We can fill the new federated identity with the claims from the token.
             var jwtToken = new JwtSecurityToken(tokenResult.Value.Token);
-            var expTokenClaim = jwtToken.Claims.FirstOrDefault(c => c.Type.Equals(tokenExpirationClaimType, StringComparison.InvariantCultureIgnoreCase));
+            var expTokenClaim = jwtToken.Claims.FirstOrDefault(c => c.Type.Equals(TokenExpirationClaimType, StringComparison.InvariantCultureIgnoreCase));
             long expTokenTicks = 0;
             if (null != expTokenClaim)
             {
@@ -156,7 +156,7 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
             // if we have a token "cached" from the system, we can take the authorization claims from the cache (if exists)...
             // so we avoid too many backend calls for nothing.
             // But every time we have a token that has been refreshed, we will call the backend (if available and reload the claims).
-            var cachedExpiredClaim = cachedClaims.FirstOrDefault(c => c.ClaimType.Equals(tokenExpirationClaimType, StringComparison.InvariantCultureIgnoreCase));
+            var cachedExpiredClaim = cachedClaims.FirstOrDefault(c => c.ClaimType.Equals(TokenExpirationClaimType, StringComparison.InvariantCultureIgnoreCase));
             long cachedExpiredTicks = 0;
 
             if (null != cachedExpiredClaim)

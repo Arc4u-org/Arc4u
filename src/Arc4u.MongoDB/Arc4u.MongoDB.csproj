@@ -7,7 +7,6 @@
     <ProjectReference Include="..\Arc4u.Dependency\Arc4u.Dependency.csproj" />
     <PackageReference Include="MongoDB.Driver" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
 </Project>

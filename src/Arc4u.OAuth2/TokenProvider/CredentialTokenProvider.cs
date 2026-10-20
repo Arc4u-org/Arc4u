@@ -223,7 +223,7 @@ public class CredentialTokenProvider(ILogger<CredentialTokenProvider> logger, IO
                 // To avoid overflowing the log with a large response body, we make sure that we limit its length. This should be a rare occurrence.
                 var loggedResponseBody = responseBody;
                 const int MaxResponseBodyLength = 256;  // arbitrary
-                if (loggedResponseBody != null && loggedResponseBody.Length > MaxResponseBodyLength)
+                if (loggedResponseBody.Length > MaxResponseBodyLength)
                 {
                     loggedResponseBody = $"{responseBody[..MaxResponseBodyLength]}...(response truncated, {loggedResponseBody.Length} total characters)";
                 }

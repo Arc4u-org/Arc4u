@@ -39,7 +39,7 @@ namespace Arc4u
         [DataMember(EmitDefaultValue = false)]
         public T Value { get; internal set; }
 
-        private static T _lowestValue;
+        private static T _lowestValue = default!;
 
         /// <summary>
         /// Gets the lowest value.
@@ -50,7 +50,7 @@ namespace Arc4u
             get { return _lowestValue; }
         }
 
-        private static T _upmostValue;
+        private static T _upmostValue = default!;
 
         /// <summary>
         /// Gets the upmost value.
@@ -187,7 +187,7 @@ namespace Arc4u
         /// <returns>
         ///     <b>true</b> if this instance equals the <paramref name="obj"/>; otherwise, <b>false</b>.
         /// </returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return (obj is Bound<T> bound) && Equals(bound);
         }
@@ -203,7 +203,7 @@ namespace Arc4u
         /// <returns>
         ///     <b>true</b> if this instance equals the <paramref name="other"/>; otherwise, <b>false</b>.
         /// </returns>
-        public bool Equals(Bound<T> other)
+        public bool Equals(Bound<T>? other)
         {
             return object.ReferenceEquals(this, other) ||
                 (other is not null

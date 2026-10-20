@@ -10,7 +10,6 @@
     <PackageReference Include="Grpc.StatusProto" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Arc4u.Configuration\Arc4u.Configuration.csproj" />

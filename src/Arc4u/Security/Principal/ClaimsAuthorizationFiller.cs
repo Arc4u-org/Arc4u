@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Arc4u.Security.Principal;
 
 [JsonSerializable(typeof(Authorization))]
-internal partial class AuthorizationJsonContext : JsonSerializerContext
+internal sealed partial class AuthorizationJsonContext : JsonSerializerContext
 {
 }
 

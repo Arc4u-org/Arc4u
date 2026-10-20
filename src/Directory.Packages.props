@@ -22,7 +22,6 @@
     <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.23.0" />
     <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
-    <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Expressions" Version="5.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
@@ -37,7 +36,6 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
-    <PackageVersion Include="System.Security.Cryptography.Cng" Version="5.0.0" />
     <PackageVersion Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
@@ -49,20 +47,15 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="Serilog.Sinks.XUnit" Version="3.0.19" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-    <PackageVersion Include="System.Net.Http" Version="4.3.4" />
-    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Duende.IdentityModel.OidcClient" Version="7.1.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.9.0" PrivateAssets="all" />
     <PackageVersion Include="Asp.Versioning.Http" Version="10.2.3" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
-    <PackageVersion Include="System.Text.Json" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.0" />
@@ -79,12 +72,10 @@
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
-    <PackageVersion Include="System.Formats.Asn1" Version="10.0.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net11.0' ">
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="11.0.0-rc.2.26504.105" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="11.0.0-rc.2.26504.105" />
-    <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.2.26504.105" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="11.0.0-rc.2.26504.105" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-rc.2.26504.105" />
     <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="11.0.0-rc.2.26504.105" />
@@ -101,11 +92,14 @@
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="11.0.0-rc.2.26504.105" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.2.26504.105" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="11.0.0-rc.2.26504.105" />
-    <PackageVersion Include="System.Formats.Asn1" Version="11.0.0-rc.2.26504.105" />
+  </ItemGroup>
+  <!-- Roslyn used by the generator tests. The generator itself (netstandard2.0) is pinned to an older Roslyn below, so it loads in older compilers. -->
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.14.0" PrivateAssets="all" />
     <PackageVersion Include="System.Text.Encodings.Web" Version="10.0.12" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageVersion Include="System.Text.Json" Version="10.0.12" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageVersion Include="System.IO.Pipelines" Version="10.0.12" PrivateAssets="all" GeneratePathProperty="true" />

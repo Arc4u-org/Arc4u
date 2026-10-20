@@ -52,6 +52,6 @@ public static class ApiAuthenticationContextExtension
         AddAuthenticationApiContext(services, ApiExtraContextConfigurationFiller);
     }
 
-    private class CustomApiContextParameters(string sectionName, IConfiguration configuration)
+    private sealed class CustomApiContextParameters(string sectionName, IConfiguration configuration)
         : KeyValueSettings(sectionName, configuration);
 }

@@ -6,10 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
-    <PackageReference Include="System.Security.Cryptography.Cng" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="System.Text.Json" />
-    <PackageReference Include="System.Formats.Asn1" />
     <ProjectReference Include="..\Arc4u.OAuth2\Arc4u.OAuth2.csproj" />
   </ItemGroup>
 </Project>
