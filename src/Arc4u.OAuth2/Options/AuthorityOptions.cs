@@ -61,7 +61,11 @@ public class AuthorityOptions
         TokenEndpoint = tokenEndpoint;
         MetaDataAddress = metadataAddress;
         Issuer = issuer;
+        _metadataLoaded = false;
     }
+
+    // Set once the metadata document has been read, so that an authority without an end_session_endpoint is not downloaded at each call.
+    private bool _metadataLoaded;
 
     /// <summary>Gets or sets the base url of the authority.</summary>
     public Uri Url { get; set; }
@@ -125,36 +129,24 @@ public class AuthorityOptions
     {
         if (TokenEndpoint is null)
         {
-            using var client = new HttpClient();
-
-            var stream = await client.GetStreamAsync(GetMetaDataAddress(), cancellationToken).ConfigureAwait(false);
-            var openIdConfiguration = JsonSerializer.Deserialize(stream, OpenIdConfigurationJsonContext.Default.OpenIdConfiguration);
-
-            EndSessionEndpoint = openIdConfiguration!.end_session_endpoint;
-            TokenEndpoint = openIdConfiguration!.Token_endpoint;
-            Issuer = openIdConfiguration.access_token_issuer ?? openIdConfiguration.issuer;
+            await LoadMetadataAsync(cancellationToken).ConfigureAwait(false);
         }
-        return TokenEndpoint;
+        return TokenEndpoint!;
     }
 
     /// <summary>Gets the end session endpoint, downloading the metadata document when it is not yet known. The metadata also fills <see cref="TokenEndpoint"/> and <see cref="Issuer"/>.</summary>
     /// <param name="cancellationToken">A token to cancel the metadata request.</param>
-    /// <returns>The end session endpoint.</returns>
-    public async Task<Uri> GetEndSessionEndpointAsync(CancellationToken cancellationToken)
+    /// <returns>The end session endpoint, or <see langword="null"/> when the identity provider does not publish one (<c>end_session_endpoint</c> is optional in the metadata).</returns>
+    public async Task<Uri?> GetEndSessionEndpointAsync(CancellationToken cancellationToken)
     {
-        if (EndSessionEndpoint is null)
+        // When the metadata has been read and has no end_session_endpoint, null is the answer: do not download it again.
+        if (EndSessionEndpoint is null && !_metadataLoaded)
         {
-            using var client = new HttpClient();
-
-            var stream = await client.GetStreamAsync(GetMetaDataAddress(), cancellationToken).ConfigureAwait(false);
-            var openIdConfiguration = JsonSerializer.Deserialize(stream, OpenIdConfigurationJsonContext.Default.OpenIdConfiguration);
-
-            EndSessionEndpoint = openIdConfiguration!.end_session_endpoint;
-            TokenEndpoint = openIdConfiguration!.Token_endpoint;
-            Issuer = openIdConfiguration.access_token_issuer ?? openIdConfiguration.issuer;
+            await LoadMetadataAsync(cancellationToken).ConfigureAwait(false);
         }
         return EndSessionEndpoint;
     }
+
     /// <summary>Gets the issuer, downloading the metadata document when it is not yet known. The metadata also fills <see cref="TokenEndpoint"/> and <see cref="EndSessionEndpoint"/>.</summary>
     /// <param name="cancellationToken">A token to cancel the metadata request.</param>
     /// <returns>The issuer, which is the <c>access_token_issuer</c> of the metadata when present, otherwise its <c>issuer</c>.</returns>
@@ -162,15 +154,22 @@ public class AuthorityOptions
     {
         if (Issuer is null)
         {
-            using var client = new HttpClient();
-
-            var stream = await client.GetStreamAsync(GetMetaDataAddress(), cancellationToken).ConfigureAwait(false);
-            var openIdConfiguration = JsonSerializer.Deserialize(stream, OpenIdConfigurationJsonContext.Default.OpenIdConfiguration);
-
-            EndSessionEndpoint = openIdConfiguration!.end_session_endpoint;
-            TokenEndpoint = openIdConfiguration!.Token_endpoint;
-            Issuer = openIdConfiguration.access_token_issuer ?? openIdConfiguration.issuer;
+            await LoadMetadataAsync(cancellationToken).ConfigureAwait(false);
         }
-        return Issuer;
+        return Issuer!;
+    }
+
+    // Token_endpoint and issuer are required in OpenIdConfiguration, so TokenEndpoint and Issuer are not null afterwards.
+    private async Task LoadMetadataAsync(CancellationToken cancellationToken)
+    {
+        using var client = new HttpClient();
+
+        var stream = await client.GetStreamAsync(GetMetaDataAddress(), cancellationToken).ConfigureAwait(false);
+        var openIdConfiguration = JsonSerializer.Deserialize(stream, OpenIdConfigurationJsonContext.Default.OpenIdConfiguration);
+
+        EndSessionEndpoint = openIdConfiguration!.end_session_endpoint;
+        TokenEndpoint = openIdConfiguration!.Token_endpoint;
+        Issuer = openIdConfiguration.access_token_issuer ?? openIdConfiguration.issuer;
+        _metadataLoaded = true;
     }
 }

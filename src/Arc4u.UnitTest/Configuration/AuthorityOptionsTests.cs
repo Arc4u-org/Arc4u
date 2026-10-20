@@ -3,8 +3,12 @@ using Arc4u.OAuth2.Options;
 using AutoFixture;
 using AutoFixture.AutoMoq;
 using AwesomeAssertions;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -107,5 +111,31 @@ public class AuthorityOptionsTests
         options.Should().NotBeNull();
         options.Url.Should().Be(option.Url);
         options.TokenEndpoint.Should().Be(_default.TokenEndpoint);
+    }
+
+    [Fact]
+    public async Task Metadata_Without_End_Session_Endpoint_Should_Be_Downloaded_Once()
+    {
+        // AuthorityOptions creates its own HttpClient, so the metadata is served by a real local server.
+        var downloads = 0;
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Logging.ClearProviders();
+        await using var app = builder.Build();
+        app.MapGet("/.well-known/openid-configuration", async context =>
+        {
+            Interlocked.Increment(ref downloads);
+            var authority = $"{context.Request.Scheme}://{context.Request.Host}";
+            await context.Response.WriteAsJsonAsync(new { token_endpoint = $"{authority}/token", issuer = authority });
+        });
+        await app.StartAsync();
+
+        var options = new AuthorityOptions(new Uri(app.Urls.First()), null, null, null);
+
+        (await options.GetEndpointAsync(CancellationToken.None)).Should().Be(new Uri($"{app.Urls.First()}/token"));
+        (await options.GetEndSessionEndpointAsync(CancellationToken.None)).Should().BeNull();
+        (await options.GetEndSessionEndpointAsync(CancellationToken.None)).Should().BeNull();
+
+        downloads.Should().Be(1);
     }
 }
