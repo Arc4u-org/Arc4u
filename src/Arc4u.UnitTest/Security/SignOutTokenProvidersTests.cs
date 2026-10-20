@@ -293,7 +293,7 @@ public class SignOutTokenProvidersTests
         provider.Verify(p => p.SignOutAsync(It.IsAny<IKeyValueSettings>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    private AppServicePrincipalFactory CreateServicePrincipalFactory(Action<IServiceCollection> register)
+    private static AppServicePrincipalFactory CreateServicePrincipalFactory(Action<IServiceCollection> register)
     {
         var container = BuildContainer(register);
 

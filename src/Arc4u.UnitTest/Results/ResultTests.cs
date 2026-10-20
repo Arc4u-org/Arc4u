@@ -380,8 +380,8 @@ public class ResultTests
 
         result.IsFailed.Should().BeTrue();
         result.Errors.Count.Should().Be(1);
-        result.Errors.First().Should().BeOfType<ValidationError>();
-        var validationError = result.Errors.First().As<ValidationError>();
+        result.Errors[0].Should().BeOfType<ValidationError>();
+        var validationError = result.Errors[0].As<ValidationError>();
         validationError.Message.Should().Be(error.Message);
         validationError.Code.Should().Be(error.Code);
         validationError.Severity.Should().Be(error.Severity);

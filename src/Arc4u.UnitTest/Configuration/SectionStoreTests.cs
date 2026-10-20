@@ -60,9 +60,9 @@ public class SectionStoreTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    public void SectionEntity_Constructor_Should_Reject_An_Invalid_Key(string? key)
+    public void SectionEntity_Constructor_Should_Reject_An_Invalid_Key(string? invalidKey)
     {
-        var act = () => new SectionEntity(key!, "{}");
+        var act = () => new SectionEntity(invalidKey!, "{}");
 
         act.Should().Throw<ArgumentException>().WithParameterName("key");
     }

@@ -171,6 +171,6 @@ public class RemoteSecretsTokenProviderTests
 
         // assert
         result.IsFailed.Should().BeTrue();
-        result.Errors.First().Message.Should().Be("Client secret Header is missing. Cannot process the request.");
+        result.Errors[0].Message.Should().Be("Client secret Header is missing. Cannot process the request.");
     }
 }

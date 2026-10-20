@@ -1,5 +1,6 @@
 #if NET10_0
 using System.Collections.Immutable;
+using System.Globalization;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Dependency.Tool;
 using AwesomeAssertions;
@@ -50,7 +51,7 @@ public class DependencyToolGeneratorTests
         var diagnostic = diagnostics.Should().ContainSingle().Which;
         diagnostic.Id.Should().Be("ARC4UDEP005");
         diagnostic.Severity.Should().Be(DiagnosticSeverity.Warning);
-        diagnostic.GetMessage().Should().Contain("Contoso.Business.Both");
+        diagnostic.GetMessage(CultureInfo.InvariantCulture).Should().Contain("Contoso.Business.Both");
     }
 
     [Fact]

@@ -68,14 +68,14 @@ public sealed class RealmLoggingDbCtxTests : IDisposable
             .BuildServiceProvider();
 
         // Resolve on a dedicated thread, then use it from other threads, as an ASP.NET Core request would.
-        var store = await Task.Factory.StartNew(() => provider.GetRequiredService<ILogStore>(), TaskCreationOptions.LongRunning);
+        var store = await Task.Factory.StartNew(() => provider.GetRequiredService<ILogStore>(), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        var logs = await Task.Factory.StartNew(() => store.GetLogs("", 0, 10), TaskCreationOptions.LongRunning);
+        var logs = await Task.Factory.StartNew(() => store.GetLogs("", 0, 10), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         logs.Select(l => l.Message).Should().Equal("third", "second", "first");
 
-        await Task.Factory.StartNew(store.RemoveAll, TaskCreationOptions.LongRunning);
+        await Task.Factory.StartNew(store.RemoveAll, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        var afterClear = await Task.Factory.StartNew(() => store.GetLogs("", 0, 10), TaskCreationOptions.LongRunning);
+        var afterClear = await Task.Factory.StartNew(() => store.GetLogs("", 0, 10), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         afterClear.Should().BeEmpty();
     }
 

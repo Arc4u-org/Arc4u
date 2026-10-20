@@ -302,7 +302,7 @@ public class OboTokenProviderSignOutTests
     private static string OboCacheKey(AuthorityOptions authority, IKeyValueSettings settings, string userToken)
         => $"_Obo_{settings.Values[TokenKeys.ClientIdKey]}_{TokenCacheKey.Hash(authority.Url.ToString(), userToken, settings.Values[TokenKeys.Scope])}";
 
-    private AzureADOboTokenProvider CreateObo(IApplicationContext? applicationContext, TokenRefreshInfo tokens, Mock<ICache> cache, AuthorityOptions authority, IUserObjectIdentifier? userObjectIdentifier = null)
+    private static AzureADOboTokenProvider CreateObo(IApplicationContext? applicationContext, TokenRefreshInfo tokens, Mock<ICache> cache, AuthorityOptions authority, IUserObjectIdentifier? userObjectIdentifier = null)
     {
         var cacheHelper = new Mock<ICacheHelper>();
         cacheHelper.Setup(h => h.GetCache()).Returns(cache.Object);

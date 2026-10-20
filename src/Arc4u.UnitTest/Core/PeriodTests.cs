@@ -59,7 +59,7 @@ public class PeriodTest
     [Fact]
     public void Constructor_With_Null_Bound_Must_Throw_ArgumentNullException()
     {
-        var exception = Record.Exception(() => new Period(null, (Bound<DateTimeOffset?>)null));
+        var exception = Record.Exception(() => new Period(null!, (Bound<DateTimeOffset?>)null!));
 
         exception.Should().BeOfType<ArgumentNullException>();
         exception.Message.Should().Be("Value cannot be null. (Parameter 'lowerBound')");
@@ -70,7 +70,7 @@ public class PeriodTest
     {
         var lower = new Bound<DateTimeOffset?>(BoundType.Lower, BoundDirection.Closed, DateTimeOffset.MinValue);
 
-        var exception = Record.Exception(() => new Period(lower, null));
+        var exception = Record.Exception(() => new Period(lower, null!));
 
         exception.Should().BeOfType<ArgumentNullException>();
         exception.Message.Should().Be("Value cannot be null. (Parameter 'upperBound')");

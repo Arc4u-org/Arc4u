@@ -1,5 +1,6 @@
 #if NET10_0
 using System.Collections.Immutable;
+using System.Globalization;
 using Arc4u.Dependency.Tool;
 using Arc4u.UnitTest.Dependency;
 using AwesomeAssertions;
@@ -235,7 +236,7 @@ public class GenerateRegisteredTypesTests
         var diagnostic = diagnostics.Should().ContainSingle().Which;
         diagnostic.Id.Should().Be(expectedId);
         diagnostic.Severity.Should().Be(DiagnosticSeverity.Warning);
-        diagnostic.GetMessage().Should().Contain(entry);
+        diagnostic.GetMessage(CultureInfo.InvariantCulture).Should().Contain(entry);
         diagnostic.Location.GetLineSpan().Path.Should().Be(settingsPath);
         diagnostic.Location.GetLineSpan().StartLinePosition.Line.Should().Be(2);
 

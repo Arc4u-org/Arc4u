@@ -1,4 +1,5 @@
 #if NET10_0
+using System.Globalization;
 using Arc4u.Results;
 using AwesomeAssertions;
 using FluentResults;
@@ -44,8 +45,8 @@ public class ResultExtensionGuardTests
 
         errors.Should().ContainSingle();
         errors[0].Id.Should().Be(ObsoleteError);
-        errors[0].GetMessage().Should().Contain(expectedGuard);
-        errors[0].GetMessage().Should().Contain("async void");
+        errors[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain(expectedGuard);
+        errors[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain("async void");
     }
 
     [Theory]
@@ -65,7 +66,7 @@ public class ResultExtensionGuardTests
 
         errors.Should().ContainSingle();
         errors[0].Id.Should().Be(ObsoleteError);
-        errors[0].GetMessage().Should().Contain(expectedGuard);
+        errors[0].GetMessage(CultureInfo.InvariantCulture).Should().Contain(expectedGuard);
     }
 
     [Theory]

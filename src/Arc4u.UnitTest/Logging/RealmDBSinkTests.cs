@@ -68,7 +68,7 @@ public sealed class RealmDBSinkTests : IDisposable
         for (var batch = 0; batch < 5; batch++)
         {
             var events = Enumerable.Range(0, 10).Select(i => Event($"batch {batch} event {i}")).ToList();
-            await Task.Factory.StartNew(() => sink.EmitBatchAsync(events), TaskCreationOptions.LongRunning).Unwrap();
+            await Task.Factory.StartNew(() => sink.EmitBatchAsync(events), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
         }
 
         ReadAll().Should().HaveCount(50);

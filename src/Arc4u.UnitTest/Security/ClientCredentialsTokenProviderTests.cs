@@ -166,7 +166,7 @@ public class ClientCredentialsTokenProviderTests
         exception.Should().BeOfType<ArgumentNullException>();
     }
 
-    private SimpleKeyValueSettings BuildSettings(string clientId, string clientSecret, string scope, IEnumerable<KeyValuePair<string, string>> extra)
+    private static SimpleKeyValueSettings BuildSettings(string clientId, string clientSecret, string scope, IEnumerable<KeyValuePair<string, string>> extra)
     {
         var values = new Dictionary<string, string>
         {
@@ -189,7 +189,7 @@ public class ClientCredentialsTokenProviderTests
         return (mock.Object, mock);
     }
 
-    private ClientCredentialsTokenProvider BuildSut(StubHandler handler, ITokenCache cache)
+    private static ClientCredentialsTokenProvider BuildSut(StubHandler handler, ITokenCache cache)
     {
         var mockFactory = new Mock<IHttpClientFactory>();
         mockFactory.Setup(m => m.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient(handler));
