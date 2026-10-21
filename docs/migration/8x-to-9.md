@@ -1117,6 +1117,63 @@ Steps:
 > The properties added with `Add` (and the message template arguments) are written with that entry
 > only: `Technical()`, `Business()` and `Monitoring()` return a logger dedicated to the entry.
 
+## Request timing middleware removed
+
+`AddMonitoringTimeElapsed()` (`Arc4u.OAuth2.AspNetCore`) and `AddGrpcMonitoringTimeElapsed()`
+(`Arc4u.AspNetCore.gRpc`) wrote a `Time to complete method call` log entry for every request, with
+its elapsed milliseconds, status code and endpoint. OpenTelemetry already records that: ASP.NET Core
+starts an activity for each request, gRPC calls included, which becomes a server span with its
+duration, route and status code, and it publishes the `http.server.request.duration` histogram for
+every request. Arc4u 9 removes the two middlewares, their extension methods and the
+`LogTimeToCompleteCall` and `TimeToCompleteMethodCall` log messages.
+
+**Before (8.x)**
+
+```csharp
+using Arc4u.AspNetCore.Middleware;
+using Arc4u.OAuth2.Middleware;
+
+var app = builder.Build();
+
+app.AddMonitoringTimeElapsed((type, elapsed) => RequestDuration.Record(elapsed.TotalMilliseconds));
+app.AddGrpcMonitoringTimeElapsed();
+```
+
+**After (9)**
+
+```csharp
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+
+builder.Services.AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
+                                               .AddSource("Arc4u")
+                                               .AddOtlpExporter())
+                .WithMetrics(metrics => metrics.AddAspNetCoreInstrumentation()
+                                               .AddOtlpExporter());
+
+var app = builder.Build();
+```
+
+Steps:
+
+1. Delete the calls to `AddMonitoringTimeElapsed` and `AddGrpcMonitoringTimeElapsed`.
+2. If you do not export traces and metrics yet, add the packages `OpenTelemetry.Extensions.Hosting`,
+   `OpenTelemetry.Instrumentation.AspNetCore` and an exporter (for example
+   `OpenTelemetry.Exporter.OpenTelemetryProtocol`), and register them as above.
+3. If you passed an `Action<Type, TimeSpan>` to feed your own metric, use the
+   `http.server.request.duration` histogram instead: its `http.route` and `http.response.status_code`
+   attributes identify the endpoint. For a measure ASP.NET Core does not take, record it with your own
+   `System.Diagnostics.Metrics.Histogram<T>`.
+4. Update the queries, dashboards and alerts that read the `Time to complete method call` entries
+   (`Elapsed` property; Monitoring category for HTTP, Technical category and event id 9002 for gRPC)
+   to read the span durations or the `http.server.request.duration` metric.
+
+> [!NOTE]
+> The CPU and memory monitoring (`AddSystemMonitoring()`, `SystemResources`) still works in Arc4u 9
+> but is obsolete: build warning `CS0618`. Replace it with the `System.Runtime` meter, as described in
+> [Log CPU and memory usage](../guides/diagnostics/index.md#log-cpu-and-memory-usage).
+
 ## Result extension methods
 
 The FluentResults extension methods of `Arc4u.Results` changed in three ways:

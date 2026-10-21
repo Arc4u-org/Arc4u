@@ -1,7 +1,6 @@
 using Arc4u.Dependency;
 using Arc4u.Diagnostics;
 using Arc4u.OAuth2.AspNetCore.Diagnostics;
-using Arc4u.OAuth2.Middleware;
 using Arc4u.Security.Principal;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Http;
@@ -124,22 +123,6 @@ public class HttpContextIdentityTests
         consumer.Log();
 
         sink.Properties.Should().NotContainKey(LoggingConstants.Identity);
-    }
-
-    [Fact]
-    public async Task MonitoringTimeElapsed_Middleware_Writes_Identity()
-    {
-        var (serviceProvider, sink) = BuildServices();
-        using var scope = serviceProvider.CreateScope();
-        var context = StartRequest(serviceProvider, scope);
-
-        var method = typeof(HttpContextIdentityTests).GetMethod(nameof(MonitoringTimeElapsed_Middleware_Writes_Identity))!;
-        context.SetEndpoint(new Endpoint(_ => Task.CompletedTask, new EndpointMetadataCollection(method), "GET /test"));
-
-        await new LogMonitoringTimeElapsedMiddleware(_ => Task.CompletedTask).Invoke(context);
-
-        sink.Category.Should().Be(MessageCategory.Monitoring);
-        Identity(sink).Should().Be("alice@contoso.com");
     }
 
     private sealed class TenantProperties : IAddPropertiesToLog

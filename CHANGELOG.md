@@ -254,8 +254,20 @@ packages. It contains breaking changes: follow the
 - `Arc4u.Caching.Dapr`: `AddDaprCache(name, configuration, sectionName)` reads only the `Name` of the section,
   the only value it registered ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
 
+### Deprecated
+
+- `Arc4u.Diagnostics`: `AddSystemMonitoring()`, `SystemResources`, `CpuData` and `MonitoringMessages.LogMonitoring`,
+  which log the CPU and memory usage of the process every ten seconds. Collect the `System.Runtime` meter with
+  OpenTelemetry instead. See
+  [Log CPU and memory usage](https://arc4u-org.github.io/Arc4u/guides/diagnostics/index.html#log-cpu-and-memory-usage).
+
 ### Removed
 
+- `AddMonitoringTimeElapsed()` and `LogMonitoringTimeElapsedMiddleware` (`Arc4u.OAuth2.AspNetCore`),
+  `AddGrpcMonitoringTimeElapsed()` and `LogGrpcMonitoringTimeElapsedMiddleware` (`Arc4u.AspNetCore.gRpc`),
+  and the `LogTimeToCompleteCall` and `TimeToCompleteMethodCall` log messages: the server spans and the
+  `http.server.request.duration` metric of ASP.NET Core already record the duration of every request. See
+  [Request timing middleware removed](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#request-timing-middleware-removed).
 - `IApplicationContext.ActivityID`: the `ActivityId` log property is the trace id of the current
   `System.Diagnostics.Activity` (OpenTelemetry), added by the logger when an activity exists
   ([#222](https://github.com/Arc4u-org/Arc4u/issues/222)).

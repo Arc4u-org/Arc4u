@@ -7,6 +7,7 @@ namespace Arc4u.Diagnostics.Monitoring;
 /// <summary>
 /// Monitor and log the information about the Process Cpu and Memory usage!
 /// </summary>
+[Obsolete(MonitoringObsolete.Message)]
 public sealed class SystemResources : IHostedService, IDisposable
 {
     /// <summary>Initializes a new instance of the <see cref="SystemResources"/> class.</summary>

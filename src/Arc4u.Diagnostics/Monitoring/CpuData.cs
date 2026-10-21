@@ -1,6 +1,7 @@
 ﻿namespace Arc4u.Diagnostics.Monitoring;
 
 /// <summary>Holds the CPU usage of the current process, expressed as a percentage of the total CPU capacity.</summary>
+[Obsolete(MonitoringObsolete.Message)]
 public class CpuData
 {
     /// <summary>Gets or sets the total CPU used (percentage).</summary>

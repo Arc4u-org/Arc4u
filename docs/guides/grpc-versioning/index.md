@@ -96,7 +96,6 @@ builder.Services.AddGrpc(options => options.Interceptors.Add<AuthorizationInterc
 var app = builder.Build();
 
 app.AddGrpcAuthenticationControl();
-app.AddGrpcMonitoringTimeElapsed();
 // UseAuthentication() and UseAuthorization() come next.
 app.MapGrpcService<OrderGrpcService>();
 

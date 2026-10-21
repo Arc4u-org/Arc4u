@@ -23,7 +23,9 @@ HTTP/2 hosting in [Kestrel and HTTP/2](kestrel.md). The general ideas are in the
   `ActivityId` property (see [Diagnostics and logging](../diagnostics/index.md#properties-written-on-every-entry)).
 - **Consistent failures.** `AddGrpcAuthenticationControl()` turns the redirect an interactive
   authentication challenge produces into a `401`, which a gRPC client understands.
-- **Timing.** `AddGrpcMonitoringTimeElapsed()` logs how long each call took.
+- **Timing.** Arc4u does not log the duration of a call: the server span of the call and the
+  `http.server.request.duration` metric already carry it (see
+  [Use it next to OpenTelemetry](../diagnostics/index.md#use-it-next-to-opentelemetry)).
 
 ```mermaid
 sequenceDiagram
@@ -88,7 +90,6 @@ builder.Services.AddGrpc(options => options.Interceptors.Add<AuthorizationInterc
 var app = builder.Build();
 
 app.AddGrpcAuthenticationControl();
-app.AddGrpcMonitoringTimeElapsed();
 // UseAuthentication() and UseAuthorization() come next.
 app.MapGrpcService<OrderGrpcService>();
 
@@ -97,10 +98,9 @@ app.Run();
 
 | Call | What it does |
 |---|---|
-| `AddApplicationContext()` | Registers the scoped <xref:Arc4u.Security.Principal.IApplicationContext> and the Arc4u logger. `AuthorizationInterceptor` needs both; the timing middleware only needs the Arc4u logger. |
+| `AddApplicationContext()` | Registers the scoped <xref:Arc4u.Security.Principal.IApplicationContext> and the Arc4u logger. `AuthorizationInterceptor` needs both. |
 | `Interceptors.Add<AuthorizationInterceptor>()` | Applies the `culture` request header to the current thread and to the principal profile, only when the application context already has a principal (for example after JWT bearer authentication), logs every exception, `RpcException` included, at error level (expected `NotFound` or validation failures too), and turns any exception that is not an `RpcException` into `StatusCode.Internal` with the message "An error occurs.". |
 | `AddGrpcAuthenticationControl()` | A gRPC request (content type containing `grpc`) that ends with a `302` is answered with `401` and its headers are cleared. Add it before `UseAuthentication()`. |
-| `AddGrpcMonitoringTimeElapsed()` | Writes the service type, method name, elapsed milliseconds and response status to the technical log of every gRPC endpoint. Pass an `Action<Type, TimeSpan>` to also feed a metric. |
 
 The service itself is a normal `Grpc.AspNetCore` service. Protect it with the standard
 `[Authorize]` attribute once JWT bearer authentication is configured as described in

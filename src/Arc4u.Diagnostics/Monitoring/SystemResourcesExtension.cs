@@ -15,6 +15,7 @@ public static class SystemResourcesExtension
     ///                 .AddSystemMonitoring();
     /// </code>
     /// </example>
+    [Obsolete(MonitoringObsolete.Message)]
     public static IServiceCollection AddSystemMonitoring(this IServiceCollection services)
     {
         services.AddHostedService<SystemResources>();

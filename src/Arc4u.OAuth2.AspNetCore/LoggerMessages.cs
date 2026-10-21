@@ -8,14 +8,6 @@ namespace Arc4u.OAuth2.AspNetCore;
 public static partial class LoggerMessages
 {
     /// <summary>
-    /// Logs an Information message (event id 9100): <c>Time to complete method call</c>
-    /// </summary>
-    /// <param name="logger">The logger to write to.</param>
-    [LoggerMessage(EventId = 9100, Level = LogLevel.Information,
-                   Message = "Time to complete method call")]
-    public static partial void TimeToCompleteMethodCall(this ILogger logger);
-
-    /// <summary>
     /// Logs a Debug message (event id 9101): <c>Thread UI Culture is set to {UICultureName}</c>
     /// </summary>
     /// <param name="logger">The logger to write to.</param>

@@ -61,7 +61,9 @@ public class CategorySerilogTesters
 
         var serviceProvider = services.BuildServiceProvider();
 
+#pragma warning disable CS0618 // SystemResources is obsolete: keep testing it until it is removed.
         var logger = serviceProvider.GetService<ILogger<SystemResources>>()!;
+#pragma warning restore CS0618
 
         logger.Monitoring().Add("Code", 100).LogInformation("Message monitoring");
 

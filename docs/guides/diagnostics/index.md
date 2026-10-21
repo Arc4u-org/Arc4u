@@ -31,7 +31,7 @@ flowchart LR
 
 | Package | Use it for |
 |---|---|
-| `Arc4u.Diagnostics` | The fluent API (`Technical()`, `Business()`, `Monitoring()`, `Add`, `AddIf`, ...), `AddILogger`, the process monitoring (`AddSystemMonitoring`) and the `IActivitySourceFactory` used for OpenTelemetry traces. |
+| `Arc4u.Diagnostics` | The fluent API (`Technical()`, `Business()`, `Monitoring()`, `Add`, `AddIf`, ...), `AddILogger`, the process monitoring (`AddSystemMonitoring`, obsolete) and the `IActivitySourceFactory` used for OpenTelemetry traces. |
 | `Arc4u.Diagnostics.Serilog` | A one-line text formatter, the category filter and anonymizer sinks, and the helper that reads the Arc4u properties from a Serilog event. See [Serilog](serilog.md). |
 | `Arc4u.Diagnostics.Serilog.Sinks.RealmDb` | Sinks that keep the log entries in a Realm database or in memory, so a client application can show its own logs. See [Client-side log storage](frontend-logging.md). |
 
@@ -358,21 +358,10 @@ A provider you registered under `"Transient"` before is kept; it must not have s
 
 ### Log CPU and memory usage
 
-`AddSystemMonitoring()` (namespace `Microsoft.Extensions.DependencyInjection`) registers the hosted service <xref:Arc4u.Diagnostics.Monitoring.SystemResources>. Ten seconds after the host starts, and then every ten seconds, it writes one Monitoring entry with the message `Cpu & Memory`. These values are fixed for `AddSystemMonitoring`, which has no parameter to change them. To change them, register the service yourself: `SystemResources` has a constructor parameter `internalPeriodInSeconds` and a `StartMonitoringDelayInSeconds` property, for example `services.AddHostedService(sp => new SystemResources(sp.GetRequiredService<ILogger<SystemResources>>(), 60) { StartMonitoringDelayInSeconds = 30 })`.
+> [!WARNING]
+> `AddSystemMonitoring()` and <xref:Arc4u.Diagnostics.Monitoring.SystemResources> are obsolete and will be removed in a future major version. They write metrics as log entries: collect the .NET runtime and process metrics with OpenTelemetry instead, as shown below.
 
-```csharp
-using Arc4u.Dependency;
-using Arc4u.Diagnostics;
-
-public static class MonitoringRegistration
-{
-    public static void Register(IServiceCollection services)
-    {
-        services.AddILogger()
-                .AddSystemMonitoring();
-    }
-}
-```
+`AddSystemMonitoring()` (namespace `Microsoft.Extensions.DependencyInjection`) registers the hosted service <xref:Arc4u.Diagnostics.Monitoring.SystemResources>. Ten seconds after the host starts, and then every ten seconds, it writes one Monitoring entry with the message `Cpu & Memory`. These values are fixed for `AddSystemMonitoring`, which has no parameter to change them. To change them, register the service yourself: `SystemResources` has a constructor parameter `internalPeriodInSeconds` and a `StartMonitoringDelayInSeconds` property, for example `services.AddHostedService(sp => new SystemResources(sp.GetRequiredService<ILogger<SystemResources>>(), 60) { StartMonitoringDelayInSeconds = 30 })`. `SystemResources` needs the Arc4u logger: call `AddILogger()` (or `AddApplicationContext()`) as well.
 
 The entry carries these properties: `TotalCpuUsed`, `PrivilegedCpuUsed` and `UserCpuUsed` (percent of the CPU capacity of all processors since the previous measure), and `WorkingSet`, `NonPagedSystemMemory`, `PagedMemory`, `PagedSystemMemory`, `PrivateMemory` and `VirtualMemoryMemory` (bytes, as reported by `System.Diagnostics.Process`). A real entry, as written by the text formatter:
 
@@ -380,7 +369,21 @@ The entry carries these properties: `TotalCpuUsed`, `PrivilegedCpuUsed` and `Use
 29/09/2026 14:51:14,024  Information   Technical   21459  8   Arc4u.Diagnostics.Monitoring.SystemResources - CollectData - Cpu & Memory - {"TotalCpuUsed":0.11178381082593415,"PrivilegedCpuUsed":0.037256095413329,"UserCpuUsed":0.07455391315139101,"WorkingSet":77561856,"NonPagedSystemMemory":0,"PagedMemory":0,"PagedSystemMemory":0,"PrivateMemory":0,"VirtualMemoryMemory":462388707328}
 ```
 
-Send these entries to their own sink, or exclude them from the console, with the category filter described in [Serilog](serilog.md#filter-by-category). `SystemResources` needs the Arc4u logger: call `AddILogger()` (or `AddApplicationContext()`) as well.
+#### Replace it with OpenTelemetry metrics
+
+.NET publishes the CPU and memory usage of the process on the built-in `System.Runtime` meter: `dotnet.process.cpu.time` (user and system CPU time, the `UserCpuUsed` and `PrivilegedCpuUsed` of `SystemResources`), `dotnet.process.memory.working_set` (`WorkingSet`), and the GC, thread pool and exception counters. Subscribe to it with the OpenTelemetry SDK (packages `OpenTelemetry.Extensions.Hosting` and an exporter such as `OpenTelemetry.Exporter.OpenTelemetryProtocol`):
+
+```csharp
+using OpenTelemetry.Metrics;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenTelemetry()
+                .WithMetrics(metrics => metrics.AddMeter("System.Runtime")
+                                               .AddOtlpExporter());
+```
+
+The exporter sends the values every 60 seconds by default; your metrics backend computes the CPU percentage from `dotnet.process.cpu.time` and keeps the history. For the other memory values (`PrivateMemory`, `VirtualMemoryMemory`), add the `OpenTelemetry.Instrumentation.Process` package and call `AddProcessInstrumentation()`: it publishes `process.memory.usage` and `process.memory.virtual`.
 
 ### Use it next to OpenTelemetry
 
@@ -388,6 +391,7 @@ Arc4u.Diagnostics has no dependency on OpenTelemetry. The two work side by side 
 
 - **Logs.** The wrapper hands the properties to the `ILoggerFactory` as the log state. An OpenTelemetry logging provider (`builder.Logging.AddOpenTelemetry(...)`) therefore receives `Category`, `Application`, `SourceContext`, `Method`, `Pid`, `Tid`, `ActivityId` (when there is a current activity) and your `Add` properties as log record attributes, and OpenTelemetry adds the `TraceId` and `SpanId` of the current activity itself.
 - **Traces.** Arc4u components that trace their work (token providers, principal creation, middleware) start activities on an `ActivitySource` named `Arc4u`. <xref:Arc4u.Diagnostics.IActivitySourceFactory> returns that source (and any other you ask for by name and version) as a singleton, and `AddApplicationContext()` registers it. Subscribe to the source with the OpenTelemetry SDK: `WithTracing(t => t.AddSource("Arc4u"))`.
+- **Request duration.** Arc4u does not log how long a request or a gRPC call takes. ASP.NET Core starts an activity for every request, gRPC calls included, and the OpenTelemetry ASP.NET Core instrumentation (`WithTracing(t => t.AddAspNetCoreInstrumentation())`, package `OpenTelemetry.Instrumentation.AspNetCore`) turns it into a server span with its duration, route and status code. For dashboards and alerts, use the `http.server.request.duration` histogram that ASP.NET Core publishes on the `Microsoft.AspNetCore.Hosting` meter (`WithMetrics(m => m.AddAspNetCoreInstrumentation())`): unlike sampled traces, it counts every request.
 - **Ids.** The Arc4u `ActivityId` property is the `TraceId` of the current activity, the same value as the `TraceId` OpenTelemetry adds to the log record.
 
 A log record written with this setup, as printed by the OpenTelemetry console exporter (the `OrderId` and the Arc4u properties are the attributes):

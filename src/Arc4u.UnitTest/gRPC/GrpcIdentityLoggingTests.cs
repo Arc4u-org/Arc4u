@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
 using Arc4u.Diagnostics;
-using Arc4u.AspNetCore.Middleware;
 using Arc4u.OAuth2.AspNetCore.Diagnostics;
 using Arc4u.Security.Principal;
 using Arc4u.UnitTest.Logging;
@@ -100,7 +99,6 @@ public class GrpcIdentityLoggingTests
 
         var app = builder.Build();
 
-        app.AddGrpcMonitoringTimeElapsed();
         // Stands in for the Arc4u authentication: AppPrincipalTransform sets the principal on the scoped IApplicationContext of the request.
         app.Use((context, next) =>
         {
@@ -129,7 +127,6 @@ public class GrpcIdentityLoggingTests
         sink.Identity(FromService).Should().Be("alice@contoso.com");
         sink.Identity(FromSingleton).Should().Be("alice@contoso.com");
         sink.Identity(FromSingletonInTaskRun).Should().Be("alice@contoso.com");
-        sink.Identity("Time to complete").Should().Be("alice@contoso.com");
     }
 
     [Fact]
