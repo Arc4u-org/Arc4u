@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Arc4u.Configuration.Store;
 using Arc4u.Dependency;
 using AwesomeAssertions;
@@ -135,6 +136,86 @@ public class SectionStoreTests
         configuration.AddSectionStoreConfiguration(options => options.Add<FeatureOptions>("Feature"));
 
         configuration.GetSection("Feature").Get<FeatureOptions>().Should().BeEquivalentTo(new FeatureOptions { Enabled = true, Limit = 5 });
+    }
+
+    #endregion
+
+    #region JsonTypeInfo overloads
+
+    [Fact]
+    public void SectionEntity_With_JsonTypeInfo_Should_Read_The_Persisted_Format()
+    {
+        // The format persisted by the previous versions: the value wrapped in a "Value" property.
+        var entity = new SectionEntity("Feature", """{"Value":{"Enabled":true,"Limit":42}}""");
+
+        entity.GetValue(SectionStoreTestsJsonContext.Default.FeatureOptions).Should().BeEquivalentTo(new FeatureOptions { Enabled = true, Limit = 42 });
+    }
+
+    [Fact]
+    public void SectionEntity_With_JsonTypeInfo_Should_Write_The_Same_Format_As_Reflection()
+    {
+        var value = new FeatureOptions { Enabled = true, Limit = 42 };
+        var withReflection = new SectionEntity();
+        withReflection.SetValue(value);
+        var withTypeInfo = new SectionEntity();
+        withTypeInfo.SetValue(value, SectionStoreTestsJsonContext.Default.FeatureOptions);
+
+        withTypeInfo.Value.Should().Be("""{"Value":{"Enabled":true,"Limit":42}}""");
+        withTypeInfo.Value.Should().Be(withReflection.Value);
+    }
+
+    [Fact]
+    public void SectionEntity_With_JsonTypeInfo_Should_Round_Trip_A_Primitive_And_Null()
+    {
+        var entity = new SectionEntity();
+
+        entity.SetValue(12, SectionStoreTestsJsonContext.Default.Int32);
+        entity.Value.Should().Be("""{"Value":12}""");
+        entity.GetValue(SectionStoreTestsJsonContext.Default.Int32).Should().Be(12);
+
+        entity.SetValue(null, SectionStoreTestsJsonContext.Default.FeatureOptions);
+        entity.Value.Should().Be("""{"Value":null}""");
+        entity.GetValue(SectionStoreTestsJsonContext.Default.FeatureOptions).Should().BeNull();
+    }
+
+    [Fact]
+    public void AddFromConfiguration_With_JsonTypeInfo_Should_Persist_The_Section()
+    {
+        var store = new DictionarySectionStore();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Feature:Enabled"] = "true", ["Feature:Limit"] = "5" })
+            .AddSectionStoreConfiguration(options => options
+                .AddFromConfiguration("Feature", section => section.Get<FeatureOptions>(), SectionStoreTestsJsonContext.Default.FeatureOptions)
+                .Add("Count", 3, SectionStoreTestsJsonContext.Default.Int32))
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddSingleton<ISectionStore>(store);
+        services.AddSectionStoreService();
+        using var serviceProvider = services.BuildServiceProvider();
+
+        serviceProvider.UseSectionStoreConfiguration();
+
+        store.Rows["Feature"].Should().Be("""{"Value":{"Enabled":true,"Limit":5}}""");
+        configuration.GetSection("Feature").Get<FeatureOptions>().Should().BeEquivalentTo(new FeatureOptions { Enabled = true, Limit = 5 });
+        configuration["Count"].Should().Be("3");
+    }
+
+    [Fact]
+    public async Task ISectionStoreExtensions_With_JsonTypeInfo_Should_Round_Trip_The_Value()
+    {
+        var store = new DictionarySectionStore();
+        store.Rows["Feature"] = """{"Value":{"Enabled":true,"Limit":1}}""";
+        var typeInfo = SectionStoreTestsJsonContext.Default.FeatureOptions;
+
+        (await store.TrySetValueAsync("Feature", new FeatureOptions { Enabled = false, Limit = 7 }, typeInfo, CancellationToken.None)).Should().BeTrue();
+        var (valid, value) = await store.TryGetValueAsync("Feature", typeInfo, CancellationToken.None);
+
+        valid.Should().BeTrue();
+        value.Should().BeEquivalentTo(new FeatureOptions { Enabled = false, Limit = 7 });
+        (await store.TryGetValueAsync("Missing", typeInfo, CancellationToken.None)).Valid.Should().BeFalse();
     }
 
     #endregion
@@ -361,4 +442,10 @@ public class SectionStoreTests
     }
 
     #endregion
+}
+
+[JsonSerializable(typeof(SectionStoreTests.FeatureOptions))]
+[JsonSerializable(typeof(int))]
+internal sealed partial class SectionStoreTestsJsonContext : JsonSerializerContext
+{
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,19 +35,22 @@ public static class ConfigurationHelper
     }
 
     /// <summary>
-    /// Builds an <see cref="IConfiguration"/> from JSON files embedded as resources in assemblies.
+    /// Builds an <see cref="IConfiguration"/> from JSON files embedded as resources in assemblies loaded by name.
     /// </summary>
+    /// <remarks>
+    /// The assemblies are loaded with <see cref="Assembly.Load(string)"/>, which trimming cannot follow: an assembly only named here can be removed.
+    /// Use <see cref="GetConfigurationFromResourceStream(Assembly, string[])"/> in a trimmed or native AOT application.
+    /// </remarks>
     /// <param name="fileTypes">
     /// The resources to load. Each item has the form <c>"AssemblyName, full.resource.name"</c>.
     /// </param>
     /// <returns>The configuration built from the resources. Resources that are not found in the assembly are ignored.</returns>
     /// <exception cref="ApplicationException">An item of <paramref name="fileTypes"/> is not made of exactly two comma-separated parts.</exception>
+    [RequiresUnreferencedCode("The assemblies are loaded by name and can be removed by trimming. Use the overload taking an Assembly, e.g. typeof(Program).Assembly.")]
     public static IConfiguration GetConfigurationFromResourceStream(params string[] fileTypes)
     {
-        var configBuilder = new ConfigurationBuilder();
-
-        var disposables = new List<IDisposable>();
         var assemblies = new Dictionary<string, Assembly>();
+        var resources = new List<(Assembly Assembly, string ResourceName)>();
 
         foreach (var file in fileTypes)
         {
@@ -57,31 +61,65 @@ public static class ConfigurationHelper
             }
             var assemblyName = fileInfo[0].Trim();
 
-            if (!assemblies.ContainsKey(assemblyName))
+            if (!assemblies.TryGetValue(assemblyName, out var assembly))
             {
-                var a = Assembly.Load(assemblyName);
-                if (null != a)
+                assembly = Assembly.Load(assemblyName);
+                assemblies.Add(assemblyName, assembly);
+            }
+
+            resources.Add((assembly, fileInfo[1].Trim()));
+        }
+
+        return BuildFromResources(resources);
+    }
+
+    /// <summary>
+    /// Builds an <see cref="IConfiguration"/> from JSON files embedded as resources in <paramref name="assembly"/>.
+    /// Unlike the overload taking assembly names, it works with trimming and native AOT.
+    /// </summary>
+    /// <param name="assembly">The assembly holding the resources, typically <c>typeof(Program).Assembly</c>.</param>
+    /// <param name="resourceNames">The full names of the resources to load, in order: a later resource overrides the values of an earlier one.</param>
+    /// <returns>The configuration built from the resources. Resources that are not found in the assembly are ignored.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="assembly"/> or <paramref name="resourceNames"/> is <see langword="null"/>.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// var configuration = ConfigurationHelper.GetConfigurationFromResourceStream(typeof(Program).Assembly, "MyApp.appsettings.json");
+    /// </code>
+    /// </example>
+    public static IConfiguration GetConfigurationFromResourceStream(Assembly assembly, params string[] resourceNames)
+    {
+        ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentNullException.ThrowIfNull(resourceNames);
+
+        return BuildFromResources(resourceNames.Select(resourceName => (assembly, resourceName.Trim())));
+    }
+
+    private static IConfiguration BuildFromResources(IEnumerable<(Assembly Assembly, string ResourceName)> resources)
+    {
+        var configBuilder = new ConfigurationBuilder();
+        var disposables = new List<IDisposable>();
+
+        try
+        {
+            foreach (var (assembly, resourceName) in resources)
+            {
+                var stream = assembly.GetManifestResourceStream(resourceName);
+                if (null != stream)
                 {
-                    assemblies.Add(assemblyName, a);
+                    disposables.Add(stream);
+                    configBuilder.AddJsonStream(stream);
                 }
             }
 
-            var stream = assemblies[assemblyName].GetManifestResourceStream(fileInfo[1].Trim());
-            if (null != stream)
+            return configBuilder.Build();
+        }
+        finally
+        {
+            foreach (var disp in disposables)
             {
-                disposables.Add(stream);
-                configBuilder.AddJsonStream(stream);
+                disp.Dispose();
             }
         }
-
-        var configuration = configBuilder.Build();
-
-        foreach (var disp in disposables)
-        {
-            disp.Dispose();
-        }
-
-        return configuration;
     }
 
     /// <summary>

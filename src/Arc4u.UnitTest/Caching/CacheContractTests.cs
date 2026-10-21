@@ -1,10 +1,12 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Arc4u.Caching;
 using Arc4u.Caching.Dapr;
 using Arc4u.Caching.Memory;
 using Arc4u.Configuration.Dapr;
 using Arc4u.Configuration.Memory;
+using Arc4u.Dependency;
 using Arc4u.Diagnostics;
 using Arc4u.Serializer;
 using AwesomeAssertions;
@@ -181,4 +183,63 @@ public class CacheContractTests
         FluentActions.Invoking(() => cache.Get<string>("k")).Should().Throw<DataCacheException>();
         await FluentActions.Awaiting(() => cache.GetAsync<string>("k")).Should().ThrowAsync<DataCacheException>();
     }
+
+    [Fact]
+    public async Task DaprGetShouldUseTheMetadataOfTheClientOptions()
+    {
+        // Only the source-generated metadata is available: a type outside the context cannot be read.
+        var client = new Mock<DaprClient>();
+        client.SetupGet(c => c.JsonSerializerOptions).Returns(new JsonSerializerOptions { TypeInfoResolver = DaprTestJsonContext.Default });
+        client.Setup(c => c.GetStateAsync<JsonElement>("store", "k", It.IsAny<ConsistencyMode?>(), It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
+              .ReturnsAsync(JsonDocument.Parse("{\"Name\":\"a\",\"Count\":2}").RootElement);
+        using var cache = CreateDaprCache(client.Object);
+
+        (await cache.GetAsync<DaprTestValue>("k")).Should().Be(new DaprTestValue("a", 2));
+        FluentActions.Invoking(() => cache.Get<Dictionary<string, int>>("k")).Should().Throw<DataCacheException>().WithInnerException<NotSupportedException>();
+    }
+
+    [Fact]
+    public void DaprInitializeShouldGiveTheJsonOptionsToTheClient()
+    {
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { TypeInfoResolver = DaprTestJsonContext.Default };
+        var options = new Mock<IOptionsMonitor<DaprCacheOption>>();
+        options.Setup(o => o.Get("Shared")).Returns(new DaprCacheOption { Name = "statestore", JsonSerializerOptions = jsonOptions });
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddILogger();
+        using var serviceProvider = services.BuildServiceProvider();
+        using var cache = new DaprCache(serviceProvider.GetRequiredService<ILogger<DaprCache>>(), options.Object);
+
+        cache.Initialize("Shared");
+
+        var client = (DaprClient)typeof(DaprCache).GetField("_daprClient", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(cache)!;
+        client.JsonSerializerOptions.PropertyNamingPolicy.Should().Be(JsonNamingPolicy.CamelCase);
+        client.JsonSerializerOptions.GetTypeInfo(typeof(DaprTestValue)).Should().NotBeNull();
+        // The JsonElement read first by the cache is added to the metadata of the application.
+        client.JsonSerializerOptions.GetTypeInfo(typeof(JsonElement)).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddDaprCacheShouldKeepTheJsonOptions()
+    {
+        var jsonOptions = new JsonSerializerOptions { TypeInfoResolver = DaprTestJsonContext.Default };
+        var services = new ServiceCollection();
+        services.AddDaprCache("Shared", o =>
+        {
+            o.Name = "statestore";
+            o.JsonSerializerOptions = jsonOptions;
+        });
+
+        var option = services.BuildServiceProvider().GetRequiredService<IOptionsMonitor<DaprCacheOption>>().Get("Shared");
+
+        option.Name.Should().Be("statestore");
+        option.JsonSerializerOptions.Should().BeSameAs(jsonOptions);
+    }
+}
+
+public sealed record DaprTestValue(string Name, int Count);
+
+[JsonSerializable(typeof(DaprTestValue))]
+internal sealed partial class DaprTestJsonContext : JsonSerializerContext
+{
 }

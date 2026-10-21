@@ -7,6 +7,4 @@
 interface IValueHolder
 {
     string Serialize();
-    void Serialize(Stream stream);
 }
-

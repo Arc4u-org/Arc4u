@@ -94,7 +94,7 @@ public class CacheContextTests
         var memorySettings = _fixture.Build<MemoryCacheOption>().With(m => m.CompactionPercentage, 0.2).Create();
         var redisSettings = _fixture.Create<RedisCacheOption>();
         var sqlSettings = _fixture.Create<SqlCacheOption>();
-        var daprSettings = _fixture.Create<DaprCacheOption>();
+        var daprSettings = _fixture.Build<DaprCacheOption>().Without(d => d.JsonSerializerOptions).Create();
 
         IServiceCollection services = new ServiceCollection();
 

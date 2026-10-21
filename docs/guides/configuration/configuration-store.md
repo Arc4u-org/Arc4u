@@ -141,8 +141,14 @@ What each call does:
 |---|---|
 | `AddSectionStoreConfiguration` | Adds the configuration provider (<xref:Arc4u.Configuration.Store.ConfigurationBuilderExtensions>). Call it **after** the providers that hold the initial values. |
 | `options.Add<T>(key)` | Persists the section `key`. The initial value is `section.Get<T>()` from the providers registered before. The section must exist, otherwise the build throws `InvalidOperationException`. |
-| `options.AddFromConfiguration(key, section => section.Get<T>())` | Same as `Add<T>(key)`, but the binding is written in your application, so its configuration binding generator handles it. Use it when the application is trimmed or published with native AOT: `Add<T>(key)` binds with reflection and is marked `RequiresUnreferencedCode`. |
+| `options.AddFromConfiguration(key, section => section.Get<T>())` | Same as `Add<T>(key)`, but the binding is written in your application, so its configuration binding generator handles it. |
 | `options.Add<T>(key, value)` | Persists the section `key` with an initial value you pass in code. |
+
+Each call has an overload that takes a `JsonTypeInfo<T>` as the last argument, for example
+`options.AddFromConfiguration(key, section => section.Get<T>(), MyJsonContext.Default.FeatureOptions)`.
+Use it, with `AddFromConfiguration`, when the application is trimmed or published with native AOT: the
+other overloads bind or serialize the value with reflection and are marked `RequiresUnreferencedCode`
+and `RequiresDynamicCode`. The persisted format is the same with both.
 | `AddILogger` | Optional. Registers the Arc4u logger; the polling service then writes its entries in the Technical category. Without it, the service logs through the standard `ILogger`. |
 | `AddDbContextSectionStore<TDbContext>` | Registers `ISectionStore` as a scoped service backed by your context. |
 | `AddSectionStoreService` | Registers the singleton that reloads providers and a hosted service that polls. The parameterless overload polls every 15 seconds; pass a `TimeSpan` to change it. |
@@ -180,7 +186,9 @@ after the interval; the application keeps the last values.
 
 Inject <xref:Arc4u.Configuration.Store.ISectionStore> (it is scoped) and use the extension methods of
 <xref:Arc4u.Configuration.Store.ISectionStoreExtensions>. `TrySetValueAsync` returns `false` when the
-section is not persisted, because sections cannot be created at runtime.
+section is not persisted, because sections cannot be created at runtime. In a trimmed or native AOT
+application, pass the `JsonTypeInfo<T>` of the value, for example
+`store.TryGetValueAsync("Feature", MyJsonContext.Default.FeatureOptions, cancellationToken)`.
 
 ```csharp
 // FeatureEndpoints.cs

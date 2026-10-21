@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Arc4u.Configuration.Dapr;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Diagnostics;
@@ -13,6 +16,10 @@ namespace Arc4u.Caching.Dapr;
 /// An <see cref="ICache"/> backed by a Dapr state store, resolved with the kind <c>Dapr</c>. The values are serialized by the Dapr client (not by an
 /// <see cref="Arc4u.Serializer.IObjectSerialization"/>). The name of the state store comes from the <see cref="DaprCacheOption"/> named after the store.
 /// </summary>
+/// <remarks>
+/// The Dapr client serializes with <see cref="DaprCacheOption.JsonSerializerOptions"/>, or with its own defaults, which use reflection, when it is not set.
+/// In a trimmed or native AOT application, set it with a <c>JsonSerializerContext</c> that declares the types stored in the cache.
+/// </remarks>
 [Export("Dapr", typeof(ICache))]
 public sealed class DaprCache : ICache
 {
@@ -76,7 +83,7 @@ public sealed class DaprCache : ICache
                 return (false, default);
             }
 
-            return (true, element.Deserialize<TValue>(_daprClient.JsonSerializerOptions));
+            return (true, Deserialize<TValue>(element, _daprClient.JsonSerializerOptions));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -94,6 +101,32 @@ public sealed class DaprCache : ICache
         {
             throw new DataCacheException(ex.Message, ex);
         }
+    }
+
+    // The metadata comes from the options of the client: source-generated when the application configured a JsonSerializerContext.
+    // The defaults of the Dapr client have no TypeInfoResolver: then the value is read with reflection, as the Dapr client itself saves it,
+    // which is only possible when reflection is enabled. Otherwise GetTypeInfo throws, telling that a TypeInfoResolver is required.
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only used when JsonSerializer.IsReflectionEnabledByDefault is true, which is not the case in a trimmed or Native AOT application.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Only used when JsonSerializer.IsReflectionEnabledByDefault is true, which is not the case in a trimmed or Native AOT application.")]
+    private static TValue? Deserialize<TValue>(JsonElement element, JsonSerializerOptions options)
+    {
+        if (options.TypeInfoResolver is null && JsonSerializer.IsReflectionEnabledByDefault)
+        {
+            return element.Deserialize<TValue>(options);
+        }
+
+        return element.Deserialize((JsonTypeInfo<TValue>)options.GetTypeInfo(typeof(TValue)));
+    }
+
+    // ReadAsync reads a JsonElement first: add its metadata, so a JsonSerializerContext of the application does not have to declare it.
+    private static JsonSerializerOptions WithJsonElement(JsonSerializerOptions options)
+    {
+        if (options.TypeInfoResolver is null)
+        {
+            return options;
+        }
+
+        return new JsonSerializerOptions(options) { TypeInfoResolver = JsonTypeInfoResolver.Combine(options.TypeInfoResolver, DaprCacheJsonContext.Default) };
     }
 
     private static Dictionary<string, string> TimeToLive(TimeSpan timeout) => new() { { "ttlInSeconds", timeout.TotalSeconds.ToString(CultureInfo.InvariantCulture) } };
@@ -122,7 +155,13 @@ public sealed class DaprCache : ICache
                     var config = _options.Get(store);
 
                     _storeName = config.Name ?? throw new NullReferenceException("There is no name defined in the configuration for the Dapr section!");
-                    _daprClient = new DaprClientBuilder().Build();
+                    var builder = new DaprClientBuilder();
+                    if (config.JsonSerializerOptions is not null)
+                    {
+                        builder.UseJsonSerializationOptions(WithJsonElement(config.JsonSerializerOptions));
+                    }
+
+                    _daprClient = builder.Build();
                     _logger.Technical().LogCacheIsInitialized(store);
                 }
                 catch (Exception ex)
@@ -315,4 +354,9 @@ public sealed class DaprCache : ICache
     /// <summary>Returns the name of the Dapr state store.</summary>
     /// <returns>The name of the state store (empty before initialization).</returns>
     public override string ToString() => _storeName ?? throw new InvalidOperationException("The Store name parameter must not be null.");
+}
+
+[JsonSerializable(typeof(JsonElement))]
+internal sealed partial class DaprCacheJsonContext : JsonSerializerContext
+{
 }

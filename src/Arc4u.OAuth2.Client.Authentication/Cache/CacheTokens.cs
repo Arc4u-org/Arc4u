@@ -1,5 +1,7 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Arc4u.Caching;
 using Arc4u.Configuration;
 using Arc4u.Dependency.Attribute;
@@ -11,6 +13,11 @@ namespace Arc4u.OAuth2.Client.Authentication.Cache;
 /// An <see cref="ISecureCache"/> that persists each value as a JSON file in the <c>OAuth2</c> folder of the local application data of the user. The file name is built from the logging name and the
 /// environment name of the application configuration and the key. The expiration arguments are not supported.
 /// </summary>
+/// <remarks>
+/// The values stored by Arc4u (<see cref="Arc4u.OAuth2.Token.TokenRefreshInfo"/>, <see cref="Arc4u.OAuth2.Token.TokenInfo"/>, a list of <see cref="Arc4u.IdentityModel.Claims.ClaimDto"/> and <see cref="string"/>)
+/// are serialized with source-generated metadata. Other types are serialized with reflection, which is only available when
+/// <see cref="JsonSerializer.IsReflectionEnabledByDefault"/> is <c>true</c>; it is not in a Native AOT application, where they throw a <see cref="NotSupportedException"/>.
+/// </remarks>
 [Export(typeof(ISecureCache)), Shared]
 public sealed class CacheTokens : ISecureCache
 {
@@ -29,9 +36,22 @@ public sealed class CacheTokens : ISecureCache
         }
         _jsonSerializerOptions = new JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = true,
+            TypeInfoResolver = CreateTypeInfoResolver()
         };
     }
+
+    // The reflection fallback keeps the behavior for the types that are not in the context. The feature switch is false with PublishAot, so the trimmer removes the branch.
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only used when JsonSerializer.IsReflectionEnabledByDefault is true, which is not the case in a trimmed or Native AOT application.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "Only used when JsonSerializer.IsReflectionEnabledByDefault is true, which is not the case in a trimmed or Native AOT application.")]
+    private static IJsonTypeInfoResolver CreateTypeInfoResolver()
+    {
+        return JsonSerializer.IsReflectionEnabledByDefault
+            ? JsonTypeInfoResolver.Combine(CacheTokensJsonContext.Default, new DefaultJsonTypeInfoResolver())
+            : CacheTokensJsonContext.Default;
+    }
+
+    private JsonTypeInfo<T> GetTypeInfo<T>() => (JsonTypeInfo<T>)_jsonSerializerOptions.GetTypeInfo(typeof(T));
 
 #if NET9_0_OR_GREATER
         static readonly Lock FileLock = new();
@@ -77,7 +97,7 @@ public sealed class CacheTokens : ISecureCache
 
         lock (FileLock)
         {
-            var result = JsonSerializer.Deserialize<TValue>(File.ReadAllText(path));
+            var result = JsonSerializer.Deserialize(File.ReadAllText(path), GetTypeInfo<TValue>());
 
             return result ?? throw new KeyNotFoundException();
         }
@@ -135,7 +155,7 @@ public sealed class CacheTokens : ISecureCache
     {
         var path = ComputePath(key);
 
-        var json = JsonSerializer.Serialize(value, _jsonSerializerOptions);
+        var json = JsonSerializer.Serialize(value, GetTypeInfo<T>());
 
         File.WriteAllText(path, json);
     }
@@ -145,7 +165,7 @@ public sealed class CacheTokens : ISecureCache
     {
         var path = ComputePath(key);
 
-        var json = JsonSerializer.Serialize(value, _jsonSerializerOptions);
+        var json = JsonSerializer.Serialize(value, GetTypeInfo<T>());
 
         await File.WriteAllTextAsync(path, json, cancellation).ConfigureAwait(true);
     }
@@ -202,7 +222,7 @@ public sealed class CacheTokens : ISecureCache
         }
 
         using var ms = new MemoryStream(bytes, writable: false);
-        var result = await JsonSerializer.DeserializeAsync<TValue>(ms, _jsonSerializerOptions, cancellation).ConfigureAwait(false);
+        var result = await JsonSerializer.DeserializeAsync(ms, GetTypeInfo<TValue>(), cancellation).ConfigureAwait(false);
 
         return result ?? throw new KeyNotFoundException();
     }

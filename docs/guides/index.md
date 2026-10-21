@@ -31,3 +31,6 @@ most of the packages above and have no guide of their own: see
 The [package support](package-support.md) page lists every package with its
 support status and target frameworks, including the removed `Arc4u.OAuth2.Msal`, `Arc4u.Data` and
 `Arc4u.Dependency.ComponentModel` packages and the deprecated NServiceBus and Prism.DI.Wpf packages.
+
+[Native AOT and trimming](native-aot.md) tells which packages support `PublishAot`, and which APIs to
+call in a trimmed or Native AOT application.

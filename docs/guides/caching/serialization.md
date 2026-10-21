@@ -17,7 +17,9 @@ Arc4u keeps the format behind a small interface, so you can:
 - use a source-generated `JsonSerializerContext`, which does not need reflection (for trimming and Native AOT);
 - give each cache its own serializer.
 
-The Dapr cache does not use this interface: the Dapr client serializes the values itself.
+The Dapr cache does not use this interface: the Dapr client serializes the values itself. For trimming
+and Native AOT, give it a `JsonSerializerContext` through its options, see
+[Dapr](dapr.md#native-aot-and-trimming).
 
 ## Packages involved
 

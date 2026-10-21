@@ -382,7 +382,8 @@ name or discovered by reflection at startup, so the registrations need no trimmi
 console application registered this way publishes with `PublishAot=true` without trimming or AOT
 warnings from the generated code. Whether the rest of your application is AOT-compatible depends on
 the other packages it uses: publish with `PublishAot=true` and read the `IL2xxx` and `IL3xxx`
-warnings.
+warnings. [Native AOT and trimming](../native-aot.md) gives the status of each Arc4u package and the
+APIs to use.
 
 ### Register what the attributes cannot express
 

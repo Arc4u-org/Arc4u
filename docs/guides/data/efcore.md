@@ -74,7 +74,7 @@ public static class GraphSamples
 
 ## Pitfalls
 
-- **The graph helpers use reflection** (`GraphExtension` builds `Include` and `ThenInclude` calls at run time), so they are not trim-safe or native AOT-safe.
+- **The graph helpers use reflection** (`GraphExtension` builds `Include` and `ThenInclude` calls at run time), so they are not trim-safe or native AOT-safe. They are marked `[RequiresUnreferencedCode]` and `[RequiresDynamicCode]`: a trimmed or AOT application gets the warning where it calls them. Entity Framework Core itself reports trimming and AOT warnings, see [Native AOT and trimming](../native-aot.md).
 
 ## Troubleshooting
 

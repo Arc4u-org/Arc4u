@@ -179,7 +179,7 @@ Deserializing does not check the paths, because the check needs reflection on `T
 
 ## Pitfalls
 
-- **Reflection and trimming.** The constructor that takes paths, the `Includes` setter and `Parse` look up properties by name with reflection. They are marked `[RequiresUnreferencedCode]`, because trimming can remove those properties. `new Graph<T>()`, `Include`, `Exist`, `GetGraph` and `RemoveGraph` work on expressions and strings only.
+- **Reflection and trimming.** The constructor that takes paths, the `Includes` setter and `Parse` look up properties by name with reflection. They are marked `[RequiresUnreferencedCode]`, because trimming can remove those properties. `new Graph<T>()`, `Include`, `Exist`, `GetGraph` and `RemoveGraph` work on expressions and strings only: use them in a trimmed or Native AOT application (see [Native AOT and trimming](../native-aot.md)).
 - **`Includes` returns a copy.** Adding to the returned list does not change the graph: use `Include`, or set `Includes`.
 - **`Parse` calls the property getters.** With lazy-loading proxies, it loads every navigation it reads.
 

@@ -16,6 +16,13 @@ public static class DaprCacheExtension
     /// <example>
     /// <code language="csharp">
     /// builder.Services.AddDaprCache("Shared", o => o.Name = "statestore");
+    ///
+    /// // In a native AOT application, give the metadata of the cached types.
+    /// builder.Services.AddDaprCache("Shared", o =>
+    /// {
+    ///     o.Name = "statestore";
+    ///     o.JsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { TypeInfoResolver = AppJsonContext.Default };
+    /// });
     /// </code>
     /// </example>
     public static IServiceCollection AddDaprCache(this IServiceCollection services, [DisallowNull] string name, Action<DaprCacheOption> options)
@@ -25,6 +32,7 @@ public static class DaprCacheExtension
         var action = new Action<DaprCacheOption>(o =>
         {
             o.Name = rawCacheOption.Name;
+            o.JsonSerializerOptions = rawCacheOption.JsonSerializerOptions;
         });
 
         ArgumentException.ThrowIfNullOrEmpty(name);
@@ -34,7 +42,10 @@ public static class DaprCacheExtension
         return services;
     }
 
-    /// <summary>Registers the options of the Dapr cache with the given name from a configuration section. Nothing is registered when the section does not exist.</summary>
+    /// <summary>
+    /// Registers the options of the Dapr cache with the given name from a configuration section. Nothing is registered when the section does not exist.
+    /// Only <see cref="DaprCacheOption.Name"/> is read from the section: use the other overload to set <see cref="DaprCacheOption.JsonSerializerOptions"/>.
+    /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="name">The name of the cache, as used in <see cref="CachingCache.Name"/>.</param>
     /// <param name="configuration">The application configuration.</param>
@@ -47,16 +58,12 @@ public static class DaprCacheExtension
 
         if (section.Exists())
         {
-            var option = configuration.GetSection(sectionName).Get<DaprCacheOption>();
-
-            if (option is null)
-            {
-                throw new NullReferenceException(nameof(option));
-            }
+            // Only the name is read: binding the whole option would also bind JsonSerializerOptions from the configuration.
+            var storeName = section[nameof(DaprCacheOption.Name)] ?? string.Empty;
 
             void options(DaprCacheOption o)
             {
-                o.Name = option.Name;
+                o.Name = storeName;
             }
 
             services.AddDaprCache(name, options);

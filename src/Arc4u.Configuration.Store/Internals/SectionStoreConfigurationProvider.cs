@@ -22,7 +22,7 @@ sealed class SectionStoreConfigurationProvider : ConfigurationProvider
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
             Load(stream);
 
-            const string ValuePropertyName = nameof(ValueHolder<int /* dummy*/>.Value);
+            const string ValuePropertyName = ValueHolder.ValuePropertyName;
             foreach (var item in Data)
             {
                 if (item.Key == ValuePropertyName)

@@ -100,6 +100,28 @@ app.Run();
 
 ## Common scenarios
 
+### Native AOT and trimming
+
+The Dapr client serializes with its default options, which use reflection. In a trimmed or native AOT application, give it
+options whose `TypeInfoResolver` is a `JsonSerializerContext` declaring the types you put in the cache. The name of the cache
+(`Shared` below) is the `Name` of the entry in `Caching:Caches`; the store name still comes from the configuration.
+
+```csharp
+// Program.cs
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Arc4u.Configuration.Dapr;
+
+builder.Services.Configure<DaprCacheOption>("Shared", o =>
+    o.JsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { TypeInfoResolver = AppJsonContext.Default });
+
+[JsonSerializable(typeof(Report))]
+internal sealed partial class AppJsonContext : JsonSerializerContext;
+```
+
+Keep `JsonSerializerDefaults.Web` to read values saved with the default options. A type that is not in the context throws a
+`DataCacheException` whose inner exception is a `NotSupportedException`.
+
 ### Expire a value
 
 ```csharp

@@ -34,3 +34,5 @@
   topicHref: dispatcher/index.md
 - name: Package support
   href: package-support.md
+- name: Native AOT and trimming
+  href: native-aot.md

@@ -64,10 +64,24 @@ packages. It contains breaking changes: follow the
   metadata is downloaded once.
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
-  `JsonSerialization` accepts a `JsonSerializerContext`.
+  `JsonSerialization` accepts a `JsonSerializerContext`. The packages build without trimming or AOT
+  analyzer warnings, and a warning is now a build error. A CI workflow publishes an application that
+  references every AOT-compatible package with `PublishAot=true` and fails on any warning in Arc4u code.
+  [Native AOT and trimming](https://arc4u-org.github.io/Arc4u/guides/native-aot.html) lists the status of
+  each package and the APIs to use ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
 - `Arc4u.Configuration.Store`: `AddFromConfiguration(key, section => section.Get<T>())`, which lets the
   application's configuration binding generator bind a persisted section. `Add<T>(key)` binds with
   reflection and is now marked `RequiresUnreferencedCode` and `RequiresDynamicCode`.
+- `Arc4u.Configuration.Store`: overloads that take a `JsonTypeInfo<T>`, so that a trimmed or Native AOT
+  application serializes the values with source-generated metadata: `Add(key, value, typeInfo)`,
+  `AddFromConfiguration(key, bind, typeInfo)`, `SectionEntity.GetValue(typeInfo)` and
+  `SetValue(value, typeInfo)`, and `ISectionStore.TryGetValueAsync(key, typeInfo, ct)` and
+  `TrySetValueAsync(key, value, typeInfo, ct)`. The persisted format does not change ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
+- `Arc4u.Caching.Dapr`: `DaprCacheOption.JsonSerializerOptions`, given to the Dapr client to serialize the
+  values. Set it with a `JsonSerializerContext` in a trimmed or Native AOT application. It is not read from
+  the configuration ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
+- `ConfigurationHelper.GetConfigurationFromResourceStream(Assembly, params string[])`: reads the JSON resources
+  of an assembly you pass, instead of loading it by name, which trimming cannot follow ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
 - Sign-out of the token providers: `ISignOutTokenProvider` for the providers that hold tokens for a
   user session, `SignOutTokenProvidersAsync` (signs out every registered one), `AddTokenProvidersSignOut()`
   and `SignOutTokenProviderKeys` (resolve each provider separately), `SignOutGeneration` (a token requested
@@ -222,6 +236,23 @@ packages. It contains breaking changes: follow the
   to the log entries ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
 - Compared with the previews, the `Arc4u.Dependency.Tool` package contains the generator as an analyzer only: no assembly is
   copied to the output of the application ([#259](https://github.com/Arc4u-org/Arc4u/issues/259)).
+- APIs that need reflection are now marked `RequiresUnreferencedCode` and, when they build code at run time,
+  `RequiresDynamicCode`. A trimmed or Native AOT application gets an `IL2026` or `IL3050` warning where it
+  calls them; the message names the API to use instead. Nothing changes at run time ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)):
+  - `Arc4u.Configuration.Store`: `Add(key, value)`, `AddFromConfiguration(key, bind)` (the value is serialized
+    with reflection, even when the binding is generated), `SectionEntity.GetValue<T>()` and `SetValue(value)`,
+    and `ISectionStore.TryGetValueAsync<T>` and `TrySetValueAsync`. Use the overloads that take a `JsonTypeInfo<T>`.
+  - `ConfigurationHelper.GetConfigurationFromResourceStream(params string[])`: use the overload that takes an `Assembly`.
+  - `Graph<T>`: the constructor that takes paths, the `Includes` setter and `Parse`.
+  - `Arc4u.EfCore`: the `GraphExtension` methods.
+- `Bound<T>` and `Interval<T>` annotate `T` with `DynamicallyAccessedMembers` (public and non-public fields), like
+  the `Interval` helpers already did. Generic code that passes its own type parameter as `T` must carry the same
+  annotation in a trimmed application ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
+- `Arc4u.OAuth2.Client.Authentication`: `CacheTokens` serializes the tokens, the claims and the strings stored by
+  Arc4u with source-generated metadata. Another type is serialized with reflection, which throws a
+  `NotSupportedException` in a Native AOT application ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
+- `Arc4u.Caching.Dapr`: `AddDaprCache(name, configuration, sectionName)` reads only the `Name` of the section,
+  the only value it registered ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
 
 ### Removed
 

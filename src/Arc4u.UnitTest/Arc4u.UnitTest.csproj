@@ -78,6 +78,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Configuration\Resources\*.json" LogicalName="Arc4u.UnitTest.Configuration.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="Configs\cert.pem">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -16,6 +16,7 @@ This page lists every package of the Arc4u framework, whether it is supported in
 - The package name is the `<PackageId>` of the `.csproj`, which can differ from the folder name (`Arc4u.Caching.SqlServer` lives in `src/Arc4u.Caching.Sql`).
 - Target frameworks are those of the current `develop/9.0.0` build, which is the next preview, read from each `.csproj` (`src/Directory.Build.props` does not set a target framework). The published `9.0.0-preview37` and earlier previews target `net8.0`, `net9.0` and `net10.0` (`Arc4u.Dependency` also targets `netstandard2.0`; `Arc4u.Dependency.Tool` targets only `netstandard2.0`), not `net11.0`.
 - All supported packages have `9.0.0-preview37` as their latest version on NuGet.org (checked on 2026-09-29), except `Arc4u.AspNetCore.Versioning`, which is not on NuGet.org yet. The `Last version` column of the last table shows the latest *listed* version on that date.
+- Trimming and Native AOT support is listed per package in [Native AOT and trimming](native-aot.md).
 - Arc4u 9 is in preview: install with `--prerelease`, as in `dotnet add package Arc4u.Caching --prerelease`. See [Versioning and package naming](../concepts/versioning.md).
 
 ## Supported packages
