@@ -1,0 +1,114 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Publishes the AOT-compatible Arc4u packages with Native AOT (issue #277). Every Arc4u assembly is rooted, so the trimmer and the
+    AOT compiler analyze all their code and not only what Program.cs reaches. Any warning fails the publish.
+    Not part of Arc4u.slnx: run it with  dotnet publish src/Samples/Arc4u.AotPublishTest -c Release
+    The name ends with Test, so Directory.Build.props does not make it a package.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ILLinkTreatWarningsAsErrors>true</ILLinkTreatWarningsAsErrors>
+    <IlcTreatWarningsAsErrors>true</IlcTreatWarningsAsErrors>
+    <!--
+      Third-party assemblies (EF Core, MongoDB, SqlClient, OData, Dapr.Client...) report their own trim warnings as a single
+      IL2104 / IL3053 per assembly, which is ignored: they are not Arc4u's to fix. The Arc4u assemblies report every warning (target below).
+    -->
+    <TrimmerSingleWarn>true</TrimmerSingleWarn>
+    <NoWarn>$(NoWarn);IL2104;IL3053</NoWarn>
+    <!--
+      IL2037 (an unresolved DynamicDependency) is not summarized per assembly, and EF Core raises one in its own code. It stays a warning;
+      the CI job fails on any IL warning located in an Arc4u member, which covers the DynamicDependency of Arc4u's Graph.
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IL2037</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Arc4u\Arc4u.csproj" />
+    <ProjectReference Include="..\..\Arc4u.AspNetCore.Results\Arc4u.AspNetCore.Results.csproj" />
+    <ProjectReference Include="..\..\Arc4u.AspNetCore.gRpc\Arc4u.AspNetCore.gRpc.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Authorization\Arc4u.Authorization.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Caching\Arc4u.Caching.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Caching.Dapr\Arc4u.Caching.Dapr.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Caching.Memory\Arc4u.Caching.Memory.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Caching.Redis\Arc4u.Caching.Redis.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Caching.Sql\Arc4u.Caching.Sql.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Configuration\Arc4u.Configuration.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Configuration.Decryptor\Arc4u.Configuration.Decryptor.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Configuration.Store\Arc4u.Configuration.Store.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Configuration.Store.EFCore\Arc4u.Configuration.Store.EFCore.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Core\Arc4u.Core.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Dependency\Arc4u.Dependency.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Diagnostics\Arc4u.Diagnostics.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Diagnostics.Serilog\Arc4u.Diagnostics.Serilog.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Diagnostics.Serilog.Sinks.RealmDb\Arc4u.Diagnostics.Serilog.Sinks.RealmDb.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Dispatcher\Arc4u.Dispatcher.csproj" />
+    <ProjectReference Include="..\..\Arc4u.EfCore\Arc4u.EfCore.csproj" />
+    <ProjectReference Include="..\..\Arc4u.FluentValidation\Arc4u.FluentValidation.csproj" />
+    <ProjectReference Include="..\..\Arc4u.MongoDB\Arc4u.MongoDB.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OAuth2\Arc4u.OAuth2.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OAuth2.AspNetCore\Arc4u.OAuth2.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OAuth2.AspNetCore.Authentication\Arc4u.OAuth2.AspNetCore.Authentication.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OAuth2.AspNetCore.Blazor\Arc4u.OAuth2.AspNetCore.Blazor.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OAuth2.Blazor\Arc4u.OAuth2.Blazor.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OAuth2.Client\Arc4u.OAuth2.Client.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OAuth2.Client.Authentication\Arc4u.OAuth2.Client.Authentication.csproj" />
+    <ProjectReference Include="..\..\Arc4u.OData\Arc4u.OData.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Results\Arc4u.Results.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Serializer\Arc4u.Serializer.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Serializer.JSon\Arc4u.Serializer.JSon.csproj" />
+    <ProjectReference Include="..\..\Arc4u.Threading\Arc4u.Threading.csproj" />
+    <ProjectReference Include="..\..\Arc4u.gRPC\Arc4u.gRPC.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Arc4u" />
+    <TrimmerRootAssembly Include="Arc4u.AspNetCore.Results" />
+    <TrimmerRootAssembly Include="Arc4u.AspNetCore.gRpc" />
+    <TrimmerRootAssembly Include="Arc4u.Authorization" />
+    <TrimmerRootAssembly Include="Arc4u.Caching" />
+    <TrimmerRootAssembly Include="Arc4u.Caching.Dapr" />
+    <TrimmerRootAssembly Include="Arc4u.Caching.Memory" />
+    <TrimmerRootAssembly Include="Arc4u.Caching.Redis" />
+    <TrimmerRootAssembly Include="Arc4u.Caching.Sql" />
+    <TrimmerRootAssembly Include="Arc4u.Configuration" />
+    <TrimmerRootAssembly Include="Arc4u.Configuration.Decryptor" />
+    <TrimmerRootAssembly Include="Arc4u.Configuration.Store" />
+    <TrimmerRootAssembly Include="Arc4u.Configuration.Store.EFCore" />
+    <TrimmerRootAssembly Include="Arc4u.Core" />
+    <TrimmerRootAssembly Include="Arc4u.Dependency" />
+    <TrimmerRootAssembly Include="Arc4u.Diagnostics" />
+    <TrimmerRootAssembly Include="Arc4u.Diagnostics.Serilog" />
+    <TrimmerRootAssembly Include="Arc4u.Diagnostics.Serilog.Sinks.RealmDb" />
+    <TrimmerRootAssembly Include="Arc4u.Dispatcher" />
+    <TrimmerRootAssembly Include="Arc4u.EfCore" />
+    <TrimmerRootAssembly Include="Arc4u.Validation" />
+    <TrimmerRootAssembly Include="Arc4u.MongoDB" />
+    <TrimmerRootAssembly Include="Arc4u.OAuth2" />
+    <TrimmerRootAssembly Include="Arc4u.OAuth2.AspNetCore" />
+    <TrimmerRootAssembly Include="Arc4u.OAuth2.AspNetCore.Authentication" />
+    <TrimmerRootAssembly Include="Arc4u.OAuth2.AspNetCore.Blazor" />
+    <TrimmerRootAssembly Include="Arc4u.OAuth2.Blazor" />
+    <TrimmerRootAssembly Include="Arc4u.OAuth2.Client" />
+    <TrimmerRootAssembly Include="Arc4u.OAuth2.Client.Authentication" />
+    <TrimmerRootAssembly Include="Arc4u.OData" />
+    <TrimmerRootAssembly Include="Arc4u.Results" />
+    <TrimmerRootAssembly Include="Arc4u.Serializer" />
+    <TrimmerRootAssembly Include="Arc4u.Serializer.JSon" />
+    <TrimmerRootAssembly Include="Arc4u.Threading" />
+    <TrimmerRootAssembly Include="Arc4u.gRPC" />
+  </ItemGroup>
+
+  <Target Name="ReportEveryArc4uWarning" BeforeTargets="WriteIlcRspFileForCompilation">
+    <ItemGroup>
+      <ManagedAssemblyToLink Condition="$([System.String]::Copy('%(Filename)').StartsWith('Arc4u.'))">
+        <TrimmerSingleWarn>false</TrimmerSingleWarn>
+      </ManagedAssemblyToLink>
+    </ItemGroup>
+  </Target>
+
+</Project>
