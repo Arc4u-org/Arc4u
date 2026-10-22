@@ -1,6 +1,7 @@
 name: Build and publish a package in release.
 
 permissions:
+  contents: read    # CoreBuild checks out the repository
   id-token: write   # required for GitHub OIDC
 
 on: 
@@ -25,6 +26,7 @@ on:
 jobs:
   build:
     permissions:
+      contents: read  # a called workflow gets no more than its caller grants
       id-token: write  # enable GitHub OIDC token issuance for this job
     uses: ./.github/workflows/CoreBuild.yml
     with:
