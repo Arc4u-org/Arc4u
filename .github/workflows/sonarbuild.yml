@@ -10,28 +10,29 @@ jobs:
     name: Build
     runs-on: windows-latest
     steps:
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      # The SonarScanner needs Java 17 or later.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
         with:
-          java-version: 1.11
-      - uses: actions/checkout@v2
+          distribution: temurin
+          java-version: 17
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      # The SDK pinned in src/global.json (rollForward disabled) is required.
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v6
         with:
-           dotnet-version: |
-             11.0.100-rc.1.26425.128
-           include-prerelease: true
+          global-json-file: src/global.json
       - name: Cache SonarCloud packages
-        uses: actions/cache@v1
+        uses: actions/cache@v6
         with:
           path: ~\sonar\cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache SonarCloud scanner
         id: cache-sonar-scanner
-        uses: actions/cache@v1
+        uses: actions/cache@v6
         with:
           path: .\.sonar\scanner
           key: ${{ runner.os }}-sonar-scanner
@@ -42,12 +43,6 @@ jobs:
         run: |
           New-Item -Path .\.sonar\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
-      - name: setup nuget
-        uses: nuget/setup-nuget@v1
-        with:
-          nuget-version: latest
- 
-       
       - name: nuget restore
         run: dotnet restore .\src\arc4u.slnx
 
@@ -60,6 +55,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"GFlisch_Arc4u" /o:"gflisch" /d:sonar.token="${{ secrets.Sonar_Token }}" /d:sonar.scanner.scanAll=false /d:sonar.host.url="https://sonarcloud.io"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"GFlisch_Arc4u" /o:"gflisch" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.scanner.scanAll=false /d:sonar.host.url="https://sonarcloud.io"
           dotnet build .\src\arc4u.slnx --configuration ${{env.buildConfiguration}}
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
