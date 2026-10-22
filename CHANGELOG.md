@@ -65,8 +65,8 @@ packages. It contains breaking changes: follow the
 - `NullLoggerWrapper` to test classes that use the Arc4u logging extensions.
 - Ahead-of-time compilation support: the packages are marked `IsAotCompatible`, and
   `JsonSerialization` accepts a `JsonSerializerContext`. The packages build without trimming or AOT
-  analyzer warnings, and a warning is now a build error. A CI workflow publishes an application that
-  references every AOT-compatible package with `PublishAot=true` and fails on any warning in Arc4u code.
+  analyzer warnings, and a warning is now a build error. The `Arc4u.AotPublishTest` sample references
+  every AOT-compatible package and, published with `PublishAot=true`, fails on any warning in Arc4u code.
   [Native AOT and trimming](https://arc4u-org.github.io/Arc4u/guides/native-aot.html) lists the status of
   each package and the APIs to use ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
 - `Arc4u.Configuration.Store`: `AddFromConfiguration(key, section => section.Get<T>())`, which lets the
