@@ -1,16 +1,13 @@
 name: Build And Publish
 
 permissions:
+  contents: read
   id-token: write   # required for GitHub OIDC
 on: 
   workflow_call:
     inputs:
       nugetVersion:
-        description: 'nuget version number x.y.z.w'     
-        required: false
-        type: string
-      nugetVersionSpecific:
-        description: 'nuget version number z.w for specific packages'     
+        description: 'nuget version number x.y.z'     
         required: false
         type: string
       nugetPreviewName:
@@ -28,28 +25,21 @@ on:
     secrets:
        NUGET_USER:
          required: true
-        
+
+# Read the values from inputs, not github.event.inputs: the event is the caller's, so
+# github.event.inputs is only filled when the caller happens to be a workflow_dispatch.
 env:
-  solution: '**/*.slnx'
-  buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'  
-  netStandardVersion: '${{ github.event.inputs.nugetVersion }}'
-  netStandardVersionNuget: '${{ github.event.inputs.nugetVersion }}${{ github.event.inputs.nugetPreviewName }}'
-  PublishToNuget: ${{ github.event.inputs.publish }}
+  netStandardVersionNuget: '${{ inputs.nugetVersion }}${{ inputs.nugetPreviewName }}'
+  PublishToNuget: ${{ inputs.publish }}
 
 jobs:
   build:
     permissions:
+      contents: read
       id-token: write  # enable GitHub OIDC token issuance for this job
     runs-on: windows-latest
     steps:
-      # Get a short-lived NuGet API key
-      - name: NuGet login (OIDC → temp API key)
-        uses: NuGet/login@v1
-        id: login
-        with:
-          user: ${{ secrets.NUGET_USER }}
-             
       - uses: actions/checkout@v7
 
       # The SDK pinned in src/global.json (rollForward disabled) is required.
@@ -58,22 +48,42 @@ jobs:
         with:
           global-json-file: src/global.json
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~\.nuget\packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('src/global.json', 'src/Directory.Packages.props', 'src/**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
       - name: Set the NuGet PackageId in the project files
-        run: .\src\Builds\SetNuGetPackageIdPrefix.ps1 ".." "${{ github.event.inputs.nugetPackageIdPrefix }}"
+        run: .\src\Builds\SetNuGetPackageIdPrefix.ps1 ".." "${{ inputs.nugetPackageIdPrefix }}"
         shell: powershell         
 
       - name: nuget restore
         run: dotnet restore .\src\arc4u.slnx
  
       - name: build
-        run: dotnet build .\src\arc4u.slnx --configuration ${{env.buildConfiguration}} /p:Version=${{env.netStandardVersionNuget}}
+        run: dotnet build .\src\arc4u.slnx --no-restore --configuration ${{env.buildConfiguration}} /p:Version=${{env.netStandardVersionNuget}}
  
       # --no-build: test the assemblies the build step packed. A rebuild here would run
       # without /p:Version and pack a second, 1.0.0 version of the packages.
       - name: Run Test projects matching *UnitTest.csproj with filter Category = CI
         run: |
-            Get-ChildItem -Filter *.*UnitTest.csproj -Recurse | ForEach-Object { dotnet test $_.FullName --no-build -c ${{ env.buildConfiguration }} --filter 'Category = CI' }
+            $failed = 0
+            Get-ChildItem -Filter *.*UnitTest.csproj -Recurse | ForEach-Object {
+                dotnet test $_.FullName --no-build -c ${{ env.buildConfiguration }} --filter 'Category = CI' --logger trx --results-directory TestResults
+                if ($LASTEXITCODE -ne 0) { $failed++ }
+            }
+            exit $failed
         shell: pwsh     
+
+      - name: Save test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: TestResults/*.trx
+          retention-days: 7
  
       - name: Copy the nuget packages to a folder to have only one published.
         run: |
@@ -90,8 +100,15 @@ jobs:
             ./packages
           retention-days: 1
 
+      # Get a short-lived NuGet API key, only when publishing and only once the packages
+      # are built and tested, so that the key does not expire during the build.
+      - name: NuGet login (OIDC → temp API key)
+        if: ${{ env.PublishToNuget == 'true'  }}
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Publish packages
         if: ${{ env.PublishToNuget == 'true'  }}
         run: dotnet nuget push ".\packages\*.nupkg" --skip-duplicate --no-symbols --api-key ${{ steps.login.outputs.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-
-#        run: dotnet nuget push ".\packages\*.nupkg" --skip-duplicate --no-symbols --api-key ${{secrets.NUGET_API_KEY}} -s https://api.nuget.org/v3/index.json

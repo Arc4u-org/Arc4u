@@ -1,6 +1,7 @@
 name: Build and publish preview
 
 permissions:
+  contents: read    # CoreBuild checks out the repository
   id-token: write   # required for GitHub OIDC
  
 on: 
@@ -29,12 +30,13 @@ on:
 jobs:
   build:
     permissions:
+      contents: read  # a called workflow gets no more than its caller grants
       id-token: write  # enable GitHub OIDC token issuance for this job    
     uses: ./.github/workflows/CoreBuild.yml
     with:
-      nugetVersion: ${{ github.event.inputs.nugetVersion }}
-      nugetPreviewName: ${{ github.event.inputs.nugetPreviewName }}
-      nugetPackageIdPrefix: ${{ github.event.inputs.nugetPackageIdPrefix }}
-      publish: ${{ github.event.inputs.publish }}
+      nugetVersion: ${{ inputs.nugetVersion }}
+      nugetPreviewName: ${{ inputs.nugetPreviewName }}
+      nugetPackageIdPrefix: ${{ inputs.nugetPackageIdPrefix }}
+      publish: ${{ inputs.publish && 'true' || 'false' }}  # CoreBuild takes a string
     secrets:
       NUGET_USER: ${{ secrets.NUGET_USER }}

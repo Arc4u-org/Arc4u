@@ -1,0 +1,76 @@
+name: CI
+
+# Builds the solution and runs the tests marked [Trait("Category", "CI")] on every pull
+# request and push to develop/9.0.0. Nothing is published: packages are built and
+# published by BuildPreview.yml and BuildRelease.yml.
+# Changes that only touch the documentation are skipped (docs.yml builds those). Do not
+# make this check required while the path filter is on: such pull requests would wait
+# forever on a check that never runs.
+
+on:
+  pull_request:
+    branches:
+      - 'develop/9.0.0'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  push:
+    branches:
+      - 'develop/9.0.0'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  buildConfiguration: 'Release'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The SDK pinned in src/global.json (rollForward disabled) is required.
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~\.nuget\packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('src/global.json', 'src/Directory.Packages.props', 'src/**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: nuget restore
+        run: dotnet restore .\src\arc4u.slnx
+
+      - name: build
+        run: dotnet build .\src\arc4u.slnx --no-restore --configuration ${{ env.buildConfiguration }}
+
+      - name: Run Test projects matching *UnitTest.csproj with filter Category = CI
+        run: |
+            $failed = 0
+            Get-ChildItem -Filter *.*UnitTest.csproj -Recurse | ForEach-Object {
+                dotnet test $_.FullName --no-build -c ${{ env.buildConfiguration }} --filter 'Category = CI' --logger trx --results-directory TestResults
+                if ($LASTEXITCODE -ne 0) { $failed++ }
+            }
+            exit $failed
+        shell: pwsh
+
+      - name: Save test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: TestResults/*.trx
+          retention-days: 7
