@@ -9,9 +9,9 @@ jobs:
     name: depecheck_test
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       - name: Depcheck
-        uses: dependency-check/Dependency-Check_Action@main
+        uses: dependency-check/Dependency-Check_Action@1e54355a8b4c8abaa8cc7d0b70aa655a3bb15a6c # main, 2026-10-22
         id: Depcheck
         with:
           project: 'Arc4u'
@@ -23,7 +23,7 @@ jobs:
             --enableRetired
             -f JSON
       - name: Upload Test results
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v7
         with:
            name: Depcheck report
            path: ${{github.workspace}}/reports

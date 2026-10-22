@@ -50,43 +50,40 @@ jobs:
         with:
           user: ${{ secrets.NUGET_USER }}
              
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
+
+      # The SDK pinned in src/global.json (rollForward disabled) is required.
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
-           dotnet-version: |
-             11.0.100-rc.2.26504.105
-           include-prerelease: true
+          global-json-file: src/global.json
 
       - name: Set the NuGet PackageId in the project files
         run: .\src\Builds\SetNuGetPackageIdPrefix.ps1 ".." "${{ github.event.inputs.nugetPackageIdPrefix }}"
         shell: powershell         
 
-      - name: setup nuget
-        uses: nuget/setup-nuget@v1
-        with:
-          nuget-version: latest
-     
       - name: nuget restore
         run: dotnet restore .\src\arc4u.slnx
  
       - name: build
         run: dotnet build .\src\arc4u.slnx --configuration ${{env.buildConfiguration}} /p:Version=${{env.netStandardVersionNuget}}
  
+      # --no-build: test the assemblies the build step packed. A rebuild here would run
+      # without /p:Version and pack a second, 1.0.0 version of the packages.
       - name: Run Test projects matching *UnitTest.csproj with filter Category = CI
         run: |
-            Get-ChildItem -Filter *.*UnitTest.csproj -Recurse | ForEach-Object { dotnet test $_.FullName --no-restore -c ${{ env.buildConfiguration }} --filter 'Category = CI' }
+            Get-ChildItem -Filter *.*UnitTest.csproj -Recurse | ForEach-Object { dotnet test $_.FullName --no-build -c ${{ env.buildConfiguration }} --filter 'Category = CI' }
         shell: pwsh     
  
       - name: Copy the nuget packages to a folder to have only one published.
         run: |
             md .\packages 
-            Get-ChildItem -Path .\ -Recurse -Filter Arc4u.*.nupkg |  ForEach-Object { Copy-Item -Path $_.FullName -Destination (".\packages\"+$_.Name) }
+            Get-ChildItem -Path .\ -Recurse -Filter "*.${{ env.netStandardVersionNuget }}.nupkg" |  ForEach-Object { Copy-Item -Path $_.FullName -Destination (".\packages\"+$_.Name) }
         shell: pwsh  
  
       - name: Save nuget packages
         if: ${{ env.PublishToNuget == 'false'  }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artifact
           path: |
