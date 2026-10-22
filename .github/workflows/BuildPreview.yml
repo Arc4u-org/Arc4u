@@ -32,9 +32,9 @@ jobs:
       id-token: write  # enable GitHub OIDC token issuance for this job    
     uses: ./.github/workflows/CoreBuild.yml
     with:
-      nugetVersion: ${{ github.event.inputs.nugetVersion }}
-      nugetPreviewName: ${{ github.event.inputs.nugetPreviewName }}
-      nugetPackageIdPrefix: ${{ github.event.inputs.nugetPackageIdPrefix }}
-      publish: ${{ github.event.inputs.publish }}
+      nugetVersion: ${{ inputs.nugetVersion }}
+      nugetPreviewName: ${{ inputs.nugetPreviewName }}
+      nugetPackageIdPrefix: ${{ inputs.nugetPackageIdPrefix }}
+      publish: ${{ inputs.publish && 'true' || 'false' }}  # CoreBuild takes a string
     secrets:
       NUGET_USER: ${{ secrets.NUGET_USER }}
