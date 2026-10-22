@@ -101,10 +101,9 @@ call names the API to use instead.
   assembly with `TrimmerRootAssembly`, so the AOT compiler analyzes all of their code and not only what
   the sample calls. Each third-party assembly reports its warnings as a single `IL2104` or `IL3053`, which
   is ignored; every warning in an Arc4u assembly is an error.
-- The `Native AOT publish` workflow publishes this project on Linux on every pull request that changes
-  `src/`, fails on any warning located in an Arc4u member, then runs the native binary.
 
-To run the same check locally:
+No workflow runs this check. When you change an AOT-compatible package, publish the project before you
+open the pull request, and fix every warning located in an Arc4u member:
 
 ```bash
 dotnet publish src/Samples/Arc4u.AotPublishTest -c Release
