@@ -171,7 +171,7 @@ public static class Certificate
             throw new FormatException("Invalid encrypted string format");
         }
 
-        using var privateKey = GetPrivateKey(x509, x509.GetECDiffieHellmanPrivateKey);
+        using var privateKey = GetPrivateKey(x509, () => x509.GetECDiffieHellmanPrivateKey() ?? CopyEcdsaKeyForKeyAgreement(x509));
 
         var ephemeralPublicKey = Convert.FromBase64String(parts[0]);
         using var ephemeral = ECDiffieHellman.Create();
@@ -181,6 +181,42 @@ public static class Certificate
         var key = DeriveEcdhKey(privateKey, ephemeralKey, ephemeralPublicKey, x509);
 
         return CypherCodec.Decrypt(parts[1], key);
+    }
+
+    /// <summary>
+    /// On Windows, a CNG key created for ECDSA (the usual case for an EC certificate) cannot do a key agreement, so <c>GetECDiffieHellmanPrivateKey</c> returns null.
+    /// The same private key is then copied into an <see cref="ECDiffieHellman"/>, which needs an exportable key
+    /// (loaded from PEM files, or from a PFX with <see cref="X509KeyStorageFlags.Exportable"/>).
+    /// </summary>
+    private static ECDiffieHellman? CopyEcdsaKeyForKeyAgreement(X509Certificate2 x509)
+    {
+        using var ecdsa = x509.GetECDsaPrivateKey();
+        if (ecdsa is null)
+        {
+            return null;
+        }
+
+        ECParameters parameters;
+        try
+        {
+            parameters = ecdsa.ExportParameters(includePrivateParameters: true);
+        }
+        catch (CryptographicException ex)
+        {
+            throw new CryptographicException(string.Format(CultureInfo.InvariantCulture,
+                                                           "The EC private key of the certificate {0} ({1}) is reserved for signatures on this platform and is not exportable, so it cannot be used for an ECDH key agreement. " +
+                                                           "Load the certificate from PEM files or from a PFX with an exportable key.",
+                                                           x509.Subject, x509.Thumbprint), ex);
+        }
+
+        try
+        {
+            return ECDiffieHellman.Create(parameters);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(parameters.D);
+        }
     }
 
     /// <summary>

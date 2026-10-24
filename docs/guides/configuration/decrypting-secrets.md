@@ -135,9 +135,12 @@ means encrypting the values again (see [Rotate the certificate](#rotate-the-cert
 
 > [!NOTE]
 > Strictly, a key agreement needs the `keyAgreement` key usage, and many ECDSA certificates only have
-> `digitalSignature`. .NET does not check the key usage, but your PKI policy may. On Windows, a
-> private key stored with a signature-only CNG algorithm (`ECDSA_P256`, for example) can refuse the
-> key agreement; a key loaded from a PEM or PFX file is not affected.
+> `digitalSignature`. .NET does not check the key usage, but your PKI policy may. On Windows, a CNG
+> key created for ECDSA cannot do a key agreement, so `Decrypt` copies the private key into an ECDH
+> key. This works when the key is exportable: a key loaded from PEM files, or from a PFX with
+> `X509KeyStorageFlags.Exportable`. A non-exportable key in the Windows certificate store gives a
+> `CryptographicException`; import the certificate again with an exportable key, or use an RSA
+> certificate.
 
 ### Step 3: Put the encrypted value in the configuration
 
