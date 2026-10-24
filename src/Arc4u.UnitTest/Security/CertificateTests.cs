@@ -83,26 +83,74 @@ public class CertificateTests
     }
 
     [Theory]
-    [InlineData(10)]
-    [InlineData(600)]
-    public void Encrypt_With_Ecdsa_Certificate_Should_Throw_NotSupportedException(int length)
+    [InlineData("nistP256", 10)]
+    [InlineData("nistP256", 600)]
+    [InlineData("nistP384", 10)]
+    [InlineData("nistP521", 600)]
+    public void Ec_Certificate_Should_Encrypt_And_Decrypt(string curve, int length)
     {
         // arrange
-        using var certificate = CreateEcdsaCertificate();
+        using var certificate = CreateEcdsaCertificate(ECCurve.CreateFromFriendlyName(curve));
         var plainText = new string('A', length);
 
         // act
-        var exception = Record.Exception(() => certificate.Encrypt(plainText));
+        var cypherText = certificate.Encrypt(plainText);
+        var sut = certificate.Decrypt(cypherText);
 
         // assert
-        exception.Should().BeOfType<NotSupportedException>();
-        exception!.Message.Should().Contain("RSA");
+        cypherText.Split('.').Should().HaveCount(2);
+        sut.Should().Be(plainText);
+    }
+
+    [Fact]
+    public void Ec_Encryption_Should_Use_A_New_Ephemeral_Key_Each_Time()
+    {
+        // arrange
+        using var certificate = CreateEcdsaCertificate();
+
+        // act
+        var first = certificate.Encrypt("same text");
+        var second = certificate.Encrypt("same text");
+
+        // assert
+        first.Split('.')[0].Should().NotBe(second.Split('.')[0]);
+    }
+
+    [Fact]
+    public void Ec_Decrypt_With_Another_Certificate_Should_Fail()
+    {
+        // arrange
+        using var certificate = CreateEcdsaCertificate();
+        using var other = CreateEcdsaCertificate();
+        var cypherText = certificate.Encrypt("secret");
+
+        // act
+        var exception = Record.Exception(() => other.Decrypt(cypherText));
+
+        // assert
+        exception.Should().BeAssignableTo<CryptographicException>();
+    }
+
+    [Fact]
+    public void Ec_Decrypt_With_A_Substituted_Ephemeral_Key_Should_Fail()
+    {
+        // arrange
+        using var certificate = CreateEcdsaCertificate();
+        var cypherText = certificate.Encrypt("secret");
+        var otherEphemeralKey = certificate.Encrypt("other").Split('.')[0];
+        var tampered = $"{otherEphemeralKey}.{cypherText.Split('.')[1]}";
+
+        // act
+        var exception = Record.Exception(() => certificate.Decrypt(tampered));
+
+        // assert
+        exception.Should().BeAssignableTo<CryptographicException>();
     }
 
     [Theory]
     [InlineData(10)]
     [InlineData(600)]
-    public void Decrypt_With_Ecdsa_Certificate_Should_Throw_NotSupportedException(int length)
+    public void Rsa_Cypher_Text_Decrypted_With_Ec_Certificate_Should_Fail(int length)
     {
         // arrange
         var cypherText = CertificateDecryptor.GetX509Certificate2().Encrypt(new string('A', length));
@@ -112,13 +160,14 @@ public class CertificateTests
         var exception = Record.Exception(() => certificate.Decrypt(cypherText));
 
         // assert
-        exception.Should().BeOfType<NotSupportedException>();
-        exception!.Message.Should().Contain("RSA");
+        exception.Should().Match(e => e is FormatException || e is CryptographicException);
     }
 
-    private static X509Certificate2 CreateEcdsaCertificate()
+    private static X509Certificate2 CreateEcdsaCertificate() => CreateEcdsaCertificate(ECCurve.NamedCurves.nistP256);
+
+    private static X509Certificate2 CreateEcdsaCertificate(ECCurve curve)
     {
-        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        using var ecdsa = ECDsa.Create(curve);
         var request = new CertificateRequest("CN=Arc4u ECDSA", ecdsa, HashAlgorithmName.SHA256);
         return request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1));
     }

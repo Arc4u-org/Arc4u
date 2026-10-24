@@ -9,17 +9,24 @@ namespace Arc4u.Security.Cryptography;
 /// Extension methods to encrypt and decrypt strings with an <see cref="X509Certificate2"/>.
 /// Short texts are encrypted directly with RSA (OAEP, SHA-256); longer texts are encrypted with a random AES key that is itself encrypted with the certificate.
 /// The result is a base64 string, or two base64 parts separated by a dot (<c>key.data</c>) in the AES case, where <c>data</c> is produced by <see cref="CypherCodec.Encrypt(string, byte[])"/>.
-/// Only certificates with an RSA key are supported.
+/// With an EC certificate the text is encrypted with ECIES: an ephemeral ECDH key agreement with the certificate key, HKDF-SHA256 to derive the AES key,
+/// then AES-GCM. The result is <c>ephemeralPublicKey.data</c>, the ephemeral public key being a base64 SubjectPublicKeyInfo.
+/// The algorithm is chosen from the certificate key, so a text must be decrypted with the certificate it was encrypted for.
+/// Only certificates with an RSA or an EC key are supported.
 /// </summary>
 public static class Certificate
 {
+    private const string EcPublicKeyOid = "1.2.840.10045.2.1";
+    private const int EcdhKeySizeInBytes = 32;
+    private static readonly byte[] EcdhInfoLabel = "Arc4u.ECIES.v1"u8.ToArray();
+
     /// <summary>
     /// Encrypt a text and return an encrypted version formated in a 64string.
     /// </summary>
     /// <param name="plainText">The plain text to encrypt.</param>
     /// <param name="x509">The certificate used to encrypt</param>
     /// <returns>The encrypted plain text.</returns>
-    /// <exception cref="NotSupportedException">The certificate has no RSA public key.</exception>
+    /// <exception cref="NotSupportedException">The certificate has no RSA or EC public key.</exception>
     public static string Encrypt(this X509Certificate2 x509, string plainText)
     {
         ArgumentNullException.ThrowIfNull(x509);
@@ -29,7 +36,12 @@ public static class Certificate
             throw new ArgumentNullException(nameof(plainText));
         }
 
-        using var rsa = x509.GetRSAPublicKey() ?? throw NotRsa(x509);
+        if (IsEc(x509))
+        {
+            return EncryptWithEcdh(x509, plainText);
+        }
+
+        using var rsa = x509.GetRSAPublicKey() ?? throw NotSupportedKey(x509);
 
         var bytes = Encoding.UTF8.GetBytes(plainText.Trim());
 
@@ -77,7 +89,7 @@ public static class Certificate
     /// <returns>The decrypted text.</returns>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="CryptographicException">The certificate has no private key, or its private key cannot be accessed (for example missing permissions on a LocalMachine certificate).</exception>
-    /// <exception cref="NotSupportedException">The certificate has no RSA private key.</exception>
+    /// <exception cref="NotSupportedException">The certificate has no RSA or EC private key.</exception>
     public static string Decrypt(this X509Certificate2 x509, string base64Cypherstring)
     {
         ArgumentNullException.ThrowIfNull(x509);
@@ -92,7 +104,12 @@ public static class Certificate
             throw new CryptographicException(string.Format(CultureInfo.InvariantCulture, "The certificate {0} has no private key!", x509.FriendlyName));
         }
 
-        using var rsa = GetRSAPrivateKey(x509);
+        if (IsEc(x509))
+        {
+            return DecryptWithEcdh(x509, base64Cypherstring);
+        }
+
+        using var rsa = GetPrivateKey(x509, x509.GetRSAPrivateKey);
 
         if (base64Cypherstring.Contains('.'))
         {
@@ -129,15 +146,71 @@ public static class Certificate
         return rsa.Decrypt(cipherBytes, RSAEncryptionPadding.OaepSHA256);
     }
 
+    private static bool IsEc(X509Certificate2 x509) => x509.PublicKey.Oid.Value == EcPublicKeyOid;
+
     /// <summary>
-    /// Get the RSA private key and explain the failure when the key exists but cannot be opened,
+    /// Encrypt with an ephemeral EC key: the AES key is derived from the ECDH agreement between the ephemeral key and the certificate key.
+    /// </summary>
+    private static string EncryptWithEcdh(X509Certificate2 x509, string plainText)
+    {
+        using var recipient = x509.GetECDiffieHellmanPublicKey() ?? throw NotSupportedKey(x509);
+        using var recipientPublicKey = recipient.PublicKey;
+        using var ephemeral = ECDiffieHellman.Create(recipient.ExportParameters(false).Curve);
+
+        var ephemeralPublicKey = ephemeral.ExportSubjectPublicKeyInfo();
+        var key = DeriveEcdhKey(ephemeral, recipientPublicKey, ephemeralPublicKey, x509);
+
+        return $"{Convert.ToBase64String(ephemeralPublicKey)}.{CypherCodec.Encrypt(plainText, key)}";
+    }
+
+    private static string DecryptWithEcdh(X509Certificate2 x509, string cypherText)
+    {
+        var parts = cypherText.Split('.');
+        if (parts.Length != 2)
+        {
+            throw new FormatException("Invalid encrypted string format");
+        }
+
+        using var privateKey = GetPrivateKey(x509, x509.GetECDiffieHellmanPrivateKey);
+
+        var ephemeralPublicKey = Convert.FromBase64String(parts[0]);
+        using var ephemeral = ECDiffieHellman.Create();
+        ephemeral.ImportSubjectPublicKeyInfo(ephemeralPublicKey, out _);
+        using var ephemeralKey = ephemeral.PublicKey;
+
+        var key = DeriveEcdhKey(privateKey, ephemeralKey, ephemeralPublicKey, x509);
+
+        return CypherCodec.Decrypt(parts[1], key);
+    }
+
+    /// <summary>
+    /// Derive the AES key from the ECDH shared secret with HKDF-SHA256.
+    /// The ephemeral and the certificate public keys are part of the HKDF info, so the key is bound to both (a substituted ephemeral key fails the AES-GCM tag check).
+    /// </summary>
+    private static byte[] DeriveEcdhKey(ECDiffieHellman ownKey, ECDiffieHellmanPublicKey otherKey, byte[] ephemeralPublicKey, X509Certificate2 x509)
+    {
+        var secret = ownKey.DeriveRawSecretAgreement(otherKey);
+        try
+        {
+            byte[] info = [.. EcdhInfoLabel, .. ephemeralPublicKey, .. x509.PublicKey.ExportSubjectPublicKeyInfo()];
+
+            return HKDF.DeriveKey(HashAlgorithmName.SHA256, secret, EcdhKeySizeInBytes, salt: [], info);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(secret);
+        }
+    }
+
+    /// <summary>
+    /// Get the private key and explain the failure when the key exists but cannot be opened,
     /// typically a certificate in the LocalMachine store whose private key is not readable by the current user ("Keyset does not exist").
     /// </summary>
-    private static RSA GetRSAPrivateKey(X509Certificate2 x509)
+    private static T GetPrivateKey<T>(X509Certificate2 x509, Func<T?> getPrivateKey) where T : AsymmetricAlgorithm
     {
         try
         {
-            return x509.GetRSAPrivateKey() ?? throw NotRsa(x509);
+            return getPrivateKey() ?? throw NotSupportedKey(x509);
         }
         catch (CryptographicException ex)
         {
@@ -149,8 +222,8 @@ public static class Certificate
         }
     }
 
-    private static NotSupportedException NotRsa(X509Certificate2 x509)
+    private static NotSupportedException NotSupportedKey(X509Certificate2 x509)
         => new(string.Format(CultureInfo.InvariantCulture,
-                             "The certificate {0} ({1}) uses the key algorithm {2}. Only certificates with an RSA key can encrypt or decrypt secrets.",
+                             "The certificate {0} ({1}) uses the key algorithm {2}. Only certificates with an RSA or an EC key can encrypt or decrypt secrets.",
                              x509.Subject, x509.Thumbprint, x509.PublicKey.Oid.FriendlyName ?? x509.PublicKey.Oid.Value));
 }

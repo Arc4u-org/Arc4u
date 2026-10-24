@@ -48,9 +48,20 @@ openssl req -x509 -newkey rsa:2048 -nodes \
   -subj "/CN=Arc4u Config Secrets"
 ```
 
-The certificate must have an RSA key: the encryption uses the RSA public key, so an ECDSA
-certificate cannot be used (see [Troubleshooting](#notsupportedexception-only-certificates-with-an-rsa-key)). To check that a certificate and a key belong together, both commands
-print the same public key:
+The certificate can also have an EC key (P-256, P-384 or P-521), for example an ECDSA certificate
+issued by your PKI. To create one:
+
+```bash
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
+  -keyout key.pem \
+  -out cert.pem \
+  -days 365 \
+  -subj "/CN=Arc4u Config Secrets"
+```
+
+Other key types are not supported (see [Troubleshooting](#notsupportedexception-only-certificates-with-an-rsa-or-an-ec-key)).
+See [RSA or EC certificate](#rsa-or-ec-certificate) for how each one encrypts. To check that a
+certificate and a key belong together, both commands print the same public key:
 
 ```bash
 openssl x509 -in cert.pem -noout -pubkey
@@ -97,10 +108,36 @@ Decrypt:C6PBLlEuyKB3aTnC77sRYvEmgXvoKqHsKlR7kjoYVppiQXfDTWj5r0Wm...
 ```
 
 The output is Base64 text and changes on every run (the encryption is randomized), so a different
-string for the same value is normal. A value shorter than 191 bytes is trimmed of leading and trailing whitespace and encrypted directly with the
+string for the same value is normal. The form of the output depends on the certificate key.
+
+#### RSA or EC certificate
+
+With an **RSA** certificate, a value shorter than 191 bytes is trimmed of leading and trailing whitespace and encrypted directly with the
 certificate's RSA public key (RSA-OAEP with SHA-256, for a 2048-bit key). A longer value is
 encrypted with AES-GCM and a random AES key, and the output has the form `<key>.<data>` where the
 AES key is itself encrypted with the certificate. Both forms decrypt the same way.
+
+With an **EC** certificate, every value is encrypted with ECIES:
+
+1. A new EC key pair, on the curve of the certificate, is generated for the value.
+2. An ECDH key agreement between this ephemeral private key and the certificate's public key gives a
+   shared secret, which HKDF-SHA256 turns into a 256-bit AES key. Both public keys are part of the
+   key derivation, so the AES key is bound to them.
+3. The value is encrypted with AES-GCM, and the output has the form `<ephemeralPublicKey>.<data>`.
+   The ephemeral private key is discarded.
+
+To decrypt, the certificate's private key and the ephemeral public key give the same shared secret.
+The value is not trimmed.
+
+`Decrypt` chooses the algorithm from the certificate key, not from the encrypted text: a value must
+be decrypted with the certificate it was encrypted for, so changing from an RSA to an EC certificate
+means encrypting the values again (see [Rotate the certificate](#rotate-the-certificate)).
+
+> [!NOTE]
+> Strictly, a key agreement needs the `keyAgreement` key usage, and many ECDSA certificates only have
+> `digitalSignature`. .NET does not check the key usage, but your PKI policy may. On Windows, a
+> private key stored with a signature-only CNG algorithm (`ECDSA_P256`, for example) can refuse the
+> key agreement; a key loaded from a PEM or PFX file is not affected.
 
 ### Step 3: Put the encrypted value in the configuration
 
@@ -244,7 +281,7 @@ env:
 ```
 
 `tls.crt` and `tls.key` are the file names of a `kubernetes.io/tls` secret when it is mounted as a volume. Both must be PEM,
-and the key must be unencrypted (a PKCS#8 `PRIVATE KEY` or `RSA PRIVATE KEY` block).
+and the key must be unencrypted (a PKCS#8 `PRIVATE KEY`, an `RSA PRIVATE KEY` or an `EC PRIVATE KEY` block).
 To convert a key, use `openssl pkcs8 -topk8 -nocrypt -in old.key -out key.pem`.
 
 ### Load the certificate yourself
@@ -408,7 +445,7 @@ configuration built from the earlier providers and `SecretSectionName`. Returnin
 - **One key per environment.** Use a different certificate per environment so that a leak in a
   test environment does not expose production secrets. A secret is only as private as the private key that decrypts it.
 - **Start-up fails on purpose.** The decryptor does not catch exceptions: a missing certificate, a
-  certificate without an RSA key or a value that cannot be decrypted stops the application at startup,
+  certificate with neither an RSA nor an EC key or a value that cannot be decrypted stops the application at startup,
   so the error is visible.
 - **Not a secret manager.** The encrypted values are public data. Rotating or revoking a secret means
   re-encrypting and redeploying. For secrets that change often, use a dedicated secret store and a
@@ -454,13 +491,13 @@ The value was encrypted with another certificate, or the certificate has no priv
 (`The certificate ... has no private key!`). The exact type and message depend on the operating
 system. Encrypt the value again with the public certificate that matches `key.pem`.
 
-### NotSupportedException: only certificates with an RSA key
+### NotSupportedException: only certificates with an RSA or an EC key
 
-Encryption and decryption use the RSA key of the certificate. `Encrypt` and `Decrypt` throw a
+Encryption and decryption use the RSA or the EC key of the certificate. `Encrypt` and `Decrypt` throw a
 `NotSupportedException` naming the certificate and its key algorithm when the certificate has another
-key type, such as ECDSA. Use a certificate with an RSA key
-(`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption`) and encrypt the
-values again.
+key type, such as DSA or Ed25519. Use a certificate with an RSA or an EC key
+(`openssl x509 -in cert.pem -noout -text` shows `Public Key Algorithm: rsaEncryption` or
+`id-ecPublicKey`) and encrypt the values again.
 
 ### Which earlier sources does the decryptor read?
 

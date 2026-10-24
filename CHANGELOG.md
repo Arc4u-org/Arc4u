@@ -121,6 +121,10 @@ packages. It contains breaking changes: follow the
   as `ManageExceptionsFilter`. `ManageExceptionsFilterOptions` adds the exception details to the response
   (`IncludeExceptionDetails`, by default in the `Development` environment only) and logs the action
   arguments (`LogActionArguments`, off by default, truncated to `MaxActionArgumentLength`) ([#31](https://github.com/Arc4u-org/Arc4u/issues/31)).
+- `Certificate.Encrypt` and `Decrypt` (`Arc4u.Security.Cryptography`), and so the secret decryptor, accept a
+  certificate with an EC key (P-256, P-384 or P-521). The value is encrypted with ECIES: an ephemeral ECDH
+  key agreement with the certificate key, HKDF-SHA256 and AES-GCM, in the form `<ephemeralPublicKey>.<data>`.
+  The algorithm is chosen from the certificate key; values encrypted with an RSA certificate are unchanged.
 
 ### Changed
 
@@ -496,7 +500,7 @@ packages. It contains breaking changes: follow the
 - The secret decryptor read the earlier configuration sources again, so stream sources failed and remote
   providers were loaded twice ([#246](https://github.com/Arc4u-org/Arc4u/issues/246)).
 - Secret decryption with an ECDSA certificate failed silently or with unrelated exceptions; a certificate
-  without an RSA key now throws a `NotSupportedException`
+  with neither an RSA nor an EC key now throws a `NotSupportedException`
   ([#247](https://github.com/Arc4u-org/Arc4u/issues/247)), and a private key that cannot be read gives
   an explicit error ([#40](https://github.com/Arc4u-org/Arc4u/issues/40)).
 - `Arc4u.Dependency.Tool`: `[Shared]` with `[Scoped]` gave different lifetimes in the two generators
