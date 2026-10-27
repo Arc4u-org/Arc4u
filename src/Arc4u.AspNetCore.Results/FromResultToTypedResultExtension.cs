@@ -42,13 +42,9 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Ok<TResult>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Ok(value))
-            .OnSuccessNull(() => objectResult = TypedResults.Ok(default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Ok<TResult>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Ok(default(TResult)) : TypedResults.Ok(value),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -68,13 +64,9 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Ok<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Ok(mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Ok(default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Ok(default(T)) : TypedResults.Ok(mapper(value)),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -94,26 +86,10 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Ok<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = TypedResults.Ok(default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = TypedResults.Ok(mapped);
-            }
-        }
-        else
-        {
-            objectResult = TypedResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(
+            async value => value is null ? TypedResults.Ok(default(T)) : TypedResults.Ok(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(TypedResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -127,12 +103,9 @@ public static class FromResultToTypedResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        Results<NoContent, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccess(() => objectResult = TypedResults.NoContent())
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<Results<NoContent, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.NoContent(),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -153,13 +126,9 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Created<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Created<T>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, mapper(value)),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -180,26 +149,10 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Created<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = TypedResults.Created((Uri?)null, default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = TypedResults.Created(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = TypedResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, Results<Created<T>, ProblemHttpResult, ValidationProblem>>(
+            async value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<Results<Created<T>, ProblemHttpResult, ValidationProblem>>(TypedResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -215,13 +168,9 @@ public static class FromResultToTypedResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        Results<Created<TResult>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Created<TResult>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(TResult)) : TypedResults.Created(location, value),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -236,12 +185,9 @@ public static class FromResultToTypedResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        Results<Created, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccess(() => objectResult = TypedResults.Created(location))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<Results<Created, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.Created(location),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     #endregion
@@ -261,13 +207,9 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Ok<TResult>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Ok(value))
-            .OnSuccessNull(() => objectResult = TypedResults.Ok(default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Ok<TResult>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Ok(default(TResult)) : TypedResults.Ok(value),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -287,13 +229,9 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Ok<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Ok(mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Ok(default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Ok(default(T)) : TypedResults.Ok(mapper(value)),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -313,26 +251,10 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Ok<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = TypedResults.Ok(default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = TypedResults.Ok(mapped);
-            }
-        }
-        else
-        {
-            objectResult = TypedResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(
+            async value => value is null ? TypedResults.Ok(default(T)) : TypedResults.Ok(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(TypedResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -346,12 +268,9 @@ public static class FromResultToTypedResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        Results<NoContent, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccess(() => objectResult = TypedResults.NoContent())
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<Results<NoContent, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.NoContent(),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -363,13 +282,9 @@ public static class FromResultToTypedResultExtension
     public static Task<Results<NoContent, ProblemHttpResult, ValidationProblem>>
     ToTypedOkResultAsync(this Result result)
     {
-        Results<NoContent, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-
-        result
-              .OnSuccess(() => objectResult = TypedResults.NoContent())
-              .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<Results<NoContent, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.NoContent(),
+            _ => TypedResults.Problem(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -387,26 +302,10 @@ public static class FromResultToTypedResultExtension
     {
         ArgumentNullException.ThrowIfNull(asyncMapper);
 
-        Results<Ok<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-
-        if (result.IsSuccess)
-        {
-            if (result.Value is null)
-            {
-                objectResult = TypedResults.Ok(default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(result.Value).ConfigureAwait(false);
-                objectResult = TypedResults.Ok(mapped);
-            }
-        }
-        else
-        {
-            objectResult = TypedResults.Problem(result.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await result.MatchAsync<TResult, Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(
+            async value => value is null ? TypedResults.Ok(default(T)) : TypedResults.Ok(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(TypedResults.Problem(result.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -427,13 +326,9 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Created<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Created<T>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, mapper(value)),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -454,26 +349,10 @@ public static class FromResultToTypedResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        Results<Created<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = TypedResults.Created((Uri?)null, default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = TypedResults.Created(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = TypedResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, Results<Created<T>, ProblemHttpResult, ValidationProblem>>(
+            async value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<Results<Created<T>, ProblemHttpResult, ValidationProblem>>(TypedResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -489,13 +368,9 @@ public static class FromResultToTypedResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        Results<Created<TResult>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, Results<Created<TResult>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(TResult)) : TypedResults.Created(location, value),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -514,13 +389,9 @@ public static class FromResultToTypedResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        Results<Created<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<TResult, Results<Created<T>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, mapper(value)),
+            _ => TypedResults.Problem(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -539,26 +410,10 @@ public static class FromResultToTypedResultExtension
     {
         ArgumentNullException.ThrowIfNull(asyncMapper);
 
-        Results<Created<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-
-        if (result.IsSuccess)
-        {
-            if (result.Value is null)
-            {
-                objectResult = TypedResults.Created((Uri?)null, default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(result.Value).ConfigureAwait(false);
-                objectResult = TypedResults.Created(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = TypedResults.Problem(result.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await result.MatchAsync<TResult, Results<Created<T>, ProblemHttpResult, ValidationProblem>>(
+            async value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<Results<Created<T>, ProblemHttpResult, ValidationProblem>>(TypedResults.Problem(result.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -572,13 +427,9 @@ public static class FromResultToTypedResultExtension
     public static Task<Results<Created<TResult>, ProblemHttpResult, ValidationProblem>>
     ToTypedCreatedResultAsync<TResult>(this Result<TResult> result, Uri? location)
     {
-        Results<Created<TResult>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<TResult, Results<Created<TResult>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(TResult)) : TypedResults.Created(location, value),
+            _ => TypedResults.Problem(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -593,12 +444,9 @@ public static class FromResultToTypedResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        Results<Created, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        res
-            .OnSuccess(() => objectResult = TypedResults.Created(location))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<Results<Created, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.Created(location),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -611,12 +459,9 @@ public static class FromResultToTypedResultExtension
     public static Task<Results<Created, ProblemHttpResult, ValidationProblem>>
     ToTypedCreatedResultAsync(this Result result, Uri? location)
     {
-        Results<Created, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccess(() => objectResult = TypedResults.Created(location))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<Results<Created, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.Created(location),
+            _ => TypedResults.Problem(result.ToProblemDetails())));
     }
 
     #endregion
@@ -634,13 +479,9 @@ public static class FromResultToTypedResultExtension
     ToTypedOkResult<TResult>(this Result<TResult> result)
     {
 
-        Results<Ok<TResult>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Ok(value))
-            .OnSuccessNull(() => objectResult = TypedResults.Ok(default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, Results<Ok<TResult>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Ok(default(TResult)) : TypedResults.Ok(value),
+            _ => TypedResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -658,13 +499,9 @@ public static class FromResultToTypedResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        Results<Ok<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Ok(mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Ok(default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, Results<Ok<T>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Ok(default(T)) : TypedResults.Ok(mapper(value)),
+            _ => TypedResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -683,13 +520,9 @@ public static class FromResultToTypedResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        Results<Created<T>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, Results<Created<T>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, mapper(value)),
+            _ => TypedResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -703,13 +536,9 @@ public static class FromResultToTypedResultExtension
     public static Results<Created<TResult>, ProblemHttpResult, ValidationProblem>
     ToTypedCreatedResult<TResult>(this Result<TResult> result, Uri? location)
     {
-        Results<Created<TResult>, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, Results<Created<TResult>, ProblemHttpResult, ValidationProblem>>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(TResult)) : TypedResults.Created(location, value),
+            _ => TypedResults.Problem(result.ToProblemDetails()));
     }
     #endregion
 
@@ -723,12 +552,9 @@ public static class FromResultToTypedResultExtension
     public static Results<NoContent, ProblemHttpResult, ValidationProblem>
     ToTypedOkResult(this Result result)
     {
-        Results<NoContent, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccess(() => objectResult = TypedResults.NoContent())
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<Results<NoContent, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.NoContent(),
+            _ => TypedResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -741,12 +567,9 @@ public static class FromResultToTypedResultExtension
     public static Results<Created, ProblemHttpResult, ValidationProblem>
     ToTypedCreatedResult(this Result result, Uri? location)
     {
-        Results<Created, ProblemHttpResult, ValidationProblem> objectResult = TypedResults.Problem();
-        result
-            .OnSuccess(() => objectResult = TypedResults.Created(location))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<Results<Created, ProblemHttpResult, ValidationProblem>>(
+            () => TypedResults.Created(location),
+            _ => TypedResults.Problem(result.ToProblemDetails()));
     }
 
     #endregion

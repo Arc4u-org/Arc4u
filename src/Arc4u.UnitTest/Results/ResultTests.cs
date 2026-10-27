@@ -183,7 +183,7 @@ public class ResultTests
         Result<string> globalResult = Result.Ok();
 
         var sut = await result.LogIfFailed()
-            .OnFailed(errors => globalResult.WithErrors(errors));
+            .OnFailed(errors => { globalResult.WithErrors(errors); });
 
         sut.Should().BeSameAs(result.Result);
         globalResult.IsFailed.Should().BeTrue();

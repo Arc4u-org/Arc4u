@@ -1,5 +1,5 @@
 ---
-description: "Chain OnSuccess, OnFailed and LogIfFailed on a Result, create ProblemDetailError and log failed results with Arc4u.Results."
+description: "Chain OnSuccess, OnFailed, LogIfFailed and the steps that can fail (Then, EnsureNotNull, Check, Compensate, Recover) on a Result, end a chain with Match, create ProblemDetailError and log failed results with Arc4u.Results."
 ---
 # Fluent result chains
 
@@ -77,9 +77,16 @@ static class <xref:Arc4u.Results.ResultExtension>, except `LogIfFailed` on a pla
 Rules that apply to all of them:
 
 - **The original result is returned.** A callback cannot change the result, which keeps the chain
-  honest: what you read is what runs. To report the outcome of a whole chain, collect errors in
-  a separate result with `OnFailed(globalResult)`, as in the sample above. The errors are added
-  to `globalResult`, which then fails.
+  honest: what you read is what runs. These methods are for actions that cannot fail (log,
+  notify, fill a cache). A step that can fail returns a result: chain it with `Then` or another of the
+  [steps that can fail](#steps-that-can-fail). To collect the errors of independent operations in
+  one result, use `OnFailed(globalResult)`, as in the sample above. The errors are added to
+  `globalResult`, which then fails.
+- **A callback returning a result is refused.** `OnSuccess(t => t.Update())` would discard the result
+  of `Update`, errors included, and the chain would carry on as if it had succeeded. The overload is
+  marked as an error that points to `Then`, `Check`, `Compensate` and `Recover`. The same applies to
+  the `*Async` methods when the task of the callback produces a result. To discard a result on purpose,
+  write a statement lambda: `OnSuccess(t => { t.Update(); })`.
 - **Methods named `*Async` return a task.** Await the chain. Nothing in the library blocks on a task.
 - **A method without `Async` refuses an asynchronous callback.** `OnSuccess(async () => ...)` would run
   as `async void`, so the overload is marked as an error and the compiler tells you to use
@@ -113,6 +120,110 @@ public interface ICustomerRepository
     Task<Result<Customer>> FindAsync(int id);
 }
 ```
+
+## Steps that can fail
+
+These methods chain a step that returns a result. Each one runs its callback only in the case it
+handles, stops the chain at the first failure and keeps the reasons of every step.
+
+| Method | Runs the callback when | Returns |
+|---|---|---|
+| `Then` / `ThenAsync` | The result succeeded | The result of the step, with its value and errors |
+| `EnsureNotNull(() => error)` | The result succeeded with a `null` value | A `Result<T>` with a value that is not `null`, or failed with `error` |
+| `Check` / `CheckAsync` | The result succeeded | The original value when the step succeeded, otherwise the errors of the step |
+| `Compensate` / `CompensateAsync` | The result failed | The failure, with the reasons of the clean-up added: an error of the clean-up is not lost |
+| `Recover` / `RecoverAsync` | The result failed | The result of the fallback when it succeeded, otherwise the errors of both |
+
+They exist on `Result<T>`, `Task<Result<T>>` and `ValueTask<Result<T>>`; `Then`, `Compensate` and
+`Recover` also exist on `Result`, `Task<Result>` and `ValueTask<Result>`. They return a new result carrying the
+reasons of the original one followed by those of the callback, except when the callback is not called:
+the original result is then returned. The rules of `OnSuccess` and `OnFailed` apply: a method named `*Async` takes a
+callback returning a `Task` and returns a task, and an exception thrown by a callback propagates.
+
+A use case that loads, changes and saves an entity reads in one chain, and returns the first failure,
+whichever step produced it:
+
+```csharp
+using System.Globalization;
+using Arc4u.Results;
+using FluentResults;
+
+public class RenameTemplate(ITemplateRepository db)
+{
+    public Task<Result> RunAsync(Guid id, string name, CancellationToken cancellationToken)
+        => db.GetByIdAsync(id, cancellationToken)
+             .EnsureNotNull(() => ProblemDetailError.Create(string.Format(CultureInfo.InvariantCulture, "No template with an id {0} exists.", id))
+                                                    .WithStatusCode(404))
+             .Check(template => template.Rename(name))
+             .ThenAsync(template => db.UpdateAsync(template, cancellationToken))
+             .LogIfFailed();
+}
+
+public class Template
+{
+    public Result Rename(string name) => name.Length <= 50 ? Result.Ok() : Result.Fail("The name is too long.");
+}
+
+public interface ITemplateRepository
+{
+    Task<Result<Template?>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<Result> UpdateAsync(Template template, CancellationToken cancellationToken);
+}
+```
+
+`Then` is FluentResults' `Bind` under a name of the Arc4u chain, available on every receiver, so
+`FluentResults.Extensions` is not needed: the chain continues with the result of the step, and with
+its value for a `Result<T>`. `Check` is for a step whose result has no value of its own: the template
+is kept for the next step, where `Then(t => t.Rename(name).ToResult(t))` would be needed otherwise.
+
+`Compensate` and `Recover` are the failure side. `Compensate` runs a clean-up, for instance deleting a
+file written before the failure; the result stays failed, with the errors of the clean-up added.
+`Recover` handles the failure, for instance by reading a cached value; its result replaces the failure:
+
+```csharp
+Task<Result<Rate>> GetRateAsync(string currency)
+    => rates.GetAsync(currency)
+            .RecoverAsync(_ => cache.GetAsync(currency))
+            .Compensate(_ => alerts.Raise($"No rate for {currency}."));
+```
+
+## End a chain with Match
+
+`Match` turns a result into another type, for instance an HTTP response, a DTO or a message for the
+user. It calls the callback matching the state of the result and returns what that callback produces,
+so no variable has to be assigned from an `OnSuccess` and an `OnFailed` callback:
+
+```csharp
+using Arc4u.Results;
+using FluentResults;
+
+public static class CustomerMessages
+{
+    public static string Describe(Result<Customer?> result)
+        => result.Match(customer => $"Customer {customer.Name}.",
+                        () => "No customer.",
+                        errors => $"{errors.Count} error(s).");
+
+    public static string Describe(Result result)
+        => result.Match(() => "Done.", errors => errors.First().Message);
+}
+```
+
+| Overload | Callbacks |
+|---|---|
+| On `Result` | `onSuccess()`, `onFailed(errors)` |
+| On `Result<T>` | `onSuccess(value)`, `onFailed(errors)`; the value can be `null` |
+| On `Result<T?>` | `onSuccessNotNull(value)`, `onSuccessNull()`, `onFailed(errors)`; the value passed is not `null` |
+
+Exactly one callback is called. `Match` exists on `Task` and `ValueTask` results too, and `MatchAsync` takes
+callbacks returning a `Task`. Use the overload with `onSuccessNull` when the value is declared nullable,
+such as `Result<Customer?>`; for a value declared not nullable, the overload with a single success callback
+avoids a nullable warning.
+
+The type produced is inferred from the callbacks. When they return different types, for instance
+`OkObjectResult` and `ObjectResult` for an `ActionResult`, give it explicitly:
+`result.Match<Order, ActionResult>(order => new OkObjectResult(order), _ => new ObjectResult(problem))`.
+`Arc4u.AspNetCore.Results` builds its HTTP responses this way.
 
 ## Errors
 
@@ -211,9 +322,22 @@ You passed an asynchronous lambda to a method that is not named `*Async`. Rename
 `OnSuccessAsync` (or `OnSuccessNotNullAsync`, `OnSuccessNullAsync`, `OnFailedAsync`) and await the chain.
 The `OnFailedAsync` callback has one parameter, the collection of errors: `OnFailedAsync(async errors => ...)`.
 
-### `OnSuccess(() => throw ...)` gives CS0619
+### Compile error `CS0619: ... This callback returns a result`
 
-A lambda that only throws also binds to the obsolete `Func<Task>` overload. Cast it: `OnSuccess((Action)(() => throw new InvalidOperationException()))`.
+The callback of `OnSuccess`, `OnSuccessNull`, `OnSuccessNotNull`, `OnFailed` or one of their `*Async` twins
+returns a `Result` or a `Result<T>`, which the method would discard. Pick the method matching what the step does:
+
+- It produces the next value or result: `Then` (`ThenAsync` for an asynchronous step).
+- It can fail but the value must be kept: `Check` (`CheckAsync` for an asynchronous step).
+- It cleans up after a failure and can fail itself: `Compensate`.
+- It replaces the failure with another result: `Recover`.
+- The result really does not matter, as in `errors => global.WithErrors(errors)`: write a statement
+  lambda, `errors => { global.WithErrors(errors); }`, or use `OnFailed(global)`.
+
+### `OnSuccess(() => throw ...)` gives CS0121 or CS0619
+
+A lambda that only throws converts to every delegate type, so it matches the obsolete overloads too, and the
+call is reported as ambiguous. Cast it: `OnSuccess((Action)(() => throw new InvalidOperationException()))`.
 
 ### The method `OnFailed(action, result)` does not exist
 

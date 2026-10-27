@@ -41,13 +41,9 @@ public static class FromResultToHttpResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Ok(value))
-            .OnSuccessNull(() => objectResult = HttpResults.Ok())
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Ok() : HttpResults.Ok(value),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -67,13 +63,9 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Ok(mapper(value)))
-            .OnSuccessNull(() => objectResult = HttpResults.Ok())
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Ok() : HttpResults.Ok(mapper(value)),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -93,26 +85,10 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        IResult objectResult = HttpResults.BadRequest();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = HttpResults.Ok();
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = HttpResults.Ok(mapped);
-            }
-        }
-        else
-        {
-            objectResult = HttpResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, IResult>(
+            async value => value is null ? HttpResults.Ok() : HttpResults.Ok(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<IResult>(HttpResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -126,12 +102,9 @@ public static class FromResultToHttpResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccess(() => objectResult = HttpResults.NoContent())
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<IResult>(
+            () => HttpResults.NoContent(),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -152,13 +125,9 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = HttpResults.Created((Uri?)null, default(T)))
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Created((Uri?)null, default(T)) : HttpResults.Created(location, mapper(value)),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -179,26 +148,10 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        IResult objectResult = HttpResults.BadRequest();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = HttpResults.Created((Uri?)null, default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = HttpResults.Created(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = HttpResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, IResult>(
+            async value => value is null ? HttpResults.Created((Uri?)null, default(T)) : HttpResults.Created(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<IResult>(HttpResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -214,13 +167,9 @@ public static class FromResultToHttpResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = HttpResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Created((Uri?)null, default(TResult)) : HttpResults.Created(location, value),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     #endregion
@@ -239,13 +188,9 @@ public static class FromResultToHttpResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Ok(value))
-            .OnSuccessNull(() => objectResult = HttpResults.Ok())
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Ok() : HttpResults.Ok(value),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -265,13 +210,9 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Ok(mapper(value)))
-            .OnSuccessNull(() => objectResult = HttpResults.Ok())
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Ok() : HttpResults.Ok(mapper(value)),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -291,26 +232,10 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        IResult objectResult = HttpResults.BadRequest();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = HttpResults.Ok();
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = HttpResults.Ok(mapped);
-            }
-        }
-        else
-        {
-            objectResult = HttpResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, IResult>(
+            async value => value is null ? HttpResults.Ok() : HttpResults.Ok(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<IResult>(HttpResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -324,12 +249,9 @@ public static class FromResultToHttpResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccess(() => objectResult = HttpResults.NoContent())
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<IResult>(
+            () => HttpResults.NoContent(),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -341,13 +263,9 @@ public static class FromResultToHttpResultExtension
     public static Task<IResult>
     ToHttpOkResultAsync(this Result result)
     {
-        var objectResult = HttpResults.BadRequest();
-
-        result
-            .OnSuccess(() => objectResult = HttpResults.NoContent())
-            .OnFailed(_ => objectResult = HttpResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<IResult>(
+            () => HttpResults.NoContent(),
+            _ => HttpResults.Problem(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -365,26 +283,10 @@ public static class FromResultToHttpResultExtension
     {
         ArgumentNullException.ThrowIfNull(asyncMapper);
 
-        IResult objectResult = HttpResults.BadRequest();
-
-        if (result.IsSuccess)
-        {
-            if (result.Value is null)
-            {
-                objectResult = HttpResults.Ok();
-            }
-            else
-            {
-                var mapped = await asyncMapper(result.Value).ConfigureAwait(false);
-                objectResult = HttpResults.Ok(mapped);
-            }
-        }
-        else
-        {
-            objectResult = HttpResults.Problem(result.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await result.MatchAsync<TResult, IResult>(
+            async value => value is null ? HttpResults.Ok() : HttpResults.Ok(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<IResult>(HttpResults.Problem(result.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -405,13 +307,9 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = HttpResults.Created((Uri?)null, default(T)))
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Created((Uri?)null, default(T)) : HttpResults.Created(location, mapper(value)),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -432,26 +330,10 @@ public static class FromResultToHttpResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        IResult objectResult = HttpResults.BadRequest();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = HttpResults.Created((Uri?)null, default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = HttpResults.Created(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = HttpResults.Problem(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, IResult>(
+            async value => value is null ? HttpResults.Created((Uri?)null, default(T)) : HttpResults.Created(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<IResult>(HttpResults.Problem(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -467,13 +349,9 @@ public static class FromResultToHttpResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccessNotNull(value => objectResult = HttpResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = HttpResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(_ => objectResult = HttpResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Created((Uri?)null, default(TResult)) : HttpResults.Created(location, value),
+            _ => HttpResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -492,13 +370,9 @@ public static class FromResultToHttpResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(T)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<TResult, IResult>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, mapper(value)),
+            _ => TypedResults.Problem(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -517,26 +391,10 @@ public static class FromResultToHttpResultExtension
     {
         ArgumentNullException.ThrowIfNull(asyncMapper);
 
-        IResult objectResult = HttpResults.BadRequest();
-
-        if (result.IsSuccess)
-        {
-            if (result.Value is null)
-            {
-                objectResult = TypedResults.Created((Uri?)null, default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(result.Value).ConfigureAwait(false);
-                objectResult = TypedResults.Created(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = TypedResults.Problem(result.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await result.MatchAsync<TResult, IResult>(
+            async value => value is null ? TypedResults.Created((Uri?)null, default(T)) : TypedResults.Created(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<IResult>(TypedResults.Problem(result.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -550,13 +408,9 @@ public static class FromResultToHttpResultExtension
     public static Task<IResult>
     ToHttpCreatedResultAsync<TResult>(this Result<TResult> result, Uri? location)
     {
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccessNotNull(value => objectResult = TypedResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = TypedResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<TResult, IResult>(
+            value => value is null ? TypedResults.Created((Uri?)null, default(TResult)) : TypedResults.Created(location, value),
+            _ => TypedResults.Problem(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -571,12 +425,9 @@ public static class FromResultToHttpResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        var objectResult = HttpResults.BadRequest();
-        res
-            .OnSuccess(() => objectResult = TypedResults.Created(location))
-            .OnFailed(errors => objectResult = TypedResults.Problem(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<IResult>(
+            () => TypedResults.Created(location),
+            _ => TypedResults.Problem(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -589,12 +440,9 @@ public static class FromResultToHttpResultExtension
     public static Task<IResult>
     ToHttpCreatedResultAsync(this Result result, Uri? location)
     {
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccess(() => objectResult = TypedResults.Created(location))
-            .OnFailed(errors => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<IResult>(
+            () => TypedResults.Created(location),
+            _ => TypedResults.Problem(result.ToProblemDetails())));
     }
 
     #endregion
@@ -611,13 +459,9 @@ public static class FromResultToHttpResultExtension
     public static IResult
     ToHttpOkResult<TResult>(this Result<TResult> result)
     {
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccessNotNull(value => objectResult = HttpResults.Ok(value))
-            .OnSuccessNull(() => objectResult = HttpResults.Ok())
-            .OnFailed(_ => objectResult = HttpResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Ok() : HttpResults.Ok(value),
+            _ => HttpResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -635,13 +479,9 @@ public static class FromResultToHttpResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccessNotNull(value => objectResult = HttpResults.Ok(mapper(value)))
-            .OnSuccessNull(() => objectResult = HttpResults.Ok())
-            .OnFailed(_ => objectResult = HttpResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Ok() : HttpResults.Ok(mapper(value)),
+            _ => HttpResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -660,13 +500,9 @@ public static class FromResultToHttpResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccessNotNull(value => objectResult = HttpResults.Created(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = HttpResults.Created((Uri?)null, default(T)))
-            .OnFailed(_ => objectResult = HttpResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Created((Uri?)null, default(T)) : HttpResults.Created(location, mapper(value)),
+            _ => HttpResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -680,13 +516,9 @@ public static class FromResultToHttpResultExtension
     public static IResult
     ToHttpCreatedResult<TResult>(this Result<TResult> result, Uri? location)
     {
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccessNotNull(value => objectResult = HttpResults.Created(location, value))
-            .OnSuccessNull(() => objectResult = HttpResults.Created((Uri?)null, default(TResult)))
-            .OnFailed(_ => objectResult = HttpResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, IResult>(
+            value => value is null ? HttpResults.Created((Uri?)null, default(TResult)) : HttpResults.Created(location, value),
+            _ => HttpResults.Problem(result.ToProblemDetails()));
     }
 
     #endregion
@@ -702,13 +534,9 @@ public static class FromResultToHttpResultExtension
     public static IResult
     ToHttpOkResult(this Result result)
     {
-        var objectResult = HttpResults.BadRequest();
-
-        result
-            .OnSuccess(() => objectResult = HttpResults.NoContent())
-            .OnFailed(_ => objectResult = HttpResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<IResult>(
+            () => HttpResults.NoContent(),
+            _ => HttpResults.Problem(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -721,12 +549,9 @@ public static class FromResultToHttpResultExtension
     public static IResult
     ToHttpCreatedResult(this Result result, Uri? location)
     {
-        var objectResult = HttpResults.BadRequest();
-        result
-            .OnSuccess(() => objectResult = TypedResults.Created(location))
-            .OnFailed(_ => objectResult = TypedResults.Problem(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<IResult>(
+            () => TypedResults.Created(location),
+            _ => TypedResults.Problem(result.ToProblemDetails()));
     }
 
     #endregion

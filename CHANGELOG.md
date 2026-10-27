@@ -58,6 +58,10 @@ packages. It contains breaking changes: follow the
 - Results: `ValidationError.Create`, `WithCode`, `WithSeverity`; implicit conversions from
   `ValidationError` and `ProblemDetailError` to `Result`; mappers with an asynchronous function;
   `ProblemDetails.WithInstance`.
+- Results: `Then` / `ThenAsync` (FluentResults' `Bind` for every receiver), `EnsureNotNull`, `Check` /
+  `CheckAsync`, `Compensate` / `CompensateAsync` and `Recover` / `RecoverAsync`, steps that can fail and
+  keep the errors of every step; `Match` / `MatchAsync`, which end a chain by turning the result into
+  another type (an HTTP response, a DTO) from the callback matching its state.
 - `Issuer` in `AuthorityOptions`.
 - `EndSessionEndpoint` and `GetEndSessionEndpointAsync` in `AuthorityOptions`: the sign-out endpoint of the
   identity provider, read from its metadata, or `null` when the identity provider publishes none. The
@@ -156,6 +160,10 @@ packages. It contains breaking changes: follow the
   asynchronous lambda to a synchronous `OnSuccess`, `OnFailed`, `OnSuccessNull` or `OnSuccessNotNull`
   is a compile error; the `…Async` methods on a plain `Result` or `Result<T>` return a `Task` instead of
   blocking with `.Wait()`.
+- Passing a callback that returns a result (`v => v.Update()`, or `async v => await SaveAsync(v)` producing
+  a `Result`) to `OnSuccess`, `OnSuccessNull`, `OnSuccessNotNull`, `OnFailed` or their `…Async` twins is a
+  compile error: the result, and its errors, were silently discarded. Use `Then`, `Check`, `Compensate` or
+  `Recover`, or a statement lambda (`v => { v.Update(); }`) to discard it on purpose.
 - `ValidateWithResult` moved to `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), and
   `ToFluentResultErrors` is renamed `ToResultErrors`.
 - `UseForceOfOpenId(options)` is replaced by `AddForceOpenId(options)` and `UseForceOpenId()`.

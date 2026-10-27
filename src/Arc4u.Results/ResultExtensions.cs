@@ -15,6 +15,10 @@ namespace Arc4u.Results;
 ///      compile error pointing at the *Async twin, because an async lambda bound to an Action
 ///      would run as 'async void': fire-and-forget, with nothing awaiting it. Its exception
 ///      would then surface on a thread pool thread instead of at the caller's await.
+///   3. OnSuccess / OnSuccessNull / OnSuccessNotNull / OnFailed run an action and return the original
+///      result unchanged, so they never accept a callback returning a result, whose errors would be
+///      discarded. Passing one is a compile error pointing at the steps that can fail: Then,
+///      EnsureNotNull, Check, Compensate and Recover.
 ///
 /// The *Async twins take Task-returning callbacks. Adapt a ValueTask-returning call with an async
 /// lambda ('async () => await SaveAsync()') or with .AsTask(): a second overload taking Func&lt;ValueTask&gt;
@@ -36,7 +40,7 @@ namespace Arc4u.Results;
 ///     .LogIfFailed();
 /// </code>
 /// </example>
-public static class ResultExtension
+public static partial class ResultExtension
 {
     private const string AsyncCallbackOnSyncMethod =
         "This overload takes a synchronous callback. An asynchronous one would be invoked as 'async void': " +

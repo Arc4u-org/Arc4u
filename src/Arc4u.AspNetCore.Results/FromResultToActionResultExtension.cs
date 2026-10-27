@@ -45,13 +45,9 @@ public static class FromResultToActionResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new OkObjectResult(value))
-            .OnSuccessNull(() => objectResult = new OkObjectResult(default(TResult)))
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult>(
+            value => value is null ? new OkObjectResult(default(TResult)) : new OkObjectResult(value),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -71,13 +67,9 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new OkObjectResult(mapper(value)))
-            .OnSuccessNull(() => objectResult = new OkObjectResult(default(TResult)))
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult>(
+            value => value is null ? new OkObjectResult(default(TResult)) : new OkObjectResult(mapper(value)),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -97,26 +89,10 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = new OkObjectResult(default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = new OkObjectResult(mapped);
-            }
-        }
-        else
-        {
-            objectResult = new ObjectResult(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, ActionResult>(
+            async value => value is null ? new OkObjectResult(default(T)) : new OkObjectResult(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<ActionResult>(new ObjectResult(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -130,12 +106,9 @@ public static class FromResultToActionResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccess(() => objectResult = new NoContentResult())
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<ActionResult>(
+            () => new NoContentResult(),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -156,16 +129,9 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(T))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult>(
+            value => value is null ? new ObjectResult(default(T)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, mapper(value)),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -186,29 +152,10 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = new ObjectResult(default(T))
-                {
-                    StatusCode = StatusCodes.Status201Created
-                };
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = new CreatedResult(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = new ObjectResult(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, ActionResult>(
+            async value => value is null ? new ObjectResult(default(T)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<ActionResult>(new ObjectResult(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -224,16 +171,9 @@ public static class FromResultToActionResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, value))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(TResult))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult>(
+            value => value is null ? new ObjectResult(default(TResult)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, value),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     #endregion
@@ -253,13 +193,9 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new OkObjectResult(value))
-            .OnSuccessNull(() => objectResult = new OkObjectResult(default(TResult)))
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult>(
+            value => value is null ? new OkObjectResult(default(TResult)) : new OkObjectResult(value),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -279,13 +215,9 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult<T> objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new OkObjectResult(mapper(value)))
-            .OnSuccessNull(() => objectResult = new OkObjectResult(default(TResult)))
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult<T>>(
+            value => value is null ? new OkObjectResult(default(TResult)) : new OkObjectResult(mapper(value)),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -305,26 +237,10 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult<T> objectResult = new BadRequestResult();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = new OkObjectResult(default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = new OkObjectResult(mapped);
-            }
-        }
-        else
-        {
-            objectResult = new ObjectResult(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, ActionResult<T>>(
+            async value => value is null ? new OkObjectResult(default(T)) : new OkObjectResult(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<ActionResult<T>>(new ObjectResult(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -338,12 +254,9 @@ public static class FromResultToActionResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccess(() => objectResult = new NoContentResult())
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<ActionResult>(
+            () => new NoContentResult(),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -355,13 +268,9 @@ public static class FromResultToActionResultExtension
     public static Task<ActionResult>
     ToActionOkResultAsync(this Result result)
     {
-        ActionResult objectResult = new BadRequestResult();
-
-        result
-            .OnSuccess(() => objectResult = new NoContentResult())
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<ActionResult>(
+            () => new NoContentResult(),
+            _ => new ObjectResult(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -379,26 +288,10 @@ public static class FromResultToActionResultExtension
     {
         ArgumentNullException.ThrowIfNull(asyncMapper);
 
-        ActionResult<T> objectResult = new BadRequestResult();
-
-        if (result.IsSuccess)
-        {
-            if (result.Value is null)
-            {
-                objectResult = new OkObjectResult(default(T));
-            }
-            else
-            {
-                var mapped = await asyncMapper(result.Value).ConfigureAwait(false);
-                objectResult = new OkObjectResult(mapped);
-            }
-        }
-        else
-        {
-            objectResult = new ObjectResult(result.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await result.MatchAsync<TResult, ActionResult<T>>(
+            async value => value is null ? new OkObjectResult(default(T)) : new OkObjectResult(await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<ActionResult<T>>(new ObjectResult(result.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -419,16 +312,9 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult<T> objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(T))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult<T>>(
+            value => value is null ? new ObjectResult(default(T)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, mapper(value)),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -449,29 +335,10 @@ public static class FromResultToActionResultExtension
 
         var res = await result.ConfigureAwait(false);
 
-        ActionResult<T> objectResult = new BadRequestResult();
-
-        if (res.IsSuccess)
-        {
-            if (res.Value is null)
-            {
-                objectResult = new ObjectResult(default(T))
-                {
-                    StatusCode = StatusCodes.Status201Created
-                };
-            }
-            else
-            {
-                var mapped = await asyncMapper(res.Value).ConfigureAwait(false);
-                objectResult = new CreatedResult(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = new ObjectResult(res.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await res.MatchAsync<TResult, ActionResult<T>>(
+            async value => value is null ? new ObjectResult(default(T)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<ActionResult<T>>(new ObjectResult(res.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -487,16 +354,9 @@ public static class FromResultToActionResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        ActionResult<TResult> objectResult = new BadRequestResult();
-        res
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, value))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(TResult))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<TResult, ActionResult<TResult>>(
+            value => value is null ? new ObjectResult(default(TResult)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, value),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -515,16 +375,9 @@ public static class FromResultToActionResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        ActionResult objectResult = new BadRequestResult();
-        result
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(T))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<TResult, ActionResult>(
+            value => value is null ? new ObjectResult(default(T)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, mapper(value)),
+            _ => new ObjectResult(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -543,29 +396,10 @@ public static class FromResultToActionResultExtension
     {
         ArgumentNullException.ThrowIfNull(asyncMapper);
 
-        ActionResult objectResult = new BadRequestResult();
-
-        if (result.IsSuccess)
-        {
-            if (result.Value is null)
-            {
-                objectResult = new ObjectResult(default(T))
-                {
-                    StatusCode = StatusCodes.Status201Created
-                };
-            }
-            else
-            {
-                var mapped = await asyncMapper(result.Value).ConfigureAwait(false);
-                objectResult = new CreatedResult(location, mapped);
-            }
-        }
-        else
-        {
-            objectResult = new ObjectResult(result.ToProblemDetails());
-        }
-
-        return objectResult;
+        return await result.MatchAsync<TResult, ActionResult>(
+            async value => value is null ? new ObjectResult(default(T)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, await asyncMapper(value).ConfigureAwait(false)),
+            _ => Task.FromResult<ActionResult>(new ObjectResult(result.ToProblemDetails())))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -579,16 +413,9 @@ public static class FromResultToActionResultExtension
     public static Task<ActionResult>
     ToActionCreatedResultAsync<TResult>(this Result<TResult> result, Uri? location)
     {
-        ActionResult objectResult = new BadRequestResult();
-        result
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, value))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(TResult))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<TResult, ActionResult>(
+            value => value is null ? new ObjectResult(default(TResult)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, value),
+            _ => new ObjectResult(result.ToProblemDetails())));
     }
 
     /// <summary>
@@ -603,12 +430,9 @@ public static class FromResultToActionResultExtension
     {
         var res = await result.ConfigureAwait(false);
 
-        ActionResult objectResult = new BadRequestResult();
-        res
-            .OnSuccess(() => objectResult = new CreatedResult(location, null))
-            .OnFailed(_ => objectResult = new ObjectResult(res.ToProblemDetails()));
-
-        return objectResult;
+        return res.Match<ActionResult>(
+            () => new CreatedResult(location, null),
+            _ => new ObjectResult(res.ToProblemDetails()));
     }
 
     /// <summary>
@@ -621,12 +445,9 @@ public static class FromResultToActionResultExtension
     public static Task<ActionResult>
     ToActionCreatedResultAsync(this Result result, Uri? location)
     {
-        ActionResult objectResult = new BadRequestResult();
-        result
-            .OnSuccess(() => objectResult = new CreatedResult(location, null))
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return Task.FromResult(objectResult);
+        return Task.FromResult(result.Match<ActionResult>(
+            () => new CreatedResult(location, null),
+            _ => new ObjectResult(result.ToProblemDetails())));
     }
 
     #endregion
@@ -643,13 +464,9 @@ public static class FromResultToActionResultExtension
     public static ActionResult<TResult>
     ToActionOkResult<TResult>(this Result<TResult> result)
     {
-        ActionResult<TResult> objectResult = new BadRequestResult();
-        result
-            .OnSuccessNotNull(value => objectResult = new OkObjectResult(value))
-            .OnSuccessNull(() => objectResult = new OkObjectResult(default(TResult)))
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, ActionResult<TResult>>(
+            value => value is null ? new OkObjectResult(default(TResult)) : new OkObjectResult(value),
+            _ => new ObjectResult(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -667,13 +484,9 @@ public static class FromResultToActionResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        ActionResult<T> objectResult = new BadRequestResult();
-        result
-            .OnSuccessNotNull(value => objectResult = new OkObjectResult(mapper(value)))
-            .OnSuccessNull(() => objectResult = new OkObjectResult(default(TResult)))
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, ActionResult<T>>(
+            value => value is null ? new OkObjectResult(default(TResult)) : new OkObjectResult(mapper(value)),
+            _ => new ObjectResult(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -692,16 +505,9 @@ public static class FromResultToActionResultExtension
     {
         ArgumentNullException.ThrowIfNull(mapper);
 
-        ActionResult<T> objectResult = new BadRequestResult();
-        result
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, mapper(value)))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(T))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, ActionResult<T>>(
+            value => value is null ? new ObjectResult(default(T)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, mapper(value)),
+            _ => new ObjectResult(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -715,16 +521,9 @@ public static class FromResultToActionResultExtension
     public static ActionResult<TResult>
     ToActionCreatedResult<TResult>(this Result<TResult> result, Uri? location)
     {
-        ActionResult<TResult> objectResult = new BadRequestResult();
-        result
-            .OnSuccessNotNull(value => objectResult = new CreatedResult(location, value))
-            .OnSuccessNull(() => objectResult = new ObjectResult(default(TResult))
-            {
-                StatusCode = StatusCodes.Status201Created
-            })
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<TResult, ActionResult<TResult>>(
+            value => value is null ? new ObjectResult(default(TResult)) { StatusCode = StatusCodes.Status201Created } : new CreatedResult(location, value),
+            _ => new ObjectResult(result.ToProblemDetails()));
     }
 
     #endregion
@@ -740,13 +539,9 @@ public static class FromResultToActionResultExtension
     public static ActionResult
     ToActionOkResult(this Result result)
     {
-        ActionResult objectResult = new BadRequestResult();
-
-        result
-            .OnSuccess(() => objectResult = new NoContentResult())
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<ActionResult>(
+            () => new NoContentResult(),
+            _ => new ObjectResult(result.ToProblemDetails()));
     }
 
     /// <summary>
@@ -759,12 +554,9 @@ public static class FromResultToActionResultExtension
     public static ActionResult
     ToActionCreatedResult(this Result result, Uri? location)
     {
-        ActionResult objectResult = new BadRequestResult();
-        result
-            .OnSuccess(() => objectResult = new CreatedResult(location, null))
-            .OnFailed(_ => objectResult = new ObjectResult(result.ToProblemDetails()));
-
-        return objectResult;
+        return result.Match<ActionResult>(
+            () => new CreatedResult(location, null),
+            _ => new ObjectResult(result.ToProblemDetails()));
     }
 
     #endregion
