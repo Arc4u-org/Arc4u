@@ -18,6 +18,12 @@ packages. It contains breaking changes: follow the
 
 ### Added
 
+- `Arc4u`: `ZonedTimeProvider`, a `TimeProvider` whose `LocalTimeZone` is the time zone of the application, registered
+  by `AddZonedTimeProvider()` from `Application.Configuration:Environment:TimeZone` or by
+  `AddZonedTimeProvider(key, timeZoneId)` as a keyed service. Extension methods taking a `TimeProvider`:
+  `DateTime.AsLocalTime`, `AsUniversalTime`, `SubtractWithDaylightTime`, `DateTimeOffset.ToLocalTime`,
+  `TimeProvider.GetDaylightChanges` and `GetDueTimeOfDay`. `TimeZoneInfo.GetDaylightChanges(year)` and
+  `GetTransitions(from, to)` give the same result on every operating system.
 - `Arc4u.Diagnostics`: categories defined by the application. `MessageCategoryRegistry.Register("Security",
   (MessageCategory)8)` names a flag, and `logger.Category(category)` starts an entry in any category, so
   an application can write its own `logger.Security()` extension method. The name is written in the
@@ -274,6 +280,14 @@ packages. It contains breaking changes: follow the
   [Log CPU and memory usage](https://arc4u-org.github.io/Arc4u/guides/diagnostics/index.html#log-cpu-and-memory-usage).
 
 ### Removed
+
+- `Arc4u`: `TimeZoneContext`, `InitializeTimeZoneContext()`, the `DateTime` extension methods `AsLocalTime()`,
+  `AsUniversalTime()` and `SubtractWithDaylightTime(DateTime)`, and the `TimeSpan` extension methods
+  `GetDueTimeOfDay()` and `GetDueTimeOfDay(DateTime)`, which read the static `TimeZoneContext.Current`.
+  `TimeZoneContext.GetDaylightChanges` also returned wrong dates on Linux and macOS (2026-03-01 instead of 2026-03-29
+  for Brussels) and threw for southern hemisphere time zones. Register a `ZonedTimeProvider` with
+  `AddZonedTimeProvider()`, inject the `TimeProvider` and use the overloads that take it (see the
+  [migration guide](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#other-removed-apis)).
 
 - `AddMonitoringTimeElapsed()` and `LogMonitoringTimeElapsedMiddleware` (`Arc4u.OAuth2.AspNetCore`),
   `AddGrpcMonitoringTimeElapsed()` and `LogGrpcMonitoringTimeElapsedMiddleware` (`Arc4u.AspNetCore.gRpc`),

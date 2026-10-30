@@ -83,7 +83,7 @@ section into <xref:Arc4u.Configuration.ApplicationConfig> and registers it as op
 | `Application.Configuration:ApplicationName` | `string` | none (required) | Name that identifies the application outside the logs, for example to the cache and authorization features. |
 | `Application.Configuration:Environment:Name` | `string` | none (required) | Name of the environment, for example `Dev` or `Prod`. |
 | `Application.Configuration:Environment:LoggingName` | `string` | none (required) | The value written in the `Application` property of every log entry. |
-| `Application.Configuration:Environment:TimeZone` | `string` | none (required) | A system time zone ID accepted by `TimeZoneInfo.FindSystemTimeZoneById`, used by `TimeZoneContext`. Examples: `Romance Standard Time`, `Europe/Brussels`. |
+| `Application.Configuration:Environment:TimeZone` | `string` | none (required) | A system time zone ID accepted by `TimeZoneInfo.FindSystemTimeZoneById`, used by the `TimeProvider` that `AddZonedTimeProvider()` registers. Examples: `Romance Standard Time`, `Europe/Brussels`. |
 
 The four values are required: a missing or empty value throws a
 <xref:Arc4u.Configuration.ConfigurationException> that lists all of them.

@@ -727,6 +727,13 @@ public sealed class CheckoutService([FromKeyedServices("card")] IPaymentGateway 
 
 | 8.x | Arc4u 9 |
 |---|---|
+| `TimeZoneContext`, `TimeZoneContext.Current`, `InitializeTimeZoneContext()` | `services.AddZonedTimeProvider()` registers a `ZonedTimeProvider` as the `TimeProvider`, with the time zone of `Application.Configuration:Environment:TimeZone`. Inject `TimeProvider`: `LocalTimeZone` is that time zone and `GetLocalNow()` the current time in it. `AddZonedTimeProvider("NewYork", "America/New_York")` adds a keyed provider for another time zone |
+| `TimeZoneContext.ConvertFromUtc(value)`, `value.AsLocalTime()` | `value.AsLocalTime(timeProvider)`. The result has the `Unspecified` kind, not `Local`: `Local` is the time zone of the machine |
+| `TimeZoneContext.ConvertToUtc(value)`, `value.AsUniversalTime()` | `value.AsUniversalTime(timeProvider)`. An `Unspecified` value is read in the time zone of the provider (it was labelled UTC by `AsUniversalTime()`), a `Local` value is a time of the machine |
+| `SubtractWithDaylightTime(value)` | `SubtractWithDaylightTime(value, timeProvider)` |
+| `TimeZoneContext.GetDaylightChanges(year)` | `timeProvider.GetDaylightChanges(year)` or `timeZoneInfo.GetDaylightChanges(year)`, which give the same result on every operating system. `Start` and `End` have the `Unspecified` kind |
+| `TimeSpan.GetDueTimeOfDay()`, `GetDueTimeOfDay(now)` | `timeProvider.GetDueTimeOfDay(timeOfDay)`. In the tests, a `ZonedTimeProvider` over a fake `TimeProvider` sets the current time |
+| `TimeZoneContext.GetWeekNumber(date)` | `CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(date, culture.DateTimeFormat.CalendarWeekRule, culture.DateTimeFormat.FirstDayOfWeek)`, or `ISOWeek.GetWeekOfYear(date)` for ISO 8601 weeks |
 | `container.Register<IFoo, Foo>()`, `RegisterScoped`, `RegisterSingleton` | `services.AddTransient<IFoo, Foo>()`, `AddScoped`, `AddSingleton` |
 | `container.Register<IFoo, Foo>("name")` | `services.AddKeyedTransient<IFoo, Foo>("name")` (and `AddKeyedScoped`, `AddKeyedSingleton`) |
 | `container.RegisterInstance(instance, "name")` | `services.AddKeyedSingleton<IFoo>("name", instance)` |
@@ -736,7 +743,8 @@ public sealed class CheckoutService([FromKeyedServices("card")] IPaymentGateway 
 | `ResolveAll<T>()`, `ResolveAll<T>("name")` | `GetServices<T>()`, `GetKeyedServices<T>("name")` |
 | `CreateScope()` on the container | `IServiceProvider.CreateScope()` |
 | `InitializeFromConfig(configuration)` reading `Application.Dependency` at run time | Explicit registrations, or the `Arc4u.Dependency.Tool` source generator |
-| `GetCacheContext(this IContainerResolve)`, `InitializeTimeZoneContext(this IContainerResolve)` | Same methods on `IServiceProvider` |
+| `GetCacheContext(this IContainerResolve)` | Same method on `IServiceProvider` |
+| `InitializeTimeZoneContext(this IContainerResolve)` | `services.AddZonedTimeProvider()` (see [Other removed APIs](#other-removed-apis)) |
 
 Steps:
 

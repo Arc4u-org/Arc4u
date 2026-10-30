@@ -1,4 +1,3 @@
-
 using Arc4u;
 
 namespace System;
@@ -9,47 +8,82 @@ namespace System;
 public static class DateTimeExtensions
 {
     /// <summary>
-    /// Converts the specified <paramref name="value"/> to local time when its <see cref="DateTime.Kind"/> is Unspecified".
+    /// Converts a UTC <paramref name="value"/> to the <see cref="TimeProvider.LocalTimeZone"/> of <paramref name="timeProvider"/>.
     /// </summary>
-    /// <param name="value">The value.</param>
-    /// <returns>A <see cref="DateTime"/> object whose <see cref="DateTime.Kind"/> property is Local.</returns>
-    public static DateTime AsLocalTime(this DateTime value)
+    /// <param name="value">The value. A value whose <see cref="DateTime.Kind"/> is not <see cref="DateTimeKind.Utc"/> is considered to be already in the time zone of <paramref name="timeProvider"/> and is returned unchanged.</param>
+    /// <param name="timeProvider">The time provider, typically a <see cref="ZonedTimeProvider"/>.</param>
+    /// <returns>The wall-clock time in the time zone of <paramref name="timeProvider"/>. A converted value has a <see cref="DateTime.Kind"/> of <see cref="DateTimeKind.Unspecified"/>:
+    /// <see cref="DateTimeKind.Local"/> would mean the time zone of the machine.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="timeProvider"/> is <see langword="null"/>.</exception>
+    /// <example>
+    /// <code language="csharp">
+    /// @inject TimeProvider Clock
+    /// &lt;td&gt;@order.CreatedUtc.AsLocalTime(Clock).ToString("g")&lt;/td&gt;
+    /// </code>
+    /// </example>
+    public static DateTime AsLocalTime(this DateTime value, TimeProvider timeProvider)
     {
-        if (DateTimeKind.Unspecified == value.Kind)
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
+        if (value.Kind != DateTimeKind.Utc)
         {
-            return DateTime.SpecifyKind(value, DateTimeKind.Local);
+            return value;
         }
 
-        return (value.Kind == DateTimeKind.Utc) ? TimeZoneContext.Current.ConvertFromUtc(value) : value;
+        return DateTime.SpecifyKind(TimeZoneInfo.ConvertTimeFromUtc(value, timeProvider.LocalTimeZone), DateTimeKind.Unspecified);
     }
 
     /// <summary>
-    /// Converts the specified <paramref name="value"/> to Coordinated Universal Time (UTC) when its <see cref="DateTime.Kind"/> is Unspecified.
+    /// Converts a <paramref name="value"/> to Coordinated Universal Time (UTC).
     /// </summary>
-    /// <param name="value">The value.</param>
-    /// <returns>A <see cref="DateTime"/> object whose <see cref="DateTime.Kind"/> property is Utc.</returns>
-    public static DateTime AsUniversalTime(this DateTime value)
+    /// <param name="value">The value:
+    /// <list type="bullet">
+    /// <item><description><see cref="DateTimeKind.Utc"/>: returned unchanged.</description></item>
+    /// <item><description><see cref="DateTimeKind.Local"/>: a time of the machine (for example deserialized from a JSON offset), converted with <see cref="DateTime.ToUniversalTime"/>.</description></item>
+    /// <item><description><see cref="DateTimeKind.Unspecified"/>: a wall-clock time in the time zone of <paramref name="timeProvider"/> (for example typed in a form).
+    /// A time skipped when the clocks go forward is moved forward by the gap (02:30 becomes 03:30); a time that happens twice when the clocks go back is the first of the two.</description></item>
+    /// </list>
+    /// </param>
+    /// <param name="timeProvider">The time provider, typically a <see cref="ZonedTimeProvider"/>.</param>
+    /// <returns>A <see cref="DateTime"/> whose <see cref="DateTime.Kind"/> is <see cref="DateTimeKind.Utc"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="timeProvider"/> is <see langword="null"/>.</exception>
+    public static DateTime AsUniversalTime(this DateTime value, TimeProvider timeProvider)
     {
-        if (value.Kind == DateTimeKind.Local)
-        {
-            return TimeZoneContext.Current.ConvertToUtc(value);
-        }
+        ArgumentNullException.ThrowIfNull(timeProvider);
 
-        return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => timeProvider.LocalTimeZone.ConvertWallClockToUtc(value),
+        };
     }
 
     /// <summary>
-    /// Subtracts the specified date and time from this <paramref name="instance"/> taking into account the DaylightTime.
+    /// Gets the elapsed time between this <paramref name="instance"/> and <paramref name="value"/>, taking the changes of the daylight saving time into account.
+    /// Both values are converted to UTC as <see cref="AsUniversalTime(DateTime, TimeProvider)"/> does.
     /// </summary>
-    /// <param name="instance">The <see cref="DateTime"/> instance assumed to be a local time.</param>
-    /// <param name="value">The <see cref="DateTime"/> to substract assumed to be a local time.</param>
-    /// <returns>A <see cref="TimeSpan"/> interval equal to the date and time represented by this <paramref name="instance"/> minus the date and time represented by <paramref name="value"/>.</returns>
-    public static TimeSpan SubtractWithDaylightTime(this DateTime instance, DateTime value)
+    /// <param name="instance">The first date and time.</param>
+    /// <param name="value">The second date and time.</param>
+    /// <param name="timeProvider">The time provider, typically a <see cref="ZonedTimeProvider"/>.</param>
+    /// <returns>The absolute duration between the two values.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="timeProvider"/> is <see langword="null"/>.</exception>
+    public static TimeSpan SubtractWithDaylightTime(this DateTime instance, DateTime value, TimeProvider timeProvider)
     {
-        var utcDate1 = instance.AsUniversalTime();
-        var utcDate2 = value.AsUniversalTime();
-
-        return utcDate1 > utcDate2 ? utcDate1 - utcDate2 : utcDate2 - utcDate1;
+        return (instance.AsUniversalTime(timeProvider) - value.AsUniversalTime(timeProvider)).Duration();
     }
 
+    /// <summary>
+    /// Converts an instant to the <see cref="TimeProvider.LocalTimeZone"/> of <paramref name="timeProvider"/>, keeping its offset.
+    /// </summary>
+    /// <param name="value">The instant.</param>
+    /// <param name="timeProvider">The time provider, typically a <see cref="ZonedTimeProvider"/>.</param>
+    /// <returns>The same instant, with the offset of the time zone of <paramref name="timeProvider"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="timeProvider"/> is <see langword="null"/>.</exception>
+    public static DateTimeOffset ToLocalTime(this DateTimeOffset value, TimeProvider timeProvider)
+    {
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
+        return TimeZoneInfo.ConvertTime(value, timeProvider.LocalTimeZone);
+    }
 }

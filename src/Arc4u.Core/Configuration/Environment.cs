@@ -16,7 +16,7 @@ public class Environment
     public string LoggingName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the identifier of the time zone (as understood by <see cref="TimeZoneInfo.FindSystemTimeZoneById(string)"/>) used by the application. When empty, or not found, the time zone of the machine is used by the <c>TimeZoneContext</c>.
+    /// Gets or sets the identifier of the time zone (as understood by <see cref="TimeZoneInfo.FindSystemTimeZoneById(string)"/>) used by the application. It is the <c>LocalTimeZone</c> of the <c>TimeProvider</c> registered by <c>AddZonedTimeProvider</c>. When empty, or not found, the time zone of the machine is used.
     /// </summary>
     public string TimeZone { get; set; } = string.Empty;
 }
