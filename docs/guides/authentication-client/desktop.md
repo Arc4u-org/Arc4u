@@ -18,9 +18,6 @@ IdentityModel for WPF and MAUI apps instead: that is `Arc4u.OAuth2.Client.Authen
 See [MSAL status](../../migration/8x-to-9.md#msal-status) in the migration guide and the
 [package support](../package-support.md) page.
 
-`BlazorMsalTokenProvider` in `Arc4u.OAuth2.Blazor` is not affected: it relies on the Microsoft
-WebAssembly authentication, not on this package (see [Blazor](blazor.md)).
-
 ## Install
 
 ```bash

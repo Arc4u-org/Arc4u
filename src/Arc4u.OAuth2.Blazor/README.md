@@ -1,6 +1,8 @@
 # Arc4u.OAuth2.Blazor
 
-Authentication for Blazor WebAssembly apps: gets the user's access token from the Blazor server with the authentication cookie, sends it to APIs, and builds the Arc4u `AppPrincipal` from the authentication state.
+Authentication for the client (WebAssembly) project of a Blazor Web App, whose server signs the user in with a cookie: gets the user's access token from the server with that cookie, sends it to APIs, and builds the Arc4u `AppPrincipal` from the authentication state sent by the server.
+
+Standalone Blazor WebAssembly apps, which sign the user in themselves, are not supported.
 
 ## Install
 
@@ -23,15 +25,15 @@ builder.Services.AddHttpClient<InventoryClient>()
 
 `AddAuthenticationCookie` reads the `Authentication:OAuth2.Settings` section (`BaseUri` and `TokenRequestUrl` of the server endpoint that returns the token).
 
-## Expired tokens with MSAL
+`ConfigureAuthStateDeserializationOptions` and `AppPrincipalFromAuthenticationState` rebuild the `AppPrincipal` from the authentication state that the server serializes with `AddAuthenticationStateSerialization`:
 
-With `BlazorMsalTokenProvider` (key `blazor`), the token of the current principal is used while it is valid, otherwise a new one is requested from the MSAL `IAccessTokenProvider`. When MSAL cannot renew it silently (`AccessTokenResultStatus.RequiresRedirect`, for example once the refresh token has expired), the provider:
-
-1. clears the current principal, so it is rebuilt from the new token after the login;
-2. redirects the user to the login page with `NavigationManager.NavigateToLogin`, passing the interaction options returned by MSAL;
-3. returns a failed result: `JwtHttpHandler` logs it and sends the pending request without token.
-
-The user comes back to the application once logged in, instead of getting `401 Unauthorized` until the browser is restarted.
+```csharp
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAuthenticationStateDeserialization();
+builder.Services.AddSingleton<IAppPrincipalAuthenticationStateProvider, AppPrincipalFromAuthenticationState>();
+builder.Services.AddSingleton<IConfigureOptions<AuthenticationStateDeserializationOptions>, ConfigureAuthStateDeserializationOptions>();
+```
 
 ## Documentation
 

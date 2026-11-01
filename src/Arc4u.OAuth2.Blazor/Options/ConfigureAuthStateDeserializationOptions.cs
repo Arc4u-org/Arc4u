@@ -1,5 +1,4 @@
-﻿#if NET9_0_OR_GREATER
-using Arc4u.Dependency.Attribute;
+﻿using Arc4u.Dependency.Attribute;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.Options;
 
@@ -34,4 +33,3 @@ public sealed class ConfigureAuthStateDeserializationOptions
         };
     }
 }
-#endif

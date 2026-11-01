@@ -63,7 +63,6 @@ key, as shown in the scenarios below.
 | `Credential` | <xref:Arc4u.OAuth2.TokenProvider.CredentialTokenCacheTokenProvider> | `Arc4u.OAuth2.AspNetCore` | A token for a fixed user name and password (password grant), requested through the `CredentialDirect` <xref:Arc4u.OAuth2.TokenProvider.CredentialTokenProvider>. |
 | `RemoteSecret` | <xref:Arc4u.OAuth2.TokenProvider.RemoteClientSecretTokenProvider> | `Arc4u.OAuth2.AspNetCore` | No call to an identity provider: the configured secret, sent in the configured header. |
 | `Client` | <xref:Arc4u.OAuth2.TokenProvider.ClientTokenProvider> | `Arc4u.OAuth2.Blazor` | The user's token, fetched by a Blazor WebAssembly app from its server. See [Blazor](blazor.md). |
-| `blazor` | <xref:Arc4u.OAuth2.TokenProvider.BlazorTokenProvider>, <xref:Arc4u.OAuth2.TokenProvider.BlazorMsalTokenProvider> | `Arc4u.OAuth2.Blazor` | The user's token in a Blazor WebAssembly app. See [Blazor](blazor.md). |
 | `OidcClientIdentityModel` | <xref:Arc4u.OAuth2.Client.Authentication.TokenProvider.OidcClientIdentityModelTokenProvider> | `Arc4u.OAuth2.Client.Authentication` | The user's token in a desktop or mobile app. See [Desktop and mobile clients](desktop.md). |
 | `usernamePassword` | <xref:Arc4u.OAuth2.Token.UsernamePasswordTokenProvider> | `Arc4u.OAuth2.Client` | A token for credentials that the user of a client app enters. See [Desktop and mobile clients](desktop.md). |
 
@@ -400,10 +399,8 @@ instead of the ones the application uses.
 |---|---|
 | `AzureADOboTokenProvider` | Removes from the cache the on-behalf-of tokens of every API obtained for the current user, also with an access token that was refreshed since. Their keys are kept in an `OboTokenCacheIndex` per user (the registered `IUserObjectIdentifier`, as for the claims cache, otherwise the `oid` or `sub` claim) and application (`aud` claim, otherwise `azp` or `appid`), both read from the user token, so two applications sharing a cache do not remove each other's tokens: add this type to your `JsonSerializerContext` if the cache serializer uses one |
 | `ClientTokenProvider` (Blazor) | Forgets the token kept in memory, and does not keep a token requested before the sign-out. Sign out of the backend cookie in your application |
-| `BlazorMsalTokenProvider` | Clears the principal. Sign out with `NavigateToLogout` |
 | `OidcClientIdentityModelTokenProvider` | Cancels a login in progress, clears the tokens in memory and in the secure cache, then logs the user out of the authority (in the browser, bounded by `LoginTimeout`) when the user had a session. A refresh or a login in progress is not kept; concurrent calls refresh the token once |
 | `UsernamePasswordTokenProvider` | Removes the user name, the password and the token from the secure cache. Does nothing with settings without `Authority` and `ServiceApplicationId` |
-| `BlazorTokenProvider` | Removes the token from the local storage |
 | `OidcTokenProvider` | None: the tokens are in the authentication cookie. Sign out of the cookie and OpenID Connect schemes with `HttpContext.SignOutAsync` |
 | `CredentialTokenCacheTokenProvider` | None: the token is the one of a configured account, shared by all the users |
 | `RemoteClientSecretTokenProvider`, `ClientCredentialsTokenProvider`, `BootstrapContextTokenProvider`, `NullTokenProvider` | None: they hold no user session |

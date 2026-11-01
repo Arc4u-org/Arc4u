@@ -318,7 +318,7 @@ no 9 package: its last version is 8.3.2, and its source code is removed from the
 | 8.x client | Arc4u 9 |
 |---|---|
 | Desktop or mobile client with `MsalTokenProvider` | `Arc4u.OAuth2.Client.Authentication`: OpenID Connect with `Duende.IdentityModel.OidcClient` |
-| Blazor WebAssembly with `BlazorMsalTokenProvider` | `BlazorMsalTokenProvider` is still in `Arc4u.OAuth2.Blazor` |
+| Blazor WebAssembly with `BlazorMsalTokenProvider` | Removed: a standalone Blazor WebAssembly app is no longer supported. Move to a Blazor Web App whose server signs the user in, and use `ClientTokenProvider` in its WebAssembly project (see [Blazor](../guides/authentication-client/blazor.md)) |
 
 **Before (8.x)**
 
@@ -366,10 +366,6 @@ Steps:
 1. Replace `Arc4u.Standard.OAuth2.Msal` with `Arc4u.OAuth2.Client.Authentication`.
 2. Implement `IBrowser` for your UI technology and move the client settings to the `Authentication`
    section, as described in the [client authentication guide](../guides/authentication-client/index.md).
-
-> [!NOTE]
-> `BlazorTokenProvider` and `BlazorMsalTokenProvider` are both registered under the provider name
-> `blazor`: register only one of them in an application.
 
 ## NServiceBus replaced by Dapr pub/sub
 
@@ -1415,7 +1411,6 @@ public static class Security
 | `AddScopedOperationsPolicy(scopes, operations, authorizationOptions)` | `AddScopedOperationsPolicy(scopes, operations)` returns a <xref:Arc4u.Authorization.PoliciesBuilder>; call `ConfigureAuthorization(...)` on it |
 | `ScopedOperationsRequirement`, `ScopedOperationsHandler` | `AllScopedOperationsRequirement`, `AllScopedOperationsHandler` (and `AnyScopedOperation…` for "any of") |
 | `AuthorityOptions.SetData(url, tokenEndpoint, metadataAddress)` and the `AuthorityOptions(url, tokenEndpoint, metadataAddress)` constructor | `SetData(url, tokenEndpoint, issuer, metadataAddress)` and `AuthorityOptions(url, tokenEndpoint, issuer, metadataAddress)` |
-| `Arc4u.Caching.SecureCache` | `Arc4u.Blazor.Caching.SecureCache` |
 | `Arc4u.FluentValidation.DefaultValidatorExtensions` | `Arc4u.Validation.DefaultValidatorExtensions` |
 | `Arc4u.OAuth2.Configuration.ClaimsIdentifierOption` | `Arc4u.OAuth2.Options.ClaimsIdentifierOption` |
 | `Arc4u.OAuth2.Middleware.OpenIdBearerInjectorOptions`, `OpenIdBearerInjectorSettingsOptions` | Namespace `Arc4u.OAuth2.Options` |
@@ -1429,7 +1424,6 @@ public static class Security
 | `Identity` log property: `UserProfile.Name` (`Domain\SamAccountName`) or the identity name | The email of the user profile, or the identity name when there is no email. Update the log queries and dashboards that filter on it |
 | `AddApplicationContext()` registered `DefaultLoggingProperties`, so the entries had the `Identity` property | `AddApplicationContext()` registers no provider: add `services.AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped")`, or list `Arc4u.Diagnostics.DefaultLoggingProperties, Arc4u` in `Application.Dependency:RegisterTypes`. See [Diagnostics and logging](../guides/diagnostics/index.md) |
 | `MemoryLogDbSink.LogMessages` as a `List<LogMessage>` (indexer, `RemoveAt`, LINQ on the live list) | A thread-safe `MemoryLogMessages`: `Add`, `Clear`, `Count`, `GetPage(predicate, skip, take)`, or enumerate it to read a snapshot. Prefer `ILogStore` |
-| `Arc4u.OAuth2.Blazor`: the login popup of `BlazorTokenProvider` (`WindowInterop.OpenWindowAsync`) waited forever when the user closed it, and let a `JSException` through when `CreatePopupWindow.js` was not loaded | A `TimeoutException` when the login is not completed within 5 minutes, and an `InvalidOperationException` (the `JSException` as inner exception) when the popup cannot be opened. Both come from the token request, so from the HTTP calls that need a token: catch them there to show a message or let the user retry |
 
 ### Other removed APIs
 
@@ -1443,6 +1437,8 @@ public static class Security
 | `LoggerContext`, `CommonLoggerProperties`, `LoggerBase` | See [Fluent logging API](#fluent-logging-api) |
 | `RealmLoggingDbCtx.CreateMapping()` (AutoMapper) | Removed with the AutoMapper dependency |
 | `RealmLoggingDbCtx(RealmConfiguration, ILoggerFactory)` and `RealmLoggingDbCtx.Realm` | `RealmLoggingDbCtx(RealmConfiguration)`. The store opens a `Realm` for each call, so it no longer exposes one: open your own with `Realm.GetInstance(config)` on the thread that uses it |
+| `Arc4u.OAuth2.Blazor`: `BlazorTokenProvider`, `BlazorMsalTokenProvider`, `ITokenWindowInterop`, `WindowInterop` and the `Authenticate.html`, `CreatePopupWindow.js` and `GetToken.html` static assets; `Arc4u.OAuth2.AspNetCore.Blazor`: `BlazorController` (`/blazor/redirectto/...`) | A Blazor Web App: the server signs the user in with a cookie and exposes the user's token, and the WebAssembly project gets it with `ClientTokenProvider` (see [Blazor](../guides/authentication-client/blazor.md)). Standalone Blazor WebAssembly apps are not supported |
+| `Arc4u.Caching.SecureCache` (moved to `Arc4u.Blazor.Caching.SecureCache` in previews of 9.0) and `Arc4u.Blazor.SetCultureUIExtensions.SetDefaultCulture` | None. Keep your own in-memory `ISecureCache` if needed; set `CultureInfo.DefaultThreadCurrentCulture` and `DefaultThreadCurrentUICulture` before `RunAsync` |
 | `CustomRootCaExtensions.CertificateOptionKeys` (static, shared by every service collection of the process) | The names registered with `AddCustomRootCA` in a service collection: `serviceProvider.GetRequiredService<IOptions<CARootOptionKeys>>().Value.Keys` |
 | `Arc4u.gRPC`: `ClientErrorInterceptor` | Catch the `RpcException` and call `ToResult()` (see [ProblemDetails over gRPC](../guides/grpc-versioning/grpc-problem-details.md)). A 403 returned by the service arrives as `PermissionDenied` with status 403 in its ProblemDetails. The interceptor only converted exceptions raised while a call was started, which almost never happens with `Grpc.Net.Client`, so removing it barely changes what your code receives |
 | `Arc4u.OAuth2.Client.Authentication`: `OidcClientAuthenticationOptions` and `OidcClientAuthenticationSectionOptions` `NameClaimType`, `RoleClaimType` and `ValidateAuthority` (`Authentication:NameClaimType`, `Authentication:RoleClaimType`, `Authentication:ValidateAuthority` in a client application) | None: the client authentication never read them. Delete the assignments; the configuration keys are ignored. The client principal is built by the `AppPrincipalFactory` |

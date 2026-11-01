@@ -1,5 +1,4 @@
-﻿#if NET9_0_OR_GREATER
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Security.Principal;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -74,4 +73,3 @@ public sealed class AppPrincipalServerAuthenticationStateProvider : ServerAuthen
     private void OnAuthenticationStateChanged(Task<AuthenticationState> task)
         => _ = ApplicationContextInitializer.SetPrincipalAsync(task, _authorizationFiller, _claimsFiller, _applicationContext);
 }
-#endif

@@ -246,7 +246,7 @@ See [Desktop and mobile clients](desktop.md).
 | <xref:Arc4u.OAuth2.Token.ITokenProvider> (keyed) | The providers listed in [Token providers](token-providers.md#built-in-token-providers) | Get tokens another way. Register yours under a new key and put that key in `ProviderId`. |
 | <xref:Arc4u.OAuth2.TokenProvider.Scenarios.IClientTokenScenario> | `ClientCredentials`, `UserPassword`, `Basic` | Add a scenario to `Authentication:ClientTokens` with `ClientTokensExtension.SetScenarioResolver`. |
 | <xref:Arc4u.OAuth2.Token.ITokenCache> | <xref:Arc4u.OAuth2.Token.ApplicationCache> | Store the application tokens elsewhere. |
-| `ISecureCache` (client apps) | <xref:Arc4u.OAuth2.Client.Authentication.Cache.CacheTokens> (desktop), <xref:Arc4u.Blazor.Caching.SecureCache> (Blazor) | Encrypt the tokens kept by a desktop app. |
+| `ISecureCache` (client apps) | <xref:Arc4u.OAuth2.Client.Authentication.Cache.CacheTokens> | Encrypt the tokens kept by a desktop app. |
 
 See [Write your own token provider](token-providers.md#write-your-own-token-provider).
 

@@ -45,8 +45,6 @@ public class SignOutTokenProvidersTests
     [Theory]
     [InlineData(typeof(AzureADOboTokenProvider))]
     [InlineData(typeof(ClientTokenProvider))]
-    [InlineData(typeof(BlazorMsalTokenProvider))]
-    [InlineData(typeof(BlazorTokenProvider))]
     [InlineData(typeof(UsernamePasswordTokenProvider))]
     [InlineData(typeof(OidcClientIdentityModelTokenProvider))]
     public void Providers_With_User_Session_Should_Sign_Out(Type providerType)

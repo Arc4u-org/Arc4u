@@ -281,6 +281,13 @@ packages. It contains breaking changes: follow the
 
 ### Removed
 
+- Standalone Blazor WebAssembly authentication. Only the Blazor Web App is supported: the server signs the
+  user in with a cookie and the WebAssembly project gets the user's token with `ClientTokenProvider`.
+  Removed from `Arc4u.OAuth2.Blazor`: `BlazorTokenProvider`, `BlazorMsalTokenProvider`, `ITokenWindowInterop`,
+  `WindowInterop`, `SecureCache`, `SetCultureUIExtensions` and the `Authenticate.html`, `CreatePopupWindow.js`
+  and `GetToken.html` static assets, with the `Blazored.LocalStorage` dependency. Removed from
+  `Arc4u.OAuth2.AspNetCore.Blazor`: `BlazorController` and its log messages (event ids 9160 to 9162). See the
+  [migration guide](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#other-removed-apis).
 - `Arc4u`: `TimeZoneContext`, `InitializeTimeZoneContext()`, the `DateTime` extension methods `AsLocalTime()`,
   `AsUniversalTime()` and `SubtractWithDaylightTime(DateTime)`, and the `TimeSpan` extension methods
   `GetDueTimeOfDay()` and `GetDueTimeOfDay(DateTime)`, which read the static `TimeZoneContext.Current`.

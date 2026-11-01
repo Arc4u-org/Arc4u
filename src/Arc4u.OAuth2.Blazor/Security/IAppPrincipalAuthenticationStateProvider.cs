@@ -1,5 +1,4 @@
-﻿#if NET9_0_OR_GREATER
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Arc4u.Blazor;
 
@@ -11,4 +10,3 @@ public interface IAppPrincipalAuthenticationStateProvider
     /// <returns>The authentication state.</returns>
     Task<AuthenticationState> DeserializeAuthenticationStateAsync(AuthenticationStateData? authenticationStateData);
 }
-#endif

@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Arc4u.Blazor.Caching;
 using Arc4u.Caching;
 using Arc4u.Caching.Memory;
 using Arc4u.Configuration.Memory;
@@ -49,28 +48,6 @@ public class TokenTests
 
         // assert
         (sut.ValidTo > DateTime.UtcNow.AddMinutes(-5)).Should().BeFalse();
-    }
-
-    [Fact]
-    public void AccessTokenBlazorSerializationShouldNot()
-    {
-        // Arrange
-        var jwt = new JwtSecurityToken("issuer", "audience", [new Claim("key", "value")], DateTime.UtcNow.AddHours(-1),
-            DateTime.UtcNow.AddMinutes(-10));
-
-        var tokenInfo = new TokenInfo("Bearer", jwt.EncodedPayload, DateTime.UtcNow);
-
-        var sut = new SecureCache();
-        sut.Initialize("store name");
-
-        sut.Put("key", tokenInfo);
-
-        // act
-        var cachedToken = sut.Get<TokenInfo>("key");
-
-        // assert
-        cachedToken.Should().NotBeNull();
-        cachedToken.Token.Should().Be(jwt.EncodedPayload);
     }
 
     [Fact]

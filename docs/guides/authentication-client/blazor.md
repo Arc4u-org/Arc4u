@@ -9,6 +9,10 @@ and a token to call APIs. How they are obtained depends on where the component r
 signs in on the server with OpenID Connect and a cookie, as described in
 [Server authentication](../authentication-server/index.md).
 
+Only Blazor Web Apps, whose server signs the user in, are supported. A standalone Blazor
+WebAssembly app, which signs the user in from the browser (`AddMsalAuthentication` or
+`AddOidcAuthentication`), is not.
+
 | Render mode | Where the code runs | Arc4u provides |
 |---|---|---|
 | Interactive WebAssembly | In the browser | The principal rebuilt from the authentication state sent by the server; a token fetched from the server with the cookie (`ClientTokenProvider`). |
@@ -20,7 +24,7 @@ signs in on the server with OpenID Connect and a cookie, as described in
 | Package | Use it for |
 |---|---|
 | `Arc4u.OAuth2.Blazor` | The WebAssembly project: token providers, the `JwtHttpHandler` for `HttpClient`, `AddAuthenticationCookie`, and the principal built from the authentication state. |
-| `Arc4u.OAuth2.AspNetCore.Blazor` | The server project: the principal of Interactive Server components (`AppPrincipalServerAuthenticationStateProvider`, `ApplicationContextCircuitHandler`) and the `BlazorController`. |
+| `Arc4u.OAuth2.AspNetCore.Blazor` | The server project: the principal of Interactive Server components (`AppPrincipalServerAuthenticationStateProvider`, `ApplicationContextCircuitHandler`). |
 
 ```bash
 dotnet add package Arc4u.OAuth2.Blazor --prerelease
@@ -236,25 +240,6 @@ browser, so the application needs both setups above: on the server, the circuit'
 [Interactive Server](#interactive-server-get-the-principal-in-the-circuit); in the browser, the
 principal is rebuilt from the serialized authentication state. Only the claims that the server
 serializes reach the browser, so the authorization built there is only as complete as those claims.
-
-## Other WebAssembly token providers
-
-`Arc4u.OAuth2.Blazor` contains two other providers. Both are registered under the key `blazor`:
-register only one of them, because a keyed registration replaces the previous one with the same
-key.
-
-- <xref:Arc4u.OAuth2.TokenProvider.BlazorMsalTokenProvider> works with the Microsoft WebAssembly
-  authentication (`AddMsalAuthentication` or `AddOidcAuthentication`), where the browser signs the
-  user in and holds the tokens. It returns the token of the current principal when it is still
-  valid, otherwise the token requested from `IAccessTokenProvider`. When that token cannot
-  be renewed silently (`AccessTokenResultStatus.RequiresRedirect`), it clears the current principal,
-  redirects the user to the login page with `NavigationManager.NavigateToLogin` and returns a failed
-  result, so the pending request is sent without a token. It does not use the
-  Microsoft Authentication Library for .NET (see [MSAL status](desktop.md#msal-status)).
-- <xref:Arc4u.OAuth2.TokenProvider.BlazorTokenProvider> opens a pop-up window on the
-  `BlazorController` of the server, which sends the token back to a page of the package and the
-  token is kept in the browser local storage. A stored token is reused only while it is valid for
-  at least five more minutes.
 
 ## Troubleshooting
 
