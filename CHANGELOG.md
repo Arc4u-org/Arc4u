@@ -64,8 +64,8 @@ packages. It contains breaking changes: follow the
 - Results: `ValidationError.Create`, `WithCode`, `WithSeverity`; implicit conversions from
   `ValidationError` and `ProblemDetailError` to `Result`; mappers with an asynchronous function;
   `ProblemDetails.WithInstance`.
-- Results: `Then` / `ThenAsync` (FluentResults' `Bind` for every receiver), `EnsureNotNull`, `Check` /
-  `CheckAsync`, `Compensate` / `CompensateAsync` and `Recover` / `RecoverAsync`, steps that can fail and
+- Results: `Then` / `ThenAsync` (FluentResults' `Bind` for every receiver), `EnsureNotNull`, `Ensure` /
+  `EnsureAsync`, `Compensate` / `CompensateAsync` and `Recover` / `RecoverAsync`, steps that can fail and
   keep the errors of every step; `Match` / `MatchAsync`, which end a chain by turning the result into
   another type (an HTTP response, a DTO) from the callback matching its state.
 - `Issuer` in `AuthorityOptions`.
@@ -168,7 +168,7 @@ packages. It contains breaking changes: follow the
   blocking with `.Wait()`.
 - Passing a callback that returns a result (`v => v.Update()`, or `async v => await SaveAsync(v)` producing
   a `Result`) to `OnSuccess`, `OnSuccessNull`, `OnSuccessNotNull`, `OnFailed` or their `…Async` twins is a
-  compile error: the result, and its errors, were silently discarded. Use `Then`, `Check`, `Compensate` or
+  compile error: the result, and its errors, were silently discarded. Use `Then`, `Ensure`, `Compensate` or
   `Recover`, or a statement lambda (`v => { v.Update(); }`) to discard it on purpose.
 - `ValidateWithResult` moved to `Arc4u.FluentValidation` (namespace `Arc4u.Validation`), and
   `ToFluentResultErrors` is renamed `ToResultErrors`.

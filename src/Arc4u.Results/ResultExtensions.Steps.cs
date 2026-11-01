@@ -6,7 +6,7 @@ namespace Arc4u.Results;
 // return a new result carrying the reasons of the original one and those of the callback, so nothing it reports is lost:
 //   Then           the next step runs on success and the chain continues with its result (FluentResults' Bind).
 //   EnsureNotNull  a successful result with a null value becomes a failure.
-//   Check          a step that can fail runs on the value, which is kept when the step succeeds.
+//   Ensure         a step that can fail runs on the value, which is kept when the step succeeds.
 //   Compensate     a clean-up runs after a failure; its own errors are added to the failure.
 //   Recover        a fallback replaces a failure; when the fallback fails too, both errors are kept.
 public static partial class ResultExtension
@@ -472,109 +472,109 @@ public static partial class ResultExtension
 
     #endregion
 
-    #region Check
+    #region Ensure
 
     /// <summary>
     /// Runs a step that can fail on the value of a successful result, and keeps the value when the step succeeds.
     /// </summary>
-    /// <remarks>A failed result is returned unchanged and <paramref name="check"/> is not called. Otherwise the new result carries the reasons of
+    /// <remarks>A failed result is returned unchanged and <paramref name="step"/> is not called. Otherwise the new result carries the reasons of
     /// <paramref name="result"/> followed by those of the step: it fails with the errors of the step, or succeeds with the original value. The value
     /// of a result returned by the step is ignored; use <c>Then</c> to continue with it. An exception thrown by the step propagates to the caller.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The result to inspect.</param>
-    /// <param name="check">The step receiving the value.</param>
+    /// <param name="step">The step receiving the value.</param>
     /// <returns>A new result with the value of <paramref name="result"/> and the reasons of both, or <paramref name="result"/> when it failed.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="check"/> is <see langword="null"/>.</exception>
-    public static Result<TValue> Check<TValue>(this Result<TValue> result, Func<TValue, IResultBase> check)
+    /// <exception cref="ArgumentNullException"><paramref name="step"/> is <see langword="null"/>.</exception>
+    public static Result<TValue> Ensure<TValue>(this Result<TValue> result, Func<TValue, IResultBase> step)
     {
         ArgumentNullException.ThrowIfNull(result);
-        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(step);
 
-        return result.IsFailed ? result : KeepValue(result, check(result.Value));
+        return result.IsFailed ? result : KeepValue(result, step(result.Value));
     }
 
     /// <summary>
     /// Awaits the task, then runs a step that can fail on the value of a successful result, and keeps the value when the step succeeds.
     /// </summary>
-    /// <remarks>See <see cref="Check{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
+    /// <remarks>See <see cref="Ensure{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="check">The step receiving the value.</param>
+    /// <param name="step">The step receiving the value.</param>
     /// <returns>A task completing with a new result with the value and the reasons of both, or with the awaited result when it failed.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="check"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> Check<TValue>(this Task<Result<TValue>> result, Func<TValue, IResultBase> check)
+    /// <exception cref="ArgumentNullException"><paramref name="step"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> Ensure<TValue>(this Task<Result<TValue>> result, Func<TValue, IResultBase> step)
     {
-        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(step);
 
-        return (await result.ConfigureAwait(false)).Check(check);
+        return (await result.ConfigureAwait(false)).Ensure(step);
     }
 
     /// <summary>
     /// Awaits the value task, then runs a step that can fail on the value of a successful result, and keeps the value when the step succeeds.
     /// </summary>
-    /// <remarks>See <see cref="Check{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
+    /// <remarks>See <see cref="Ensure{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="check">The step receiving the value.</param>
+    /// <param name="step">The step receiving the value.</param>
     /// <returns>A value task completing with a new result with the value and the reasons of both, or with the awaited result when it failed.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="check"/> is <see langword="null"/>.</exception>
-    public static async ValueTask<Result<TValue>> Check<TValue>(this ValueTask<Result<TValue>> result, Func<TValue, IResultBase> check)
+    /// <exception cref="ArgumentNullException"><paramref name="step"/> is <see langword="null"/>.</exception>
+    public static async ValueTask<Result<TValue>> Ensure<TValue>(this ValueTask<Result<TValue>> result, Func<TValue, IResultBase> step)
     {
-        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(step);
 
-        return (await result.ConfigureAwait(false)).Check(check);
+        return (await result.ConfigureAwait(false)).Ensure(step);
     }
 
     /// <summary>
     /// Awaits an asynchronous step that can fail on the value of a successful result, and keeps the value when the step succeeds.
     /// </summary>
-    /// <remarks>See <see cref="Check{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
+    /// <remarks>See <see cref="Ensure{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <typeparam name="TResult">The type of the result produced by the step.</typeparam>
     /// <param name="result">The result to inspect.</param>
-    /// <param name="check">The step receiving the value.</param>
+    /// <param name="step">The step receiving the value.</param>
     /// <returns>A task completing with a new result with the value and the reasons of both, or with <paramref name="result"/> when it failed.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="check"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> CheckAsync<TValue, TResult>(this Result<TValue> result, Func<TValue, Task<TResult>> check) where TResult : IResultBase
+    /// <exception cref="ArgumentNullException"><paramref name="step"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> EnsureAsync<TValue, TResult>(this Result<TValue> result, Func<TValue, Task<TResult>> step) where TResult : IResultBase
     {
         ArgumentNullException.ThrowIfNull(result);
-        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(step);
 
-        return result.IsFailed ? result : KeepValue(result, await check(result.Value).ConfigureAwait(false));
+        return result.IsFailed ? result : KeepValue(result, await step(result.Value).ConfigureAwait(false));
     }
 
     /// <summary>
     /// Awaits the task, then awaits an asynchronous step that can fail on the value of a successful result, and keeps the value when the step succeeds.
     /// </summary>
-    /// <remarks>See <see cref="Check{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
+    /// <remarks>See <see cref="Ensure{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <typeparam name="TResult">The type of the result produced by the step.</typeparam>
     /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="check">The step receiving the value.</param>
+    /// <param name="step">The step receiving the value.</param>
     /// <returns>A task completing with a new result with the value and the reasons of both, or with the awaited result when it failed.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="check"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> CheckAsync<TValue, TResult>(this Task<Result<TValue>> result, Func<TValue, Task<TResult>> check) where TResult : IResultBase
+    /// <exception cref="ArgumentNullException"><paramref name="step"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> EnsureAsync<TValue, TResult>(this Task<Result<TValue>> result, Func<TValue, Task<TResult>> step) where TResult : IResultBase
     {
-        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(step);
 
-        return await (await result.ConfigureAwait(false)).CheckAsync(check).ConfigureAwait(false);
+        return await (await result.ConfigureAwait(false)).EnsureAsync(step).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Awaits the value task, then awaits an asynchronous step that can fail on the value of a successful result, and keeps the value when the step succeeds.
     /// </summary>
-    /// <remarks>See <see cref="Check{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
+    /// <remarks>See <see cref="Ensure{TValue}(Result{TValue}, Func{TValue, IResultBase})"/>.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <typeparam name="TResult">The type of the result produced by the step.</typeparam>
     /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="check">The step receiving the value.</param>
+    /// <param name="step">The step receiving the value.</param>
     /// <returns>A value task completing with a new result with the value and the reasons of both, or with the awaited result when it failed.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="check"/> is <see langword="null"/>.</exception>
-    public static async ValueTask<Result<TValue>> CheckAsync<TValue, TResult>(this ValueTask<Result<TValue>> result, Func<TValue, Task<TResult>> check) where TResult : IResultBase
+    /// <exception cref="ArgumentNullException"><paramref name="step"/> is <see langword="null"/>.</exception>
+    public static async ValueTask<Result<TValue>> EnsureAsync<TValue, TResult>(this ValueTask<Result<TValue>> result, Func<TValue, Task<TResult>> step) where TResult : IResultBase
     {
-        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(step);
 
-        return await (await result.ConfigureAwait(false)).CheckAsync(check).ConfigureAwait(false);
+        return await (await result.ConfigureAwait(false)).EnsureAsync(step).ConfigureAwait(false);
     }
 
     #endregion
@@ -991,9 +991,9 @@ public static partial class ResultExtension
     // A successful step keeps the value; a failed one leaves a result without value. The reasons of both are kept in order.
     private static Result<TValue> KeepValue<TValue>(Result<TValue> result, IResultBase step)
     {
-        var checkedResult = new Result<TValue>().WithReasons(result.Reasons).WithReasons(step.Reasons);
+        var ensured = new Result<TValue>().WithReasons(result.Reasons).WithReasons(step.Reasons);
 
-        return checkedResult.IsSuccess ? checkedResult.WithValue(result.Value) : checkedResult;
+        return ensured.IsSuccess ? ensured.WithValue(result.Value) : ensured;
     }
 
     private static Result Recovered(Result result, Result recovered)

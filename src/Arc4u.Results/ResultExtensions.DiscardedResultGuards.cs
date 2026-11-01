@@ -8,7 +8,7 @@ public static partial class ResultExtension
     private const string DiscardedResultCallback =
         "This callback returns a result, but OnSuccess, OnSuccessNull, OnSuccessNotNull and OnFailed only run an action " +
         "and return the original result unchanged: the result of the callback, and its errors, would be discarded. Use Then " +
-        "for a step producing the next result, Check for a step that can fail but keeps the value, Compensate for a clean-up " +
+        "for a step producing the next result, Ensure for a step that can fail but keeps the value, Compensate for a clean-up " +
         "after a failure that can itself fail, or Recover to replace a failure. To discard the result on purpose, use a " +
         "statement lambda: '() => { Step(); }'.";
 

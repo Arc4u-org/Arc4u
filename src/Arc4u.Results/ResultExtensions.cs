@@ -18,7 +18,7 @@ namespace Arc4u.Results;
 ///   3. OnSuccess / OnSuccessNull / OnSuccessNotNull / OnFailed run an action and return the original
 ///      result unchanged, so they never accept a callback returning a result, whose errors would be
 ///      discarded. Passing one is a compile error pointing at the steps that can fail: Then,
-///      EnsureNotNull, Check, Compensate and Recover.
+///      EnsureNotNull, Ensure, Compensate and Recover.
 ///
 /// The *Async twins take Task-returning callbacks. Adapt a ValueTask-returning call with an async
 /// lambda ('async () => await SaveAsync()') or with .AsTask(): a second overload taking Func&lt;ValueTask&gt;

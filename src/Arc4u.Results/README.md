@@ -1,6 +1,6 @@
 # Arc4u.Results
 
-Fluent `OnSuccess` / `OnFailed` / `LogIfFailed` chains for FluentResults, steps that can fail (`Then`, `EnsureNotNull`, `Check`, `Compensate`, `Recover`), `Match` to end a chain, plus `ProblemDetailError`, `ValidationError` and a result logger, for the business layer of an Arc4u application.
+Fluent `OnSuccess` / `OnFailed` / `LogIfFailed` chains for FluentResults, steps that can fail (`Then`, `EnsureNotNull`, `Ensure`, `Compensate`, `Recover`), `Match` to end a chain, plus `ProblemDetailError`, `ValidationError` and a result logger, for the business layer of an Arc4u application.
 
 ## Install
 
@@ -33,7 +33,7 @@ using FluentResults;
 Task<Result> UpdateAsync(Guid id, string name)
     => repository.GetByIdAsync(id)                                                         // Task<Result<Template?>>
                  .EnsureNotNull(() => ProblemDetailError.Create($"No template {id}.").WithStatusCode(404))
-                 .Check(template => template.Rename(name))                                 // Result: the template is kept
+                 .Ensure(template => template.Rename(name))                                // Result: the template is kept
                  .ThenAsync(template => repository.UpdateAsync(template))                  // Task<Result>
                  .LogIfFailed();
 ```

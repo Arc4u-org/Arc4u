@@ -198,17 +198,17 @@ public class ResultExtensionStepTests
 
     #endregion
 
-    #region Check
+    #region Ensure
 
     [Fact]
     [Trait("Category", "CI")]
-    public void Check_With_A_Successful_Step_Should_Keep_The_Value_And_The_Reasons_Of_Both()
+    public void Ensure_With_A_Successful_Step_Should_Keep_The_Value_And_The_Reasons_Of_Both()
     {
         var template = new Template("welcome");
         var result = Result.Ok(template).WithSuccess("loaded");
         Template? received = null;
 
-        var sut = result.Check(t => { received = t; return Result.Ok().WithSuccess("updated"); });
+        var sut = result.Ensure(t => { received = t; return Result.Ok().WithSuccess("updated"); });
 
         received.Should().BeSameAs(template);
         sut.IsSuccess.Should().BeTrue();
@@ -218,11 +218,11 @@ public class ResultExtensionStepTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public void Check_With_A_Failed_Step_Should_Fail_With_Its_Errors()
+    public void Ensure_With_A_Failed_Step_Should_Fail_With_Its_Errors()
     {
         var result = Result.Ok(new Template("welcome")).WithSuccess("loaded");
 
-        var sut = result.Check(_ => Result.Fail("name too long"));
+        var sut = result.Ensure(_ => Result.Fail("name too long"));
 
         sut.IsFailed.Should().BeTrue();
         sut.Errors.Should().ContainSingle(e => e.Message == "name too long");
@@ -231,23 +231,23 @@ public class ResultExtensionStepTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public void Check_Should_Ignore_The_Value_Of_A_Typed_Step()
+    public void Ensure_Should_Ignore_The_Value_Of_A_Typed_Step()
     {
         var template = new Template("welcome");
 
-        var sut = Result.Ok(template).Check(_ => Result.Ok(42));
+        var sut = Result.Ok(template).Ensure(_ => Result.Ok(42));
 
         sut.Value.Should().BeSameAs(template);
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public void Check_On_A_Failed_Result_Should_Return_It_Without_Running_The_Step()
+    public void Ensure_On_A_Failed_Result_Should_Return_It_Without_Running_The_Step()
     {
         var result = Result.Fail<Template>("db down");
         var called = false;
 
-        var sut = result.Check(_ => { called = true; return Result.Ok(); });
+        var sut = result.Ensure(_ => { called = true; return Result.Ok(); });
 
         sut.Should().BeSameAs(result);
         called.Should().BeFalse();
@@ -255,13 +255,13 @@ public class ResultExtensionStepTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public async Task Check_On_A_Task_Should_Stop_The_Chain_On_The_First_Failure()
+    public async Task Ensure_On_A_Task_Should_Stop_The_Chain_On_The_First_Failure()
     {
         var steps = new List<string>();
 
         var sut = await Task.FromResult(Result.Ok(new Template("welcome")))
-                            .Check(_ => { steps.Add("first"); return Result.Fail("invalid"); })
-                            .Check(_ => { steps.Add("second"); return Result.Ok(); });
+                            .Ensure(_ => { steps.Add("first"); return Result.Fail("invalid"); })
+                            .Ensure(_ => { steps.Add("second"); return Result.Ok(); });
 
         steps.Should().Equal("first");
         sut.Errors.Should().ContainSingle(e => e.Message == "invalid");
@@ -269,11 +269,11 @@ public class ResultExtensionStepTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public async Task CheckAsync_Should_Await_The_Step_And_Keep_The_Value()
+    public async Task EnsureAsync_Should_Await_The_Step_And_Keep_The_Value()
     {
         var template = new Template("welcome");
 
-        var sut = await Result.Ok(template).CheckAsync(async _ =>
+        var sut = await Result.Ok(template).EnsureAsync(async _ =>
         {
             await Task.Yield();
             return Result.Ok().WithSuccess("saved");
@@ -285,22 +285,22 @@ public class ResultExtensionStepTests
 
     [Fact]
     [Trait("Category", "CI")]
-    public async Task CheckAsync_On_A_ValueTask_Should_Fail_With_The_Errors_Of_The_Step()
+    public async Task EnsureAsync_On_A_ValueTask_Should_Fail_With_The_Errors_Of_The_Step()
     {
         var sut = await ValueTask.FromResult(Result.Ok(new Template("welcome")))
-                                 .CheckAsync(_ => Task.FromResult(Result.Fail<int>("not saved")));
+                                 .EnsureAsync(_ => Task.FromResult(Result.Fail<int>("not saved")));
 
         sut.Errors.Should().ContainSingle(e => e.Message == "not saved");
     }
 
     [Fact]
     [Trait("Category", "CI")]
-    public async Task CheckAsync_On_A_Failed_Task_Should_Not_Run_The_Step()
+    public async Task EnsureAsync_On_A_Failed_Task_Should_Not_Run_The_Step()
     {
         var called = false;
 
         var sut = await Task.FromResult(Result.Fail<Template>("db down"))
-                            .CheckAsync(_ => { called = true; return Task.FromResult(Result.Ok()); });
+                            .EnsureAsync(_ => { called = true; return Task.FromResult(Result.Ok()); });
 
         sut.Errors.Should().ContainSingle(e => e.Message == "db down");
         called.Should().BeFalse();
@@ -587,7 +587,7 @@ public class ResultExtensionStepTests
         Task<Result> UpdateAsync(Template _) { saved = true; return Task.FromResult(Result.Ok()); }
 
         var sut = await GetByIdAsync().EnsureNotNull(() => ProblemDetailError.Create("No template.").WithStatusCode(404))
-                                      .Check(t => t.Name.Length > 3 ? Result.Fail("name too long") : Result.Ok())
+                                      .Ensure(t => t.Name.Length > 3 ? Result.Fail("name too long") : Result.Ok())
                                       .ThenAsync(UpdateAsync);
 
         sut.Errors.Should().ContainSingle(e => e.Message == "name too long");

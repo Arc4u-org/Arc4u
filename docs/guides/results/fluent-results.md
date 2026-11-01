@@ -1,5 +1,5 @@
 ---
-description: "Chain OnSuccess, OnFailed, LogIfFailed and the steps that can fail (Then, EnsureNotNull, Check, Compensate, Recover) on a Result, end a chain with Match, create ProblemDetailError and log failed results with Arc4u.Results."
+description: "Chain OnSuccess, OnFailed, LogIfFailed and the steps that can fail (Then, EnsureNotNull, Ensure, Compensate, Recover) on a Result, end a chain with Match, create ProblemDetailError and log failed results with Arc4u.Results."
 ---
 # Fluent result chains
 
@@ -84,7 +84,7 @@ Rules that apply to all of them:
   `globalResult`, which then fails.
 - **A callback returning a result is refused.** `OnSuccess(t => t.Update())` would discard the result
   of `Update`, errors included, and the chain would carry on as if it had succeeded. The overload is
-  marked as an error that points to `Then`, `Check`, `Compensate` and `Recover`. The same applies to
+  marked as an error that points to `Then`, `Ensure`, `Compensate` and `Recover`. The same applies to
   the `*Async` methods when the task of the callback produces a result. To discard a result on purpose,
   write a statement lambda: `OnSuccess(t => { t.Update(); })`.
 - **Methods named `*Async` return a task.** Await the chain. Nothing in the library blocks on a task.
@@ -130,7 +130,7 @@ handles, stops the chain at the first failure and keeps the reasons of every ste
 |---|---|---|
 | `Then` / `ThenAsync` | The result succeeded | The result of the step, with its value and errors |
 | `EnsureNotNull(() => error)` | The result succeeded with a `null` value | A `Result<T>` with a value that is not `null`, or failed with `error` |
-| `Check` / `CheckAsync` | The result succeeded | The original value when the step succeeded, otherwise the errors of the step |
+| `Ensure` / `EnsureAsync` | The result succeeded | The original value when the step succeeded, otherwise the errors of the step |
 | `Compensate` / `CompensateAsync` | The result failed | The failure, with the reasons of the clean-up added: an error of the clean-up is not lost |
 | `Recover` / `RecoverAsync` | The result failed | The result of the fallback when it succeeded, otherwise the errors of both |
 
@@ -154,7 +154,7 @@ public class RenameTemplate(ITemplateRepository db)
         => db.GetByIdAsync(id, cancellationToken)
              .EnsureNotNull(() => ProblemDetailError.Create(string.Format(CultureInfo.InvariantCulture, "No template with an id {0} exists.", id))
                                                     .WithStatusCode(404))
-             .Check(template => template.Rename(name))
+             .Ensure(template => template.Rename(name))
              .ThenAsync(template => db.UpdateAsync(template, cancellationToken))
              .LogIfFailed();
 }
@@ -173,7 +173,7 @@ public interface ITemplateRepository
 
 `Then` is FluentResults' `Bind` under a name of the Arc4u chain, available on every receiver, so
 `FluentResults.Extensions` is not needed: the chain continues with the result of the step, and with
-its value for a `Result<T>`. `Check` is for a step whose result has no value of its own: the template
+its value for a `Result<T>`. `Ensure` is for a step whose result has no value of its own: the template
 is kept for the next step, where `Then(t => t.Rename(name).ToResult(t))` would be needed otherwise.
 
 `Compensate` and `Recover` are the failure side. `Compensate` runs a clean-up, for instance deleting a
@@ -328,7 +328,7 @@ The callback of `OnSuccess`, `OnSuccessNull`, `OnSuccessNotNull`, `OnFailed` or 
 returns a `Result` or a `Result<T>`, which the method would discard. Pick the method matching what the step does:
 
 - It produces the next value or result: `Then` (`ThenAsync` for an asynchronous step).
-- It can fail but the value must be kept: `Check` (`CheckAsync` for an asynchronous step).
+- It can fail but the value must be kept: `Ensure` (`EnsureAsync` for an asynchronous step).
 - It cleans up after a failure and can fail itself: `Compensate`.
 - It replaces the failure with another result: `Recover`.
 - The result really does not matter, as in `errors => global.WithErrors(errors)`: write a statement
