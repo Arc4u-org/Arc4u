@@ -7,7 +7,6 @@
     <!-- Common packages -->
     <PackageVersion Include="Grpc.AspNetCore.Server" Version="2.85.0" />
     <PackageVersion Include="FluentResults" Version="4.0.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.2" />
     <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageVersion Include="Serilog" Version="4.4.0" />

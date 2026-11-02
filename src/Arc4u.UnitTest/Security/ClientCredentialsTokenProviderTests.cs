@@ -116,7 +116,7 @@ public class ClientCredentialsTokenProviderTests
             var (cache, mockCache) = MockCache(cached: null);
             var sut = BuildSut(new StubHandler(Ok(_fixture.Create<string>(), 3600)), cache);
             await sut.GetTokenAsync(BuildSettings(clientId, clientSecret, Constants.OpenIdScope, extra), null);
-            return (string)mockCache.Invocations.Single(i => i.Method.Name == nameof(ITokenCache.Put)).Arguments[0];
+            return (string)mockCache.Invocations.Single(i => i.Method.Name == nameof(ITokenCache.Put)).Arguments[0]!;
         }
 
         // act

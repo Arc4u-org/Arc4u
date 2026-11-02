@@ -18,4 +18,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Arc4u.UnitTest" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
 </Project>
