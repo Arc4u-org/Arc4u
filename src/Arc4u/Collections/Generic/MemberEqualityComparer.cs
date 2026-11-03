@@ -41,7 +41,7 @@ public sealed class MemberEqualityComparer<T> : IEqualityComparer<T>
     public bool Equals(T? x, T? y)
     {
         return ReferenceEquals(x, y)
-            || (x != null && y != null && Equals(_selector(x), _selector(y)));
+            || (x is not null && y is not null && Equals(_selector(x), _selector(y)));
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public sealed class MemberEqualityComparer<T> : IEqualityComparer<T>
     /// <returns>The hash code of the selected member, or 0 when the object or its selected member is <see langword="null"/>.</returns>
     public int GetHashCode(T? obj)
     {
-        return (obj == null || _selector(obj) == null)
+        return (obj is null || _selector(obj) == null)
             ? 0
             : _selector(obj).GetHashCode();
     }

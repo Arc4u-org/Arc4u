@@ -31,7 +31,7 @@ public class ApplicationCache(ICacheHelper cacheHelper, ILogger logger, IOptions
     /// <inheritdoc/>
     public void Put<T>(string key, T data)
     {
-        if (null == data)
+        if (data is null)
         {
             logger.Technical<ApplicationCache>().LogNullTokenData(key);
             return;
@@ -48,7 +48,7 @@ public class ApplicationCache(ICacheHelper cacheHelper, ILogger logger, IOptions
         logger.Technical<ApplicationCache>().LogGetDataTokenCache(key);
         var data = _cache.Get<T>(ApplicationCache.GetKey(key));
 
-        if (null == data)
+        if (data is null)
         {
             logger.Technical<ApplicationCache>().LogGetNullDataTokenCache(key);
         }

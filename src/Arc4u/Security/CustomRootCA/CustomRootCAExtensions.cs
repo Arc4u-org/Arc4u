@@ -93,25 +93,15 @@ public static class CustomRootCaExtensions
                 return services;
             }
 
-            // Check that each certificate has 1 field.
-            foreach (var certificate in certificates)
+            // AddCustomRootCA checks that each certificate has exactly one CA source.
+            foreach (var (name, source) in certificates)
             {
-                var option = new CARootOption
+                services.AddCustomRootCA(name, option =>
                 {
-                    CaFilePath = certificate.Value.CaFilePath,
-                    CaPem = certificate.Value.CaPem,
-                    Store = certificate.Value.Store
-                };
-
-                services.AddCustomRootCA(certificate.Key, FillCustomRootCa);
-                continue;
-
-                void FillCustomRootCa(CARootOption fillerOption)
-                {
-                    fillerOption.CaFilePath = option.CaFilePath;
-                    fillerOption.CaPem = option.CaPem;
-                    fillerOption.Store = option.Store;
-                }
+                    option.CaFilePath = source.CaFilePath;
+                    option.CaPem = source.CaPem;
+                    option.Store = source.Store;
+                });
             }
 
             return services;

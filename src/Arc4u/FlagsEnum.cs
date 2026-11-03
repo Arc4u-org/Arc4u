@@ -165,8 +165,9 @@ public static class FlagsEnum
             return false;
         }
 
-        // For large integral values (e.g. 2^24 + 1) the logarithm is within epsilon of an integer, so require an exact match.
-        if (Math.Floor(d) == d && Math.Pow(2, exponent) != d)
+        // For large integral values (e.g. 2^24 + 1) the logarithm is within epsilon of an integer, so require an exact match:
+        // an integral double is a power of two only when its mantissa bits are all zero.
+        if (double.IsInteger(d) && (BitConverter.DoubleToInt64Bits(d) & 0x000F_FFFF_FFFF_FFFFL) != 0)
         {
             return false;
         }

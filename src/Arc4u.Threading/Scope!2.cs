@@ -59,7 +59,7 @@ public class Scope<TScope, TInstance> : IDisposable
         }
         set
         {
-            if (_instance.Value != null && null != value)
+            if (_instance.Value != null && value is not null)
             {
                 _instance.Value.Value = value;
             }
@@ -118,7 +118,7 @@ public class Scope<TScope, TInstance> : IDisposable
     /// </returns>
     public override string ToString()
     {
-        return Current != null
+        return Current is not null
             ? string.Format(CultureInfo.InvariantCulture, "Scoping: {0}", Current)
             : base.ToString()!;
     }

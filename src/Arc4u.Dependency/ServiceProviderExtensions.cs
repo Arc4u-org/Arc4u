@@ -32,7 +32,7 @@ public static class ServiceProviderExtensions
         {
             service = default;
         }
-        return null != service;
+        return service is not null;
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public static class ServiceProviderExtensions
         {
             service = default;
         }
-        return null != service;
+        return service is not null;
     }
 
 }
