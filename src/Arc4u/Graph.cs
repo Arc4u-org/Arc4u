@@ -478,17 +478,13 @@ public class Graph<T> where T : class
     }
 
     /// <summary>
-    /// The include paths of the graph. The getter returns a copy; the setter checks the paths like the constructor.
+    /// The include paths of the graph. The getter returns a read-only view; the setter checks the paths like the constructor.
     /// </summary>
     /// <exception cref="ArgumentNullException">The value set is <see langword="null"/>.</exception>
     /// <exception cref="MissingMemberException">A property of a path set does not exist, or is not a class or a generic collection of one class.</exception>
-    public IList<string> Includes
+    public IReadOnlyList<string> Includes
     {
-        get
-        {
-            // Clone it before.
-            return new List<string>(_includes);
-        }
+        get => _includes.AsReadOnly();
         [RequiresUnreferencedCode(PathsUseReflection)]
         set
         {

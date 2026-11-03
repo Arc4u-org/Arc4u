@@ -57,7 +57,7 @@ public class ValidateResourcesRightMiddleware
             if (!authResult.Succeeded)
             {
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsync(option.ContentToDisplay).ConfigureAwait(false);
+                await context.Response.WriteAsync(option.ContentToDisplay, context.RequestAborted).ConfigureAwait(false);
                 return;
             }
         }

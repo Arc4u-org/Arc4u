@@ -80,7 +80,7 @@ public class OidcClientIdentityModelTokenProvider(
     // Removes an entry that cannot be read, so every call does not read (and log) it again. A valid entry written meanwhile by a login (the tokens are in memory) is kept.
     private async Task RemoveUnreadableEntryAsync()
     {
-        await _tokensLock.WaitAsync().ConfigureAwait(false);
+        await _tokensLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         try
         {
             if (tokensInfo.AccessToken is null && tokensInfo.RefreshToken is null)
@@ -122,7 +122,7 @@ public class OidcClientIdentityModelTokenProvider(
     // The identity token replaces the current one when it is given; null keeps it (a refresh response does not always contain one).
     private async Task<bool> TryStoreTokensAsync(int signOutCount, TokenInfo? accessToken, TokenInfo? refreshToken, string? identityToken, bool persist)
     {
-        await _tokensLock.WaitAsync().ConfigureAwait(false);
+        await _tokensLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         try
         {
             if (_signOutGeneration.HasChanged(signOutCount))
@@ -173,7 +173,7 @@ public class OidcClientIdentityModelTokenProvider(
             TokenRefreshInfo tokens;
             try
             {
-                tokens = await secureCache.GetAsync<TokenRefreshInfo>(TokenKey).ConfigureAwait(false) ?? new TokenRefreshInfo();
+                tokens = await secureCache.GetAsync<TokenRefreshInfo>(TokenKey, CancellationToken.None).ConfigureAwait(false) ?? new TokenRefreshInfo();
             }
             catch (Exception ex) when (IsUnreadable(ex))
             {
@@ -212,7 +212,7 @@ public class OidcClientIdentityModelTokenProvider(
         }
 
         var acquireAttempts = Volatile.Read(ref _acquireAttempts);
-        if (!await _acquireLock.WaitAsync(clientOptions.LoginTimeout).ConfigureAwait(false))
+        if (!await _acquireLock.WaitAsync(clientOptions.LoginTimeout, CancellationToken.None).ConfigureAwait(false))
         {
             return FluentResults.Result.Fail("The token is still being obtained by another call (a login in progress).");
         }
@@ -271,7 +271,7 @@ public class OidcClientIdentityModelTokenProvider(
                 parameters.Add(parameter.Key, parameter.Value);
             }
 
-            var result = await client.RefreshTokenAsync(refreshToken.Token, parameters).ConfigureAwait(false);
+            var result = await client.RefreshTokenAsync(refreshToken.Token, parameters, cancellationToken: CancellationToken.None).ConfigureAwait(false);
 
             if (_signOutGeneration.HasChanged(signOutCount))
             {

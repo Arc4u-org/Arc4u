@@ -26,7 +26,6 @@ namespace Arc4u.OAuth2.DataProtection
             ArgumentNullException.ThrowIfNull(cacheKey);
 
             _logger = loggerFactory.CreateLogger<CacheStore>();
-            _cacheContext = cacheContext;
             _cacheName = cacheName;
             _cacheKey = cacheKey;
             _serialization = serialization;
@@ -38,7 +37,6 @@ namespace Arc4u.OAuth2.DataProtection
             });
         }
 
-        private readonly ICacheContext _cacheContext;
         private readonly ILogger<CacheStore> _logger;
         private readonly string _cacheKey;
         private readonly string? _cacheName;

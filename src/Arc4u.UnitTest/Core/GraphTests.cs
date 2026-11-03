@@ -274,12 +274,13 @@ public class GraphTests
     }
 
     [Fact]
-    public void Includes_Should_Return_A_Copy()
+    public void Includes_Should_Be_Read_Only()
     {
         var graph = new Graph<Company>(["Headquarter"]);
 
-        graph.Includes.Add("Departments");
+        var act = () => ((ICollection<string>)graph.Includes).Add("Departments");
 
+        act.Should().Throw<NotSupportedException>();
         graph.Includes.Should().Equal("Headquarter");
     }
 

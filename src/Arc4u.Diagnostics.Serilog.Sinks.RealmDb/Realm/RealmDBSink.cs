@@ -25,12 +25,12 @@ public class RealmDBSink : IBatchedLogEventSink
     private RealmConfiguration Config { get; set; }
 
     /// <summary>Writes the events of the batch to the Realm database in one transaction. Events that cannot be converted are ignored.</summary>
-    /// <param name="events">The batch of events.</param>
+    /// <param name="batch">The batch of events.</param>
     /// <returns>A task that completes when the batch has been written.</returns>
-    public Task EmitBatchAsync(IEnumerable<LogEvent> events)
+    public Task EmitBatchAsync(IEnumerable<LogEvent> batch)
     {
         var messages = new List<LogDBMessage>();
-        foreach (var _event in events)
+        foreach (var _event in batch)
         {
             try
             {

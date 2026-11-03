@@ -53,7 +53,7 @@ namespace Arc4u.OAuth2.TokenProviders
         /// <returns>The token, or a failed result when there is no principal or no token for the user.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
         /// <exception cref="HttpRequestException">The token endpoint does not answer with a success status code.</exception>
-        public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
+        public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
         {
             ArgumentNullException.ThrowIfNull(settings);
 

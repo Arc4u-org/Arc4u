@@ -23,11 +23,11 @@ public class MemoryLogDbSink : IBatchedLogEventSink
     public static MemoryLogMessages LogMessages { get; } = new();
 
     /// <summary>Converts each event of the batch to a <see cref="LogMessage"/> and adds it to <see cref="LogMessages"/>. Events that cannot be converted are ignored.</summary>
-    /// <param name="events">The batch of events.</param>
+    /// <param name="batch">The batch of events.</param>
     /// <returns>A completed task.</returns>
-    public Task EmitBatchAsync(IEnumerable<LogEvent> events)
+    public Task EmitBatchAsync(IEnumerable<LogEvent> batch)
     {
-        foreach (var _event in events)
+        foreach (var _event in batch)
         {
             var (Category, Application, Identity, ClassType, MethodName, ActivityId, ProcessId, ThreadId, Stacktrace, Properties) = Helper.ExtractEventInfo(_event);
 

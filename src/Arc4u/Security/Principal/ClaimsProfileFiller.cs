@@ -90,8 +90,7 @@ public class ClaimsProfileFiller : IClaimProfileFiller
                     }
                 }
             }
-            else
-            if (upn.Contains('\\'))
+            else if (upn.Contains('\\'))
             {
                 var array = upn.Split('\\');
                 if (array.Length == 2)

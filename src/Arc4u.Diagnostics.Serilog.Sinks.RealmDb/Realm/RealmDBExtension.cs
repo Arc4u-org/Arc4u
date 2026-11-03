@@ -38,7 +38,7 @@ public static class RealmDBExtension
     }
 
     /// <summary>Gets or sets the factory that creates the Realm configuration used by the sink. The default configuration uses the file <c>loggingDB.realm</c> with schema version 1.</summary>
-    public static Func<RealmConfiguration> DefaultConfig = () => new RealmConfiguration("loggingDB.realm")
+    public static Func<RealmConfiguration> DefaultConfig { get; set; } = () => new RealmConfiguration("loggingDB.realm")
     {
         SchemaVersion = 1,
     };

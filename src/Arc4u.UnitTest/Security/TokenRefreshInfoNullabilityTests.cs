@@ -19,7 +19,7 @@ namespace Arc4u.UnitTest.Security;
 public class TokenRefreshInfoNullabilityTests
 {
     private static OidcTokenProvider CreateOidcProvider(TokenRefreshInfo tokens, Mock<ITokenRefreshProvider> refreshProvider)
-        => new(NullLogger<OidcTokenProvider>.Instance, tokens, Options.Create(new OidcAuthenticationOptions()), refreshProvider.Object);
+        => new(tokens, Options.Create(new OidcAuthenticationOptions()), refreshProvider.Object);
 
     [Fact]
     public async Task OidcTokenProvider_Without_Tokens_Should_Fail_Without_Refreshing()

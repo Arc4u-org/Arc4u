@@ -42,17 +42,17 @@ namespace Arc4u.OAuth2.Events
         private readonly ILogger<StandardCookieEvents> _logger;
 
         /// <inheritdoc/>
-        public override async Task ValidatePrincipal(CookieValidatePrincipalContext cookieCtx)
+        public override async Task ValidatePrincipal(CookieValidatePrincipalContext context)
         {
             ArgumentNullException.ThrowIfNull(_serviceProvider);
             ArgumentNullException.ThrowIfNull(_hybridOptions);
 
-            var cookieTokenExpiration = cookieCtx.Properties.ExpiresUtc;
+            var cookieTokenExpiration = context.Properties.ExpiresUtc;
             if (!cookieTokenExpiration.HasValue || cookieTokenExpiration.Value < DateTime.UtcNow)
             {
                 _logger?.Technical().LogError("Cookie doesn't exist or is expired. Reject the principal and sign out the user.");
-                cookieCtx.RejectPrincipal();
-                await cookieCtx.HttpContext.SignOutAsync().ConfigureAwait(false);
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync().ConfigureAwait(false);
                 return;
             }
 
@@ -70,14 +70,14 @@ namespace Arc4u.OAuth2.Events
             if (null == tokensInfo)
             {
                 _logger.Technical().LogNoTokenRefreshInfo();
-                cookieCtx.RejectPrincipal();
-                await cookieCtx.HttpContext.SignOutAsync().ConfigureAwait(false);
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync().ConfigureAwait(false);
                 return;
             }
 
-            var accessToken = cookieCtx.Properties.GetTokenValue("access_token");
+            var accessToken = context.Properties.GetTokenValue("access_token");
             var jwtToken = new JsonWebToken(accessToken);
-            var refreshToken = cookieCtx.Properties.GetTokenValue("refresh_token");
+            var refreshToken = context.Properties.GetTokenValue("refresh_token");
 
             tokensInfo.AccessToken = new TokenInfo("access_token", accessToken ?? string.Empty, jwtToken.ValidTo);
             // As not all the autorities are using a jwt token for the refresh token, the expiration date is not  extracted from the token
@@ -101,11 +101,11 @@ namespace Arc4u.OAuth2.Events
                     // throws an exception if the call failed.
                     await _tokenRefreshProvider.RefreshTokenAsync(CancellationToken.None).ConfigureAwait(false);
 
-                    cookieCtx.Properties.UpdateTokenValue("access_token", tokensInfo.AccessToken.Token);
-                    cookieCtx.Properties.UpdateTokenValue("refresh_token", tokensInfo.RefreshToken.Token);
-                    cookieCtx.Properties.UpdateTokenValue("expires_at", tokensInfo.AccessToken.ExpiresOnUtc.ToString("o", CultureInfo.InvariantCulture));
+                    context.Properties.UpdateTokenValue("access_token", tokensInfo.AccessToken.Token);
+                    context.Properties.UpdateTokenValue("refresh_token", tokensInfo.RefreshToken.Token);
+                    context.Properties.UpdateTokenValue("expires_at", tokensInfo.AccessToken.ExpiresOnUtc.ToString("o", CultureInfo.InvariantCulture));
 
-                    cookieCtx.ShouldRenew = true;
+                    context.ShouldRenew = true;
                     _logger?.Technical().LogDebug("Renew the cookie.");
                 }
                 catch (Exception ex)
@@ -113,14 +113,14 @@ namespace Arc4u.OAuth2.Events
                     _logger?.Technical().LogCantRefreshToken();
                     _logger?.Technical().LogException(ex);
 
-                    cookieCtx.RejectPrincipal();
-                    await cookieCtx.HttpContext.SignOutAsync().ConfigureAwait(false);
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync().ConfigureAwait(false);
                     return;
                 }
 
             }
 
-            if (cookieCtx.Principal?.Identity is ClaimsIdentity identity && !string.IsNullOrWhiteSpace(tokensInfo.AccessToken?.Token))
+            if (context.Principal?.Identity is ClaimsIdentity identity && !string.IsNullOrWhiteSpace(tokensInfo.AccessToken?.Token))
             {
                 identity.BootstrapContext = tokensInfo.AccessToken.Token;
             }

@@ -87,24 +87,24 @@ public class X509CertificateLoader : IX509CertificateLoader
     }
 
     /// <inheritdoc/>
-    /// <exception cref="ArgumentNullException"><paramref name="certificateFilePathInfo"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="certificateInfo"/> is <see langword="null"/>.</exception>
     /// <exception cref="FileNotFoundException">The public certificate file or the private key file does not exist.</exception>
-    public X509Certificate2 FindCertificate(CertificateFilePathInfo? certificateFilePathInfo)
+    public X509Certificate2 FindCertificate(CertificateFilePathInfo? certificateInfo)
     {
-        ArgumentNullException.ThrowIfNull(certificateFilePathInfo);
+        ArgumentNullException.ThrowIfNull(certificateInfo);
 
-        if (!File.Exists(certificateFilePathInfo.Cert))
+        if (!File.Exists(certificateInfo.Cert))
         {
             _logger?.Technical().LogError($"Public key file doesn't exist.");
-            throw new FileNotFoundException("Public key file doesn't exist.", certificateFilePathInfo.Cert);
+            throw new FileNotFoundException("Public key file doesn't exist.", certificateInfo.Cert);
         }
 
-        if (!File.Exists(certificateFilePathInfo.Key))
+        if (!File.Exists(certificateInfo.Key))
         {
             _logger?.Technical().LogError($"Private key file doesn't exist.");
-            throw new FileNotFoundException("Private key file doesn't exist.", certificateFilePathInfo.Key);
+            throw new FileNotFoundException("Private key file doesn't exist.", certificateInfo.Key);
         }
 
-        return X509Certificate2.CreateFromPemFile(certificateFilePathInfo.Cert, certificateFilePathInfo.Key);
+        return X509Certificate2.CreateFromPemFile(certificateInfo.Cert, certificateInfo.Key);
     }
 }

@@ -23,7 +23,7 @@ public class RemoteClientSecretTokenProvider : ITokenProvider
     /// <returns>The token, or a failed result when the header name is not in the settings.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     /// <exception cref="ConfigurationException">The settings have no client secret.</exception>
-    public ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
+    public ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
 

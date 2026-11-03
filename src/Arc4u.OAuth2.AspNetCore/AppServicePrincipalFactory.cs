@@ -56,7 +56,7 @@ public class AppServicePrincipalFactory : IAppPrincipalFactory
     }
 
     /// <inheritdoc/>
-    public async Task<Result<AppPrincipal>> CreatePrincipalAsync(string settingsResolveName, object? parameter)
+    public async Task<Result<AppPrincipal>> CreatePrincipalAsync(string settingsResolveName, object? parameter = null)
     {
         var settings = _settings.Get(settingsResolveName);
         return await CreatePrincipalAsync(settings, parameter).ConfigureAwait(false);

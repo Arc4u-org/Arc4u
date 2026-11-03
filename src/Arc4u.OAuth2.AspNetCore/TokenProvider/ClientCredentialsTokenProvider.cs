@@ -49,7 +49,7 @@ public class ClientCredentialsTokenProvider(
     /// <param name="_">Not used.</param>
     /// <returns>The token, or a failed result when a required setting is missing or the token cannot be obtained.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
-    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? _)
+    public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)
     {
         ArgumentNullException.ThrowIfNull(settings);
 

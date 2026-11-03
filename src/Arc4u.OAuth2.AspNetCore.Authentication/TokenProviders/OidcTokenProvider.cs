@@ -2,7 +2,6 @@ using Arc4u.Dependency.Attribute;
 using Arc4u.OAuth2.Options;
 using Arc4u.OAuth2.Token;
 using FluentResults;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.TokenProviders
@@ -18,19 +17,16 @@ namespace Arc4u.OAuth2.TokenProviders
         public const string ProviderName = "Oidc";
 
         /// <summary>Initializes a new instance of the <see cref="OidcTokenProvider"/> class.</summary>
-        /// <param name="logger">The logger.</param>
         /// <param name="tokenRefreshInfo">The scoped access and refresh tokens of the user.</param>
         /// <param name="oidcOptions">The OpenID Connect authentication options.</param>
         /// <param name="refreshTokenProvider">The provider that refreshes the tokens.</param>
-        public OidcTokenProvider(ILogger<OidcTokenProvider> logger, TokenRefreshInfo tokenRefreshInfo, IOptions<OidcAuthenticationOptions> oidcOptions, ITokenRefreshProvider refreshTokenProvider)
+        public OidcTokenProvider(TokenRefreshInfo tokenRefreshInfo, IOptions<OidcAuthenticationOptions> oidcOptions, ITokenRefreshProvider refreshTokenProvider)
         {
-            _logger = logger;
             _tokenRefreshInfo = tokenRefreshInfo;
             _hybridOptions = oidcOptions.Value;
             _refreshTokenProvider = refreshTokenProvider;
         }
 
-        private readonly ILogger<OidcTokenProvider> _logger;
         private readonly TokenRefreshInfo _tokenRefreshInfo;
         private readonly OidcAuthenticationOptions _hybridOptions;
         private readonly ITokenRefreshProvider _refreshTokenProvider;

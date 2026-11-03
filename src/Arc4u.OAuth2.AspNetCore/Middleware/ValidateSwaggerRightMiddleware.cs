@@ -43,7 +43,7 @@ public class ValidateSwaggerRightMiddleware
             else
             {
                 context.Response.StatusCode = 200;
-                await context.Response.WriteAsync(_option.ContentToDisplay).ConfigureAwait(false);
+                await context.Response.WriteAsync(_option.ContentToDisplay, context.RequestAborted).ConfigureAwait(false);
             }
         }
         else

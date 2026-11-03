@@ -271,6 +271,11 @@ packages. It contains breaking changes: follow the
   `NotSupportedException` in a Native AOT application ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
 - `Arc4u.Caching.Dapr`: `AddDaprCache(name, configuration, sectionName)` reads only the `Name` of the section,
   the only value it registered ([#277](https://github.com/Arc4u-org/Arc4u/issues/277)).
+- `Graph<T>.Includes` is an `IReadOnlyList<string>`: the getter returns a read-only view of the paths instead of
+  a copy. The setter still takes any list of paths.
+- `Arc4u.OAuth2.AspNetCore.Authentication`: the `OidcTokenProvider` constructor no longer takes an `ILogger`, which
+  it did not use.
+- `Arc4u.Diagnostics.Serilog.Sinks.RealmDb`: `RealmDBExtension.DefaultConfig` is a property instead of a field.
 
 ### Deprecated
 
@@ -283,7 +288,6 @@ packages. It contains breaking changes: follow the
 
 - `Arc4u.Diagnostics`: `LoggerBaseWrapper<T>.Dispose()`. The wrapper did not implement `IDisposable` and nothing
   called it; once called, every later log entry threw an `ObjectDisposedException`.
-
 - Standalone Blazor WebAssembly authentication. Only the Blazor Web App is supported: the server signs the
   user in with a cookie and the WebAssembly project gets the user's token with `ClientTokenProvider`.
   Removed from `Arc4u.OAuth2.Blazor`: `BlazorTokenProvider`, `BlazorMsalTokenProvider`, `ITokenWindowInterop`,
@@ -363,7 +367,9 @@ packages. It contains breaking changes: follow the
 
 - Caching: `ToString()` of `MemoryCache`, `RedisCache`, `RedisSentinelCache` and `SqlCache` threw an
   `InvalidOperationException` before `Initialize`; it now returns an empty string, like `DaprCache`.
-
+- `Arc4u.OAuth2.AspNetCore`: `AppServicePrincipalFactory.CreatePrincipalAsync(settingsResolveName)` called on the
+  class (not on `IAppPrincipalFactory`) resolved to the overload without settings, which always throws a
+  `NotSupportedException`; its `parameter` now defaults to `null`, like the interface.
 - `Arc4u.Configuration.Store`: `Add<T>(key)` crashed with a stack overflow when the section store was added
   to a `ConfigurationBuilder` (not to `WebApplicationBuilder.Configuration`): reading the initial value built
   the section store again. It now reads the section from the providers registered before the section store.
