@@ -353,7 +353,7 @@ public sealed class DaprCache : ICache
 
     /// <summary>Returns the name of the Dapr state store.</summary>
     /// <returns>The name of the state store (empty before initialization).</returns>
-    public override string ToString() => _storeName ?? throw new InvalidOperationException("The Store name parameter must not be null.");
+    public override string ToString() => _storeName;
 }
 
 [JsonSerializable(typeof(JsonElement))]

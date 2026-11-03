@@ -1,13 +1,32 @@
 name: SonarBuild
+
+# Analyzes develop/9.0.0 on SonarCloud on every push, and on demand for any branch.
+# In SonarCloud, develop/9.0.0 must match the long-lived branch pattern (or be the main
+# branch), otherwise it is purged as a short-lived branch after 30 days without analysis.
+# Automatic Analysis must be disabled in SonarCloud: it conflicts with this CI analysis.
+
 on:
+  push:
+    branches:
+      - 'develop/9.0.0'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'    
+  buildConfiguration: 'Release'
+
 jobs:
   build:
-    name: Build
+    name: Build and analyze
     runs-on: windows-latest
     steps:
       # The SonarScanner needs Java 17 or later.
@@ -24,6 +43,12 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: src/global.json
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~\.nuget\packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('src/global.json', 'src/Directory.Packages.props', 'src/**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
       - name: Cache SonarCloud packages
         uses: actions/cache@v6
         with:
@@ -43,18 +68,21 @@ jobs:
         run: |
           New-Item -Path .\.sonar\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+
       - name: nuget restore
         run: dotnet restore .\src\arc4u.slnx
 
-      - name: build
-        run: dotnet build .\src\arc4u.slnx --configuration ${{env.buildConfiguration}}
-
-      - name: Build and analyze
+      # Test failures do not stop the analysis: ci.yml is the check that reports them.
+      - name: Build, test and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        shell: powershell
+        shell: pwsh
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"GFlisch_Arc4u" /o:"gflisch" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.scanner.scanAll=false /d:sonar.host.url="https://sonarcloud.io"
-          dotnet build .\src\arc4u.slnx --configuration ${{env.buildConfiguration}}
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"GFlisch_Arc4u" /o:"gflisch" /d:sonar.token="$env:SONAR_TOKEN" /d:sonar.scanner.scanAll=false /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml"
+          dotnet build .\src\arc4u.slnx --no-restore --configuration ${{ env.buildConfiguration }}
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem -Filter *.*UnitTest.csproj -Recurse | ForEach-Object {
+              dotnet test $_.FullName --no-build -c ${{ env.buildConfiguration }} --filter 'Category = CI' --collect "XPlat Code Coverage;Format=opencover" --results-directory TestResults
+          }
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"

@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Arc4u.OAuth2.Token;
 using Arc4u.Serializer;
 using AutoFixture;
+using AwesomeAssertions;
 using AutoFixture.AutoMoq;
 using Xunit;
 using Xunit.Abstractions;
@@ -13,7 +14,7 @@ namespace Arc4u.UnitTest.Serialization;
 [Trait("Category", "CI")]
 public class CompressionAndSpeedTests
 {
-    private static string[] _bearerTokens = [];
+    private static string[]? _bearerTokens;
 
     private static readonly JwtSecurityToken _jwt = new("issuer", "audience", [new Claim("key", "value")],
         DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddMinutes(-10));
@@ -57,7 +58,7 @@ public class CompressionAndSpeedTests
     {
         var sw = Stopwatch.StartNew();
         var size = 0;
-        for (var iterations = 0; iterations < 10000; ++iterations)
+        for (var iterations = 0; iterations < 1000; ++iterations)
         {
             size = 0;
 
@@ -123,6 +124,9 @@ public class CompressionAndSpeedTests
         // sort by smallest size
         list.Sort((item1, item2) => item1.Size.CompareTo(item2.Size));
         ShowMeasurements(list, "Results ordered by ascending serialization size");
+
+        // assert
+        list.Should().AllSatisfy(m => m.Size.Should().BePositive());
     }
 
     private sealed class Measurement

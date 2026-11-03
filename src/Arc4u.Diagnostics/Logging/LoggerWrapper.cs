@@ -77,7 +77,6 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     private readonly ILogger _logger;
     private readonly Dictionary<string, object?> _additionalFields = [];
     private string _caller = string.Empty;
-    private bool _disposed;
     private readonly IAddPropertiesToLog? _addPropertiesToLog;
     private readonly ApplicationConfig _applicationConfig;
 
@@ -130,8 +129,6 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     private void Write<TState>(LogLevel level, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter,
                                string category, string caller, Type contextType, Dictionary<string, object?> fields, bool includeStackTrace)
     {
-        ThrowIfDisposed();
-
         if (!IsEnabled(level))
         {
             return;
@@ -186,19 +183,6 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
         }
     }
 
-    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
-
-    /// <summary>Marks the wrapper as disposed; any later attempt to log throws an <see cref="ObjectDisposedException"/>.</summary>
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-    }
-
     private void AddPropertiesToLog(Dictionary<string, object?> properties)
     {
         try
@@ -232,7 +216,6 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     /// <param name="state">The state to log.</param>
     /// <param name="exception">The exception related to the entry, if any.</param>
     /// <param name="formatter">Creates the message from the state and the exception.</param>
-    /// <exception cref="ObjectDisposedException">The wrapper has been disposed.</exception>
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         try

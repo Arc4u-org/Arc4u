@@ -155,7 +155,6 @@ public class RedisSentinelCache : BaseDistributeCache<RedisSentinelCache>, ICach
     }
 
     /// <summary>Returns the name of the cache given to <see cref="Initialize(string)"/>.</summary>
-    /// <returns>The name of the cache.</returns>
-    /// <exception cref="InvalidOperationException">The cache has not been initialized.</exception>
-    public override string ToString() => Name ?? throw new InvalidOperationException("The 'Name' property must not be null.");
+    /// <returns>The name of the cache (empty before initialization).</returns>
+    public override string ToString() => Name ?? string.Empty;
 }
