@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace Arc4u.Dependency.Tool;
 
 /// <summary>
@@ -7,8 +5,6 @@ namespace Arc4u.Dependency.Tool;
 /// </summary>
 public static class ClassNameCleaner
 {
-    private static readonly Regex InvalidCharsRegex = new(@"[^a-zA-Z0-9_]", RegexOptions.Compiled);
-
     /// <summary>
     /// Removes the characters that are not letters, digits or underscores, and prefixes the result with an underscore when it starts with a digit.
     /// </summary>
@@ -17,8 +13,8 @@ public static class ClassNameCleaner
     /// <exception cref="IndexOutOfRangeException">No valid character remains after the cleaning.</exception>
     public static string CleanClassName(string className)
     {
-        // Remove invalid characters using the compiled regex
-        var cleanedName = InvalidCharsRegex.Replace(className, "");
+        // Keep only ASCII letters, digits and underscores
+        var cleanedName = string.Concat(className.Where(c => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '_'));
 
         // Ensure the first character is not a digit
         if (char.IsDigit(cleanedName[0]))

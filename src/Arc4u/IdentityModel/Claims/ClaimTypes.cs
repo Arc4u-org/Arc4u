@@ -8,32 +8,32 @@ public class ClaimTypes
     /// <summary>
     /// Gets the claim type that holds the culture of the user (for example <c>en-GB</c>).
     /// </summary>
-    public static string Culture { get { return "http://schemas.arc4u.net/ws/2012/05/identity/claims/culture"; } }
+    public static string Culture { get { return "arc4u_culture"; } }
 
     /// <summary>
     /// Gets the claim type that holds the authorization data (the JSON representation of an <see cref="Arc4u.Security.Principal.Authorization"/>).
     /// </summary>
-    public static string Authorization { get { return "http://schemas.arc4u.net/ws/2012/05/identity/claims/authorization"; } }
+    public static string Authorization { get { return "arc4u_authorization"; } }
 
     /// <summary>
     /// Gets the claim type that holds the security identifier of a service.
     /// </summary>
-    public static string ServiceSid { get { return "http://schemas.arc4u.net/ws/2012/05/identity/claims/servicesid"; } }
+    public static string ServiceSid { get { return "arc4u_servicesid"; } }
 
     /// <summary>
     /// Gets the claim type that holds the company of the user.
     /// </summary>
-    public static string Company { get { return "http://schemas.arc4u.net/ws/2012/05/identity/claims/company"; } }
+    public static string Company { get { return "arc4u_company"; } }
 
     /// <summary>
     /// Gets the claim type that holds the security identifier of the user.
     /// </summary>
-    public static string Sid { get { return "http://schemas.arc4u.net/ws/2012/05/identity/claims/sid"; } }
+    public static string Sid { get { return "arc4u_sid"; } }
 
     /// <summary>
     /// Gets the claim type that holds the picture of the user.
     /// </summary>
-    public static string UserPicture { get { return "http://schemas.arc4u.net/ws/2012/05/identity/claims/userPicture"; } }
+    public static string UserPicture { get { return "arc4u_userpicture"; } }
 
     /// <summary>
     /// Gets the claim type (<c>name</c>) that holds the name of the user.
