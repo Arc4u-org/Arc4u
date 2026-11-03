@@ -79,6 +79,12 @@ public class TokenKeys
     public const string PasswordStoreKey = "PasswordStoreKey";
 
     /// <summary>
+    /// The default name of the secure-cache entry that holds the user and password, used when the settings do not define <see cref="PasswordStoreKey"/>.
+    /// It is the name of the entry, not a credential.
+    /// </summary>
+    public const string DefaultPasswordStoreKey = "secret";
+
+    /// <summary>
     /// The authentication type of the identities the settings apply to: <c>OAuth2</c> (bearer), <c>Cookies</c> or <c>Inject</c> (see <c>Constants</c>).
     /// </summary>
     public const string AuthenticationTypeKey = "AuthenticationType";

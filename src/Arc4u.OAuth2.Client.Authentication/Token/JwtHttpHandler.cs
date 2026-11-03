@@ -30,8 +30,6 @@ public class JwtHttpHandler<T> : DelegatingHandler
     /// <exception cref="ConfigurationException">No settings exist with that name, or no <see cref="IApplicationContext"/> is registered in the container.</exception>
     public JwtHttpHandler(IServiceProvider container, ILogger<T> logger, string resolvingName)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-
         _container = container ?? throw new ArgumentNullException(nameof(container));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 

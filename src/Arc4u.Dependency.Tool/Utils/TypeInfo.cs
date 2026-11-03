@@ -1,3 +1,5 @@
+namespace Arc4u.Dependency.Tool;
+
 internal sealed class TypeInfo
 {
     private const char NamespaceSeparator = '.';

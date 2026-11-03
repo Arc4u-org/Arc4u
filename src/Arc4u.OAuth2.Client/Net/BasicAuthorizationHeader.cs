@@ -45,11 +45,9 @@ public class BasicAuthorizationHeader : IBasicAuthorizationHeader
 
     private static void ExtractFromSettings(IKeyValueSettings settings, out string passwordStoreKey)
     {
-        passwordStoreKey = "secret";
-        if (settings.Values.ContainsKey(TokenKeys.PasswordStoreKey))
-        {
-            passwordStoreKey = string.IsNullOrWhiteSpace(settings.Values[TokenKeys.PasswordStoreKey]) ? passwordStoreKey : settings.Values[TokenKeys.PasswordStoreKey];
-        }
+        passwordStoreKey = settings.Values.TryGetValue(TokenKeys.PasswordStoreKey, out var storeKey) && !string.IsNullOrWhiteSpace(storeKey)
+            ? storeKey
+            : TokenKeys.DefaultPasswordStoreKey;
 
     }
 }

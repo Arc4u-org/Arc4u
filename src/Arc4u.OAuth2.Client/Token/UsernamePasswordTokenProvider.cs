@@ -204,11 +204,9 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
             throw new InvalidOperationException("The settings are not correct!");
         }
 
-        passwordStoreKey = "secret";
-        if (settings.Values.ContainsKey(TokenKeys.PasswordStoreKey))
-        {
-            passwordStoreKey = string.IsNullOrWhiteSpace(settings.Values[TokenKeys.PasswordStoreKey]) ? passwordStoreKey : settings.Values[TokenKeys.PasswordStoreKey];
-        }
+        passwordStoreKey = settings.Values.TryGetValue(TokenKeys.PasswordStoreKey, out var storeKey) && !string.IsNullOrWhiteSpace(storeKey)
+            ? storeKey
+            : TokenKeys.DefaultPasswordStoreKey;
 
     }
 
