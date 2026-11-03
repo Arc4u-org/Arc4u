@@ -82,7 +82,9 @@ public class TokenKeys
     /// The default name of the secure-cache entry that holds the user and password, used when the settings do not define <see cref="PasswordStoreKey"/>.
     /// It is the name of the entry, not a credential.
     /// </summary>
+#pragma warning disable S2068 // Hard-coded credentials: the value is the name of a cache entry, not a credential.
     public const string DefaultPasswordStoreKey = "secret";
+#pragma warning restore S2068
 
     /// <summary>
     /// The authentication type of the identities the settings apply to: <c>OAuth2</c> (bearer), <c>Cookies</c> or <c>Inject</c> (see <c>Constants</c>).

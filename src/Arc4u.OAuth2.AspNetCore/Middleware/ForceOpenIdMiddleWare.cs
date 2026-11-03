@@ -70,7 +70,8 @@ public class ForceOpenIdMiddleWare
 
         return new Regex(
             sb.ToString(),
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled,
+            TimeSpan.FromMilliseconds(100));
     }
 
     /// <summary>Processes the request.</summary>
