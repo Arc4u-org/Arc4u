@@ -88,8 +88,8 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
             upn = hasCredential.Upn;
             pwd = hasCredential.Password;
             // Store the new User and password in the cache.
-            _secureCache.Put(userkey, upn);
-            _secureCache.Put(pwdkey, pwd);
+            await _secureCache.PutAsync(userkey, upn).ConfigureAwait(false);
+            await _secureCache.PutAsync(pwdkey, pwd).ConfigureAwait(false);
         }
 
         // Check before requesting a token we have a network connectivity!
@@ -105,7 +105,7 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
             tokenInfo = await CreateBasicTokenInfoAsync(settings, new CredentialsResult(true, upn, pwd)).ConfigureAwait(false);
 
             // Store the tokenInfo
-            _secureCache.Put(serviceId, tokenInfo);
+            await _secureCache.PutAsync(serviceId, tokenInfo).ConfigureAwait(false);
 
             return tokenInfo;
         }
@@ -158,7 +158,7 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
             var tokenInfo = await CreateBasicTokenInfoAsync(Settings, new CredentialsResult(true, upn, password)).ConfigureAwait(false);
 
             // Store the tokenInfo
-            _secureCache.Put(serviceId, tokenInfo);
+            await _secureCache.PutAsync(serviceId, tokenInfo).ConfigureAwait(false);
 
             return true;
         }
