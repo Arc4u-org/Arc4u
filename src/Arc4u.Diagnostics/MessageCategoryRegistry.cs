@@ -86,12 +86,9 @@ public static class MessageCategoryRegistry
     /// <returns><see langword="true"/> when the name is a predefined name, a registered name or a positive number.</returns>
     public static bool TryGetCategory(string? name, out MessageCategory category)
     {
-        if (!string.IsNullOrWhiteSpace(name))
+        if (!string.IsNullOrWhiteSpace(name) && (Enum.TryParse(name, true, out category) || _byName.TryGetValue(name.Trim(), out category)))
         {
-            if (Enum.TryParse(name, true, out category) || _byName.TryGetValue(name.Trim(), out category))
-            {
-                return category > 0;
-            }
+            return category > 0;
         }
 
         category = default;

@@ -38,10 +38,10 @@ public class TimeoutHelperTests
     }
 
     [Fact]
-    public void TimeoutHelper_RemainingTime_ShouldReturnCorrectValue()
+    public async Task TimeoutHelper_RemainingTime_ShouldReturnCorrectValue()
     {
         var timeoutHelper = new TimeoutHelper(TimeSpan.FromMilliseconds(100));
-        Thread.Sleep(50);
+        await Task.Delay(50);
         Assert.True(timeoutHelper.RemainingTime() <= TimeSpan.FromMilliseconds(50));
     }
 
@@ -61,12 +61,12 @@ public class TimeoutHelperTests
     }
 
     [Fact]
-    public void RemainingTime_ShouldReturnCorrectTime()
+    public async Task RemainingTime_ShouldReturnCorrectTime()
     {
         var timeout = TimeSpan.FromSeconds(2);
         var helper = new TimeoutHelper(timeout);
 
-        Thread.Sleep(1000);
+        await Task.Delay(1000);
 
         var remaining = helper.RemainingTime();
 
@@ -74,12 +74,12 @@ public class TimeoutHelperTests
     }
 
     [Fact]
-    public void RemainingTime_ShouldReturnZero_WhenTimeoutHasElapsed()
+    public async Task RemainingTime_ShouldReturnZero_WhenTimeoutHasElapsed()
     {
         var timeout = TimeSpan.FromSeconds(1);
         var helper = new TimeoutHelper(timeout);
 
-        Thread.Sleep(2000);
+        await Task.Delay(2000);
 
         var remaining = helper.RemainingTime();
 

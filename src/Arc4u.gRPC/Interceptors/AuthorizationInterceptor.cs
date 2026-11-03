@@ -19,8 +19,6 @@ public class AuthorizationInterceptor(
     ILogger<AuthorizationInterceptor> logger,
     IApplicationContext applicationContext) : Interceptor
 {
-    //const string appSettings = "AppSettings";
-
     /// <inheritdoc/>
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(TRequest request,
         ServerCallContext context, UnaryServerMethod<TRequest, TResponse> continuation)
@@ -58,9 +56,11 @@ public class AuthorizationInterceptor(
             }
             catch (ArgumentNullException)
             {
+                // No culture given: the culture of the principal is kept.
             }
             catch (CultureNotFoundException)
             {
+                // An unknown culture is ignored: the culture of the principal is kept.
             }
         }
     }

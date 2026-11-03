@@ -229,13 +229,13 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
             return ValueTask.CompletedTask;
         }
 
-        GetSettings(settings, out var serviceId, out _, out var passwordStoreKey);
+        GetSettings(settings, out var settingsServiceId, out _, out var storeKey);
 
         try
         {
             // remove the passord information.
-            var pwdkey = passwordStoreKey + "_pwd";
-            _secureCache.Remove(pwdkey);
+            var passwordKey = storeKey + "_pwd";
+            _secureCache.Remove(passwordKey);
         }
         catch (Exception ex)
         {
@@ -245,7 +245,7 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
         try
         {
             // remove the user name, so the next user does not see who signed in before.
-            _secureCache.Remove(passwordStoreKey + "_upn");
+            _secureCache.Remove(storeKey + "_upn");
         }
         catch (Exception ex)
         {
@@ -255,7 +255,7 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
         try
         {
             // remove de access token information.
-            _secureCache.Remove(serviceId);
+            _secureCache.Remove(settingsServiceId);
         }
         catch (Exception ex)
         {

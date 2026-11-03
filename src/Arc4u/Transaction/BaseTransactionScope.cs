@@ -13,7 +13,7 @@ public abstract class BaseTransactionScope : IDisposable
     /// </summary>
     /// <param name="transactionScopeOption">The requested scope option. Note that the underlying <see cref="TransactionScope"/> is always created with <see cref="TransactionScopeOption.Required"/>.</param>
     /// <param name="isolationLevel">The isolation level of the transaction.</param>
-    public BaseTransactionScope(TransactionScopeOption transactionScopeOption, IsolationLevel isolationLevel)
+    protected BaseTransactionScope(TransactionScopeOption transactionScopeOption, IsolationLevel isolationLevel)
     {
         var transactionOption = new TransactionOptions
         {
@@ -27,7 +27,7 @@ public abstract class BaseTransactionScope : IDisposable
     /// Initializes a new instance of the <see cref="BaseTransactionScope"/> class that requires a transaction (<see cref="TransactionScopeOption.Required"/>).
     /// </summary>
     /// <param name="isolationLevel">The isolation level of the transaction.</param>
-    public BaseTransactionScope(IsolationLevel isolationLevel) : this(TransactionScopeOption.Required, isolationLevel)
+    protected BaseTransactionScope(IsolationLevel isolationLevel) : this(TransactionScopeOption.Required, isolationLevel)
     {
     }
 
@@ -63,13 +63,10 @@ public abstract class BaseTransactionScope : IDisposable
     /// <param name="disposing"><see langword="true"/> when called from <see cref="Dispose()"/>; derived classes with a finalizer pass <see langword="false"/>.</param>
     protected virtual void Dispose(Boolean disposing)
     {
-        if (!disposed)
+        if (!disposed && disposing)
         {
-            if (disposing)
-            {
-                transactionScope?.Dispose();
-                disposed = true;
-            }
+            transactionScope?.Dispose();
+            disposed = true;
         }
     }
 }

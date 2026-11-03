@@ -11,7 +11,6 @@ public interface ICacheContext
     /// <summary>Gets the default cache, i.e. the cache named by the <c>Default</c> entry of the <c>Caching</c> configuration section.</summary>
     /// <exception cref="InvalidOperationException">No cache is configured with the default name.</exception>
     ICache Default { get; }
-    // CachingPrincipal Principal { get; set; }
 
     /// <summary>Determines whether a cache with this name is declared in the configuration, whether it is already initialized or not.</summary>
     /// <param name="cacheName">The name of the cache.</param>

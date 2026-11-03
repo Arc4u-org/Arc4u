@@ -29,7 +29,7 @@ public class PriorityOrderer : ITestCaseOrderer
     }
 
     private static TValue GetOrCreate<TKey, TValue>(
-        IDictionary<TKey, TValue> dictionary, TKey key)
+        SortedDictionary<TKey, TValue> dictionary, TKey key)
         where TKey : struct
         where TValue : new()
     {

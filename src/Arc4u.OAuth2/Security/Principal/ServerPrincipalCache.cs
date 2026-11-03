@@ -31,13 +31,10 @@ public class ServerPrincipalCache : ISecureCache
     /// <param name="disposing"><see langword="true"/> when called from <see cref="Dispose()"/>.</param>
     protected virtual void Dispose(bool disposing)
     {
-        if (!disposed)
+        if (!disposed && disposing)
         {
-            if (disposing)
-            {
-                _cache = null;
-                disposed = true;
-            }
+            _cache = null;
+            disposed = true;
         }
     }
 

@@ -106,6 +106,7 @@ public class RootPemCertificates
         }
         catch (Exception)
         {
+            // A certificate that cannot be exported gives an empty or partial PEM string.
         }
 
         return builder.ToString();

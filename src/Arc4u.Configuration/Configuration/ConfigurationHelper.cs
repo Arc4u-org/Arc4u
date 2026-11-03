@@ -54,7 +54,7 @@ public static class ConfigurationHelper
 
         foreach (var file in fileTypes)
         {
-            var fileInfo = file.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            var fileInfo = file.Split(',', StringSplitOptions.RemoveEmptyEntries);
             if (fileInfo.Length != 2)
             {
                 throw new ApplicationException($"File info receives is badly formatted: '{file}'. We expect: 'Assembly, full namespace file'.");

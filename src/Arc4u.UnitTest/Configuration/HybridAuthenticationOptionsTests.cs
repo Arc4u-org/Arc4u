@@ -420,7 +420,7 @@ public class HybridAuthenticationOptionsTests
         services.AddTransient<StandardBearerEvents>();
 
         var type = services.GetImplementationType<JwtBearerEvents>();
-        type.Should().Be(typeof(StandardBearerEvents));
+        type.Should().Be<StandardBearerEvents>();
     }
 
     public class X509Certificate2SpecimenBuilder : ISpecimenBuilder

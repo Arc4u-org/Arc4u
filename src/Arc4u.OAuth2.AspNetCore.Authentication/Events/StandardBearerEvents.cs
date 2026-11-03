@@ -95,29 +95,26 @@ namespace Arc4u.OAuth2.Events
         /// <returns>A completed task.</returns>
         public override Task TokenValidated(TokenValidatedContext context)
         {
-            if (context.SecurityToken is not null)
+            if (context.SecurityToken is not null && context.Principal?.Identity is ClaimsIdentity identity)
             {
-                if (context.Principal?.Identity is ClaimsIdentity identity)
+                var sToken = context.Request.Headers.Authorization.ToString();
+                if (sToken.StartsWith("Bearer ", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var sToken = context.Request.Headers.Authorization.ToString();
-                    if (sToken.StartsWith("Bearer ", StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        sToken = sToken[7..];
-                        identity.BootstrapContext = sToken;
+                    sToken = sToken[7..];
+                    identity.BootstrapContext = sToken;
 
-                        if (!HasUserIdentifier(context, identity))
-                        {
-                            context.Fail("The token has no claim identifying the user.");
-                            context.Response.Clear();
-                            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                        }
-                    }
-                    else
+                    if (!HasUserIdentifier(context, identity))
                     {
-                        context.Fail("A Bearer token is expected!");
+                        context.Fail("The token has no claim identifying the user.");
                         context.Response.Clear();
                         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     }
+                }
+                else
+                {
+                    context.Fail("A Bearer token is expected!");
+                    context.Response.Clear();
+                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 }
             }
 

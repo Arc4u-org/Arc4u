@@ -51,6 +51,6 @@ public sealed class UserPasswordScenario : IClientTokenScenario
             clientSecret: Get(s, ClientSecret));
     }
 
-    private static string? Get(IReadOnlyDictionary<string, string> settings, string key)
+    private static string? Get(Dictionary<string, string> settings, string key)
         => settings.TryGetValue(key, out var value) ? value : null;
 }

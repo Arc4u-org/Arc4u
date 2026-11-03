@@ -80,7 +80,7 @@ public static class FlagsEnum
         var type = typeof(TEnum);
         if (!type.GetTypeInfo().IsEnum)
         {
-            throw new ArgumentException("Type provided must be an enumeration.", "TEnum");
+            throw new ArgumentException($"The type {type} must be an enumeration.");
         }
 
         var underlyingType = Enum.GetUnderlyingType(type);

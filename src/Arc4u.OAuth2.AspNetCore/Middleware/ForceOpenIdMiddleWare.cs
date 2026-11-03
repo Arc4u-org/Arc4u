@@ -37,7 +37,7 @@ public class ForceOpenIdMiddleWare
 
     // Build a prefix-match regex from the configured paths ('*' => '.*'), or null when
     // no paths are configured so the middleware is a no-op. Done once, not per request.
-    private static Regex? PathsRegex(IList<string> paths)
+    private static Regex? PathsRegex(List<string> paths)
     {
         if (paths.Count == 0)
         {

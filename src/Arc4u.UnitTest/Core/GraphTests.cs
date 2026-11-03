@@ -7,6 +7,8 @@ namespace Arc4u.UnitTest.Core;
 [Trait("Category", "CI")]
 public class GraphTests
 {
+    private static readonly JsonSerializerOptions CaseInsensitiveOptions = new() { PropertyNameCaseInsensitive = true };
+
     public sealed class Product
     {
         public string Name { get; set; } = string.Empty;
@@ -653,7 +655,7 @@ public class GraphTests
                       .Includes.Should().Equal("Headquarter");
 
         JsonSerializer.Deserialize<Graph<Company>>("""{"includes":["Headquarter"]}""")!.Includes.Should().BeEmpty();
-        JsonSerializer.Deserialize<Graph<Company>>("""{"includes":["Headquarter"]}""", new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!
+        JsonSerializer.Deserialize<Graph<Company>>("""{"includes":["Headquarter"]}""", CaseInsensitiveOptions)!
                       .Includes.Should().Equal("Headquarter");
     }
 

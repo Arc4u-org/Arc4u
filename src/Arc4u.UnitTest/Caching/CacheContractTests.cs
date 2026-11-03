@@ -150,7 +150,7 @@ public class CacheContractTests
     {
         var client = CreateDaprClient();
         client.Setup(c => c.GetStateAsync<JsonElement>("store", "zero", It.IsAny<ConsistencyMode?>(), It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
-              .ReturnsAsync(JsonDocument.Parse("0").RootElement);
+              .ReturnsAsync(JsonElement.Parse("0"));
         using var cache = CreateDaprCache(client.Object);
 
         cache.TryGetValue<int>("zero", out var number).Should().BeTrue();
@@ -191,7 +191,7 @@ public class CacheContractTests
         var client = new Mock<DaprClient>();
         client.SetupGet(c => c.JsonSerializerOptions).Returns(new JsonSerializerOptions { TypeInfoResolver = DaprTestJsonContext.Default });
         client.Setup(c => c.GetStateAsync<JsonElement>("store", "k", It.IsAny<ConsistencyMode?>(), It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()))
-              .ReturnsAsync(JsonDocument.Parse("{\"Name\":\"a\",\"Count\":2}").RootElement);
+              .ReturnsAsync(JsonElement.Parse("{\"Name\":\"a\",\"Count\":2}"));
         using var cache = CreateDaprCache(client.Object);
 
         (await cache.GetAsync<DaprTestValue>("k")).Should().Be(new DaprTestValue("a", 2));

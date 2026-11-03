@@ -106,13 +106,11 @@ static class TypeExportAttributeScanner
                 }
                 else
                 {
-                    //Console.WriteLine($"Unsupported EntityHandle.Kind: {ctor.Parent.Kind}");
                     return null;
                 }
             }
             catch (InvalidCastException)
             {
-                //Console.WriteLine($"Unsupported EntityHandle.Kind: {ctor.Parent.Kind}");
                 return null;
             }
         }

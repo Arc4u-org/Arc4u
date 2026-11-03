@@ -26,7 +26,7 @@ namespace Arc4u.OAuth2.Extensions
             }
 
             // if we don't have to validate the audience, we don't need to have any.
-            if (validate.ValidateAudience && !validate.Audiences.Any())
+            if (validate.ValidateAudience && validate.Audiences.Count == 0)
             {
                 throw new MissingFieldException($"Audiences field is not defined.");
             }
@@ -36,7 +36,7 @@ namespace Arc4u.OAuth2.Extensions
                 throw new MissingFieldException($"ClientId field is not defined.");
             }
 
-            if (!validate.Scopes.Any())
+            if (validate.Scopes.Count == 0)
             {
                 throw new MissingFieldException($"Scopes field is not defined.");
             }

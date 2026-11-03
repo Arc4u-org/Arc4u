@@ -299,7 +299,7 @@ public class OboTokenProviderSignOutTests
         => new(new Dictionary<string, string> { [TokenKeys.ClientIdKey] = "front-app", [TokenKeys.ClientSecret] = "secret", [TokenKeys.Scope] = scope });
 
     // The cache key of an on-behalf-of token obtained with the given user token.
-    private static string OboCacheKey(AuthorityOptions authority, IKeyValueSettings settings, string userToken)
+    private static string OboCacheKey(AuthorityOptions authority, SimpleKeyValueSettings settings, string userToken)
         => $"_Obo_{settings.Values[TokenKeys.ClientIdKey]}_{TokenCacheKey.Hash(authority.Url.ToString(), userToken, settings.Values[TokenKeys.Scope])}";
 
     private static AzureADOboTokenProvider CreateObo(IApplicationContext? applicationContext, TokenRefreshInfo tokens, Mock<ICache> cache, AuthorityOptions authority, IUserObjectIdentifier? userObjectIdentifier = null)

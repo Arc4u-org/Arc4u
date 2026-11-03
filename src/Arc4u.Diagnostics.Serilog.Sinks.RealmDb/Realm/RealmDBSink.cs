@@ -38,6 +38,7 @@ public class RealmDBSink : IBatchedLogEventSink
             }
             catch (Exception)
             {
+                // An event that cannot be converted is ignored.
             }
         }
 

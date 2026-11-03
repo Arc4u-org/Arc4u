@@ -13,7 +13,7 @@ namespace Arc4u.gRPC.ChannelCertificate;
 /// <remarks>
 /// The certificate is only captured when the connection is negotiated: as the underlying <see cref="HttpClient"/> reuses its connections,
 /// a later call for the same server may not trigger the callback and return <see langword="null"/>.
-/// The extractor owns an <see cref="HttpClient"/> that is released by <see cref="Dispose"/>.
+/// The extractor owns an <see cref="HttpClient"/> that is released by <see cref="Dispose()"/>.
 /// </remarks>
 [Export(typeof(IRootCertificateExtractor))]
 public class RootCertificateExtractor : IRootCertificateExtractor, IDisposable
@@ -87,11 +87,20 @@ public class RootCertificateExtractor : IRootCertificateExtractor, IDisposable
         return sslPolicyErrors == SslPolicyErrors.None;
     }
 
-    /// <summary>
-    /// Releases the <see cref="HttpClient"/> used to contact the servers.
-    /// </summary>
+    /// <summary>Releases the <see cref="HttpClient"/> used to contact the servers.</summary>
     public void Dispose()
     {
-        _httpClient.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>Releases the <see cref="HttpClient"/> used to contact the servers.</summary>
+    /// <param name="disposing"><see langword="true"/> when called from <see cref="Dispose()"/>; <see langword="false"/> when called from a finalizer.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _httpClient.Dispose();
+        }
     }
 }

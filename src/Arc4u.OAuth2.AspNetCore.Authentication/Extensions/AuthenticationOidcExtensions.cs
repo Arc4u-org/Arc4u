@@ -104,13 +104,11 @@ namespace Arc4u.OAuth2.Extensions
             if (oidcOptions.AuthenticationCacheTicketStoreOption is not null)
             {
                 services.AddCacheTicketStore(oidcOptions.AuthenticationCacheTicketStoreOption);
-                services.TryAddSingleton(typeof(IPostConfigureOptions<CookieAuthenticationOptions>),
-                    typeof(ConfigureCookieWithTicketStoreAuthenticationOptions));
+                services.TryAddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, ConfigureCookieWithTicketStoreAuthenticationOptions>();
             }
             else
             {
-                services.TryAddSingleton(typeof(IPostConfigureOptions<CookieAuthenticationOptions>),
-                    typeof(ConfigureStandardCookieAuthenticationOptions));
+                services.TryAddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, ConfigureStandardCookieAuthenticationOptions>();
             }
 
             services.AddDataProtection()

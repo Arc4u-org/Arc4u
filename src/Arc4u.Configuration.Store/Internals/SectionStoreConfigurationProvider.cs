@@ -17,7 +17,7 @@ sealed class SectionStoreConfigurationProvider : ConfigurationProvider
         {
         }
 
-        public void Transform(IDictionary<string, string?> output, string key, string json)
+        public void Transform(Dictionary<string, string?> output, string key, string json)
         {
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
             Load(stream);
@@ -69,7 +69,7 @@ sealed class SectionStoreConfigurationProvider : ConfigurationProvider
         }
     }
 
-    private IDictionary<string, string?> GetData()
+    private Dictionary<string, string?> GetData()
     {
         var data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         var transformer = new Transformer();

@@ -27,7 +27,7 @@ namespace Arc4u.OAuth2.Extensions
                 throw new MissingFieldException($"ClientId field is not defined.");
             }
 
-            if (!validate.Scopes.Any())
+            if (validate.Scopes.Count == 0)
             {
                 throw new MissingFieldException($"Scopes field is not defined.");
             }

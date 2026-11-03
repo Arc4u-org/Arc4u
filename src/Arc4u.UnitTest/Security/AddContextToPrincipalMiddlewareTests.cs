@@ -53,6 +53,6 @@ public class AddContextToPrincipalMiddlewareTests
 
         await sut.InvokeAsync(context, NullLogger<AddContextToPrincipalMiddleware>.Instance);
 
-        context.Request.Headers["traceparent"].ToString().Should().NotBeNullOrEmpty();
+        context.Request.Headers.TraceParent.ToString().Should().NotBeNullOrEmpty();
     }
 }

@@ -202,7 +202,7 @@ public static class Interval
 
         if (object.Equals(lowerBound, Bound<T>.LowestBound) && object.Equals(upperBound, Bound<T>.UpmostBound))
         {
-
+            // The complement of the whole domain is empty.
         }
         else if (object.Equals(lowerBound, Bound<T>.LowestBound))
         {

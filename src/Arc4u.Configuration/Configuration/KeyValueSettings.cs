@@ -15,7 +15,7 @@ public abstract class KeyValueSettings : IKeyValueSettings
     /// </summary>
     /// <param name="sectionName">The name of the section whose children are read.</param>
     /// <param name="configuration">The configuration that contains the section.</param>
-    public KeyValueSettings(string sectionName, IConfiguration configuration)
+    protected KeyValueSettings(string sectionName, IConfiguration configuration)
     {
         // GetSection never returns null: a missing section has no children, so the settings are empty.
         _properties = configuration.GetSection(sectionName).GetChildren().ToDictionary(x => x.Key, x => x.Value!);

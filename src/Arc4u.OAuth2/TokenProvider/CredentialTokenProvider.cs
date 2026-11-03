@@ -228,7 +228,7 @@ public class CredentialTokenProvider(ILogger<CredentialTokenProvider> logger, IO
                     loggedResponseBody = $"{responseBody[..MaxResponseBodyLength]}...(response truncated, {loggedResponseBody.Length} total characters)";
                 }
 
-                var logger = _logger.Technical();
+                var technicalLogger = _logger.Technical();
 
                 // In case of error, any extra information should be in Json with string values, but we can't assume this is always the case!
                 Dictionary<string, string>? dictionary = null;
@@ -243,16 +243,16 @@ public class CredentialTokenProvider(ILogger<CredentialTokenProvider> logger, IO
                 // we cannot any any more meaningful information to the log if this is not a dictionary
                 if (dictionary == null)
                 {
-                    logger.LogCredentialToken(upn, response.StatusCode.ToString(), loggedResponseBody); ;
+                    technicalLogger.LogCredentialToken(upn, response.StatusCode.ToString(), loggedResponseBody);
                 }
                 else
                 {
                     // add the key/values are properties of the structured log
                     foreach (var kv in dictionary)
                     {
-                        logger.Add(kv.Key, kv.Value);
+                        technicalLogger.Add(kv.Key, kv.Value);
                     }
-                    logger.LogCredentialToken(upn, response.StatusCode.ToString(), loggedResponseBody);
+                    technicalLogger.LogCredentialToken(upn, response.StatusCode.ToString(), loggedResponseBody);
 
                     if (dictionary.TryGetValue("error", out var tokenErrorCode))
                     {

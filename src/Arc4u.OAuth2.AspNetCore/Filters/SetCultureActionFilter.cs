@@ -27,13 +27,10 @@ public class SetCultureActionFilter : IAsyncActionFilter
         {
             Thread.CurrentThread.CurrentUICulture = _application.Principal.Profile.CurrentCulture;
 
-            if (context.ActionDescriptor is ControllerActionDescriptor descriptor)
+            if (context.ActionDescriptor is ControllerActionDescriptor descriptor && null != descriptor.MethodInfo?.DeclaringType)
             {
-                if (null != descriptor.MethodInfo?.DeclaringType)
-                {
-                    _logger.Technical(descriptor.MethodInfo?.DeclaringType!, descriptor.MethodInfo?.Name ?? "MethodInfo Name")
-                           .LogThreadCultureName(_application.Principal.Profile.CurrentCulture.Name);
-                }
+                _logger.Technical(descriptor.MethodInfo?.DeclaringType!, descriptor.MethodInfo?.Name ?? "MethodInfo Name")
+                       .LogThreadCultureName(_application.Principal.Profile.CurrentCulture.Name);
             }
         }
 

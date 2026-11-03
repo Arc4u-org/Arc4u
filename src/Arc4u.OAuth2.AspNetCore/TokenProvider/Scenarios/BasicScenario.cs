@@ -66,6 +66,6 @@ public sealed class BasicScenario : IClientTokenScenario
         return (credential[..ix], credential[(ix + 1)..]);
     }
 
-    private static string? Get(IReadOnlyDictionary<string, string> settings, string key)
+    private static string? Get(Dictionary<string, string> settings, string key)
         => settings.TryGetValue(key, out var value) ? value : null;
 }

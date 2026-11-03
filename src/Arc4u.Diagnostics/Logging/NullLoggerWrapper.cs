@@ -12,7 +12,7 @@ public class NullLoggerWrapper<T> : ILoggerWrapper<T>
     /// <summary>Gets the shared instance.</summary>
     public static readonly NullLoggerWrapper<T> Instance = new();
 
-    private readonly ILogger<T> _logger = NullLogger<T>.Instance;
+    private readonly NullLogger<T> _logger = NullLogger<T>.Instance;
 
 
     /// <inheritdoc/>

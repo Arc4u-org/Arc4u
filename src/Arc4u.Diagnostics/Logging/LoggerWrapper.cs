@@ -107,7 +107,7 @@ public abstract class LoggerBaseWrapper<T> : ILoggerWrapper<T>
     /// <param name="loggerFactory">The factory used to create the underlying logger.</param>
     /// <param name="addPropertiesToLog">The provider of the additional properties added to every log entry.</param>
     /// <param name="appConfig">The application configuration, used to obtain the application name.</param>
-    public LoggerBaseWrapper(ILoggerFactory loggerFactory, IAddPropertiesToLog addPropertiesToLog, IOptionsMonitor<ApplicationConfig> appConfig)
+    protected LoggerBaseWrapper(ILoggerFactory loggerFactory, IAddPropertiesToLog addPropertiesToLog, IOptionsMonitor<ApplicationConfig> appConfig)
     {
         _logger = loggerFactory.CreateLogger<T>();
         _addPropertiesToLog = addPropertiesToLog;

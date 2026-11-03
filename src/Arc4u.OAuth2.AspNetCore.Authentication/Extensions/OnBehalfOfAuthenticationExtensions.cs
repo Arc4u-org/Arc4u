@@ -123,7 +123,7 @@ namespace Arc4u.OAuth2.Extensions
                 configErrors += "ClientSecret field is not defined." + System.Environment.NewLine;
             }
 
-            if (!extract.Scopes.Any())
+            if (extract.Scopes.Count == 0)
             {
                 configErrors += "Scope field is not defined." + System.Environment.NewLine;
             }

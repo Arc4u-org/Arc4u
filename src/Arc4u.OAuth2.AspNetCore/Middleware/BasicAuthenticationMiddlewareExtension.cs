@@ -103,12 +103,9 @@ public static class BasicAuthenticationMiddlewareExtension
         var basicOptions = new BasicAuthenticationConfigurationOptions();
         options(basicOptions);
 
-        if (!string.IsNullOrEmpty(basicOptions.DefaultUpn))
+        if (!string.IsNullOrEmpty(basicOptions.DefaultUpn) && !Regex.IsMatch(basicOptions.DefaultUpn, @"^@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))", RegexOptions.None, TimeSpan.FromMilliseconds(100)))
         {
-            if (!Regex.IsMatch(basicOptions.DefaultUpn, @"^@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))", RegexOptions.None, TimeSpan.FromMilliseconds(100)))
-            {
-                throw new ConfigurationException("Bad upn format, we expect a @ and one point.");
-            }
+            throw new ConfigurationException("Bad upn format, we expect a @ and one point.");
         }
 
         var certs = new Dictionary<string, X509Certificate2>();
@@ -193,7 +190,7 @@ public static class BasicAuthenticationMiddlewareExtension
             configErrors += "AuthenticationType field is not defined." + System.Environment.NewLine;
         }
 
-        if (!validate.Scopes.Any())
+        if (validate.Scopes.Count == 0)
         {
             configErrors += "Scope field is not defined." + System.Environment.NewLine;
         }
@@ -280,7 +277,7 @@ public static class BasicAuthenticationMiddlewareExtension
             configErrors += "ProviderId in Basic settings must be filled!" + System.Environment.NewLine;
         }
 
-        if (!settings.Scopes.Any())
+        if (settings.Scopes.Count == 0)
         {
             configErrors += "Scope in Basic settings must be filled!" + System.Environment.NewLine;
         }

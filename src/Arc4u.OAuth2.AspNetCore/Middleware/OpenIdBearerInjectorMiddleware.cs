@@ -51,12 +51,9 @@ public class OpenIdBearerInjectorMiddleware
             && context.User.Identity.IsAuthenticated
             && context.User.Identity.AuthenticationType!.Equals(_options.OpenIdSettings.Values[TokenKeys.AuthenticationTypeKey], StringComparison.InvariantCultureIgnoreCase))
         {
-            if (context.User is AppPrincipal principal)
+            if (context.User is AppPrincipal principal && null != principal?.Profile?.CurrentCulture)
             {
-                if (null != principal?.Profile?.CurrentCulture)
-                {
-                    context.Request?.Headers?.Append("culture", principal.Profile.CurrentCulture.TwoLetterISOLanguageName);
-                }
+                context.Request?.Headers?.Append("culture", principal.Profile.CurrentCulture.TwoLetterISOLanguageName);
             }
 
             _activitySource ??= activitySourceFactory.GetArc4u();
@@ -64,7 +61,7 @@ public class OpenIdBearerInjectorMiddleware
             using var activity = _activitySource?.StartActivity("Inject bearer token in header", ActivityKind.Producer);
             Result<TokenInfo> tokenInfoResult = new();
 
-            if (_options.OnBehalfOfOpenIdSettings is not null && _options.OnBehalfOfOpenIdSettings.Values.Any())
+            if (_options.OnBehalfOfOpenIdSettings is not null && _options.OnBehalfOfOpenIdSettings.Values.Count > 0)
             {
                 try
                 {

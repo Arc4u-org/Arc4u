@@ -78,6 +78,7 @@ public class OAuth2Interceptor<T> : Interceptor
         }
         catch (NullReferenceException)
         {
+            // No current scope: fall back to the root provider.
         }
 
         return _serviceProvider ?? throw new InvalidOperationException("The service provider is not defined. Use the other constructor");

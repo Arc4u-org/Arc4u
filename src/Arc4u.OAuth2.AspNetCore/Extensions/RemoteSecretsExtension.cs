@@ -53,7 +53,7 @@ public static class RemoteSecretsExtension
 
         var remoteSecrets = section.Get<Dictionary<string, RemoteSecretSettingsOptions>>();
 
-        if (remoteSecrets is null || !remoteSecrets.Any())
+        if (remoteSecrets is null || remoteSecrets.Count == 0)
         {
             return;
         }

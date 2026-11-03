@@ -18,9 +18,17 @@ public class AnonymizerSink : ILogEventSink, IDisposable
     /// <summary>Disposes the wrapped sink when it is disposable.</summary>
     public void Dispose()
     {
-        if (Sink is IDisposable)
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>Disposes the wrapped sink when it is disposable.</summary>
+    /// <param name="disposing"><see langword="true"/> when called from <see cref="Dispose()"/>; <see langword="false"/> when called from a finalizer.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing && Sink is IDisposable disposable)
         {
-            ((IDisposable)Sink).Dispose();
+            disposable.Dispose();
         }
     }
 

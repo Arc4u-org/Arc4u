@@ -41,7 +41,7 @@ public class ValidateResourcesRightMiddlewareTests
         var services = new ServiceCollection()
             .AddLogging()
             .AddSingleton(applicationContext.Object);
-        services.AddAuthorization(options => options.AddPolicy("Read", policy => policy.RequireClaim("read")));
+        services.AddAuthorizationBuilder().AddPolicy("Read", policy => policy.RequireClaim("read"));
 
         var context = new DefaultHttpContext { RequestServices = services.BuildServiceProvider() };
         context.Request.Path = path;

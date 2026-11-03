@@ -29,7 +29,7 @@ namespace Arc4u.OAuth2.Extensions
                 configErrors += "ProviderId field is not defined." + System.Environment.NewLine;
             }
 
-            if (validate.ValidateAudience && !validate.Audiences.Any())
+            if (validate.ValidateAudience && validate.Audiences.Count == 0)
             {
                 configErrors += "Audiences field is not defined." + System.Environment.NewLine;
             }

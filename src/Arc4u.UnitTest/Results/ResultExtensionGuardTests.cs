@@ -211,7 +211,7 @@ public class ResultExtensionGuardTests
         diagnostics.Where(d => d.Id.StartsWith("CS86", StringComparison.Ordinal)).Should().BeEmpty();
     }
 
-    private static IReadOnlyList<Diagnostic> Compile(string statement, bool includeWarnings = false)
+    private static List<Diagnostic> Compile(string statement, bool includeWarnings = false)
     {
         var source = $$"""
             using System;

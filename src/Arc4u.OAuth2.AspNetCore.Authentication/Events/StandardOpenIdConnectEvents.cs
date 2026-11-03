@@ -53,19 +53,16 @@ namespace Arc4u.OAuth2.Events
             var options = _openIdOptions.Get(Constants.CookiesAuthenticationType);
 
             // The Audiences key is not registered when the OpenId settings disable the audience validation.
-            if (_hybridOptions.ValidateAudience && options.Values.TryGetValue(TokenKeys.Audiences, out var audiences))
+            if (_hybridOptions.ValidateAudience && options.Values.TryGetValue(TokenKeys.Audiences, out var audiences) && !jwtToken.Audiences.Any(aud => audiences.Contains(aud)))
             {
-                if (!jwtToken.Audiences.Any(aud => audiences.Contains(aud)))
-                {
-                    _logger.Technical()
-                        .LogError("Audience(s) {audience} is not in the list of allowed audience(s): {audiences}.",
-                            jwtToken.Audiences,
-                            audiences);
+                _logger.Technical()
+                    .LogError("Audience(s) {audience} is not in the list of allowed audience(s): {audiences}.",
+                        jwtToken.Audiences,
+                        audiences);
 
-                    context.Fail("Invalid audience");
+                context.Fail("Invalid audience");
 
-                    return;
-                }
+                return;
             }
 
             if (!_hybridOptions.ValidateAuthority)

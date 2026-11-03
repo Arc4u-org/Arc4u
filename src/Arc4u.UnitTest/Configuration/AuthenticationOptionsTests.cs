@@ -65,7 +65,7 @@ public class AuthenticationOptionsTests
 
         var config = new ConfigurationBuilder().AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         var section = configuration.GetSection("Authentication");
         var settings = new HybridAuthenticationSectionOptions(); // default values applied
@@ -104,7 +104,7 @@ public class AuthenticationOptionsTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
 
@@ -146,7 +146,7 @@ public class AuthenticationOptionsTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
 
@@ -183,7 +183,7 @@ public class AuthenticationOptionsTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
 
@@ -218,7 +218,7 @@ public class AuthenticationOptionsTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
 
@@ -259,7 +259,7 @@ public class AuthenticationOptionsTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
 
@@ -301,7 +301,7 @@ public class AuthenticationOptionsTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
 
@@ -339,7 +339,7 @@ public class AuthenticationOptionsTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDic).Build();
 
-        IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
+        var configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));
 
         IServiceCollection services = new ServiceCollection();
 

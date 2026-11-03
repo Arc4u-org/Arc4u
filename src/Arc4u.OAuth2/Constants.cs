@@ -17,10 +17,6 @@ public class Constants
     /// <summary>The authentication type (<c>Cookies</c>) given to an identity built from an authentication cookie.</summary>
     public const string CookiesAuthenticationType = "Cookies";
 
-    //public const string OAuth2OptionsName = "OAuth2";
-
-    //public const string OpenIdOptionsName = "OpenId";
-
     /// <summary>The authentication type (<c>Inject</c>) given to an identity built by the bearer injector middleware.</summary>
     public const string InjectAuthenticationType = "Inject";
 

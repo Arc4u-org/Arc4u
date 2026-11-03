@@ -48,7 +48,6 @@ public static class GraphExtension
             else
             {
                 var type = objectType;
-                // var bSimpleGraph = true;
                 var includedItems = new List<string>();
                 foreach (var propertyName in path)
                 {
@@ -59,11 +58,9 @@ public static class GraphExtension
                         continue;
                     }
 
-                    // bSimpleGraph = false;
                     break;
                 }
 
-                // if (bSimpleGraph)
                 if (includedItems.Count > 0)
                 {
                     dQuery = dQuery.Include(string.Join(".", includedItems));
@@ -130,7 +127,7 @@ public static class GraphExtension
     [RequiresDynamicCode(IncludesBuildCode)]
     private static IQueryable<T>? BuildInclude<T>(this IQueryable<T> queryable, string propertyPath) where T : class
     {
-        var properties = propertyPath.Split(new[] { '.' });
+        var properties = propertyPath.Split('.');
 
         var thenIncludeObject = BuildInternalInclude(queryable, properties[0], out var propertyType);
 
@@ -185,9 +182,9 @@ public static class GraphExtension
                 && mi.GetGenericArguments().Length == 3
                 && mi.GetParameters().Length == 2).ToList();
 
-        var generic = l.Where(p0 => p0.GetParameters().Any(p1 => p1.ParameterType.GetGenericArguments().Any(g => g.Name.Equals("IEnumerable`1")))).First();
+        var generic = l.First(p0 => p0.GetParameters().Any(p1 => p1.ParameterType.GetGenericArguments().Any(g => g.Name.Equals("IEnumerable`1"))));
 
-        var m = propertyType.IsGenericType ? generic : l.Where(t => t != generic).First();
+        var m = propertyType.IsGenericType ? generic : l.First(t => t != generic);
 
         if (m == null)
         {

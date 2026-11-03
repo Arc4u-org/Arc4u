@@ -172,7 +172,7 @@ public class ProblemDetailErrorTests
         sut.Severity.Should().BeNull();
         sut.Title.Should().BeNull();
         sut.Metadata.Should().HaveCount(1);
-        sut.Metadata.Should().ContainSingle("key1", metaData);
+        sut.Metadata.Should().ContainKey("key1").WhoseValue.Should().Be(metaData);
     }
 
     [Fact]

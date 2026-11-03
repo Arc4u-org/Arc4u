@@ -125,7 +125,7 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
 
         var result = new Result();
         // Check the settings contains the service url.
-        Result<TokenInfo> tokenResult = new();
+        Result<TokenInfo> tokenResult;
         try
         {
             tokenResult = await provider!.GetTokenAsync(settings, parameter).ConfigureAwait(true);

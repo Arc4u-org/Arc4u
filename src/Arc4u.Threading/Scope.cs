@@ -95,13 +95,10 @@ public class Scope<T> : IDisposable
     {
         if (!Disposed)
         {
-            if (disposing)
+            if (disposing && ToDispose)
             {
-                if (ToDispose)
-                {
-                    var disposable = Current as IDisposable;
-                    disposable?.Dispose();
-                }
+                var disposable = Current as IDisposable;
+                disposable?.Dispose();
             }
 
             _instance.Value = Parent;

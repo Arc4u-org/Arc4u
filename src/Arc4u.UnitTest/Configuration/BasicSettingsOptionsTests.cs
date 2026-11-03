@@ -192,7 +192,7 @@ public class BasicSettingsOptionsTests
 
         sut.Should().NotBeNull();
         sut.CertificateHeaderOptions.Should().NotBeNull();
-        sut.CertificateHeaderOptions.Any().Should().BeTrue();
+        sut.CertificateHeaderOptions.Should().NotBeEmpty();
         sut.CertificateHeaderOptions.First().Key.Should().Be("Cert1");
     }
 }

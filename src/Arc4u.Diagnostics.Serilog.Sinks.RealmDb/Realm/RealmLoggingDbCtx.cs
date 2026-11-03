@@ -60,7 +60,7 @@ public class RealmLoggingDbCtx : ILogStore
     public List<LogMessage> GetLogs(string criteria, int skip, int take)
     {
         var hasCriteria = !string.IsNullOrWhiteSpace(criteria);
-        var searchText = hasCriteria ? criteria.ToLowerInvariant() : "";
+        var searchText = hasCriteria ? criteria : "";
 
         return UseRealm(realm => GetLogs(realm, hasCriteria, searchText, skip, take));
     }
@@ -82,7 +82,7 @@ public class RealmLoggingDbCtx : ILogStore
 
         while (i < take && enumerator.MoveNext())
         {
-            if (hasCriteria && enumerator.Current.Message.ToLowerInvariant().Contains(searchText))
+            if (hasCriteria && enumerator.Current.Message.Contains(searchText, StringComparison.OrdinalIgnoreCase))
             {
                 result.Add(enumerator.Current);
             }

@@ -82,7 +82,7 @@ public static class MongoDbConnection
         var dbContext = new TContext();
 
         services.TryAddSingleton(typeof(TContext), (provider) => dbContext);
-        services.TryAddSingleton(typeof(IMongoClientFactory<TContext>), typeof(DefaultMongoClientFactory<TContext>));
+        services.TryAddSingleton<IMongoClientFactory<TContext>, DefaultMongoClientFactory<TContext>>();
 
         dbContext.Configure(contextBuilder);
     }
@@ -109,7 +109,7 @@ public static class MongoDbConnection
         var dbContext = new TContext();
 
         services.TryAddSingleton(typeof(TContext), (provider) => dbContext);
-        services.TryAddSingleton(typeof(IMongoClientFactory<TContext>), typeof(DefaultMongoClientFactory<TContext>));
+        services.TryAddSingleton<IMongoClientFactory<TContext>, DefaultMongoClientFactory<TContext>>();
 
         dbContext.Configure(contextBuilder);
     }

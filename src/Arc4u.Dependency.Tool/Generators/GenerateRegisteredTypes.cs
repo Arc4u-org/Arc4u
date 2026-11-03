@@ -281,7 +281,8 @@ public class GenerateRegisteredTypes : IIncrementalGenerator
             var nugetInfo = new NugetInfo(candidates[0].Path, assemblyName);
             if (!typesByAssemblies.TryGetValue(nugetInfo, out var types))
             {
-                typesByAssemblies.Add(nugetInfo, types = []);
+                types = [];
+                typesByAssemblies.Add(nugetInfo, types);
             }
             types.Add((typeInfo, typeString));
         }

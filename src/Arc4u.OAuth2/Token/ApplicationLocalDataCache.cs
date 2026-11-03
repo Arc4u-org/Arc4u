@@ -34,7 +34,10 @@ public class ApplicationLocalDataCache : ITokenCache
             Cache.Remove(key);
             _token = null;
         }
-        catch { }
+        catch
+        {
+            // Errors are ignored: clearing the token is best effort.
+        }
     }
 
     /// <inheritdoc/>
