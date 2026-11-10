@@ -7,7 +7,7 @@ Standalone Blazor WebAssembly apps, which sign the user in themselves, are not s
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.Blazor --prerelease
+dotnet add package Arc4u.OAuth2.Blazor
 ```
 
 ## Usage

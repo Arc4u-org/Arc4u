@@ -5,7 +5,7 @@ Configures ASP.NET Core authentication from the `Authentication` configuration s
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.AspNetCore.Authentication --prerelease
+dotnet add package Arc4u.OAuth2.AspNetCore.Authentication
 ```
 
 ## Usage

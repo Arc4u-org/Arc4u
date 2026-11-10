@@ -82,7 +82,7 @@ certificate. A small console project that references `Arc4u` does the job:
 ```bash
 dotnet new console -o EncryptSecret
 cd EncryptSecret
-dotnet add package Arc4u --prerelease
+dotnet add package Arc4u
 ```
 
 ```csharp
@@ -166,7 +166,7 @@ environment variables (`EncryptionCertificate__File__Cert`).
 ### Step 4: Register the decryptor
 
 ```bash
-dotnet add package Arc4u.Configuration.Decryptor --prerelease
+dotnet add package Arc4u.Configuration.Decryptor
 ```
 
 ```csharp

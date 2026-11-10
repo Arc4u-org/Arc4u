@@ -14,10 +14,10 @@ This page lists every package of the Arc4u framework, whether it is supported in
 | **Removed** | The package and its source no longer exist in 9.x. Older versions stay on NuGet.org. |
 
 - The package name is the `<PackageId>` of the `.csproj`, which can differ from the folder name (`Arc4u.Caching.SqlServer` lives in `src/Arc4u.Caching.Sql`).
-- Target frameworks are those of the current `develop/9.0.0` build, which is the next preview, read from each `.csproj` (`src/Directory.Build.props` does not set a target framework). The published `9.0.0-preview37` and earlier previews target `net8.0`, `net9.0` and `net10.0` (`Arc4u.Dependency` also targets `netstandard2.0`; `Arc4u.Dependency.Tool` targets only `netstandard2.0`), not `net11.0`.
-- All supported packages have `9.0.0-preview37` as their latest version on NuGet.org (checked on 2026-09-29), except `Arc4u.AspNetCore.Versioning`, which is not on NuGet.org yet. The `Last version` column of the last table shows the latest *listed* version on that date.
+- Target frameworks are those of the 9.0.0 packages, read from each `.csproj` (`src/Directory.Build.props` does not set a target framework). `Arc4u.Dependency.Tool` is a source generator and targets only `netstandard2.0`.
+- All supported packages are published on NuGet.org with version 9.0.0. The `Last version on NuGet` column of the last table shows the latest *listed* version of each package that is not supported.
 - Trimming and Native AOT support is listed per package in [Native AOT and trimming](native-aot.md).
-- Arc4u 9 is in preview: install with `--prerelease`, as in `dotnet add package Arc4u.Caching --prerelease`. See [Versioning and package naming](../concepts/versioning.md).
+- Install a package without a version, as in `dotnet add package Arc4u.Caching`, to get the latest stable version. See [Versioning and package naming](../concepts/versioning.md).
 
 ## Supported packages
 
@@ -99,7 +99,7 @@ These packages are used by many of the others and have no guide of their own. Se
 |---|---|---|---|
 | `Arc4u.gRPC` | Supported | `net10.0`, `net11.0` | [gRPC and API versioning](grpc-versioning/index.md) |
 | `Arc4u.AspNetCore.gRpc` | Supported | `net10.0`, `net11.0` | [gRPC and API versioning](grpc-versioning/index.md) |
-| `Arc4u.AspNetCore.Versioning` | Supported | `net10.0` | [gRPC and API versioning](grpc-versioning/index.md) |
+| `Arc4u.AspNetCore.Versioning` | Supported | `net10.0`, `net11.0` | [gRPC and API versioning](grpc-versioning/index.md) |
 
 ### Data access
 
@@ -117,8 +117,8 @@ These packages are used by many of the others and have no guide of their own. Se
 
 ## Deprecated and removed packages
 
-None of these packages is built from the current 9.x source. `Arc4u.Data` was published with the
-9.0.0 previews up to `9.0.0-preview37` and removed afterwards.
+None of these packages is built from the 9.x source. `Arc4u.Data` was published only as a
+prerelease during the development of 9.0 and is not part of 9.0.0.
 
 | Package | Status | Last version on NuGet | Replacement | More |
 |---|---|---|---|---|
@@ -127,7 +127,7 @@ None of these packages is built from the current 9.x source. `Arc4u.Data` was pu
 | `Arc4u.Standard.NServiceBus.RabbitMQ` | Deprecated | `8.3.2` | In 9: use Dapr pub/sub directly. | [NServiceBus replaced by Dapr pub/sub](../migration/8x-to-9.md#nservicebus-replaced-by-dapr-pubsub) |
 | `Arc4u.Prism.DI.Wpf` | Deprecated | `8.3.2` | In 9: use `Prism.DryIoc`, Prism's own DryIoc container package. | [Prism.DI.Wpf replaced by Prism.DryIoc](../migration/8x-to-9.md#prismdiwpf-replaced-by-prismdryioc) |
 | `Arc4u.Dependency.ComponentModel` (8.x ID `Arc4u.Standard.Dependency.ComponentModel`) | Removed | `8.3.2` | `Arc4u.Dependency`, which registers services on `IServiceCollection`. | [Dependency injection](dependency-injection/index.md) |
-| `Arc4u.Data` (8.x ID `Arc4u.Standard.Data`) | Removed | `9.0.0-preview37` (`Arc4u.Standard.Data`: `8.3.2`) | None: define the entities in your domain model and persist them with the Entity Framework Core API. | [Arc4u.Data and change tracking removed](../migration/8x-to-9.md#arc4udata-and-change-tracking-removed) |
+| `Arc4u.Data` (8.x ID `Arc4u.Standard.Data`) | Removed | `Arc4u.Standard.Data`: `8.3.2` | None: define the entities in your domain model and persist them with the Entity Framework Core API. | [Arc4u.Data and change tracking removed](../migration/8x-to-9.md#arc4udata-and-change-tracking-removed) |
 | `Arc4u.OAuth2.Msal` (8.x ID `Arc4u.Standard.OAuth2.Msal`) | Removed | `8.3.2` | None in Arc4u 9. | [MSAL status](../migration/8x-to-9.md#msal-status) |
 | `Arc4u.Standard.OAuth2.AspNetCore.Api` | Removed | `8.3.2` | None. The project was deleted from 9.x. For server authentication see `Arc4u.OAuth2.AspNetCore`. | [Server authentication](authentication-server/index.md) |
 | `Arc4u.Standard.OAuth2.Adal`, `Arc4u.Standard.OAuth2.AspNetCore.Adal` | Removed | `6.0.6.1-preview02`, `8.3.0-preview01` | None. ADAL is retired by Microsoft. | [ADAL and Protobuf removed](../migration/8x-to-9.md#adal-and-protobuf-removed) |

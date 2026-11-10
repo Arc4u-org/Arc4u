@@ -14,7 +14,7 @@ A caller decides which parts of an aggregate it needs (an order with its lines, 
 ## Install
 
 ```bash
-dotnet add package Arc4u.EfCore --prerelease
+dotnet add package Arc4u.EfCore
 ```
 
 `Arc4u.EfCore` references `Microsoft.EntityFrameworkCore` and `Arc4u`, which defines `Graph<T>`. Add the provider package of your database yourself. The package has no configuration section and registers nothing in dependency injection: you keep registering your `DbContext` with `AddDbContext` as usual.

@@ -33,12 +33,11 @@ OpenAPI generation.
 ## Install
 
 ```bash
-dotnet add package Arc4u.AspNetCore.Versioning --prerelease
+dotnet add package Arc4u.AspNetCore.Versioning
 ```
 
 > [!NOTE]
-> The package is not published on NuGet.org yet and targets `net10.0` only. It is flagged as not AOT
-> compatible because MVC and the API explorer it depends on are not trimmable yet.
+> The package is flagged as not AOT compatible because MVC and the API explorer it depends on are not trimmable yet.
 
 ## Configuration
 

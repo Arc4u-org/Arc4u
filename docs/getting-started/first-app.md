@@ -39,11 +39,11 @@ assembly (see [Step 5](#step-5-write-programcs)).
 ## Step 2: Add the packages
 
 ```bash
-dotnet add package Arc4u.Dependency --prerelease
-dotnet add package Arc4u.Dependency.Tool --prerelease
-dotnet add package Arc4u.Configuration --prerelease
-dotnet add package Arc4u.Diagnostics --prerelease
-dotnet add package Arc4u.OAuth2.AspNetCore.Authentication --prerelease
+dotnet add package Arc4u.Dependency
+dotnet add package Arc4u.Dependency.Tool
+dotnet add package Arc4u.Configuration
+dotnet add package Arc4u.Diagnostics
+dotnet add package Arc4u.OAuth2.AspNetCore.Authentication
 dotnet add package Serilog.AspNetCore
 ```
 

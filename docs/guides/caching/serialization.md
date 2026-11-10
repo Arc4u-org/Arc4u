@@ -31,7 +31,7 @@ and Native AOT, give it a `JsonSerializerContext` through its options, see
 ## Install
 
 ```bash
-dotnet add package Arc4u.Serializer.JSon --prerelease
+dotnet add package Arc4u.Serializer.JSon
 ```
 
 ## Configuration

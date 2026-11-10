@@ -8,7 +8,7 @@ want to move it to Arc4u 9. It lists every breaking change with the 8.x code, th
 and the steps to follow. Work through the sections in order: the first three (packages, target
 framework, JSON) apply to every application, the others only if you use the feature.
 
-The Arc4u 9 code in this guide is the code on the `develop/9.0.0` branch. For the complete list of
+The Arc4u 9 code in this guide is Arc4u 9.0.0. For the complete list of
 changes per version, see the [changelog](../releases/index.md).
 
 ## Before you start
@@ -24,20 +24,6 @@ changes per version, see the [changelog](../releases/index.md).
   used the Protobuf serializer (see [ADAL and Protobuf removed](#adal-and-protobuf-removed)).
 
 > [!WARNING]
-> Arc4u 9 is in preview: install the packages with `--prerelease`. The last preview on NuGet,
-> `9.0.0-preview37`, was built before part of the changes described here, and it targets `net8.0`,
-> `net9.0` and `net10.0`. If you migrate to that preview, check this list:
->
-> - **Already in preview37:** `AddHybridAuthentication`; `AddOidcAuthentication` registering OpenID
->   Connect and cookies only, without JWT bearer; `AddClientTokens` and `ClientTokensSectionPath`;
->   the `AuthenticationMethod`, `NameClaimType` and `RoleClaimType` settings;
->   `DataProtectionCertificate`; `JwtHttpHandler<T>`; the removal of the `*EventsType` keys; the
->   `IReadOnlyCollection<IError>` parameter of `OnFailed`.
-> - **Not yet in preview37:** the settings are still named `OpenId` and `OAuth2`, the bearer
->   `AuthenticationType` is still `OAuth2Bearer`, the `AuthenticationType` and `SettingsKeys` keys are
->   still read, `IClaimsFiller.GetAsync` still has the 8.x signature, and the `…Async` result
->   extension methods on a plain `Result` still return synchronously.
->
 > Because `AddOidcAuthentication` no longer registers JWT bearer, an 8.x application that keeps
 > calling it stops accepting bearer tokens without any error at startup: switch to
 > `AddHybridAuthentication` (see [Registration methods](#registration-methods)).
@@ -62,8 +48,8 @@ change: Arc4u 8.x already used `Arc4u.*` namespaces, so most `using` directives 
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Arc4u.Caching.Memory" Version="9.0.0-preview37" />
-  <PackageReference Include="Arc4u.OAuth2.AspNetCore.Authentication" Version="9.0.0-preview37" />
+  <PackageReference Include="Arc4u.Caching.Memory" Version="9.0.0" />
+  <PackageReference Include="Arc4u.OAuth2.AspNetCore.Authentication" Version="9.0.0" />
 </ItemGroup>
 ```
 
@@ -131,7 +117,7 @@ following 8.x packages have no Arc4u 9 version:
 
 Arc4u 9 also adds packages that have no 8.x equivalent: `Arc4u.Dependency.Tool` (source
 generators for dependency registration), `Arc4u.OAuth2.Client.Authentication` (OpenID Connect
-for desktop and mobile clients) and `Arc4u.AspNetCore.Versioning` (not published on NuGet yet).
+for desktop and mobile clients) and `Arc4u.AspNetCore.Versioning` (API versioning helpers).
 The [package support matrix](../guides/package-support.md) lists the status of every package.
 
 ## Target frameworks
@@ -145,7 +131,6 @@ and `net9.0`). Arc4u 9 drops .NET Standard and the .NET versions that reach end 
 | All Arc4u 9 packages, except the ones below | `net10.0`, `net11.0` |
 | `Arc4u.Dependency` | `netstandard2.0`, `net10.0`, `net11.0` |
 | `Arc4u.Dependency.Tool` | `netstandard2.0` (a Roslyn source generator, it runs inside the compiler) |
-| `Arc4u.AspNetCore.Versioning` | `net10.0` |
 
 **Before (8.x)**
 
@@ -1438,7 +1423,7 @@ public static class Security
 | `RealmLoggingDbCtx.CreateMapping()` (AutoMapper) | Removed with the AutoMapper dependency |
 | `RealmLoggingDbCtx(RealmConfiguration, ILoggerFactory)` and `RealmLoggingDbCtx.Realm` | `RealmLoggingDbCtx(RealmConfiguration)`. The store opens a `Realm` for each call, so it no longer exposes one: open your own with `Realm.GetInstance(config)` on the thread that uses it |
 | `Arc4u.OAuth2.Blazor`: `BlazorTokenProvider`, `BlazorMsalTokenProvider`, `ITokenWindowInterop`, `WindowInterop` and the `Authenticate.html`, `CreatePopupWindow.js` and `GetToken.html` static assets; `Arc4u.OAuth2.AspNetCore.Blazor`: `BlazorController` (`/blazor/redirectto/...`) | A Blazor Web App: the server signs the user in with a cookie and exposes the user's token, and the WebAssembly project gets it with `ClientTokenProvider` (see [Blazor](../guides/authentication-client/blazor.md)). Standalone Blazor WebAssembly apps are not supported |
-| `Arc4u.Caching.SecureCache` (moved to `Arc4u.Blazor.Caching.SecureCache` in previews of 9.0) and `Arc4u.Blazor.SetCultureUIExtensions.SetDefaultCulture` | None. Keep your own in-memory `ISecureCache` if needed; set `CultureInfo.DefaultThreadCurrentCulture` and `DefaultThreadCurrentUICulture` before `RunAsync` |
+| `Arc4u.Caching.SecureCache` and `Arc4u.Blazor.SetCultureUIExtensions.SetDefaultCulture` | None. Keep your own in-memory `ISecureCache` if needed; set `CultureInfo.DefaultThreadCurrentCulture` and `DefaultThreadCurrentUICulture` before `RunAsync` |
 | `CustomRootCaExtensions.CertificateOptionKeys` (static, shared by every service collection of the process) | The names registered with `AddCustomRootCA` in a service collection: `serviceProvider.GetRequiredService<IOptions<CARootOptionKeys>>().Value.Keys` |
 | `Arc4u.gRPC`: `ClientErrorInterceptor` | Catch the `RpcException` and call `ToResult()` (see [ProblemDetails over gRPC](../guides/grpc-versioning/grpc-problem-details.md)). A 403 returned by the service arrives as `PermissionDenied` with status 403 in its ProblemDetails. The interceptor only converted exceptions raised while a call was started, which almost never happens with `Grpc.Net.Client`, so removing it barely changes what your code receives |
 | `Arc4u.OAuth2.Client.Authentication`: `OidcClientAuthenticationOptions` and `OidcClientAuthenticationSectionOptions` `NameClaimType`, `RoleClaimType` and `ValidateAuthority` (`Authentication:NameClaimType`, `Authentication:RoleClaimType`, `Authentication:ValidateAuthority` in a client application) | None: the client authentication never read them. Delete the assignments; the configuration keys are ignored. The client principal is built by the `AppPrincipalFactory` |

@@ -33,9 +33,9 @@ The packages do not reference each other. `Graph<T>` lives in the base `Arc4u` p
 Install only what the service uses:
 
 ```bash
-dotnet add package Arc4u.EfCore --prerelease
-dotnet add package Arc4u.MongoDB --prerelease
-dotnet add package Arc4u.OData --prerelease
+dotnet add package Arc4u.EfCore
+dotnet add package Arc4u.MongoDB
+dotnet add package Arc4u.OData
 ```
 
 You also need an EF Core provider package (for example `Microsoft.EntityFrameworkCore.SqlServer`) or a reachable MongoDB server; Arc4u ships neither.

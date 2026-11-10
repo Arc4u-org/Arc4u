@@ -5,7 +5,7 @@ gRPC interceptors and helpers for Arc4u: forward the caller's bearer token and c
 ## Install
 
 ```bash
-dotnet add package Arc4u.gRPC --prerelease
+dotnet add package Arc4u.gRPC
 ```
 
 ## Usage

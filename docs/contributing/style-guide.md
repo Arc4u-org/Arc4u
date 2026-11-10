@@ -168,10 +168,10 @@ description: "Configure named caches backed by memory, Redis, SQL Server or Dapr
   placeholders in angle brackets (`"<client-secret>"`) or `example.com`.
 - Fence languages: `csharp`, `json`, `xml`, `bash` (for `dotnet` commands, which are the same
   on every OS), `powershell` (Windows-only commands), `yaml`, `http`, `text`, `mermaid`.
-- Install commands do not pin versions. While Arc4u 9 is in preview, add `--prerelease`:
+- Install commands do not pin versions:
 
   ```bash
-  dotnet add package Arc4u.Caching --prerelease
+  dotnet add package Arc4u.Caching
   ```
 
 ### JSON samples

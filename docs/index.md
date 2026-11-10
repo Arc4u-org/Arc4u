@@ -8,7 +8,7 @@ number of technologies from the .NET ecosystem and packages them so that you can
 common enterprise concerns, such as authentication, logging or caching, without
 reinventing them. The framework has been in use for many years and is open source.
 
-This site documents Arc4u 9, the `develop/9.0.0` line. It targets `net10.0` and
+This site documents Arc4u 9.0.0. It targets `net10.0` and
 `net11.0` and ships as a set of NuGet packages named `Arc4u.*`, grouped by feature area.
 
 ## Where to start

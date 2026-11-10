@@ -57,10 +57,10 @@ which does not use it.
 Install the core package, one package per kind you use, and the JSON serializer. For example, for a memory and a Redis cache:
 
 ```bash
-dotnet add package Arc4u.Caching --prerelease
-dotnet add package Arc4u.Caching.Memory --prerelease
-dotnet add package Arc4u.Caching.Redis --prerelease
-dotnet add package Arc4u.Serializer.JSon --prerelease
+dotnet add package Arc4u.Caching
+dotnet add package Arc4u.Caching.Memory
+dotnet add package Arc4u.Caching.Redis
+dotnet add package Arc4u.Serializer.JSon
 ```
 
 The caches log through the Arc4u logger. Register it with `AddILogger()` (see [Diagnostics](../diagnostics/index.md));

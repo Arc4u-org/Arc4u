@@ -5,7 +5,7 @@ Stores the sections of the Arc4u configuration store in a database through an EF
 ## Install
 
 ```bash
-dotnet add package Arc4u.Configuration.Store.EfCore --prerelease
+dotnet add package Arc4u.Configuration.Store.EfCore
 ```
 
 ## Usage

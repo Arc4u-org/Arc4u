@@ -25,8 +25,8 @@ changing the object after `Put` does not change what `Get` returns, and the size
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.Memory --prerelease
-dotnet add package Arc4u.Serializer.JSon --prerelease
+dotnet add package Arc4u.Caching.Memory
+dotnet add package Arc4u.Serializer.JSon
 ```
 
 `Arc4u.Caching.Memory` brings `Arc4u.Caching`.

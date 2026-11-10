@@ -5,7 +5,7 @@ description: "Symptoms, causes and fixes for the Arc4u server authentication, bu
 
 This page lists the errors met with the Arc4u server authentication, from the most frequent to the rarest,
 with their cause and fix. Several come from past GitHub issues, linked for context. The last section lists the
-known issues of `develop/9.0.0`. Start with the [overview](index.md) if the scenario itself is new to you, and
+known issues of 9.0.0. Start with the [overview](index.md) if the scenario itself is new to you, and
 see [Concepts](../../concepts/index.md) for the vocabulary.
 
 > [!TIP]
@@ -135,7 +135,7 @@ This is a client-side issue ([#155](https://github.com/Arc4u-org/Arc4u/issues/15
 
 ## Known issues
 
-The following behaviors of `develop/9.0.0` are known. They are described where they matter, with a workaround
+The following behaviors of 9.0.0 are known. They are described where they matter, with a workaround
 when there is one.
 
 | Area | Issue | Workaround |

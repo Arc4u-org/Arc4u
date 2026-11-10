@@ -40,13 +40,13 @@ flowchart LR
 ## Install
 
 ```bash
-dotnet add package Arc4u.Diagnostics --prerelease
+dotnet add package Arc4u.Diagnostics
 ```
 
 To write to Serilog sinks, add the Serilog integration and the hosting package that connects Serilog to `Microsoft.Extensions.Logging`:
 
 ```bash
-dotnet add package Arc4u.Diagnostics.Serilog --prerelease
+dotnet add package Arc4u.Diagnostics.Serilog
 dotnet add package Serilog.AspNetCore
 ```
 

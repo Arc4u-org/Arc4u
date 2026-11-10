@@ -5,7 +5,7 @@ Turns the operations of the Arc4u authorization model into ASP.NET Core authoriz
 ## Install
 
 ```bash
-dotnet add package Arc4u.Authorization --prerelease
+dotnet add package Arc4u.Authorization
 ```
 
 ## Usage

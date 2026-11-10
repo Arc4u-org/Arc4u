@@ -5,7 +5,7 @@ A `DbContext`-like class per MongoDB database: register it from a connection str
 ## Install
 
 ```bash
-dotnet add package Arc4u.MongoDB --prerelease
+dotnet add package Arc4u.MongoDB
 ```
 
 ## Usage

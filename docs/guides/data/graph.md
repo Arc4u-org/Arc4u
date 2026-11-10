@@ -22,7 +22,7 @@ flowchart LR
 ## Install
 
 ```bash
-dotnet add package Arc4u --prerelease
+dotnet add package Arc4u
 ```
 
 `Graph<T>` is in the `Arc4u` namespace of the base `Arc4u` package. To apply a graph to a query, the data access layer also needs `Arc4u.EfCore` (see [Entity Framework Core](efcore.md#install)).

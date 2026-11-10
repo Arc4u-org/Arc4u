@@ -21,7 +21,7 @@ See [MSAL status](../../migration/8x-to-9.md#msal-status) in the migration guide
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.Client.Authentication --prerelease
+dotnet add package Arc4u.OAuth2.Client.Authentication
 ```
 
 The package references `Arc4u.OAuth2` and `Duende.IdentityModel.OidcClient`. You also need an

@@ -49,9 +49,8 @@ flowchart LR
 | `Arc4u.Dependency` | The `[Export]`, `[Shared]` and `[Scoped]` attributes, and `TryGetService` helpers on `IServiceProvider`. |
 | `Arc4u.Dependency.Tool` | The two source generators. A development dependency: it runs inside the compiler, and your code never calls it. |
 
-Reference both packages in every project that contains `[Export]` classes. On `develop/9.0.0`,
-`Arc4u.Dependency` targets `netstandard2.0`, `net10.0` and `net11.0` (the published
-`9.0.0-preview37` targets `netstandard2.0`, `net8.0`, `net9.0` and `net10.0`). Its
+Reference both packages in every project that contains `[Export]` classes. `Arc4u.Dependency`
+targets `netstandard2.0`, `net10.0` and `net11.0`. Its
 `netstandard2.0` build contains only the attributes. On the other target frameworks it references
 `Microsoft.Extensions.Hosting`, which brings the `Microsoft.Extensions.DependencyInjection` API that
 the generated code calls.
@@ -62,8 +61,8 @@ Arc4u 9. See [Package support](../package-support.md).
 ## Install
 
 ```bash
-dotnet add package Arc4u.Dependency --prerelease
-dotnet add package Arc4u.Dependency.Tool --prerelease
+dotnet add package Arc4u.Dependency
+dotnet add package Arc4u.Dependency.Tool
 ```
 
 Because `Arc4u.Dependency.Tool` is a development dependency, `dotnet add package` writes its

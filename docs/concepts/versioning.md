@@ -20,12 +20,11 @@ Since 8.0.0, a version is `MAJOR.MINOR.PATCH`:
 | `MINOR` | A release adds features, with bug fixes. |
 | `PATCH` | A release contains bug fixes only. |
 
-Previews carry a `-previewNN` suffix, for example `9.0.0-preview37`. Arc4u 9 is available only
-as previews so far, which is why the install commands in this documentation use
-`--prerelease`:
+The current release is 9.0.0. Install commands in this documentation do not pin a version, so
+they install the latest stable release:
 
 ```bash
-dotnet add package Arc4u.Caching --prerelease
+dotnet add package Arc4u.Caching
 ```
 
 All the packages are built and published together, with one version number passed to the
@@ -39,16 +38,14 @@ The versions published on NuGet.org so far fall into these lines:
 | 5.0.x.y (2021 to 2022) | `Arc4u.Standard.*` | Four parts, tied to .NET | `netstandard2.0`, `netstandard2.1` |
 | 6.0.x.y and 6.1.x.y (2022 to 2023) | `Arc4u.Standard.*` | Four parts, tied to .NET | `netstandard2.0`, `net6.0`, `net7.0` |
 | 8.0.0 to 8.3.2 (2023 to 2025) | `Arc4u.Standard.*` | Semantic versioning | `netstandard2.0`, `net8.0`, `net9.0` |
-| 9.0.0 previews (since 2025) | `Arc4u.*` | Semantic versioning | `9.0.0-preview02` to `9.0.0-preview37`: `net8.0`, `net9.0`, `net10.0` (`9.0.0-preview01`: `net8.0`, `net9.0`) |
+| 9.0.0 (2026) | `Arc4u.*` | Semantic versioning | `net10.0`, `net11.0` |
 
-The code on the `develop/9.0.0` branch, which this site documents, targets `net10.0` and
-`net11.0` (see [Target frameworks](../migration/8x-to-9.md#target-frameworks)).
+This site documents 9.0.0 (see [Target frameworks](../migration/8x-to-9.md#target-frameworks)).
 
 > [!NOTE]
 > A few packages also have a stable `1.0.0` version outside these lines, for example
 > `Arc4u.Standard.Core`, `Arc4u.AspNetCore.Results` and `Arc4u.Dependency.Tool`. Ignore it:
-> `dotnet add package Arc4u.Dependency.Tool` without `--prerelease` installs `1.0.0`, not a
-> 9.0.0 preview.
+> `dotnet add package` installs 9.0.0, the highest stable version.
 
 Before 8.0.0, a version followed the .NET version it was built with. For example, `6.0.9.1`
 was built with .NET 6.0.9:
@@ -107,8 +104,8 @@ The complete list of renamed packages is in
 
 ## Trade-offs
 
-- **Previews are not stable.** An API can change between two `9.0.0-previewNN` versions.
-  Read the [changelog](../releases/index.md) before you move to a newer preview.
+- **Read the changelog before you upgrade.** A new major version contains breaking changes:
+  read the [changelog](../releases/index.md) before you move to it.
 - **New versions without changes.** Because all packages share a version, upgrading one means
   upgrading all, even those whose code is identical.
 - **Two package families.** The `Arc4u.Standard.*` 8.x packages are still on NuGet.org next to
@@ -126,7 +123,7 @@ and define the version once:
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <Arc4uVersion>9.0.0-preview37</Arc4uVersion>
+    <Arc4uVersion>9.0.0</Arc4uVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Arc4u.Caching" Version="$(Arc4uVersion)" />

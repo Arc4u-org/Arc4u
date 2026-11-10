@@ -44,9 +44,9 @@ flowchart LR
 ## Install
 
 ```bash
-dotnet add package Arc4u.Configuration --prerelease
-dotnet add package Arc4u.Configuration.Decryptor --prerelease
-dotnet add package Arc4u.Configuration.Store.EfCore --prerelease
+dotnet add package Arc4u.Configuration
+dotnet add package Arc4u.Configuration.Decryptor
+dotnet add package Arc4u.Configuration.Store.EfCore
 ```
 
 Install only the packages you use. `Arc4u.Configuration.Decryptor` depends on `Arc4u`, and

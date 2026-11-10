@@ -5,7 +5,7 @@ Keep secrets encrypted in configuration files and decrypt values that start with
 ## Install
 
 ```bash
-dotnet add package Arc4u.Configuration.Decryptor --prerelease
+dotnet add package Arc4u.Configuration.Decryptor
 ```
 
 ## Usage

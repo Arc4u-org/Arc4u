@@ -54,10 +54,10 @@ for desktop sign-in.
 For a service (ASP.NET Core) that calls other APIs:
 
 ```bash
-dotnet add package Arc4u.OAuth2.AspNetCore.Authentication --prerelease
-dotnet add package Arc4u.Caching.Memory --prerelease
-dotnet add package Arc4u.Serializer.JSon --prerelease
-dotnet add package Arc4u.gRPC --prerelease
+dotnet add package Arc4u.OAuth2.AspNetCore.Authentication
+dotnet add package Arc4u.Caching.Memory
+dotnet add package Arc4u.Serializer.JSon
+dotnet add package Arc4u.gRPC
 ```
 
 The cache packages keep the application tokens (see [Caching](../caching/index.md)); use another

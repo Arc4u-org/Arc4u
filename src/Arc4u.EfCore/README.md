@@ -5,7 +5,7 @@ Applies the includes of a `Graph<T>` to Entity Framework Core queries.
 ## Install
 
 ```bash
-dotnet add package Arc4u.EfCore --prerelease
+dotnet add package Arc4u.EfCore
 ```
 
 ## Usage

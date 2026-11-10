@@ -5,7 +5,7 @@ Base library of the Arc4u framework: intervals and periods, timeout and time zon
 ## Install
 
 ```bash
-dotnet add package Arc4u --prerelease
+dotnet add package Arc4u
 ```
 
 ## Usage

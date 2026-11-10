@@ -5,8 +5,8 @@ Attributes (`[Export]`, `[Shared]`, `[Scoped]`) that declare how a class is regi
 ## Install
 
 ```bash
-dotnet add package Arc4u.Dependency --prerelease
-dotnet add package Arc4u.Dependency.Tool --prerelease
+dotnet add package Arc4u.Dependency
+dotnet add package Arc4u.Dependency.Tool
 ```
 
 ## Usage

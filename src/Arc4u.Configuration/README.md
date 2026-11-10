@@ -5,7 +5,7 @@ Application-wide settings for Arc4u: `ApplicationConfig` (application name, envi
 ## Install
 
 ```bash
-dotnet add package Arc4u.Configuration --prerelease
+dotnet add package Arc4u.Configuration
 ```
 
 ## Usage

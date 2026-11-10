@@ -51,8 +51,8 @@ sequenceDiagram
 ## Install
 
 ```bash
-dotnet add package Arc4u.AspNetCore.gRpc --prerelease   # service (also for ConfigureLocalCaCertificateForGrpc)
-dotnet add package Arc4u.gRPC --prerelease              # client
+dotnet add package Arc4u.AspNetCore.gRpc   # service (also for ConfigureLocalCaCertificateForGrpc)
+dotnet add package Arc4u.gRPC              # client
 ```
 
 The samples on this page use the `orders.proto` below. `Grpc.AspNetCore` generates the service base

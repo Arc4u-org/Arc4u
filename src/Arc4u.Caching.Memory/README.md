@@ -5,7 +5,7 @@ The `Memory` cache kind of Arc4u: a named cache stored in the memory of the proc
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.Memory --prerelease
+dotnet add package Arc4u.Caching.Memory
 ```
 
 ## Usage

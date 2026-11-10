@@ -5,7 +5,7 @@ The `Dapr` cache kind of Arc4u: a named cache stored in a Dapr state store.
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.Dapr --prerelease
+dotnet add package Arc4u.Caching.Dapr
 ```
 
 ## Usage

@@ -21,7 +21,7 @@ flowchart LR
 ## Install
 
 ```bash
-dotnet add package Arc4u.OData --prerelease
+dotnet add package Arc4u.OData
 ```
 
 The package targets ASP.NET Core (it references the shared framework) and brings `Microsoft.AspNetCore.OData` with it. It has no configuration section of its own.

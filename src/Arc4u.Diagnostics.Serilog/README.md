@@ -5,7 +5,7 @@ Serilog integration for the Arc4u logging: a one-line text formatter, an anonymi
 ## Install
 
 ```bash
-dotnet add package Arc4u.Diagnostics.Serilog --prerelease
+dotnet add package Arc4u.Diagnostics.Serilog
 ```
 
 ## Usage

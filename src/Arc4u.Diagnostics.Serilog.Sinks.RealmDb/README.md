@@ -5,7 +5,7 @@ Serilog sinks that keep the Arc4u log entries in memory or in a Realm database, 
 ## Install
 
 ```bash
-dotnet add package Arc4u.Diagnostics.Serilog.Sinks.RealmDb --prerelease
+dotnet add package Arc4u.Diagnostics.Serilog.Sinks.RealmDb
 ```
 
 ## Usage

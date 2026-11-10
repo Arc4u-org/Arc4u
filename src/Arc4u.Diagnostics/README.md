@@ -5,7 +5,7 @@ Fluent logging API on top of `Microsoft.Extensions.Logging`: log entries get a c
 ## Install
 
 ```bash
-dotnet add package Arc4u.Diagnostics --prerelease
+dotnet add package Arc4u.Diagnostics
 ```
 
 ## Usage

@@ -5,7 +5,7 @@ Fluent `OnSuccess` / `OnFailed` / `LogIfFailed` chains for FluentResults, steps 
 ## Install
 
 ```bash
-dotnet add package Arc4u.Results --prerelease
+dotnet add package Arc4u.Results
 ```
 
 ## Usage

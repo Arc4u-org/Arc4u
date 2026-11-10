@@ -15,8 +15,8 @@ about five minutes.
   dotnet --version
   ```
 
-  The Arc4u 9 code targets `net10.0` and `net11.0`. The `9.0.0-preview` packages on NuGet
-  target `net8.0`, `net9.0` and `net10.0`, so a .NET 10 SDK is enough to use them.
+  The Arc4u 9.0.0 packages target `net10.0` and `net11.0`. Use the .NET 11 SDK to target
+  `net11.0`.
 - A .NET project to add Arc4u to. [Build your first Arc4u app](first-app.md) starts from
   `dotnet new web`.
 
@@ -52,16 +52,15 @@ For the [first app](first-app.md), you need `Arc4u.Dependency`, `Arc4u.Dependenc
 
 ## Step 2: Add the packages
 
-From the folder that contains your `.csproj`, add each package. Arc4u 9 is published as
-`9.0.0-previewNN` versions only, so add `--prerelease`; without it, `dotnet add package` looks for
-a stable version and fails.
+From the folder that contains your `.csproj`, add each package. `dotnet add package` installs the
+latest stable version, 9.0.0.
 
 ```bash
-dotnet add package Arc4u.Dependency --prerelease
-dotnet add package Arc4u.Dependency.Tool --prerelease
-dotnet add package Arc4u.Configuration --prerelease
-dotnet add package Arc4u.Diagnostics --prerelease
-dotnet add package Arc4u.OAuth2.AspNetCore.Authentication --prerelease
+dotnet add package Arc4u.Dependency
+dotnet add package Arc4u.Dependency.Tool
+dotnet add package Arc4u.Configuration
+dotnet add package Arc4u.Diagnostics
+dotnet add package Arc4u.OAuth2.AspNetCore.Authentication
 ```
 
 Keep every Arc4u package of an application on the same version.
@@ -71,7 +70,7 @@ your application. `dotnet add package` marks it as a development dependency, so 
 contains:
 
 ```xml
-<PackageReference Include="Arc4u.Dependency.Tool" Version="9.0.0-preview37">
+<PackageReference Include="Arc4u.Dependency.Tool" Version="9.0.0">
   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   <PrivateAssets>all</PrivateAssets>
 </PackageReference>
@@ -85,18 +84,17 @@ List the packages of the project:
 dotnet list package
 ```
 
-The output shows the Arc4u packages with the version NuGet resolved (the preview number changes
-with each release):
+The output shows the Arc4u packages with the version NuGet resolved:
 
 ```text
 Project 'GettingStarted' has the following package references
    [net10.0]:
-   Top-level Package                             Requested         Resolved
-   > Arc4u.Configuration                         9.0.0-preview37   9.0.0-preview37
-   > Arc4u.Dependency                            9.0.0-preview37   9.0.0-preview37
-   > Arc4u.Dependency.Tool                       9.0.0-preview37   9.0.0-preview37
-   > Arc4u.Diagnostics                           9.0.0-preview37   9.0.0-preview37
-   > Arc4u.OAuth2.AspNetCore.Authentication      9.0.0-preview37   9.0.0-preview37
+   Top-level Package                             Requested   Resolved
+   > Arc4u.Configuration                         9.0.0       9.0.0
+   > Arc4u.Dependency                            9.0.0       9.0.0
+   > Arc4u.Dependency.Tool                       9.0.0       9.0.0
+   > Arc4u.Diagnostics                           9.0.0       9.0.0
+   > Arc4u.OAuth2.AspNetCore.Authentication      9.0.0       9.0.0
 ```
 
 Then build the project with `dotnet build`. It ends with `Build succeeded`.

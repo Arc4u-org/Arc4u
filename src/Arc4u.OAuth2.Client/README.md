@@ -5,7 +5,7 @@ Builds the `AppPrincipal` of the user of a client application (desktop, mobile, 
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.Client --prerelease
+dotnet add package Arc4u.OAuth2.Client
 ```
 
 ## Usage

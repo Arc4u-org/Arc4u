@@ -5,7 +5,7 @@ Sets the Arc4u `AppPrincipal` of the signed-in user in the `IApplicationContext`
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.AspNetCore.Blazor --prerelease
+dotnet add package Arc4u.OAuth2.AspNetCore.Blazor
 ```
 
 ## Usage

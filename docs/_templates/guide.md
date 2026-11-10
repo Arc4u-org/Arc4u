@@ -45,7 +45,7 @@ flowchart LR
 ## Install
 
 ```bash
-dotnet add package Arc4u.<Package> --prerelease
+dotnet add package Arc4u.<Package>
 ```
 
 <Prerequisites outside NuGet, if any (a Redis server, a certificate, an identity provider).>

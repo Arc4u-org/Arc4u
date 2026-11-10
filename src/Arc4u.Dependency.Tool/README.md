@@ -5,8 +5,8 @@ Source generators that turn the `[Export]`, `[Shared]` and `[Scoped]` attributes
 ## Install
 
 ```bash
-dotnet add package Arc4u.Dependency --prerelease
-dotnet add package Arc4u.Dependency.Tool --prerelease
+dotnet add package Arc4u.Dependency
+dotnet add package Arc4u.Dependency.Tool
 ```
 
 ## Usage

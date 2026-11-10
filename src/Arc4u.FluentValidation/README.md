@@ -5,7 +5,7 @@ FluentValidation extensions that return a FluentResults `Result<T>` holding `Val
 ## Install
 
 ```bash
-dotnet add package Arc4u.FluentValidation --prerelease
+dotnet add package Arc4u.FluentValidation
 ```
 
 ## Usage

@@ -4,10 +4,8 @@ One API versioning convention for every Arc4u REST service, on top of Asp.Versio
 
 ## Install
 
-> This package is not published on NuGet.org yet. Reference the project from the repository until a preview is available.
-
 ```bash
-dotnet add package Arc4u.AspNetCore.Versioning --prerelease
+dotnet add package Arc4u.AspNetCore.Versioning
 ```
 
 ## Usage
@@ -18,7 +16,7 @@ using Arc4u.AspNetCore.Versioning;
 builder.Services.AddServiceApiVersioning();
 ```
 
-The package targets `net10.0`.
+The package targets `net10.0` and `net11.0`.
 
 ## Documentation
 

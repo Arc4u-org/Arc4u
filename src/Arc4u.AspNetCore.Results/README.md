@@ -5,7 +5,7 @@ Turns a FluentResults `Result` or `Result<T>` into a controller `ActionResult`, 
 ## Install
 
 ```bash
-dotnet add package Arc4u.AspNetCore.Results --prerelease
+dotnet add package Arc4u.AspNetCore.Results
 ```
 
 ## Usage

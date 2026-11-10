@@ -5,7 +5,7 @@ The `Redis` and `RedisSentinel` cache kinds of Arc4u: named caches stored in Red
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.Redis --prerelease
+dotnet add package Arc4u.Caching.Redis
 ```
 
 ## Usage

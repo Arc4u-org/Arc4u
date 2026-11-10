@@ -5,7 +5,7 @@ Asynchronous synchronization primitives: an awaitable lock and semaphore, plus a
 ## Install
 
 ```bash
-dotnet add package Arc4u.Threading --prerelease
+dotnet add package Arc4u.Threading
 ```
 
 ## Usage

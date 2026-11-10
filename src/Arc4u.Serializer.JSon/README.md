@@ -5,7 +5,7 @@ System.Text.Json implementations of `IObjectSerialization`: plain JSON, and JSON
 ## Install
 
 ```bash
-dotnet add package Arc4u.Serializer.JSon --prerelease
+dotnet add package Arc4u.Serializer.JSon
 ```
 
 ## Usage

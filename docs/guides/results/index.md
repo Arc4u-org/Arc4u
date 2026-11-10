@@ -55,19 +55,19 @@ All three target `net10.0` and `net11.0`.
 Business layer:
 
 ```bash
-dotnet add package Arc4u.Results --prerelease
+dotnet add package Arc4u.Results
 ```
 
 ASP.NET Core project that exposes the API:
 
 ```bash
-dotnet add package Arc4u.AspNetCore.Results --prerelease
+dotnet add package Arc4u.AspNetCore.Results
 ```
 
 If you validate with FluentValidation:
 
 ```bash
-dotnet add package Arc4u.FluentValidation --prerelease
+dotnet add package Arc4u.FluentValidation
 ```
 
 ## Configuration

@@ -27,8 +27,8 @@ WebAssembly app, which signs the user in from the browser (`AddMsalAuthenticatio
 | `Arc4u.OAuth2.AspNetCore.Blazor` | The server project: the principal of Interactive Server components (`AppPrincipalServerAuthenticationStateProvider`, `ApplicationContextCircuitHandler`). |
 
 ```bash
-dotnet add package Arc4u.OAuth2.Blazor --prerelease
-dotnet add package Arc4u.OAuth2.AspNetCore.Blazor --prerelease
+dotnet add package Arc4u.OAuth2.Blazor
+dotnet add package Arc4u.OAuth2.AspNetCore.Blazor
 ```
 
 ## WebAssembly: call APIs with the user's token

@@ -5,7 +5,7 @@ Creates the Arc4u principal of authenticated ASP.NET Core requests and provides 
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.AspNetCore --prerelease
+dotnet add package Arc4u.OAuth2.AspNetCore
 ```
 
 ## Usage

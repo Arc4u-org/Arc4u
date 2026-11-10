@@ -18,7 +18,7 @@ It does not wrap the driver: you get `IMongoClient` and `IMongoCollection<T>` ba
 ## Install
 
 ```bash
-dotnet add package Arc4u.MongoDB --prerelease
+dotnet add package Arc4u.MongoDB
 ```
 
 The package references `MongoDB.Driver`. It needs a reachable MongoDB server only when the first call reaches the database; registering, resolving the factory and getting a collection object do not fail without a server (the first call creates the `MongoClient`, which connects in the background).

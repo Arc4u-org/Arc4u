@@ -6,7 +6,7 @@ The `IObjectSerialization` interface that Arc4u caches use to convert objects to
 ## Install
 
 ```bash
-dotnet add package Arc4u.Serializer --prerelease
+dotnet add package Arc4u.Serializer
 ```
 
 ## Usage

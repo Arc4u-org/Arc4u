@@ -5,7 +5,7 @@ ASP.NET Core support for hosting gRPC services with Arc4u: report a failed `Resu
 ## Install
 
 ```bash
-dotnet add package Arc4u.AspNetCore.gRpc --prerelease
+dotnet add package Arc4u.AspNetCore.gRpc
 ```
 
 ## Usage

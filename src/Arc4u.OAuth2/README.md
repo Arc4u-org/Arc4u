@@ -5,7 +5,7 @@ Options and services shared by the Arc4u authentication packages: identity provi
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2 --prerelease
+dotnet add package Arc4u.OAuth2
 ```
 
 ## Usage

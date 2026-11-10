@@ -5,7 +5,7 @@ The `Sql` cache kind of Arc4u: a named cache stored in a SQL Server table.
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.SqlServer --prerelease
+dotnet add package Arc4u.Caching.SqlServer
 ```
 
 ## Usage

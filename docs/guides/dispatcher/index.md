@@ -34,7 +34,7 @@ It does not give you a message bus, queueing, retries, a result from the handler
 ## Install
 
 ```bash
-dotnet add package Arc4u.Dispatcher --prerelease
+dotnet add package Arc4u.Dispatcher
 ```
 
 `Arc4u.Dispatcher` targets `net10.0` and `net11.0`. See [Package support](../package-support.md) for the other packages.

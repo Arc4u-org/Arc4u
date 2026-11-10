@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <PackageId>Arc4u.AspNetCore.Versioning</PackageId>
     <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);IDE0130</NoWarn>

@@ -29,7 +29,7 @@ Compared with the other kinds:
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.Dapr --prerelease
+dotnet add package Arc4u.Caching.Dapr
 ```
 
 The application must run with a Dapr sidecar (`dapr run`, or the Dapr annotations on Kubernetes) and a state store component

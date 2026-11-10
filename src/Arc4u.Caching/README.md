@@ -6,7 +6,7 @@ Add a provider package for the store (memory, Redis, SQL Server or Dapr).
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching --prerelease
+dotnet add package Arc4u.Caching
 ```
 
 ## Usage

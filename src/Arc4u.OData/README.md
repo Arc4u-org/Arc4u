@@ -5,7 +5,7 @@ Makes the URLs in OData responses (`@odata.context`, `@odata.nextLink`) point to
 ## Install
 
 ```bash
-dotnet add package Arc4u.OData --prerelease
+dotnet add package Arc4u.OData
 ```
 
 ## Usage

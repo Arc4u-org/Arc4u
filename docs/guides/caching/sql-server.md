@@ -24,8 +24,8 @@ the named configuration and the serialization of the values. The kind is `Sql`; 
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.SqlServer --prerelease
-dotnet add package Arc4u.Serializer.JSon --prerelease
+dotnet add package Arc4u.Caching.SqlServer
+dotnet add package Arc4u.Serializer.JSon
 ```
 
 Create the cache table before the first use. Arc4u does not create it. Use the

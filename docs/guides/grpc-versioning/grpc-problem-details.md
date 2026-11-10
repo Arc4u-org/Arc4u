@@ -43,8 +43,8 @@ sequenceDiagram
 ## Install
 
 ```bash
-dotnet add package Arc4u.AspNetCore.gRpc --prerelease   # service
-dotnet add package Arc4u.gRPC --prerelease              # client
+dotnet add package Arc4u.AspNetCore.gRpc   # service
+dotnet add package Arc4u.gRPC              # client
 ```
 
 ## Configuration

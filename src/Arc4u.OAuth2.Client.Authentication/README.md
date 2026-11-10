@@ -5,7 +5,7 @@ Signs the user of a desktop or mobile .NET app in with OpenID Connect (Duende.Id
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.Client.Authentication --prerelease
+dotnet add package Arc4u.OAuth2.Client.Authentication
 ```
 
 ## Usage

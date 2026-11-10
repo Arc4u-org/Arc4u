@@ -5,7 +5,7 @@ Publish a notification to every handler registered for it in the dependency inje
 ## Install
 
 ```bash
-dotnet add package Arc4u.Dispatcher --prerelease
+dotnet add package Arc4u.Dispatcher
 ```
 
 ## Usage

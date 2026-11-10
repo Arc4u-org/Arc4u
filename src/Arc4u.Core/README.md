@@ -5,7 +5,7 @@ Small abstractions shared by most Arc4u packages: the `IKeyValueSettings` and `I
 ## Install
 
 ```bash
-dotnet add package Arc4u.Core --prerelease
+dotnet add package Arc4u.Core
 ```
 
 ## Usage

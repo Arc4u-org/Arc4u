@@ -12,8 +12,9 @@ no release notes.
 
 ## [Unreleased]
 
-Arc4u 9.0.0, developed on the `develop/9.0.0` branch and published on NuGet as `9.0.0-previewNN`
-packages. It contains breaking changes: follow the
+## [9.0.0] - 2026-11-10
+
+Arc4u 9.0.0 contains breaking changes: follow the
 [migration guide from 8.x to 9](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html).
 
 ### Added
@@ -39,8 +40,7 @@ packages. It contains breaking changes: follow the
   [#258](https://github.com/Arc4u-org/Arc4u/issues/258)).
 - `Arc4u.OAuth2.Client.Authentication`: OpenID Connect sign-in for desktop and mobile clients with
   `Duende.IdentityModel.OidcClient` (`AddOidcClientAuthentication`).
-- `Arc4u.AspNetCore.Versioning`: API versioning helpers (`AddServiceApiVersioning`). Not published
-  on NuGet yet.
+- `Arc4u.AspNetCore.Versioning`: API versioning helpers (`AddServiceApiVersioning`).
 - `AddHybridAuthentication`: OpenID Connect, cookies and JWT bearer in one registration.
   `AddOidcAuthentication` now registers OpenID Connect and cookies only.
 - `AuthenticationMethod` (`RedirectGet` by default, or `FormPost`), `NameClaimType` and
@@ -142,8 +142,7 @@ packages. It contains breaking changes: follow the
   file; earlier versions declared `MIT`.
 - Packages renamed from `Arc4u.Standard.*` to `Arc4u.*` (assembly names too). See
   [Package renames](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#package-renames).
-- Target frameworks: `net10.0` and `net11.0` (the previews up to `9.0.0-preview37` target `net8.0`,
-  `net9.0` and `net10.0`). See
+- Target frameworks: `net10.0` and `net11.0`. See
   [Target frameworks](https://arc4u-org.github.io/Arc4u/migration/8x-to-9.html#target-frameworks).
 - Dependency injection uses the keyed services of `Microsoft.Extensions.DependencyInjection`
   instead of `IContainer`. See
@@ -252,7 +251,7 @@ packages. It contains breaking changes: follow the
 - `AddApplicationContext()` no longer registers `DefaultLoggingProperties`: register it with
   `AddKeyedScoped<IAddPropertiesToLog, DefaultLoggingProperties>("Scoped")` to add the `Identity` property
   to the log entries ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
-- Compared with the previews, the `Arc4u.Dependency.Tool` package contains the generator as an analyzer only: no assembly is
+- The `Arc4u.Dependency.Tool` package contains the generator as an analyzer only: no assembly is
   copied to the output of the application ([#259](https://github.com/Arc4u-org/Arc4u/issues/259)).
 - APIs that need reflection are now marked `RequiresUnreferencedCode` and, when they build code at run time,
   `RequiresDynamicCode`. A trimmed or Native AOT application gets an `IL2026` or `IL3050` warning where it
@@ -352,8 +351,6 @@ packages. It contains breaking changes: follow the
   `ToResult()` to get the server's ProblemDetails back.
 - `UserProfile.Name` (`Domain\SamAccountName`): use `Email`, `PrincipalName`, or `Domain` and
   `SamAccountName` ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
-- `IScopedLogger<T>` and `ScopedLoggerWrapper<T>`, which existed in the previews only: inject
-  `ILogger<T>` ([#237](https://github.com/Arc4u-org/Arc4u/issues/237)).
 - `CustomRootCaExtensions.CertificateOptionKeys`: read the names from `IOptions<CARootOptionKeys>`
   ([#226](https://github.com/Arc4u-org/Arc4u/issues/226)).
 - `NameClaimType`, `RoleClaimType` and `ValidateAuthority` of `OidcClientAuthenticationOptions` and
@@ -876,6 +873,7 @@ Entra ID, Azure AD B2C, ADFS, Keycloak and ForgeRock). The settings are simplifi
 - First release based on ASP.NET Core 5.0.5.
 
 [Unreleased]: https://www.nuget.org/packages/Arc4u
+[9.0.0]: https://www.nuget.org/packages/Arc4u/9.0.0
 [8.3.2]: https://www.nuget.org/packages/Arc4u.Standard/8.3.2
 [8.3.1]: https://www.nuget.org/packages/Arc4u.Standard/8.3.1
 [8.3.0]: https://www.nuget.org/packages/Arc4u.Standard/8.3.0

@@ -50,13 +50,13 @@ The package ID (title, install command) is the <PackageId> of the .csproj, not t
   Arc4u.FluentValidation                   guides/results/                api/Arc4u.Validation.html
   Arc4u.gRPC                               guides/grpc-versioning/        api/Arc4u.gRPC.html
   Arc4u.AspNetCore.gRpc                    guides/grpc-versioning/        api/Arc4u.AspNetCore.gRpc.html
-  Arc4u.AspNetCore.Versioning              guides/grpc-versioning/        api/Arc4u.AspNetCore.Versioning.html   (not on NuGet.org yet)
+  Arc4u.AspNetCore.Versioning              guides/grpc-versioning/        api/Arc4u.AspNetCore.Versioning.html
   Arc4u.EfCore                             guides/data/                   api/Arc4u.EfCore.html
   Arc4u.MongoDB                            guides/data/                   api/Arc4u.MongoDB.html
   Arc4u.OData                              guides/data/                   api/Arc4u.OData.html
   Arc4u.Dispatcher                         guides/dispatcher/             api/Arc4u.Dispatcher.Notification.html
 
-Not shipped in 9.x: the removed Arc4u.OAuth2.Msal, Arc4u.Data (last published as 9.0.0-preview37),
+Not shipped in 9.x: the removed Arc4u.OAuth2.Msal, Arc4u.Data (never part of 9.0.0),
 Arc4u.Dependency.ComponentModel, NServiceBus and Prism.DI.Wpf packages. Their status is on the
 Package support page (#189); do not write a
 README from this template for them unless #189 decides they ship.
@@ -68,7 +68,7 @@ README from this template for them unless #189 decides they ship.
 ## Install
 
 ```bash
-dotnet add package Arc4u.<Package> --prerelease
+dotnet add package Arc4u.<Package>
 ```
 
 ## Usage

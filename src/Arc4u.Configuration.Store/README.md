@@ -5,7 +5,7 @@ A configuration provider that persists selected sections in a store and reloads 
 ## Install
 
 ```bash
-dotnet add package Arc4u.Configuration.Store --prerelease
+dotnet add package Arc4u.Configuration.Store
 ```
 
 ## Usage

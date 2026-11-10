@@ -26,8 +26,6 @@ The foundation packages `Arc4u`, `Arc4u.Core` and `Arc4u.Threading` are used by
 most of the packages above and have no guide of their own: see
 [Concepts](../concepts/index.md) and the [API reference](../api/index.md).
 
-`Arc4u.AspNetCore.Versioning` is not published on NuGet.org yet.
-
 The [package support](package-support.md) page lists every package with its
 support status and target frameworks, including the removed `Arc4u.OAuth2.Msal`, `Arc4u.Data` and
 `Arc4u.Dependency.ComponentModel` packages and the deprecated NServiceBus and Prism.DI.Wpf packages.

@@ -164,7 +164,8 @@ public class AuthorityOptions
     {
         using var client = new HttpClient();
 
-        await using var stream = await client.GetStreamAsync(GetMetaDataAddress(), cancellationToken).ConfigureAwait(false);
+        var stream = await client.GetStreamAsync(GetMetaDataAddress(), cancellationToken).ConfigureAwait(false);
+        await using var _ = stream.ConfigureAwait(false);
         var openIdConfiguration = await JsonSerializer.DeserializeAsync(stream, OpenIdConfigurationJsonContext.Default.OpenIdConfiguration, cancellationToken).ConfigureAwait(false);
 
         EndSessionEndpoint = openIdConfiguration!.end_session_endpoint;

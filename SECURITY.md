@@ -2,14 +2,11 @@
 
 ## Supported versions
 
-Only released versions are supported. Preview versions (`x.y.z-previewNN`) are published for
-evaluation only: they can change or be removed at any time, including breaking changes, and come
-with no support commitment. Do not use them in production.
+Only released versions are supported.
 
 | Version | Supported |
 |---|---|
-| 9.x releases (from 9.0.0, once released) | Yes |
-| 9.0.0 previews (`9.0.0-previewNN`) | No |
+| 9.x (from 9.0.0) | Yes |
 | 8.x (latest release 8.3.2, `release/8.3.2`) | Critical fixes only |
 | Earlier versions | No |
 

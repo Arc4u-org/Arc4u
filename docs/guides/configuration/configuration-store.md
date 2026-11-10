@@ -49,7 +49,7 @@ Two limits are by design:
 ## Install
 
 ```bash
-dotnet add package Arc4u.Configuration.Store.EfCore --prerelease
+dotnet add package Arc4u.Configuration.Store.EfCore
 ```
 
 You also need an EF Core provider for your database, for example

@@ -11,7 +11,7 @@ A server application sends its logs to a log server or to the console. A client 
 ## Install
 
 ```bash
-dotnet add package Arc4u.Diagnostics.Serilog.Sinks.RealmDb --prerelease
+dotnet add package Arc4u.Diagnostics.Serilog.Sinks.RealmDb
 ```
 
 The package references `Arc4u.Diagnostics.Serilog`, `Arc4u`, `Realm` and `Serilog.Sinks.PeriodicBatching`. You also need a Serilog host integration such as `Serilog.AspNetCore` or `Serilog.Extensions.Hosting`.

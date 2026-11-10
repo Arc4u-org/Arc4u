@@ -56,15 +56,15 @@ flowchart LR
 ## Install
 
 ```bash
-dotnet add package Arc4u.OAuth2.AspNetCore.Authentication --prerelease
-dotnet add package Arc4u.Authorization --prerelease
+dotnet add package Arc4u.OAuth2.AspNetCore.Authentication
+dotnet add package Arc4u.Authorization
 ```
 
 The samples of this guide also use a memory cache and the JSON serializer:
 
 ```bash
-dotnet add package Arc4u.Caching.Memory --prerelease
-dotnet add package Arc4u.Serializer.JSon --prerelease
+dotnet add package Arc4u.Caching.Memory
+dotnet add package Arc4u.Serializer.JSon
 ```
 
 You need an application registered in your identity provider: its authority URL, and for OpenID Connect a
@@ -288,7 +288,7 @@ or `Unable to find the required services... 'IServiceCollection.AddAuthorization
 ### Every request returns 401 or 500
 
 See [Troubleshooting](troubleshooting.md), which lists the symptoms reported in past issues with their
-causes, and the known issues of `develop/9.0.0`.
+causes, and the known issues of 9.0.0.
 
 ## See also
 

@@ -47,17 +47,13 @@ Install `Arc4u.AspNetCore.gRpc` in a service that hosts gRPC (it brings `Arc4u.g
 ## Install
 
 ```bash
-dotnet add package Arc4u.AspNetCore.gRpc --prerelease
-dotnet add package Arc4u.gRPC --prerelease
+dotnet add package Arc4u.AspNetCore.gRpc
+dotnet add package Arc4u.gRPC
 ```
 
 ```bash
-dotnet add package Arc4u.AspNetCore.Versioning --prerelease
+dotnet add package Arc4u.AspNetCore.Versioning
 ```
-
-> [!NOTE]
-> `Arc4u.AspNetCore.Versioning` is not published on NuGet.org yet and targets `net10.0` only. Until
-> a preview is published, reference the project from the repository.
 
 The gRPC runtime comes from Microsoft: add `Grpc.AspNetCore` to a service and `Grpc.Net.ClientFactory`
 to a client, and declare your `.proto` files with `Grpc.Tools` as described in

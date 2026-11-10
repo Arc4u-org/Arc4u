@@ -24,8 +24,8 @@ serialization of the values. The connection to Redis is opened on the first oper
 ## Install
 
 ```bash
-dotnet add package Arc4u.Caching.Redis --prerelease
-dotnet add package Arc4u.Serializer.JSon --prerelease
+dotnet add package Arc4u.Caching.Redis
+dotnet add package Arc4u.Serializer.JSon
 ```
 
 You need a reachable Redis server, or Sentinel nodes, at run time.
