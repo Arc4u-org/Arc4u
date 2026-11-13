@@ -100,7 +100,7 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
-    <PackageVersion Include="System.Text.Encodings.Web" Version="10.0.12" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageVersion Include="System.Text.Encodings.Web" Version="11.0.0" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageVersion Include="System.Text.Json" Version="10.0.12" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageVersion Include="System.IO.Pipelines" Version="10.0.12" PrivateAssets="all" GeneratePathProperty="true" />
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.12" PrivateAssets="all" GeneratePathProperty="true" />
