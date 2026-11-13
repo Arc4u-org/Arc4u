@@ -36,7 +36,7 @@
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.1" />
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
     <PackageVersion Include="Dapr.Client" Version="1.19.1" />
     <PackageVersion Include="MongoDB.Driver" Version="3.13.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OData" Version="9.5.0" />
