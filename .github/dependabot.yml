@@ -28,6 +28,9 @@ updates:
       - dependency-name: "Microsoft.AspNetCore.TestHost"
       - dependency-name: "Serilog.AspNetCore"
       - dependency-name: "Serilog.Extensions.Logging"
+      # Pinned on 9.x on purpose: patches are fine, no jump to a new major.
+      - dependency-name: "System.Security.Cryptography.Pkcs"
+        update-types: ["version-update:semver-major"]
       # Bundled inside the Arc4u.Dependency.Tool generator: patches are fine, but stay on 10.x
       # so the generator still loads in .NET 10 SDK compilers.
       - dependency-name: "System.Text.Json"
