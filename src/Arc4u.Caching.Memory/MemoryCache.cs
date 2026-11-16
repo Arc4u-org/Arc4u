@@ -1,7 +1,5 @@
 using Arc4u.Configuration.Memory;
-using Arc4u.Dependency;
 using Arc4u.Dependency.Attribute;
-using Arc4u.Diagnostics;
 using Arc4u.Serializer;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -44,77 +42,26 @@ public class MemoryCache : BaseDistributeCache<MemoryCache>, ICache
     /// </summary>
     /// <param name="store">The name of the cache, as declared in the configuration.</param>
     /// <exception cref="ArgumentException"><paramref name="store"/> is empty.</exception>
-    public override void Initialize([DisallowNull] string store)
-    {
-        if (string.IsNullOrEmpty(store))
+    public override void Initialize([DisallowNull] string store) =>
+        InitializeCore(store, "Memory", s =>
         {
-            NotInitializedReason = "When initializing the Memory cache, the value of the store cannot be an empty string.";
-            throw new ArgumentException(NotInitializedReason, nameof(store));
-        }
+            Name = s;
 
-        lock (_lock)
-        {
-            if (IsInitialized)
+            var config = _options.Get(s);
+
+            if (config.SizeLimitInMB <= 0)
             {
-                _logger.Technical().LogCacheIsAlreadyInitialized(store);
-                return;
+                _logger.LogCacheSizeLimit(s, config.SizeLimitInMB);
             }
 
-            try
+            var option = new DistriOption(new MemoryDistributedCacheOptions
             {
-                Name = store;
+                CompactionPercentage = config.CompactionPercentage,
+                SizeLimit = config.SizeLimitInBytes
+            });
 
-                var config = _options.Get(store);
-
-                if (config.SizeLimitInMB <= 0)
-                {
-                    _logger.LogCacheSizeLimit(store, config.SizeLimitInMB);
-                }
-
-                var option = new DistriOption(new MemoryDistributedCacheOptions
-                {
-                    CompactionPercentage = config.CompactionPercentage,
-                    SizeLimit = config.SizeLimitInBytes
-                });
-
-                DistributeCache = new CapacityCheckedDistributedCache(new MemoryDistributedCache(option), store);
-
-                if (!string.IsNullOrWhiteSpace(config.SerializerName))
-                {
-                    IsInitialized = Container.TryGetService<IObjectSerialization>(config.SerializerName, out var serializerFactory);
-                    if (IsInitialized)
-                    {
-                        SerializerFactory = serializerFactory!;
-                    }
-                }
-
-                if (!IsInitialized)
-                {
-                    IsInitialized = Container.TryGetService<IObjectSerialization>(out var serializerFactory);
-                    if (IsInitialized)
-                    {
-                        SerializerFactory = serializerFactory!;
-                    }
-                }
-
-                if (!IsInitialized)
-                {
-                    NotInitializedReason = $"Memory Cache {store} is not initialized. An IObjectSerialization instance cannot be resolved via the Ioc.";
-
-                    _logger.Technical().LogError(NotInitializedReason, store);
-
-                    return;
-                }
-
-                _logger.Technical().LogCacheIsInitialized(store);
-            }
-            catch (Exception ex)
-            {
-                NotInitializedReason = $"Memory Cache {store} is not initialized. With exception: {ex.Message}";
-                throw;
-            }
-        }
-    }
+            return (new CapacityCheckedDistributedCache(new MemoryDistributedCache(option), s), config.SerializerName);
+        });
 
     /// <summary>Returns the name of the cache given to <see cref="Initialize(string)"/>.</summary>
     /// <returns>The name of the cache (empty before initialization).</returns>

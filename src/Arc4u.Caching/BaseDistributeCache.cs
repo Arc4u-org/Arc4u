@@ -165,6 +165,78 @@ public abstract class BaseDistributeCache<T> : ICache
     /// <inheritdoc/>
     public virtual void Initialize(string store) { }
 
+    /// <summary>
+    /// Runs the common initialization flow of a distributed cache, thread safe: validates <paramref name="store"/>, creates the underlying
+    /// <see cref="IDistributedCache"/> with <paramref name="createCache"/> and resolves the <see cref="IObjectSerialization"/>
+    /// (the one registered with the returned serializer name if any, otherwise the default one).
+    /// When no serializer can be resolved the cache stays uninitialized and the operations throw <see cref="CacheNotInitializedException"/>.
+    /// Calling it again on an initialized cache only logs a warning.
+    /// </summary>
+    /// <param name="store">The name of the cache, as declared in the configuration.</param>
+    /// <param name="cacheKind">The kind of the cache, used in the log and error messages (for example <c>Redis</c>).</param>
+    /// <param name="createCache">Creates the underlying cache for the store and returns it with the name of the serializer to use (or <see langword="null"/>).</param>
+    /// <exception cref="ArgumentException"><paramref name="store"/> is empty.</exception>
+    protected void InitializeCore(string store, string cacheKind, Func<string, (IDistributedCache Cache, string? SerializerName)> createCache)
+    {
+        ArgumentNullException.ThrowIfNull(createCache);
+
+        if (string.IsNullOrEmpty(store))
+        {
+            NotInitializedReason = $"When initializing the {cacheKind} cache, the value of the store cannot be an empty string.";
+            throw new ArgumentException(NotInitializedReason, nameof(store));
+        }
+
+        lock (_lock)
+        {
+            if (IsInitialized)
+            {
+                _logger.Technical().LogCacheIsAlreadyInitialized(cacheKind, store);
+                return;
+            }
+
+            try
+            {
+                var (cache, serializerName) = createCache(store);
+                DistributeCache = cache;
+
+                if (!TryResolveSerializer(serializerName))
+                {
+                    NotInitializedReason = $"{cacheKind} Cache {store} is not initialized. An IObjectSerialization instance cannot be resolved via the Ioc.";
+                    _logger.Technical().LogSerializerNotResolved(cacheKind, store);
+                    return;
+                }
+
+                _logger.Technical().LogCacheIsInitialized(cacheKind, store);
+            }
+            catch (Exception ex)
+            {
+                NotInitializedReason = $"{cacheKind} Cache {store} is not initialized. With exception: {ex.Message}";
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolves the serializer registered with <paramref name="serializerName"/> if any, otherwise the default one,
+    /// and sets <see cref="SerializerFactory"/> and <see cref="IsInitialized"/> accordingly.
+    /// </summary>
+    /// <param name="serializerName">The name of the serializer, or <see langword="null"/> or empty for the default one.</param>
+    /// <returns><see langword="true"/> when a serializer has been resolved.</returns>
+    private bool TryResolveSerializer(string? serializerName)
+    {
+        IObjectSerialization? serializer = null;
+
+        IsInitialized = (!string.IsNullOrWhiteSpace(serializerName) && _container.TryGetService(serializerName, out serializer))
+                        || _container.TryGetService(out serializer);
+
+        if (IsInitialized)
+        {
+            SerializerFactory = serializer!;
+        }
+
+        return IsInitialized;
+    }
+
     /// <summary>Gets or sets the serializer used to convert the values to and from bytes.</summary>
     /// <exception cref="NullReferenceException">The getter is used before a serializer has been set.</exception>
     protected IObjectSerialization SerializerFactory
