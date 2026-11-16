@@ -7,7 +7,7 @@ updates:
   # NuGet packages, centrally managed in src/Directory.Packages.props.
   - package-ecosystem: "nuget"
     directory: "/src"
-    target-branch: "develop/9.0.0"
+    target-branch: "develop/9.1.0"
     schedule:
       interval: "weekly"
     groups:
@@ -17,11 +17,35 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Framework packages stay on the x.0.0 floor of each target framework (net10.0 -> 10.0.0,
+      # net11.0 -> 11.0.0) so consumers are not forced onto a newer patch. Raise them by hand.
+      - dependency-name: "Microsoft.Extensions.*"
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+      - dependency-name: "Microsoft.AspNetCore.Authentication.*"
+      - dependency-name: "Microsoft.AspNetCore.Authorization"
+      - dependency-name: "Microsoft.AspNetCore.Components.*"
+      - dependency-name: "Microsoft.AspNetCore.TestHost"
+      - dependency-name: "Serilog.AspNetCore"
+      - dependency-name: "Serilog.Extensions.Logging"
+      # Bundled inside the Arc4u.Dependency.Tool generator: patches are fine, but stay on 10.x
+      # so the generator still loads in .NET 10 SDK compilers.
+      - dependency-name: "System.Text.Json"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.Text.Encodings.Web"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.IO.Pipelines"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Bcl.AsyncInterfaces"
+        update-types: ["version-update:semver-major"]
+      # Roslyn: the generator is pinned to an older version than the tests, and Dependabot cannot
+      # tell the two conditional ItemGroups apart. Update both by hand.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp*"
 
   # Actions used by the workflows in .github/workflows.
   - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "develop/9.0.0"
+    target-branch: "develop/9.1.0"
     schedule:
       interval: "weekly"
     groups:
