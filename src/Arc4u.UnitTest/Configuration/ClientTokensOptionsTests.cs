@@ -70,6 +70,155 @@ public class ClientTokensOptionsTests
     }
 
     [Fact]
+    public void ClientToken_With_TokenCache_Registers_Named_TokenCacheOptions_Should()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Authentication:TokenCache:CacheName"] = "Default",
+                    ["Authentication:TokenCache:MaxTime"] = "00:40:00",
+                    ["Authentication:ClientTokens:Client1:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:Client1:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client1:Settings:ClientSecret"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client1:TokenCache:CacheName"] = "ClientCache",
+                    ["Authentication:ClientTokens:Client2:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:Client2:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client2:Settings:ClientSecret"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client2:TokenCache:MaxTime"] = "00:05:00",
+                    ["Authentication:ClientTokens:Client3:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:Client3:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client3:Settings:ClientSecret"] = _fixture.Create<string>(),
+                }).Build();
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddTokenCache(config);
+        services.AddClientTokens(config);
+
+        var serviceProvider = services.BuildServiceProvider();
+        var settings = serviceProvider.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>();
+        var tokenCacheOptions = serviceProvider.GetRequiredService<IOptionsMonitor<TokenCacheOptions>>();
+
+        // Only the given value overrides the default TokenCacheOptions.
+        settings.Get("Client1").Values[TokenKeys.TokenCacheOptionsName].Should().Be("Client1");
+        tokenCacheOptions.Get("Client1").CacheName.Should().Be("ClientCache");
+        tokenCacheOptions.Get("Client1").MaxTime.Should().Be(TimeSpan.FromMinutes(40));
+
+        settings.Get("Client2").Values[TokenKeys.TokenCacheOptionsName].Should().Be("Client2");
+        tokenCacheOptions.Get("Client2").CacheName.Should().Be("Default");
+        tokenCacheOptions.Get("Client2").MaxTime.Should().Be(TimeSpan.FromMinutes(5));
+
+        // No TokenCache section: the default TokenCacheOptions are used.
+        settings.Get("Client3").Values.ContainsKey(TokenKeys.TokenCacheOptionsName).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ClientTokensCache_Is_The_Fallback_Of_Every_Entry_Should()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Authentication:TokenCache:CacheName"] = "Default",
+                    ["Authentication:TokenCache:MaxTime"] = "00:40:00",
+                    ["Authentication:ClientTokensCache:CacheName"] = "Shared",
+                    ["Authentication:ClientTokens:Client1:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:Client1:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client1:Settings:ClientSecret"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client2:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:Client2:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client2:Settings:ClientSecret"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client2:TokenCache:MaxTime"] = "00:05:00",
+                }).Build();
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddTokenCache(config);
+        services.AddClientTokens(config);
+        // A second call (another composition path) registers nothing twice.
+        services.AddClientTokens(config);
+
+        var serviceProvider = services.BuildServiceProvider();
+        var settings = serviceProvider.GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>();
+        var tokenCacheOptions = serviceProvider.GetRequiredService<IOptionsMonitor<TokenCacheOptions>>();
+
+        // The shared section falls back on the default TokenCacheOptions for MaxTime.
+        var shared = tokenCacheOptions.Get(ClientTokensExtension.TokenCacheOptionsName);
+        shared.CacheName.Should().Be("Shared");
+        shared.MaxTime.Should().Be(TimeSpan.FromMinutes(40));
+
+        // An entry without its own TokenCache uses the shared one.
+        settings.Get("Client1").Values[TokenKeys.TokenCacheOptionsName].Should().Be(ClientTokensExtension.TokenCacheOptionsName);
+
+        // An entry with its own TokenCache falls back on the shared one, then on the default.
+        settings.Get("Client2").Values[TokenKeys.TokenCacheOptionsName].Should().Be("Client2");
+        tokenCacheOptions.Get("Client2").CacheName.Should().Be("Shared");
+        tokenCacheOptions.Get("Client2").MaxTime.Should().Be(TimeSpan.FromMinutes(5));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void An_Empty_TokenCache_Section_Name_Turns_The_Shared_Section_Off_Should(string tokenCacheSectionName)
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Authentication:ClientTokensCache:CacheName"] = "Shared",
+                    ["Authentication:ClientTokens:Client1:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:Client1:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client1:Settings:ClientSecret"] = _fixture.Create<string>(),
+                }).Build();
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddClientTokens(config, tokenCacheSectionName: tokenCacheSectionName);
+
+        // The entry uses the default options: no TokenCacheOptions name is passed to the cache.
+        var settings = services.BuildServiceProvider().GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>();
+        settings.Get("Client1").Values.ContainsKey(TokenKeys.TokenCacheOptionsName).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ClientTokensCache_With_An_Entry_Named_Like_It_Should_Throw()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Authentication:ClientTokensCache:CacheName"] = "Shared",
+                    ["Authentication:ClientTokens:clienttokenscache:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:clienttokenscache:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:clienttokenscache:Settings:ClientSecret"] = _fixture.Create<string>(),
+                }).Build();
+
+        IServiceCollection services = new ServiceCollection();
+
+        var exception = Record.Exception(() => services.AddClientTokens(config));
+
+        exception.Should().BeOfType<ConfigurationException>();
+    }
+
+    [Fact]
+    public void ClientToken_With_A_Zero_TokenCache_MaxTime_Should_Throw()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Authentication:ClientTokens:Client1:Scenario"] = ClientCredentialsScenario.Name,
+                    ["Authentication:ClientTokens:Client1:Settings:ClientId"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client1:Settings:ClientSecret"] = _fixture.Create<string>(),
+                    ["Authentication:ClientTokens:Client1:TokenCache:MaxTime"] = "00:00:00",
+                }).Build();
+
+        IServiceCollection services = new ServiceCollection();
+
+        var exception = Record.Exception(() => services.AddClientTokens(config));
+
+        exception.Should().BeOfType<ConfigurationException>();
+    }
+
+    [Fact]
     public void ClientCredentials_Scenario_With_ExtraParameters_Should()
     {
         var clientId = _fixture.Create<string>();

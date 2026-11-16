@@ -155,7 +155,7 @@ namespace Arc4u.OAuth2.Extensions
         /// <remarks>
         /// <para>
         /// Besides the authentication schemes, the method registers, from the sections named by <see cref="OidcAuthenticationSectionOptions"/>: the OpenID settings, the domain mappings, the token cache, the claims filler,
-        /// the on-behalf-of settings (<c>Authentication:OnBehalfOf</c>), the claim identifiers, the data protection keys (protected by the certificate of <c>Authentication:DataProtection:EncryptionCertificate</c> and stored in the cache described by
+        /// the on-behalf-of settings (<c>Authentication:OnBehalfOf</c>, with their optional shared token cache <c>Authentication:OnBehalfOfCache</c>), the claim identifiers, the data protection keys (protected by the certificate of <c>Authentication:DataProtection:EncryptionCertificate</c> and stored in the cache described by
         /// <c>Authentication:DataProtection:CacheStore</c>), the ticket store (<c>Authentication:AuthenticationCacheTicketStore</c>) and the bearer injector.
         /// </para>
         /// <para>A minimal configuration:</para>

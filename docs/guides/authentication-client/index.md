@@ -137,7 +137,7 @@ provider keeps the token in an Arc4u cache, declared in the `Caching` section (s
 |---|---|---|---|
 | `Authentication:DefaultAuthority:Url` | `Uri` | none (required) | The identity provider. Its token endpoint is read from its OpenID Connect metadata, unless `TokenEndpoint` is set. |
 | `Authentication:TokenCache:CacheName` | `string` | none (required by `AddTokenCache`) | The Arc4u cache that keeps the tokens. |
-| `Authentication:TokenCache:MaxTime` | `TimeSpan` | `00:50:00` | How long a token stays in the cache at most. |
+| `Authentication:TokenCache:MaxTime` | `TimeSpan` | `00:50:00` | How long a token stays in the cache at most; a token that expires earlier leaves the cache when it expires. An entry can use another cache, see [Choose the token cache of an entry](token-providers.md#choose-the-token-cache-of-an-entry). |
 | `Authentication:ClientTokens:<name>:Scenario` | `string` | none (required) | `ClientCredentials` requests a token for the application. |
 | `Authentication:ClientTokens:<name>:Scopes` | `string[]` | `openid` | Scopes of the downstream API. |
 | `Authentication:ClientTokens:<name>:Settings:ClientId` | `string` | none (required) | Client ID of your service. |

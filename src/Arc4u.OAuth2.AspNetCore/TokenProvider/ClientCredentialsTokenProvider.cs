@@ -84,10 +84,12 @@ public class ClientCredentialsTokenProvider(
             : [];
 
         var cacheKey = BuildKey(authority, clientId!, scope!, clientSecret!, extraParameters);
+        // The TokenCacheOptions of the client token entry, when it defines its own.
+        settings.Values.TryGetValue(TokenKeys.TokenCacheOptionsName, out var tokenCacheOptionsName);
 
         // Serve a still-valid token from the cache; refresh when missing or close to expiry.
-        var cached = tokenCache.Get<TokenInfo>(cacheKey);
-        if (cached is not null && cached.ExpiresOnUtc >= DateTime.UtcNow.AddMinutes(1))
+        var cached = await tokenCache.GetAsync<TokenInfo>(cacheKey, tokenCacheOptionsName).ConfigureAwait(false);
+        if (cached is not null && cached.ExpiresOnUtc >= DateTime.UtcNow + ExpirationMargin)
         {
             logger.Technical().LogTokenLoadedFromCache(cacheKey);
             return Result.Ok(cached);
@@ -97,12 +99,13 @@ public class ClientCredentialsTokenProvider(
         var tokenEndpoint = await authority.GetEndpointAsync(CancellationToken.None).ConfigureAwait(false);
         var result = await GetTokenInfoAsync(tokenEndpoint, clientId!, clientSecret!, scope!, extraParameters).ConfigureAwait(false);
 
-        if (result.IsSuccess)
+        // A token valid for less than the margin is returned but not cached: it would never be read from the cache.
+        if (result.IsSuccess && result.Value.ExpiresOnUtc >= DateTime.UtcNow + ExpirationMargin)
         {
             try
             {
                 logger.Technical().LogSaveTokenInCache(cacheKey, result.Value.ExpiresOnUtc);
-                tokenCache.Put(cacheKey, result.Value);
+                await tokenCache.PutAsync(cacheKey, result.Value, tokenCacheOptionsName).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -112,6 +115,9 @@ public class ClientCredentialsTokenProvider(
 
         return result;
     }
+
+    // A cached token is used only when it is valid for at least this time, to leave time to perform the request.
+    private static readonly TimeSpan ExpirationMargin = TimeSpan.FromMinutes(1);
 
     private static string BuildKey(AuthorityOptions authority, string clientId, string scope, string clientSecret, IEnumerable<KeyValuePair<string, string>> extraParameters)
     {

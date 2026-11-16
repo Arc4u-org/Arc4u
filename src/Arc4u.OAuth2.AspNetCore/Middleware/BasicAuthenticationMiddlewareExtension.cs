@@ -124,6 +124,9 @@ public static class BasicAuthenticationMiddlewareExtension
             }
         }
 
+        // The default Credential provider keeps the token in the ApplicationCache, which needs the resolver.
+        services.AddTokenCacheResolver();
+
         var hasSpecificAuthority = RegisterBasicAuthority(services, basicOptions.BasicOptions);
 
         var settings = basicOptions.BasicOptions.BuildBasics();

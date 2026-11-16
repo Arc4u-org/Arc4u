@@ -131,4 +131,10 @@ public class TokenKeys
     /// Url used to contact an external token identity provider.
     /// </summary>
     public const string TokenRequestUrl = "TokenRequestUrl";
+
+    /// <summary>
+    /// The name of the named <see cref="Options.TokenCacheOptions"/> the token provider passes to the <see cref="ITokenCache"/>.
+    /// When absent, the default <see cref="Options.TokenCacheOptions"/> are used.
+    /// </summary>
+    public const string TokenCacheOptionsName = "TokenCacheOptionsName";
 }

@@ -95,8 +95,10 @@ public class TokenCacheOptionsTests
         sut.MaxTime.Should().Be(defaultOptions.MaxTime);
     }
 
-    [Fact]
-    public void TockeCacheOption_From_Config_With_MaxTime_To_Zero_Exception_Should()
+    [Theory]
+    [InlineData("00:00:00")]
+    [InlineData("-00:10:00")]
+    public void TockeCacheOption_From_Config_With_MaxTime_To_Zero_Exception_Should(string maxTime)
     {
         IServiceCollection services = new ServiceCollection();
 
@@ -107,7 +109,7 @@ public class TokenCacheOptionsTests
                 new Dictionary<string, string?>
                 {
                     ["Authentication:TokenCache:CacheName"] = options.CacheName,
-                    ["Authentication:TokenCache:MaxTime"] = TimeSpan.Zero.ToString()
+                    ["Authentication:TokenCache:MaxTime"] = maxTime
                 }).Build();
 
         IConfiguration configuration = new ConfigurationRoot(new List<IConfigurationProvider>(config.Providers));

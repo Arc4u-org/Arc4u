@@ -45,6 +45,10 @@ public class AppPrincipalTransform : IClaimsTransformation
     /// <param name="activitySourceFactory">The factory of the activity source used for telemetry.</param>
     /// <param name="tokenCacheOptions">The token cache options, giving the lifetime of the cached claims.</param>
     /// <param name="logger">The logger.</param>
+    /// <remarks>
+    /// Only the <see cref="TokenCacheOptions.MaxTime"/> of the default <see cref="TokenCacheOptions"/> is read: <c>AddTokenCache</c> fixes these options at startup,
+    /// so <see cref="IOptions{TOptions}"/> is enough. The named options, which need an <see cref="IOptionsMonitor{TOptions}"/>, apply to the tokens, not to the cached claims.
+    /// </remarks>
     public AppPrincipalTransform(
         IApplicationContext applicationContext,
         IClaimProfileFiller claimProfileFiller,

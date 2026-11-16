@@ -12,6 +12,94 @@ no release notes.
 
 ## [Unreleased]
 
+### Added
+
+- `Arc4u.OAuth2.AspNetCore`: a token cache per client token. An `Authentication:ClientTokens` entry can
+  set its own `TokenCache` (`CacheName`, `MaxTime`), registered as named `TokenCacheOptions` under the
+  entry key. The optional `Authentication:ClientTokensCache` section sets the token cache shared by every
+  entry. Each value is taken from the entry, then from `Authentication:ClientTokensCache`, then from
+  `Authentication:TokenCache`. When `Authentication:ClientTokensCache` exists, no entry can be named
+  `ClientTokensCache`. `AddClientTokens` takes the section path as a new optional
+  `tokenCacheSectionName` parameter, and `AddJwtAuthentication` reads it from
+  `JwtAuthenticationSectionOptions.ClientTokensCacheSectionPath`; an empty path turns the shared section off.
+- `Arc4u.OAuth2.AspNetCore.Authentication`: a token cache per on-behalf-of setting. An
+  `Authentication:OnBehalfOf` entry (or `OnBehalfOfSettingsOptions.TokenCache` from code) can set its own
+  `TokenCache`, registered as named `TokenCacheOptions` under the setting name. The optional
+  `Authentication:OnBehalfOfCache` section sets the token cache shared by every setting of the
+  configuration; each value is taken from the setting, then from `Authentication:OnBehalfOfCache`,
+  then from `Authentication:TokenCache`. When `Authentication:OnBehalfOfCache` exists, no setting can be
+  named `OnBehalfOfCache`. `AddOnBehalfOf` takes the section path as a new optional
+  `tokenCacheSectionName` parameter (empty to turn it off). `AzureADOboTokenProvider` stores the tokens of the
+  setting in that cache, and the index of the user (used at sign-out) stays in the default token cache
+  and records the cache of each token, so the sign-out removes each token from its own cache, even
+  when its options were changed or removed since. A token in a named cache has the cache name in its
+  key, so two settings with the same client and scope but different caches do not share an entry.
+  `OboTokenCacheIndex` has a new optional `CacheNames`; an index stored by a previous version is
+  still read.
+- `Arc4u.OAuth2`: `AddNamedTokenCache` registers named `TokenCacheOptions` from code or from a
+  configuration section, `AddSharedTokenCache` registers the options shared by the entries of a section, and `TokenCacheResolver`, a singleton
+  registered by `AddTokenCache` and the other registration methods of the token cache users (or by `AddTokenCacheResolver`), gives the cache and the `MaxTime` of default or named options to the code that uses the `ICache` directly.
+
+### Changed
+
+- `Arc4u.OAuth2`: `ITokenCache` is asynchronous, so a call to a distributed cache no longer blocks a
+  thread: `Get`, `Put` and `DeleteItem` are replaced by `GetAsync`, `PutAsync` and `DeleteItemAsync`,
+  which return a `ValueTask` and take a `CancellationToken`. They also take an optional `optionsName`, the name of
+  the `TokenCacheOptions` to use (the default ones when it is `null`). `ApplicationCache` takes a
+  `TokenCacheResolver` instead of `ICacheHelper` and `IOptions<TokenCacheOptions>`: a name under which no options are registered
+  (by `AddNamedTokenCache`, `AddSharedTokenCache`, `AddClientTokens`, `AddOnBehalfOf`,
+  `Configure<TokenCacheOptions>(name, …)`, or any registration such as `BindConfiguration` giving values
+  other than those of an unregistered name, the class defaults changed by `ConfigureAll`) uses the default options and logs a warning, instead of the class defaults. `ICacheHelper` has a new `GetCache(string? cacheName)`
+  method. Custom `ITokenCache` and `ICacheHelper` implementations must add them. Moq setups that leave
+  out `optionsName` or the `CancellationToken` match only their default values: use
+  `It.IsAny<string?>()` and `It.IsAny<CancellationToken>()` to match any value.
+- `Arc4u.OAuth2`: `ApplicationCache.PutAsync` keeps a `TokenInfo` until its `ExpiresOnUtc` when that comes
+  before `TokenCacheOptions.MaxTime`. An expired `TokenInfo` is not stored, and the entry already
+  stored under the key is removed. The `ClientCredentials` and `Credential` providers no longer cache a
+  token valid for less than one minute, as they never serve it from the cache.
+- `Arc4u.OAuth2`: `AddTokenCache` throws a `ConfigurationException` for a negative
+  `Authentication:TokenCache:MaxTime`, as it does for zero, instead of passing a negative lifetime to the
+  cache for every token.
+- `Arc4u.OAuth2.AspNetCore`: `BasicAuthenticationMiddleware` no longer caches the token it gets for a
+  Basic credential. It asks the token provider named by `ProviderId` on every request, and the
+  provider is responsible for caching. The default `Credential` provider
+  (`CredentialTokenCacheTokenProvider`) already caches the token in the `ITokenCache`, so the token
+  is now stored once instead of twice. An application whose `ProviderId` names its own provider must
+  make that provider cache the token, or the token endpoint is called on every request.
+- `Arc4u.OAuth2.AspNetCore.Authentication`: `AzureADOboTokenProvider` returns a failed `Result` instead
+  of throwing an `HttpRequestException` when the token endpoint answers with an error status code, and
+  instead of throwing a `KeyNotFoundException` when `ClientId`, `ClientSecret` or `Scope` is missing
+  from the settings.
+- `Arc4u.OAuth2.AspNetCore.Authentication`: `AzureADOboTokenProvider` no longer sends the Windows
+  credentials of the process (`UseDefaultCredentials`) to the token endpoint, and no longer creates an
+  `HttpClient` for each request. It uses the `IHttpClientFactory` when one is registered (the client
+  named by the `HttpClientName` setting, or the default one), and otherwise a shared `HttpClient`. The
+  new `HttpClientName` of an `Authentication:OnBehalfOf` setting (`OnBehalfOfSettingsOptions.HttpClientName`)
+  names the client: an application whose token endpoint needs Windows authentication or a proxy
+  configures it on that client.
+- `Arc4u.OAuth2.AspNetCore.Authentication`: `AzureADOboTokenProvider` keeps a token at most the
+  `MaxTime` of its `TokenCacheOptions` (50 minutes by default), as `ApplicationCache` does, instead of
+  until it expires, and no longer caches a token valid for one minute or less, as it serves a cached
+  token only when it is valid for more than one minute. It takes a new optional `TokenCacheResolver` constructor parameter, resolved by the dependency injection.
+
+### Fixed
+
+- `Arc4u.OAuth2.AspNetCore.Authentication`: `AzureADOboTokenProvider`
+  - serves a cached token that is not a JWT (an opaque token) instead of throwing: its expiration is
+    read from the cached `TokenInfo`;
+  - reads an `expires_in` given as a string (Azure AD v1 endpoint) instead of throwing, and uses the
+    expiration of the JWT when there is no `expires_in`;
+  - returns an opaque token without `expires_in`, or with an `expires_in` of 0, without caching it,
+    instead of throwing or passing a timeout that is not positive to the cache;
+  - fails when the response has no access token or is not Json, instead of caching an empty token;
+  - limits an unreasonable `expires_in` to one year instead of throwing.
+- `Arc4u.OAuth2`: `ApplicationLocalDataCache` keeps the token of each key: a key no longer gets the
+  token of another key, and `DeleteItemAsync` removes only its key.
+- `Arc4u.OAuth2`: `CacheHelper.GetCache(cacheName)` resolves each named cache once, and uses the default
+  cache when the named cache cannot be initialized, as for the token cache.
+- `Arc4u.OAuth2.AspNetCore`: `CredentialTokenCacheTokenProvider` returns a failed `Result` instead of
+  throwing a `KeyNotFoundException` when the settings have no `Scope`.
+
 ## [9.0.0] - 2026-11-10
 
 Arc4u 9.0.0 contains breaking changes: follow the

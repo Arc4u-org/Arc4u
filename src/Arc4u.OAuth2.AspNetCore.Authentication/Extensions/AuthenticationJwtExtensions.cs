@@ -149,7 +149,7 @@ namespace Arc4u.OAuth2.Extensions
         /// <remarks>
         /// <para>
         /// Besides the JWT bearer scheme, the method registers, from the sections named by <see cref="JwtAuthenticationSectionOptions"/>: the OAuth2 settings, the claim identifiers, the domain mappings, the token cache,
-        /// the claims filler, the client tokens (<c>Authentication:ClientTokens</c>) and the remote secrets (<c>Authentication:RemoteSecrets</c>).
+        /// the claims filler, the client tokens (<c>Authentication:ClientTokens</c>, with their optional shared token cache <c>Authentication:ClientTokensCache</c>) and the remote secrets (<c>Authentication:RemoteSecrets</c>).
         /// </para>
         /// <para>
         /// The token cache section (<c>Authentication:TokenCache</c>) is optional: an API that only validates inbound tokens can omit it, and the default cache is then used.
@@ -245,8 +245,10 @@ namespace Arc4u.OAuth2.Extensions
             {
                 services.AddTokenCache(configuration, settings.TokenCacheSectionPath);
             }
+            // Without the section, the ApplicationCache (Basic authentication, client tokens) uses the default cache: it still needs the resolver.
+            services.AddTokenCacheResolver();
             services.AddClaimsFiller(configuration, settings.ClaimsFillerSectionPath);
-            services.AddClientTokens(configuration, settings.ClientTokensSectionPath);
+            services.AddClientTokens(configuration, settings.ClientTokensSectionPath, settings.ClientTokensCacheSectionPath);
             services.AddRemoteSecretsAuthentication(configuration, settings.RemoteSecretSectionPath);
 
             return services.AddJwtAuthentication(configuration, JwtAuthenticationFiller);

@@ -82,7 +82,22 @@ public class ClientCredentialsTokenProviderTests
 
         // assert
         result.IsSuccess.Should().BeTrue();
-        mockCache.Verify(m => m.Put(It.IsAny<string>(), It.IsAny<TokenInfo>()), Times.Once);
+        mockCache.Verify(m => m.PutAsync(It.IsAny<string>(), It.IsAny<TokenInfo>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetToken_Does_Not_Cache_A_Token_Valid_For_Less_Than_A_Minute_Should()
+    {
+        // A cached token is served only when it is valid for at least a minute: this one would never be read.
+        var settings = BuildSettings(_fixture.Create<string>(), _fixture.Create<string>(), Constants.OpenIdScope, []);
+        var handler = new StubHandler(Ok(_fixture.Create<string>(), 45));
+        var (cache, mockCache) = MockCache(cached: null);
+        var sut = BuildSut(handler, cache);
+
+        var result = await sut.GetTokenAsync(settings, null);
+
+        result.IsSuccess.Should().BeTrue();
+        mockCache.Verify(m => m.PutAsync(It.IsAny<string>(), It.IsAny<TokenInfo>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -116,7 +131,7 @@ public class ClientCredentialsTokenProviderTests
             var (cache, mockCache) = MockCache(cached: null);
             var sut = BuildSut(new StubHandler(Ok(_fixture.Create<string>(), 3600)), cache);
             await sut.GetTokenAsync(BuildSettings(clientId, clientSecret, Constants.OpenIdScope, extra), null);
-            return (string)mockCache.Invocations.Single(i => i.Method.Name == nameof(ITokenCache.Put)).Arguments[0]!;
+            return (string)mockCache.Invocations.Single(i => i.Method.Name == nameof(ITokenCache.PutAsync)).Arguments[0]!;
         }
 
         // act
@@ -131,6 +146,41 @@ public class ClientCredentialsTokenProviderTests
         keyApi1.Should().NotBe(keyApi2);
         keyOrderA.Should().Be(keyOrderB);
         keyApi1.Should().NotContain(clientSecret);
+    }
+
+    [Fact]
+    public async Task GetToken_Uses_The_TokenCacheOptions_Of_The_Settings_Should()
+    {
+        // arrange
+        var settings = BuildSettings(_fixture.Create<string>(), _fixture.Create<string>(), Constants.OpenIdScope, []);
+        settings.Add(TokenKeys.TokenCacheOptionsName, "Client1");
+        var handler = new StubHandler(Ok(_fixture.Create<string>(), 3600));
+        var (cache, mockCache) = MockCache(cached: null);
+        var sut = BuildSut(handler, cache);
+
+        // act
+        var result = await sut.GetTokenAsync(settings, null);
+
+        // assert
+        result.IsSuccess.Should().BeTrue();
+        mockCache.Verify(m => m.GetAsync<TokenInfo>(It.IsAny<string>(), "Client1", It.IsAny<CancellationToken>()), Times.Once);
+        mockCache.Verify(m => m.PutAsync(It.IsAny<string>(), It.IsAny<TokenInfo>(), "Client1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetToken_Without_TokenCacheOptions_Uses_The_Default_Ones_Should()
+    {
+        // arrange
+        var settings = BuildSettings(_fixture.Create<string>(), _fixture.Create<string>(), Constants.OpenIdScope, []);
+        var handler = new StubHandler(Ok(_fixture.Create<string>(), 3600));
+        var (cache, mockCache) = MockCache(cached: null);
+        var sut = BuildSut(handler, cache);
+
+        // act
+        await sut.GetTokenAsync(settings, null);
+
+        // assert
+        mockCache.Verify(m => m.PutAsync(It.IsAny<string>(), It.IsAny<TokenInfo>(), null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -185,7 +235,7 @@ public class ClientCredentialsTokenProviderTests
     private static (ITokenCache Cache, Mock<ITokenCache> Mock) MockCache(TokenInfo? cached)
     {
         var mock = new Mock<ITokenCache>();
-        mock.Setup(m => m.Get<TokenInfo>(It.IsAny<string>())).Returns(cached!);
+        mock.Setup(m => m.GetAsync<TokenInfo>(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(cached);
         return (mock.Object, mock);
     }
 

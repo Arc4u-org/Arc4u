@@ -61,6 +61,12 @@ public static class ClientTokensExtension
     };
 
     /// <summary>
+    /// The name of the <see cref="TokenCacheOptions"/> registered from the <c>Authentication:ClientTokensCache</c> section: the default token cache of every
+    /// client token entry. No entry can use this name as its key when the section exists.
+    /// </summary>
+    public const string TokenCacheOptionsName = "ClientTokensCache";
+
+    /// <summary>
     /// Reads the <paramref name="sectionName"/> section and registers a named
     /// <see cref="SimpleKeyValueSettings"/> per entry, selecting the matching
     /// <see cref="IClientTokenScenario"/> by the entry's discriminator through <see cref="Scenario"/>.
@@ -69,7 +75,13 @@ public static class ClientTokensExtension
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration to read the section from, for example <c>builder.Configuration</c>.</param>
     /// <param name="sectionName">The section to read. The default is <c>Authentication:ClientTokens</c>.</param>
-    /// <exception cref="ConfigurationException">An entry has no <c>Scenario</c>, an unknown scenario, an empty authentication type, or is invalid for its scenario.</exception>
+    /// <param name="tokenCacheSectionName">
+    /// The optional section holding the <see cref="TokenCacheOptions"/> shared by every entry. The default is <c>Authentication:ClientTokensCache</c>; an empty name turns it off.
+    /// The token cache of an entry is resolved value by value: the entry's own <c>TokenCache</c>, then this section, then the default <see cref="TokenCacheOptions"/>
+    /// (<c>Authentication:TokenCache</c>).
+    /// </param>
+    /// <exception cref="ConfigurationException">An entry has no <c>Scenario</c>, an unknown scenario, an empty authentication type, or is invalid for its scenario;
+    /// a <c>MaxTime</c> of a token cache is not greater than zero; or an entry is named <see cref="TokenCacheOptionsName"/> while the token cache section exists.</exception>
     /// <example>
     /// <code language="csharp">
     /// builder.Services.AddClientTokens(builder.Configuration);
@@ -77,10 +89,15 @@ public static class ClientTokensExtension
     /// </example>
     public static void AddClientTokens(this IServiceCollection services,
         [DisallowNull] IConfiguration configuration,
-        [DisallowNull] string sectionName = "Authentication:ClientTokens")
+        [DisallowNull] string sectionName = "Authentication:ClientTokens",
+        [DisallowNull] string tokenCacheSectionName = "Authentication:ClientTokensCache")
     {
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(sectionName);
+        ArgumentNullException.ThrowIfNull(tokenCacheSectionName);
+
+        // The token providers of the entries use the ApplicationCache, which needs the resolver.
+        services.AddTokenCacheResolver();
 
         var section = configuration.GetSection(sectionName);
 
@@ -96,13 +113,16 @@ public static class ClientTokensExtension
             return;
         }
 
+        // The token cache shared by every entry, when the section exists. Registering it again (another AddClientTokens call) sets the same values.
+        var sharedTokenCacheName = services.AddSharedTokenCache(configuration, tokenCacheSectionName, TokenCacheOptionsName, entries.Keys);
+
         foreach (var (optionKey, options) in entries)
         {
-            Register(services, optionKey, options);
+            Register(services, optionKey, options, section.GetSection(optionKey), sharedTokenCacheName);
         }
     }
 
-    private static void Register(IServiceCollection services, string optionKey, ClientTokenSettingsOptions options)
+    private static void Register(IServiceCollection services, string optionKey, ClientTokenSettingsOptions options, IConfigurationSection entrySection, string? sharedTokenCacheName)
     {
         // AddClientTokens may be reached from several composition paths (e.g. a service registration
         // and an HttpClient handler pipeline). Registering the named-options projection twice for the
@@ -137,10 +157,24 @@ public static class ClientTokensExtension
             }, optionKey);
         }
 
+        // The entry's own token cache falls back on the shared one; without its own, the entry uses the shared one (or the default when there is none).
+        var tokenCacheOptionsName = sharedTokenCacheName;
+        if (options.TokenCache is not null)
+        {
+            services.AddNamedTokenCache(optionKey, entrySection.GetSection(nameof(ClientTokenSettingsOptions.TokenCache)), sharedTokenCacheName);
+            tokenCacheOptionsName = optionKey;
+        }
+
         // Projection is deferred into the named options callback; it only writes already-validated data.
         services.Configure<SimpleKeyValueSettings>(optionKey, settings =>
         {
             scenario.WriteTo(optionKey, options, settings);
+
+            // The token providers pass this name to the ITokenCache so the tokens of this entry use its TokenCacheOptions.
+            if (tokenCacheOptionsName is not null)
+            {
+                settings.Add(TokenKeys.TokenCacheOptionsName, tokenCacheOptionsName);
+            }
 
             // Any Settings key the scenario does not claim is forwarded verbatim as an extra request parameter.
             var extra = options.Settings.Where(kv => !scenario.KnownKeys.Contains(kv.Key)).ToList();

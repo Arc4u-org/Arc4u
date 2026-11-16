@@ -81,9 +81,11 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
             // the lack of password check.
             // authority is not null here => messages log and throw will throw an exception if null.
             var cacheKey = BuildKey(credential, authority!, scope);
+            // The TokenCacheOptions of the client token entry, when it defines its own.
+            settings.Values.TryGetValue(TokenKeys.TokenCacheOptionsName, out var tokenCacheOptionsName);
 
             logger.Technical().LogCheckContainsKeyInCache(cacheKey);
-            var tokenInfo = tokenCache.Get<TokenInfo>(cacheKey);
+            var tokenInfo = await tokenCache.GetAsync<TokenInfo>(cacheKey, tokenCacheOptionsName).ConfigureAwait(false);
             var hasChanged = false;
 
             if (null != tokenInfo)
@@ -91,7 +93,7 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
                 tokenInfoResult = Result.Ok(tokenInfo);
                 logger.Technical().LogTokenLoadedFromCache(cacheKey);
 
-                if (tokenInfo.ExpiresOnUtc < DateTime.UtcNow.AddMinutes(1))
+                if (tokenInfo.ExpiresOnUtc < DateTime.UtcNow + ExpirationMargin)
                 {
                     logger.Technical().LogTokenExpiredLoadedFromCache(cacheKey);
 
@@ -107,12 +109,13 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
                 hasChanged = true;
             }
 
-            if (hasChanged)
+            // A token valid for less than the margin is returned but not cached: it would never be read from the cache.
+            if (hasChanged && tokenInfoResult.IsSuccess && tokenInfoResult.Value.ExpiresOnUtc >= DateTime.UtcNow + ExpirationMargin)
             {
                 try
                 {
                     logger.Technical().LogSaveTokenInCache(cacheKey, tokenInfoResult.Value.ExpiresOnUtc);
-                    tokenCache.Put(cacheKey, tokenInfoResult.Value);
+                    await tokenCache.PutAsync(cacheKey, tokenInfoResult.Value, tokenCacheOptionsName).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -128,6 +131,9 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
         return await CreateBasicTokenInfoAsync(settings, credential).ConfigureAwait(false);
 
     }
+
+    // A cached token is used only when it is valid for at least this time, to leave time to perform the request.
+    private static readonly TimeSpan ExpirationMargin = TimeSpan.FromMinutes(1);
 
     /// <summary>Requests a token for the credentials from the <c>CredentialDirect</c> <see cref="ICredentialTokenProvider"/>, without using the cache.</summary>
     /// <param name="settings">The provider settings.</param>
@@ -171,7 +177,7 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
         }
 
         // Valdate arguments.
-        if (!settings.Values.ContainsKey(TokenKeys.Scope))
+        if (!settings.Values.TryGetValue(TokenKeys.Scope, out var settingsScope))
         {
             result.WithError("Scope is missing. Cannot process the request.");
         }
@@ -186,7 +192,8 @@ public class CredentialTokenCacheTokenProvider(ITokenCache tokenCache, ILogger<C
         {
             authority = authorities.Get(settings.Values[TokenKeys.AuthorityKey]);
         }
-        scope = settings.Values[TokenKeys.Scope];
+        // A missing scope is reported in the result: the caller stops before using it.
+        scope = settingsScope ?? string.Empty;
 
         return result;
     }

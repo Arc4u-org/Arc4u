@@ -56,4 +56,35 @@ public class OnBehalfOfTests
         oboSettings.Values[TokenKeys.ClientSecret].Should().Be(settings.ClientSecret);
         oboSettings.Values[TokenKeys.Scope].Should().Be(string.Join(' ', settings.Scopes));
     }
+
+    [Fact]
+    public void OnBehalfOf_With_An_HttpClientName_Writes_It_In_The_Settings_Should()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Authentication:OnBehalfOf:Obo1:ClientId"] = "front-app",
+            ["Authentication:OnBehalfOf:Obo1:ClientSecret"] = "secret",
+            ["Authentication:OnBehalfOf:Obo1:Scopes:0"] = "api-y/.default",
+            ["Authentication:OnBehalfOf:Obo1:HttpClientName"] = "OboClient",
+            ["Authentication:OnBehalfOf:Obo2:ClientId"] = "front-app",
+            ["Authentication:OnBehalfOf:Obo2:ClientSecret"] = "secret",
+            ["Authentication:OnBehalfOf:Obo2:Scopes:0"] = "api-z/.default",
+        }).Build();
+
+        IServiceCollection services = new ServiceCollection();
+        services.AddOnBehalfOf(configuration);
+        services.AddOnBehalfOfSettings(o =>
+        {
+            o.ClientId = "front-app";
+            o.ClientSecret = "secret";
+            o.Scopes.Add("api-x/.default");
+            o.HttpClientName = "CodeClient";
+        }, "FromCode");
+        var settings = services.BuildServiceProvider().GetRequiredService<IOptionsMonitor<SimpleKeyValueSettings>>();
+
+        settings.Get("Obo1").Values[TokenKeys.HttpClientName].Should().Be("OboClient");
+        settings.Get("FromCode").Values[TokenKeys.HttpClientName].Should().Be("CodeClient");
+        // Without a name, the provider uses the default client.
+        settings.Get("Obo2").Values.ContainsKey(TokenKeys.HttpClientName).Should().BeFalse();
+    }
 }

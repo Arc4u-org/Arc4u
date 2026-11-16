@@ -329,8 +329,8 @@ public class JwtHttpHandlerTests
 
         // Mock the cache used by the Credential token provider.
         var mockTokenCache = _fixture.Freeze<Mock<ITokenCache>>();
-        mockTokenCache.Setup(m => m.Get<TokenInfo>(It.IsAny<string>())).Returns(() => default);
-        mockTokenCache.Setup(m => m.Put(It.IsAny<string>(), It.IsAny<TokenInfo>()));
+        mockTokenCache.Setup(m => m.GetAsync<TokenInfo>(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync((TokenInfo?)null);
+        mockTokenCache.Setup(m => m.PutAsync(It.IsAny<string>(), It.IsAny<TokenInfo>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
 
         var mockHttpContextAccessor = _fixture.Freeze<Mock<IHttpContextAccessor>>();
         mockHttpContextAccessor.SetupGet(x => x.HttpContext).Returns(() => null);

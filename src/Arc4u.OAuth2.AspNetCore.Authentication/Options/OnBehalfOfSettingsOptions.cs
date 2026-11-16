@@ -19,5 +19,22 @@ namespace Arc4u.OAuth2.Options
         /// <summary>Gets or sets the authentication type of the resulting identity. The default is <see cref="Constants.InjectAuthenticationType"/>.</summary>
         public string AuthenticationType { get; set; } = Constants.InjectAuthenticationType;
 
+        /// <summary>
+        /// Gets or sets the name of the <see cref="HttpClient"/> of the <see cref="IHttpClientFactory"/> that calls the token endpoint, for example to configure
+        /// a proxy or the Windows authentication of the token endpoint. When empty, the default client of the factory is used (a shared client when no factory is registered).
+        /// </summary>
+        public string? HttpClientName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cache in which the tokens of this setting are stored and for how long. When present, it is registered as named
+        /// <see cref="TokenCacheOptions"/> under the setting name.
+        /// In the configuration, a value that is not given (<c>CacheName</c> or <c>MaxTime</c>) is taken from the <c>Authentication:OnBehalfOfCache</c> section when it exists,
+        /// otherwise from the default <see cref="TokenCacheOptions"/> (<c>Authentication:TokenCache</c>); when absent, the setting uses the
+        /// <c>Authentication:OnBehalfOfCache</c> section, or the default options when there is none.
+        /// From code (<c>AddOnBehalfOfSettings</c>), an empty <c>CacheName</c> takes the one of the default options, the <c>MaxTime</c> of the instance is used, and the
+        /// <c>Authentication:OnBehalfOfCache</c> section does not apply.
+        /// </summary>
+        public TokenCacheOptions? TokenCache { get; set; }
+
     }
 }

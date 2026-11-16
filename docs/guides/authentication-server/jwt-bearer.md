@@ -62,6 +62,7 @@ The keys of the `Authentication` section itself:
 | `ClaimsFillerSectionPath` | string | `Authentication:ClaimsMiddleWare:ClaimsFiller` | Options of the extra claims. |
 | `DomainMappingsSectionPath` | string | `Authentication:DomainsMapping` | Domain mapping of the user profile. |
 | `ClientTokensSectionPath` | string | `Authentication:ClientTokens` | Tokens for outgoing calls, see [Client authentication](../authentication-client/index.md). Optional. |
+| `ClientTokensCacheSectionPath` | string | `Authentication:ClientTokensCache` | Token cache shared by the client tokens, see [Choose the token cache of an entry](../authentication-client/token-providers.md#choose-the-token-cache-of-an-entry). Optional. |
 | `RemoteSecretSectionPath` | string | `Authentication:RemoteSecrets` | Secrets for outgoing calls, see [Client authentication](../authentication-client/index.md). Optional. |
 
 The audience validation is not set on this section: use `OAuth2.Settings:ValidateAudience`.
@@ -190,6 +191,12 @@ app.UseAuthorization();
 `AddBasicAuthenticationSettings` throws `ConfigurationException` when the `Authentication:Basic` section is
 missing. When the password grant fails, the request continues with its Basic header and the JWT bearer handler
 answers 401.
+
+The middleware asks the token provider for a token on every request and does not cache it: the
+`Credential` provider (`CredentialTokenCacheTokenProvider`) keeps the token in the `ITokenCache` until
+it expires, and at most `Authentication:TokenCache:MaxTime` (50 minutes by default); it does not cache
+a token valid for less than one minute. If `ProviderId` names your own provider, make it cache the token, or the token endpoint is
+called on every request.
 
 > [!CAUTION]
 > The password grant sends the user's password to your API. Many providers (Azure AD B2C, accounts with

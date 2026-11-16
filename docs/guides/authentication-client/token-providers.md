@@ -120,8 +120,9 @@ The on-behalf-of flow exchanges the user's token for a token whose audience is t
 API. Use it when the downstream API does not accept the token your API received.
 <xref:Arc4u.OAuth2.TokenProviders.AzureADOboTokenProvider> posts the exchange
 (`grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer`, `requested_token_use=on_behalf_of`)
-to the token endpoint of the `Default` authority, and caches the result until it expires. The
-user's token is the access token kept by the cookie authentication or, when there is none, the
+to the token endpoint of the `Default` authority, and caches the result until it expires and at most
+the `MaxTime` of its token cache (see [Choose the token cache of an entry](#choose-the-token-cache-of-an-entry));
+a token valid for one minute or less is not cached. The user's token is the access token kept by the cookie authentication or, when there is none, the
 `BootstrapContext` of the current identity (the bearer token of the request). The cookie token
 comes first because `UseOpenIdBearerInjector()` replaces the `BootstrapContext` with the
 on-behalf-of token it injects.
@@ -158,6 +159,8 @@ already call it with the default section: do not call it a second time, see
 | `Authentication:OnBehalfOf:<name>:Scopes` | `string[]` | none (required) | Scopes requested for the downstream API. |
 | `Authentication:OnBehalfOf:<name>:AuthenticationType` | `string` | `Inject` | See [How a provider is selected](#how-a-provider-is-selected). |
 | `Authentication:OnBehalfOf:<name>:ProviderId` | `string` | `Obo` | Key of the token provider. |
+| `Authentication:OnBehalfOf:<name>:HttpClientName` | `string` | none | Name of the `HttpClient` of the `IHttpClientFactory` that calls the token endpoint. When empty, the default client is used. |
+| `Authentication:OnBehalfOf:<name>:TokenCache` | object | `Authentication:OnBehalfOfCache`, then `Authentication:TokenCache` | `CacheName` and `MaxTime` of the cache that keeps the tokens of this entry. See [Choose the token cache of an entry](#choose-the-token-cache-of-an-entry). |
 
 > [!NOTE]
 > The provider returns the token type `Bearer`: with the default `Inject`, the token is sent in
@@ -173,6 +176,12 @@ builder.Services.AddOnBehalfOf(builder.Configuration);
 builder.Services.AddScoped<TokenRefreshInfo>();
 builder.Services.AddKeyedScoped<ITokenProvider, AzureADOboTokenProvider>(AzureADOboTokenProvider.ProviderName);
 ```
+
+The provider calls the token endpoint with the client named by `HttpClientName`, or the default
+client, of the `IHttpClientFactory` when one is registered (`AddHttpClient`), and otherwise with a
+shared `HttpClient`. It does not send the Windows credentials of the process: configure them, or a
+proxy, on a named client and give its name in `HttpClientName` if your token endpoint requires them. A failure of the token endpoint, or a missing `ClientId`, `ClientSecret` or `Scopes`,
+gives a failed result, not an exception.
 
 ## Call an API with the application identity
 
@@ -224,6 +233,7 @@ expires in less than one minute.
 | `Authentication:ClientTokens:<name>:Scopes` | `string[]` | `openid` | Scopes requested, joined with spaces. |
 | `Authentication:ClientTokens:<name>:AuthenticationType` | `string` | `Inject` | See [How a provider is selected](#how-a-provider-is-selected). |
 | `Authentication:ClientTokens:<name>:Authority` | object | the `Default` authority | An authority for this entry only (`Url`, `TokenEndpoint`, `Issuer`, `MetaDataAddress`), registered under the entry name. |
+| `Authentication:ClientTokens:<name>:TokenCache` | object | `Authentication:ClientTokensCache`, then `Authentication:TokenCache` | `CacheName` and `MaxTime` of the cache that keeps the tokens of this entry. See [Choose the token cache of an entry](#choose-the-token-cache-of-an-entry). |
 | `Authentication:ClientTokens:<name>:Settings:ClientId` | `string` | none (required) | Client ID of your application. |
 | `Authentication:ClientTokens:<name>:Settings:ClientSecret` | `string` | none (required) | Client secret of your application. |
 | `Authentication:ClientTokens:<name>:Settings:<other>` | `string` | none | Any other key is sent to the token endpoint as an extra form parameter, for example `resource`. See [Cache keys](#cache-keys). |
@@ -324,6 +334,77 @@ another section). The configuration based `AddJwtAuthentication` already calls i
 | `Authentication:RemoteSecrets:<name>:AuthenticationType` | `string` | `Inject` | Keep `Inject`: the header name is taken from the token type only in that mode. |
 | `Authentication:RemoteSecrets:<name>:ProviderId` | `string` | `RemoteSecret` | Key of the token provider. |
 
+## Choose the token cache of an entry
+
+By default every provider keeps its tokens in the cache of `Authentication:TokenCache`. An entry of
+`Authentication:ClientTokens` or `Authentication:OnBehalfOf` can use another cache, or keep its
+tokens for a shorter time, with its own `TokenCache`. To change all the entries of a section at once,
+use its shared section: `Authentication:ClientTokensCache` or `Authentication:OnBehalfOfCache`.
+
+```json
+{
+  "Authentication": {
+    "TokenCache": { "CacheName": "Volatile", "MaxTime": "00:40:00" },
+    "OnBehalfOfCache": { "CacheName": "Redis" },
+    "OnBehalfOf": {
+      "Inventory": { "ClientId": "<client-id>", "ClientSecret": "<client-secret>", "Scopes": [ "api://inventory/.default" ] },
+      "Orders": {
+        "ClientId": "<client-id>", "ClientSecret": "<client-secret>", "Scopes": [ "api://orders/.default" ],
+        "TokenCache": { "MaxTime": "00:05:00" }
+      }
+    }
+  }
+}
+```
+
+Each value is taken from the entry, then from the shared section, then from
+`Authentication:TokenCache`: here `Inventory` keeps its tokens in `Redis` for 40 minutes and
+`Orders` in `Redis` for 5 minutes.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `<entry>:TokenCache:CacheName` | `string` | the shared section, then `Authentication:TokenCache:CacheName` | The [named cache](../../concepts/glossary.md#named-cache) that keeps the tokens. An unknown name, or a cache that cannot be initialized when it is first used, uses the default cache until the application restarts. |
+| `<entry>:TokenCache:MaxTime` | `TimeSpan` | the shared section, then `Authentication:TokenCache:MaxTime` | How long a token stays in the cache at most. It must be greater than zero. |
+| `Authentication:ClientTokensCache` | object | none | `CacheName` and `MaxTime` shared by the `ClientTokens` entries. Read by `AddClientTokens` (parameter `tokenCacheSectionName`) and `AddJwtAuthentication` (`ClientTokensCacheSectionPath`); an empty path turns it off. |
+| `Authentication:OnBehalfOfCache` | object | none | `CacheName` and `MaxTime` shared by the `OnBehalfOf` entries. Read by `AddOnBehalfOf` (parameter `tokenCacheSectionName`); an empty name turns it off. |
+
+The options of an entry are registered as named `TokenCacheOptions` under the entry name (the
+shared sections under `ClientTokensCache` and `OnBehalfOfCache`, so no entry can have these names
+when the section exists), and the provider passes that name to the cache. A token is kept until it
+expires, and at most `MaxTime`.
+
+An entry registered from code with `AddOnBehalfOfSettings` sets `OnBehalfOfSettingsOptions.TokenCache`:
+an empty `CacheName` takes the one of `Authentication:TokenCache`, `MaxTime` is the one of the
+instance, and `Authentication:OnBehalfOfCache` does not apply. Your own code can register named options
+with `AddNamedTokenCache` and pass their name as `optionsName` to the `ITokenCache`, and give its own
+section of entries a shared section with `AddSharedTokenCache`:
+
+```csharp
+// "Authentication:ReportsCache" holds the CacheName and MaxTime shared by the entries of "Authentication:Reports".
+var shared = services.AddSharedTokenCache(configuration, "Authentication:ReportsCache", "ReportsCache", reportEntryKeys);
+foreach (var key in reportEntryKeys)
+{
+    services.AddNamedTokenCache(key, configuration.GetSection($"Authentication:Reports:{key}:TokenCache"), fallbackName: shared);
+}
+```
+
+`AddSharedTokenCache` returns `null` when the section name is empty or the section does not exist, so
+the entries then fall back on `Authentication:TokenCache`, and throws a `ConfigurationException` when
+an entry has the name of the shared options.
+
+A name under which no options are registered, for example a typo, uses the default options
+(`Authentication:TokenCache`), and the warning event 9193 is logged once for that name. A name counts
+as registered when `AddNamedTokenCache`, `AddSharedTokenCache`, `AddClientTokens`, `AddOnBehalfOf` or
+`services.Configure<TokenCacheOptions>(name, …)` registers it. Any other registration, for example
+`services.AddOptions<TokenCacheOptions>(name).BindConfiguration(path)`, counts only when its
+`CacheName` or `MaxTime` differs from those of an unregistered name (the class defaults, as changed by
+`ConfigureAll`): when the bound section is missing, the name uses the default options and the warning
+is logged. The check is made once per name, at its first use, and kept until the application restarts.
+
+At sign-out, the on-behalf-of tokens of the user are removed from the cache of their entry: the index
+of the user stays in the cache of `Authentication:TokenCache` and records the cache of each token, so a
+token is still removed when its options were changed or removed since it was cached.
+
 ## Cache keys
 
 The providers cache the tokens they obtain. A cache key contains every value that changes the
@@ -336,7 +417,7 @@ restart:
 |---|---|
 | `ClientCredentials` | `ClientCredentials_<client-id>_<hash>`, the hash covers the authority URL, the scope, the client secret and the extra parameters (for example `resource`, in any order). |
 | `Credential` | `Credential_<user>_<hash>`, the hash covers the authority URL, the scope, the user and the password. |
-| `Obo` | `_Obo_<client-id>_<hash>`, the hash covers the authority URL, the user's token and the scope. |
+| `Obo` | `_Obo_<client-id>_<hash>`, the hash covers the authority URL, the user's token and the scope, and the name of the cache when the setting has its own (see [Choose the token cache of an entry](#choose-the-token-cache-of-an-entry)). |
 
 Two `ClientTokens` entries that differ only by an extra parameter such as `resource` get their
 own cached token.
@@ -397,7 +478,7 @@ instead of the ones the application uses.
 
 | Provider | Sign-out |
 |---|---|
-| `AzureADOboTokenProvider` | Removes from the cache the on-behalf-of tokens of every API obtained for the current user, also with an access token that was refreshed since. Their keys are kept in an `OboTokenCacheIndex` per user (the registered `IUserObjectIdentifier`, as for the claims cache, otherwise the `oid` or `sub` claim) and application (`aud` claim, otherwise `azp` or `appid`), both read from the user token, so two applications sharing a cache do not remove each other's tokens: add this type to your `JsonSerializerContext` if the cache serializer uses one |
+| `AzureADOboTokenProvider` | Removes from their cache the on-behalf-of tokens of every API obtained for the current user, also with an access token that was refreshed since. Their keys are kept in an `OboTokenCacheIndex` per user (the registered `IUserObjectIdentifier`, as for the claims cache, otherwise the `oid` or `sub` claim) and application (`aud` claim, otherwise `azp` or `appid`), both read from the user token, so two applications sharing a cache do not remove each other's tokens: add this type to your `JsonSerializerContext` if the cache serializer uses one |
 | `ClientTokenProvider` (Blazor) | Forgets the token kept in memory, and does not keep a token requested before the sign-out. Sign out of the backend cookie in your application |
 | `OidcClientIdentityModelTokenProvider` | Cancels a login in progress, clears the tokens in memory and in the secure cache, then logs the user out of the authority (in the browser, bounded by `LoginTimeout`) when the user had a session. A refresh or a login in progress is not kept; concurrent calls refresh the token once |
 | `UsernamePasswordTokenProvider` | Removes the user name, the password and the token from the secure cache. Does nothing with settings without `Authority` and `ServiceApplicationId` |

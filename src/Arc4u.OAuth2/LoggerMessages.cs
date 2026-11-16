@@ -158,6 +158,24 @@ public static partial class LoggerMessages
     public static partial void LogAddedInTokenCache(this ILogger logger, string tokenKey);
 
     /// <summary>
+    /// Logs a Warning message (event id 9192): <c>The token with id: {TokenKey} is already expired and is not added to the cache.</c>
+    /// </summary>
+    /// <param name="logger">The logger to write to.</param>
+    /// <param name="tokenKey">The value substituted in the message.</param>
+    [LoggerMessage(EventId = 9192, Level = LogLevel.Warning,
+        Message = "The token with id: {TokenKey} is already expired and is not added to the cache.")]
+    public static partial void LogExpiredTokenNotCached(this ILogger logger, string tokenKey);
+
+    /// <summary>
+    /// Logs a Warning message (event id 9193): <c>No TokenCacheOptions are registered under the name {OptionsName}: the default TokenCacheOptions are used.</c>
+    /// </summary>
+    /// <param name="logger">The logger to write to.</param>
+    /// <param name="optionsName">The value substituted in the message.</param>
+    [LoggerMessage(EventId = 9193, Level = LogLevel.Warning,
+        Message = "No TokenCacheOptions are registered under the name {OptionsName}: the default TokenCacheOptions are used.")]
+    public static partial void LogUnregisteredTokenCacheOptions(this ILogger logger, string optionsName);
+
+    /// <summary>
     /// Logs a Trace message (event id 9097): <c>Retrieve token information for user: {TokenKey}.</c>
     /// </summary>
     /// <param name="logger">The logger to write to.</param>

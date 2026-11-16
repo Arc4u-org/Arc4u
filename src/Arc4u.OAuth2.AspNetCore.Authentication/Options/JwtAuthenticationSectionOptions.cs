@@ -44,6 +44,10 @@ namespace Arc4u.OAuth2.Options
         /// <summary>Gets or sets the path of the section holding the client tokens (see <c>ClientTokenSettingsOptions</c>). The default is <c>Authentication:ClientTokens</c>.</summary>
         public string ClientTokensSectionPath { get; set; } = "Authentication:ClientTokens";
 
+        /// <summary>Gets or sets the path of the optional section holding the <see cref="TokenCacheOptions"/> shared by every client token entry.
+        /// The default is <c>Authentication:ClientTokensCache</c>; an empty path turns it off.</summary>
+        public string ClientTokensCacheSectionPath { get; set; } = "Authentication:ClientTokensCache";
+
         /// <summary>Gets or sets the path of the section holding the remote secrets. The default is <c>Authentication:RemoteSecrets</c>.</summary>
         public string RemoteSecretSectionPath { get; set; } = "Authentication:RemoteSecrets";
 

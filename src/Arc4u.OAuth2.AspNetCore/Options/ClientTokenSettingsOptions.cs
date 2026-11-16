@@ -38,6 +38,14 @@ public class ClientTokenSettingsOptions
     public List<string> Scopes { get; set; } = [];
 
     /// <summary>
+    /// The cache in which the tokens of this entry are stored and for how long. When present, it is registered as a named
+    /// <see cref="TokenCacheOptions"/> under the entry key; a value not given (<c>CacheName</c> or <c>MaxTime</c>) is taken from the
+    /// <c>Authentication:ClientTokensCache</c> section when it exists, otherwise from the default <see cref="TokenCacheOptions"/> (<c>Authentication:TokenCache</c>).
+    /// When absent, the entry uses the <c>Authentication:ClientTokensCache</c> section, or the default <see cref="TokenCacheOptions"/> when there is none.
+    /// </summary>
+    public TokenCacheOptions? TokenCache { get; set; }
+
+    /// <summary>
     /// Open bag of scenario-specific values. The selected scenario consumes the keys it knows
     /// (see <see cref="Arc4u.OAuth2.TokenProvider.Scenarios.IClientTokenScenario.KnownKeys"/>); any other key is
     /// forwarded to the token endpoint as an extra request parameter.

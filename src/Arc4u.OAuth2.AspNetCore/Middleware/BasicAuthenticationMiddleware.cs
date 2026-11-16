@@ -19,8 +19,10 @@ namespace Arc4u.OAuth2.Middleware;
 /// <summary>
 /// A middleware that converts credentials into a bearer token. The credentials are read from a Basic <c>Authorization</c> header or, when the
 /// <see cref="BasicAuthenticationSettingsOptions.CertificateHeaderOptions"/> are configured, from an encrypted header or query string parameter.
-/// A token is requested for them from the token provider designated by the <c>ProviderId</c> of the settings, cached in the <see cref="ITokenCache"/>,
+/// A token is requested for them from the token provider designated by the <c>ProviderId</c> of the settings,
 /// and the <c>Authorization</c> header of the request is replaced by <c>Bearer &lt;token&gt;</c>.
+/// The middleware does not cache the token: caching is the job of the token provider (the default <c>Credential</c> provider,
+/// <see cref="TokenProvider.CredentialTokenCacheTokenProvider"/>, caches it in the <see cref="ITokenCache"/>).
 /// Errors are logged and the request continues without change.
 /// </summary>
 public class BasicAuthenticationMiddleware
@@ -67,10 +69,6 @@ public class BasicAuthenticationMiddleware
         {
             throw new ConfigurationException("No token provider resolution name is defined in your settings!");
         }
-        if (!serviceProvider.TryGetService<ITokenCache>(out _))
-        {
-            _logger.Technical().LogError($"No token cache is defined for Basic Authentication.");
-        }
     }
 
     /// <summary>Processes the request.</summary>
@@ -92,17 +90,9 @@ public class BasicAuthenticationMiddleware
                 await _next(context).ConfigureAwait(false);
                 return;
             }
-            var tokenCache = context.RequestServices.GetService<ITokenCache>();
 
-            var cacheKey = BuildKey(credential);
-            var tokenInfo = tokenCache?.Get<TokenInfo>(cacheKey);
-
-            if (null == tokenInfo || tokenInfo.ExpiresOnUtc < DateTime.UtcNow.AddMinutes(1))
-            {
-                tokenInfo = await GetTokenFromCredentialAsync(credential, context.RequestServices).ConfigureAwait(false);
-
-                tokenCache?.Put(cacheKey, tokenInfo);
-            }
+            // The token provider serves the token from its cache when it has one.
+            var tokenInfo = await GetTokenFromCredentialAsync(credential, context.RequestServices).ConfigureAwait(false);
 
             if (tokenInfo is not null)
             {
@@ -151,13 +141,6 @@ public class BasicAuthenticationMiddleware
         }
 
         return null;
-    }
-
-    private static string BuildKey([DisallowNull] CredentialsResult credentialsResult)
-    {
-        ArgumentNullException.ThrowIfNull(credentialsResult);
-
-        return "Basic-" + TokenCacheKey.Hash(credentialsResult.Upn, credentialsResult.Password);
     }
 
     private CredentialsResult GetSecretCredential([DisallowNull] HttpContext context)
