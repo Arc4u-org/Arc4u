@@ -40,6 +40,7 @@ public class OidcClientIdentityModelTokenProvider(
     public const string TokenProviderName = "OidcClientIdentityModel";
     private const string TokenKey = "TokensInfo";
     private const string TokenType = "Bearer";
+    private const string UserSignedOutWhileLoggingIn = "The user signed out while logging in.";
 
     // Incremented by each sign-out, so tokens obtained by a refresh or a login in progress during a sign-out are not kept after it.
     // The provider is [Shared] (a singleton, like its TokenRefreshInfo): the instance signed out is the one running GetTokenAsync.
@@ -328,7 +329,7 @@ public class OidcClientIdentityModelTokenProvider(
             {
                 if (_signOutGeneration.HasChanged(signOutCount))
                 {
-                    return FluentResults.Result.Fail("The user signed out while logging in.");
+                    return FluentResults.Result.Fail(UserSignedOutWhileLoggingIn);
                 }
 
                 loginResult = await client.LoginAsync(loginRequest, loginCancellation.Token).ConfigureAwait(false);
@@ -337,7 +338,7 @@ public class OidcClientIdentityModelTokenProvider(
             {
                 // Cancelled by a sign-out, or not completed in time.
                 return _signOutGeneration.HasChanged(signOutCount)
-                    ? FluentResults.Result.Fail("The user signed out while logging in.")
+                    ? FluentResults.Result.Fail(UserSignedOutWhileLoggingIn)
                     : FluentResults.Result.Fail($"The login did not complete within {clientOptions.LoginTimeout}.");
             }
             finally
@@ -348,7 +349,7 @@ public class OidcClientIdentityModelTokenProvider(
 
         if (_signOutGeneration.HasChanged(signOutCount))
         {
-            return FluentResults.Result.Fail("The user signed out while logging in.");
+            return FluentResults.Result.Fail(UserSignedOutWhileLoggingIn);
         }
 
         if (loginResult.IsError)
@@ -359,7 +360,7 @@ public class OidcClientIdentityModelTokenProvider(
         var loggedInToken = new TokenInfo(TokenType, loginResult.AccessToken, loginResult.AccessTokenExpiration.UtcDateTime);
         if (!await TryStoreTokensAsync(signOutCount, loggedInToken, new TokenInfo(TokenType, loginResult.RefreshToken, DateTime.UtcNow + clientOptions.RefreshTokenLifetime), loginResult.IdentityToken, persist: true).ConfigureAwait(false))
         {
-            return FluentResults.Result.Fail("The user signed out while logging in.");
+            return FluentResults.Result.Fail(UserSignedOutWhileLoggingIn);
         }
 
         return loggedInToken;

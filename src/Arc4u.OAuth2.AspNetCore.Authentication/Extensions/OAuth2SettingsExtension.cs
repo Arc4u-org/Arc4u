@@ -44,7 +44,7 @@ namespace Arc4u.OAuth2.Extensions
 
             void SettingsFiller(SimpleKeyValueSettings keyOptions)
             {
-                keyOptions.Add(TokenKeys.ProviderIdKey, validate!.ProviderId);
+                keyOptions.Add(TokenKeys.ProviderIdKey, validate.ProviderId);
                 keyOptions.Add(TokenKeys.AuthenticationTypeKey, Constants.BearerAuthenticationType);
                 //Optional => go to default.
                 if (validate.Authority is not null)

@@ -9,7 +9,7 @@ public class AsyncResult : IAsyncResult
     private readonly object _state;
     private ManualResetEvent? _event;
     private bool _completed;
-    private readonly object _lock = new object();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AsyncResult"/> class.

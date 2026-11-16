@@ -169,7 +169,7 @@ public class AuthorityOptions
         var openIdConfiguration = await JsonSerializer.DeserializeAsync(stream, OpenIdConfigurationJsonContext.Default.OpenIdConfiguration, cancellationToken).ConfigureAwait(false);
 
         EndSessionEndpoint = openIdConfiguration!.end_session_endpoint;
-        TokenEndpoint = openIdConfiguration!.Token_endpoint;
+        TokenEndpoint = openIdConfiguration.Token_endpoint;
         Issuer = openIdConfiguration.access_token_issuer ?? openIdConfiguration.issuer;
         _metadataLoaded = true;
     }

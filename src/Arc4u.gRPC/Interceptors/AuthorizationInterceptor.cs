@@ -72,8 +72,6 @@ public class AuthorizationInterceptor(
     {
         SetCultureIfExist(context);
 
-        var targetType = continuation.Target!.GetType();
-
         try
         {
             await continuation(request, responseStream, context).ConfigureAwait(false);

@@ -77,7 +77,7 @@ public class RedisCache : BaseDistributeCache<RedisCache>, ICache
 
                 if (!string.IsNullOrWhiteSpace(config.SerializerName))
                 {
-                    IsInitialized = Container.TryGetService<IObjectSerialization>(config.SerializerName!, out var serializerFactory);
+                    IsInitialized = Container.TryGetService<IObjectSerialization>(config.SerializerName, out var serializerFactory);
                     if (IsInitialized)
                     {
                         SerializerFactory = serializerFactory!;

@@ -70,7 +70,7 @@ public static class AddClaimsFillerExtension
                 section.Bind(options);
                 if (!section.GetSection("ClaimsToExclude").Exists())
                 {
-                    options!.ClaimsToExclude = DefaultClaimsToExclude;
+                    options.ClaimsToExclude = DefaultClaimsToExclude;
                 }
             }
             else

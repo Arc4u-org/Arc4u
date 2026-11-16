@@ -130,7 +130,7 @@ namespace Arc4u.OAuth2.Token
 
             // if we don't inject a bearer token, the AuthenticationType defined in the settings must be the same as the authentication type defined in the Identity.
             if (!inject
-                && applicationContext?.Principal?.Identity?.AuthenticationType is not null
+                && applicationContext.Principal?.Identity?.AuthenticationType is not null
                 && !authenticationType.Contains(applicationContext.Principal.Identity.AuthenticationType, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.Technical().LogDifferentAuthenticationTypeCallNextHttpHandler(GetType().Name);
@@ -201,9 +201,9 @@ namespace Arc4u.OAuth2.Token
             }
 
             // Add the culture of the user if any.
-            if (applicationContext?.Principal is not null)
+            if (applicationContext.Principal is not null)
             {
-                var culture = applicationContext!.Principal?.Profile?.CurrentCulture?.TwoLetterISOLanguageName;
+                var culture = applicationContext.Principal.Profile?.CurrentCulture?.TwoLetterISOLanguageName;
                 if (culture is not null)
                 {
                     request.Headers.Add("culture", culture);

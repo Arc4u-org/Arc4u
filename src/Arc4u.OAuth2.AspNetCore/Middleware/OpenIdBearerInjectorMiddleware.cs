@@ -51,7 +51,7 @@ public class OpenIdBearerInjectorMiddleware
             && context.User.Identity.IsAuthenticated
             && context.User.Identity.AuthenticationType!.Equals(_options.OpenIdSettings.Values[TokenKeys.AuthenticationTypeKey], StringComparison.InvariantCultureIgnoreCase))
         {
-            if (context.User is AppPrincipal principal && null != principal?.Profile?.CurrentCulture)
+            if (context.User is AppPrincipal principal && null != principal.Profile?.CurrentCulture)
             {
                 context.Request?.Headers?.Append("culture", principal.Profile.CurrentCulture.TwoLetterISOLanguageName);
             }

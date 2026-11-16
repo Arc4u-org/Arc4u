@@ -76,7 +76,7 @@ namespace Arc4u.OAuth2.TicketStore
 
                 if (content is null)
                 {
-                    _logger.Technical().LogError($"No Authentication ticket from the cache with key {key}.");
+                    _logger.Technical().LogError("No Authentication ticket from the cache with key {Key}.", key);
                     return null;
                 }
 

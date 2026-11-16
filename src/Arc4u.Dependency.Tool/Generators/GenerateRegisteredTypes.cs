@@ -120,22 +120,22 @@ public class GenerateRegisteredTypes : IIncrementalGenerator
         }
 
         // Find the minimum length of the strings in the list
-        var minLength = symbolPaths.Min(path => path!.Length);
+        var minLength = symbolPaths.Min(path => path.Length);
 
         // Select all the strings that have the shortest length
-        var shortestPaths = symbolPaths.Where(path => path!.Length == minLength).ToList();
+        var shortestPaths = symbolPaths.Where(path => path.Length == minLength).ToList();
 
         // I can have more than one path with the same length: c:\Temp\A\B and c:\Temp\C\D.
         // I need to find the common part: c:\Temp\
-        var commonPath = shortestPaths[0]!;
+        var commonPath = shortestPaths[0];
         for (var i = 1; i < shortestPaths.Count; i++)
         {
-            commonPath = GetCommonPath(commonPath, shortestPaths[i]!);
+            commonPath = GetCommonPath(commonPath, shortestPaths[i]);
         }
         return commonPath;
     }
 
-    private string GetCommonPath(string path1, string path2)
+    private static string GetCommonPath(string path1, string path2)
     {
         var parts1 = path1.Split(Path.DirectorySeparatorChar);
         var parts2 = path2.Split(Path.DirectorySeparatorChar);
@@ -157,7 +157,7 @@ public class GenerateRegisteredTypes : IIncrementalGenerator
         return assemblies;
     }
 
-    private string GenerateRegisterTypes(SettingsFile settings, string memberName, Compilation compilation, Action<Diagnostic> reportDiagnostic)
+    private static string GenerateRegisterTypes(SettingsFile settings, string memberName, Compilation compilation, Action<Diagnostic> reportDiagnostic)
     {
         var sb = new StringBuilder();
 
@@ -294,44 +294,41 @@ public class GenerateRegisteredTypes : IIncrementalGenerator
             var registeredTypes = new HashSet<TypeInfo>();
 
             sb.AppendLine($"        // Types registered by nuget package: {typesByAssembly.Key.Assembly.FullName}");
-            foreach (var exportInfo in TypeExportAttributeScanner.GetExportDescriptions(typesByAssembly.Key.NugetFile, requestedTypes))
+            foreach (var exportInfo in TypeExportAttributeScanner.GetExportDescriptions(typesByAssembly.Key.NugetFile, requestedTypes).Where(exportInfo => requestedTypes.Contains(exportInfo.Implementation)))
             {
-                if (requestedTypes.Contains(exportInfo.Implementation))
+                // A type exported several times yields one description per Export: its diagnostics are reported once.
+                var firstExport = registeredTypes.Add(exportInfo.Implementation);
+                var entry = typesByAssembly.Value.First(t => t.Type.Equals(exportInfo.Implementation)).Entry;
+
+                // A generic type definition is named Type`N in metadata, which is not a valid C# type name.
+                if (exportInfo.Implementation.Name.Contains('`'))
                 {
-                    // A type exported several times yields one description per Export: its diagnostics are reported once.
-                    var firstExport = registeredTypes.Add(exportInfo.Implementation);
-                    var entry = typesByAssembly.Value.First(t => t.Type.Equals(exportInfo.Implementation)).Entry;
+                    if (firstExport)
+                    {
+                        reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.GenericExportNotSupported, settings.Locate(entry), exportInfo.Implementation.FullName, "a generic type cannot be registered from appsettings.json; register it in code with typeof(...)"));
+                    }
+                    continue;
+                }
 
-                    // A generic type definition is named Type`N in metadata, which is not a valid C# type name.
-                    if (exportInfo.Implementation.Name.Contains('`'))
-                    {
-                        if (firstExport)
-                        {
-                            reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.GenericExportNotSupported, settings.Locate(entry), exportInfo.Implementation.FullName, "a generic type cannot be registered from appsettings.json; register it in code with typeof(...)"));
-                        }
-                        continue;
-                    }
+                // Scoped wins, as in DependencyToolGenerator: the shorter lifetime cannot capture a scoped dependency in a singleton.
+                if (firstExport && exportInfo.IsScoped && exportInfo.IsShared)
+                {
+                    reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.ConflictingLifetimes, settings.Locate(entry), exportInfo.Implementation.FullName));
+                }
 
-                    // Scoped wins, as in DependencyToolGenerator: the shorter lifetime cannot capture a scoped dependency in a singleton.
-                    if (firstExport && exportInfo.IsScoped && exportInfo.IsShared)
-                    {
-                        reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.ConflictingLifetimes, settings.Locate(entry), exportInfo.Implementation.FullName));
-                    }
-
-                    var contractName = exportInfo.ContractName is not null ? $"\"{exportInfo.ContractName}\"" : "";
-                    var keyed = exportInfo.ContractName is not null ? "Keyed" : "";
-                    if (exportInfo.IsScoped)
-                    {
-                        sb.AppendLine($"        services.Add{keyed}Scoped<{exportInfo.Service.FullName}, {exportInfo.Implementation.FullName}>({contractName});");
-                    }
-                    else if (exportInfo.IsShared)
-                    {
-                        sb.AppendLine($"        services.Add{keyed}Singleton<{exportInfo.Service.FullName}, {exportInfo.Implementation.FullName}>({contractName});");
-                    }
-                    else
-                    {
-                        sb.AppendLine($"        services.Add{keyed}Transient<{exportInfo.Service.FullName}, {exportInfo.Implementation.FullName}>({contractName});");
-                    }
+                var contractName = exportInfo.ContractName is not null ? $"\"{exportInfo.ContractName}\"" : "";
+                var keyed = exportInfo.ContractName is not null ? "Keyed" : "";
+                if (exportInfo.IsScoped)
+                {
+                    sb.AppendLine($"        services.Add{keyed}Scoped<{exportInfo.Service.FullName}, {exportInfo.Implementation.FullName}>({contractName});");
+                }
+                else if (exportInfo.IsShared)
+                {
+                    sb.AppendLine($"        services.Add{keyed}Singleton<{exportInfo.Service.FullName}, {exportInfo.Implementation.FullName}>({contractName});");
+                }
+                else
+                {
+                    sb.AppendLine($"        services.Add{keyed}Transient<{exportInfo.Service.FullName}, {exportInfo.Implementation.FullName}>({contractName});");
                 }
             }
 

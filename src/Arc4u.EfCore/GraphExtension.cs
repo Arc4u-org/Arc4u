@@ -157,7 +157,7 @@ public static class GraphExtension
                     && mi.GetGenericArguments().Length == 2
                     && mi.GetParameters().Length == 2);
 
-        var result = includeMethodInfo.MakeGenericMethod(new[] { typeof(T), propertyType }).Invoke(queryable, new object[] { queryable, expr });
+        var result = includeMethodInfo.MakeGenericMethod(typeof(T), propertyType).Invoke(queryable, new object[] { queryable, expr });
         if (result == null)
         {
             throw new InvalidOperationException("Include method invocation returned null.");
@@ -169,7 +169,7 @@ public static class GraphExtension
     [RequiresDynamicCode(IncludesBuildCode)]
     private static object BuildThenInclude(object queryable, Type parentType, Type propertyType, string subProperty, out Type subPropertyType)
     {
-        var basePropertyType = propertyType.IsGenericType ? propertyType.GetGenericArguments().First() : propertyType;
+        var basePropertyType = propertyType.IsGenericType ? propertyType.GetGenericArguments()[0] : propertyType;
         subPropertyType = basePropertyType.GetProperty(subProperty)!.PropertyType;
 
         var pe = Expression.Parameter(basePropertyType, "p");
@@ -191,6 +191,6 @@ public static class GraphExtension
             throw new InvalidOperationException("ThenInclude method not found.");
         }
 
-        return m.MakeGenericMethod(new[] { parentType, basePropertyType, subPropertyType }).Invoke(queryable, new object[] { queryable, expr })!;
+        return m.MakeGenericMethod(parentType, basePropertyType, subPropertyType).Invoke(queryable, new object[] { queryable, expr })!;
     }
 }

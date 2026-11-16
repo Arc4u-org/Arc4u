@@ -92,35 +92,6 @@ namespace Arc4u.OAuth2.Extensions
             services.AddSingleton<OidcClient>();
         }
 
-        private static void ConfigureOidcServices(this IServiceCollection services, OidcClientSettingsOption oidcClientOptions, string sectionKey = "OidcClient")
-        {
-            void SettingsFiller(SimpleKeyValueSettings keyOptions)
-            {
-                keyOptions.Add(TokenKeys.ProviderIdKey, oidcClientOptions.ProviderId);
-                keyOptions.Add(TokenKeys.ClientIdKey, oidcClientOptions.ClientId);
-                keyOptions.Add(TokenKeys.Scope, string.Join(' ', oidcClientOptions.Scopes));
-            }
-
-            services.Configure<SimpleKeyValueSettings>(sectionKey, SettingsFiller);
-        }
-
-        private static void ConfigureOidcServices(IServiceCollection services,
-            OidcClientAuthenticationOptions oidcClientOptions)
-        {
-            // Same default as the configuration based overload: the object identifier claim types.
-            services.AddClaimsIdentifier(oidcClientOptions.ClaimsIdentifierOptions
-                                         ?? (o => o.AddRange([ClaimTypes.ObjectIdentifier, ClaimTypes.OID])));
-            services.AddSingleton<TokenRefreshInfo>();
-
-            services.AddDefaultAuthority(options =>
-            {
-                options.SetData(oidcClientOptions.DefaultAuthority.Url,
-                                oidcClientOptions.DefaultAuthority.TokenEndpoint,
-                                oidcClientOptions.DefaultAuthority.Issuer,
-                                oidcClientOptions.DefaultAuthority.MetaDataAddress);
-            });
-        }
-
         /// <summary>
         /// Registers the OpenID Connect authentication of a client application from the configuration. In addition to what the overload taking an action registers, the domain mappings,
         /// the claims filler and the extra authorization and token request parameters are read from the sections named by <see cref="OidcClientAuthenticationSectionOptions"/>.
@@ -170,6 +141,35 @@ namespace Arc4u.OAuth2.Extensions
             }
 
             services.AddOidcClientAuthentication(browser, loggerFactory, OidcAuthenticationFiller, settingsKey);
+        }
+
+        private static void ConfigureOidcServices(this IServiceCollection services, OidcClientSettingsOption oidcClientOptions, string sectionKey = "OidcClient")
+        {
+            void SettingsFiller(SimpleKeyValueSettings keyOptions)
+            {
+                keyOptions.Add(TokenKeys.ProviderIdKey, oidcClientOptions.ProviderId);
+                keyOptions.Add(TokenKeys.ClientIdKey, oidcClientOptions.ClientId);
+                keyOptions.Add(TokenKeys.Scope, string.Join(' ', oidcClientOptions.Scopes));
+            }
+
+            services.Configure<SimpleKeyValueSettings>(sectionKey, SettingsFiller);
+        }
+
+        private static void ConfigureOidcServices(IServiceCollection services,
+            OidcClientAuthenticationOptions oidcClientOptions)
+        {
+            // Same default as the configuration based overload: the object identifier claim types.
+            services.AddClaimsIdentifier(oidcClientOptions.ClaimsIdentifierOptions
+                                         ?? (o => o.AddRange([ClaimTypes.ObjectIdentifier, ClaimTypes.OID])));
+            services.AddSingleton<TokenRefreshInfo>();
+
+            services.AddDefaultAuthority(options =>
+            {
+                options.SetData(oidcClientOptions.DefaultAuthority.Url,
+                                oidcClientOptions.DefaultAuthority.TokenEndpoint,
+                                oidcClientOptions.DefaultAuthority.Issuer,
+                                oidcClientOptions.DefaultAuthority.MetaDataAddress);
+            });
         }
 
         private static void PrepareOidcAuthenticationDependencies(IServiceCollection services, IConfiguration configuration,

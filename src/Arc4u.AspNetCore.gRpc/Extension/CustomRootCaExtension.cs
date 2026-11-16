@@ -121,7 +121,7 @@ public static class CustomRootCaExtension
                         if (!isValid)
                         {
                             logger.Technical().LogCertificateValidationFailed(
-                                cert?.Subject,
+                                cert.Subject,
                                 string.Join(", ", chain.ChainStatus.Select(s => s.StatusInformation)));
                         }
 

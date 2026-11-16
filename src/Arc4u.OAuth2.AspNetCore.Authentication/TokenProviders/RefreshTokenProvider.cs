@@ -20,6 +20,8 @@ namespace Arc4u.OAuth2.TokenProviders
     [Export(typeof(ITokenRefreshProvider))]
     public class RefreshTokenProvider : ITokenRefreshProvider
     {
+        private const string RefreshTokenType = "refresh_token";
+
         /// <summary>The name (<c>Refresh</c>) of the provider.</summary>
         public const string ProviderName = "Refresh";
 
@@ -77,19 +79,19 @@ namespace Arc4u.OAuth2.TokenProviders
             // if yes => we have to log this and return a Unauthorized!
             if (DateTime.UtcNow > refreshTokenInfo.ExpiresOnUtc)
             {
-                _logger.Technical().LogError($"Refresh token is expired: {refreshTokenInfo.ExpiresOnUtc}.");
+                _logger.Technical().LogError("Refresh token is expired: {ExpiresOnUtc}.", refreshTokenInfo.ExpiresOnUtc);
                 throw new InvalidOperationException("Refreshing the token is impossible, validity date is expired.");
             }
 
             var options = _openIdConnectOptions.Get(OpenIdConnectDefaults.AuthenticationScheme) ?? throw new InvalidCastException("The OpenIdConnectOptions is not found!");
-            var metadata = await options!.ConfigurationManager!.GetConfigurationAsync(CancellationToken.None).ConfigureAwait(false);
+            var metadata = await options.ConfigurationManager!.GetConfigurationAsync(CancellationToken.None).ConfigureAwait(false);
 
             var pairs = new Dictionary<string, string>()
             {
                 { "client_id", options.ClientId ?? string.Empty},
                 { "client_secret", options.ClientSecret ?? string.Empty },
-                { "grant_type", "refresh_token" },
-                { "refresh_token", refreshTokenInfo.Token }
+                { "grant_type", RefreshTokenType },
+                { RefreshTokenType, refreshTokenInfo.Token }
             };
 
             // Some Idp require extra parameters to link application definition to the right Api context.
@@ -110,7 +112,7 @@ namespace Arc4u.OAuth2.TokenProviders
             {
                 if (IdentityModelEventSource.ShowPII)
                 {
-                    _logger.Technical().LogError($"Refreshing the token is failing. {tokenResponse.ReasonPhrase}");
+                    _logger.Technical().LogError("Refreshing the token is failing. {ReasonPhrase}", tokenResponse.ReasonPhrase);
                 }
                 else
                 {
@@ -124,15 +126,15 @@ namespace Arc4u.OAuth2.TokenProviders
             {
                 using var payload = JsonDocument.Parse(await tokenResponse.Content.ReadAsStringAsync(CancellationToken.None).ConfigureAwait(false));
                 // Persist the new acess token
-                var refresh_token = payload!.RootElement!.GetString("refresh_token");
-                var access_token = payload!.RootElement!.GetString("access_token")!;
+                var refresh_token = payload.RootElement.GetString(RefreshTokenType);
+                var access_token = payload.RootElement.GetString("access_token")!;
                 if (payload.RootElement.TryGetProperty("expires_in", out var property) && property.TryGetInt32(out var seconds))
                 {
                     var expirationAt = DateTimeOffset.UtcNow.AddSeconds(seconds).DateTime.ToUniversalTime();
                     _tokenRefreshInfo.AccessToken = new Token.TokenInfo("access_token", access_token, expirationAt);
                     if (!string.IsNullOrEmpty(refresh_token))
                     {
-                        _tokenRefreshInfo.RefreshToken = new Token.TokenInfo("refresh_token", refresh_token, DateTime.UtcNow + _hybridOptions.RefreshTokenLifetime);
+                        _tokenRefreshInfo.RefreshToken = new Token.TokenInfo(RefreshTokenType, refresh_token, DateTime.UtcNow + _hybridOptions.RefreshTokenLifetime);
                     }
                 }
                 else
@@ -140,7 +142,7 @@ namespace Arc4u.OAuth2.TokenProviders
                     _tokenRefreshInfo.AccessToken = new Token.TokenInfo("access_token", access_token);
                     if (!string.IsNullOrEmpty(refresh_token))
                     {
-                        _tokenRefreshInfo.RefreshToken = new Token.TokenInfo("refresh_token", refresh_token, DateTime.UtcNow + _hybridOptions.RefreshTokenLifetime);
+                        _tokenRefreshInfo.RefreshToken = new Token.TokenInfo(RefreshTokenType, refresh_token, DateTime.UtcNow + _hybridOptions.RefreshTokenLifetime);
                     }
                 }
             }

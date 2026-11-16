@@ -31,11 +31,6 @@ internal static class Bound
         return true;
     }
 
-    internal static bool IsInfinity<T>(T value)
-    {
-        return object.Equals(value, default);
-    }
-
     internal static Bound<T> Min<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(Bound<T> x, Bound<T> y)
     {
         ArgumentNullException.ThrowIfNull(x);
@@ -50,6 +45,11 @@ internal static class Bound
         ArgumentNullException.ThrowIfNull(y);
 
         return x.CompareTo(y) < 0 ? y : x;
+    }
+
+    internal static bool IsInfinity<T>(T value)
+    {
+        return object.Equals(value, default);
     }
 
     internal static BoundDirection Min(BoundDirection x, BoundDirection y)

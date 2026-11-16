@@ -208,7 +208,7 @@ public class CredentialTokenProvider(ILogger<CredentialTokenProvider> logger, IO
                     };
             if (!string.IsNullOrWhiteSpace(clientSecret))
             {
-                parameters.Add("client_secret", clientSecret!);
+                parameters.Add("client_secret", clientSecret);
             }
             using var content = new FormUrlEncodedContent(parameters);
 

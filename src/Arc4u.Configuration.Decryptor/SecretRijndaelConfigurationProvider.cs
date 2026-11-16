@@ -61,14 +61,11 @@ public class SecretRijndaelConfigurationProvider : ConfigurationProvider
         var key = Convert.FromBase64String(_rijndaelOptions.RijnDael.Key);
 
         // Parse the temproot Data collection of each provider
-        foreach (var item in tempRoot.AsEnumerable())
+        foreach (var item in tempRoot.AsEnumerable().Where(item => item.Value is not null && item.Value.StartsWith(_rijndaelOptions.Prefix)))
         {
-            if (item.Value is not null && item.Value.StartsWith(_rijndaelOptions.Prefix))
-            {
-                var cypher = item.Value.Substring(_rijndaelOptions.Prefix.Length);
+            var cypher = item.Value![_rijndaelOptions.Prefix.Length..];
 
-                data.Add(item.Key, CypherCodec.Decrypt(cypher, key));
-            }
+            data.Add(item.Key, CypherCodec.Decrypt(cypher, key));
         }
 
         Data = data;

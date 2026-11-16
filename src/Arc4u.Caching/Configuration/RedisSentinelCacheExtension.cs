@@ -29,14 +29,14 @@ public static class RedisSentinelCacheExtension
         var validate = new RedisSentinelCacheOption();
         new Action<RedisSentinelCacheOption>(options).Invoke(validate);
 
-        ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-        ArgumentException.ThrowIfNullOrEmpty(validate.MasterName, nameof(validate.MasterName));
-        ArgumentNullException.ThrowIfNull(validate.SentinelEndpoints, nameof(validate.SentinelEndpoints));
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentException.ThrowIfNullOrEmpty(validate.MasterName);
+        ArgumentNullException.ThrowIfNull(validate.SentinelEndpoints);
         if (validate.SentinelEndpoints.Length == 0)
         {
             throw new ArgumentException("At least one Sentinel endpoint must be provided in SentinelEndpoints.", nameof(options));
         }
-        ArgumentException.ThrowIfNullOrEmpty(validate.InstanceName, nameof(validate.InstanceName));
+        ArgumentException.ThrowIfNullOrEmpty(validate.InstanceName);
 
         services.Configure<RedisSentinelCacheOption>(name, options);
 
@@ -52,7 +52,7 @@ public static class RedisSentinelCacheExtension
     /// <exception cref="ArgumentException">The section exists but the name, the master name or the instance name is <see langword="null"/> or empty, or its sentinel endpoints are empty.</exception>
     public static IServiceCollection AddRedisSentinelCache(this IServiceCollection services, [DisallowNull] string name, [DisallowNull] IConfiguration configuration, [DisallowNull] string sectionName)
     {
-        var section = configuration.GetSection(sectionName) as IConfigurationSection;
+        var section = configuration.GetSection(sectionName);
 
         if (section.Exists())
         {

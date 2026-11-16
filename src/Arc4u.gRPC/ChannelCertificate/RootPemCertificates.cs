@@ -28,7 +28,7 @@ public class RootPemCertificates
 
     readonly IRootCertificateExtractor _certificateExtractor;
     readonly ILogger<RootPemCertificates> _logger;
-    static readonly object _lock = new();
+    static readonly Lock _lock = new();
 
     /// <summary>
     /// Gets the PEM certificates already retrieved, keyed by host name.

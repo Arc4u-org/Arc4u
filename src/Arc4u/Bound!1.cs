@@ -162,22 +162,22 @@ namespace Arc4u
         /// </remarks>
         public override string ToString()
         {
-            var format = (Type == BoundType.Lower)
-                ? (Direction == BoundDirection.Closed)
-                    ? "[{0}"
-                    : "]{0}"
-                : (Direction == BoundDirection.Closed)
-                    ? "{0}]"
-                    : "{0}[";
+            string format;
+            if (Type == BoundType.Lower)
+            {
+                format = (Direction == BoundDirection.Closed) ? "[{0}" : "]{0}";
+            }
+            else
+            {
+                format = (Direction == BoundDirection.Closed) ? "{0}]" : "{0}[";
+            }
+
             // if is a nullable type, we need to check if the value is null
             // lowestValue will be null.
-            var value = (Type == BoundType.Lower)
-                ? object.Equals(Value, LowestValue)
-                    ? Bound.Infinity
-                    : Value?.ToString() ?? Bound.Infinity
-                : object.Equals(Value, UpmostValue)
-                    ? Bound.Infinity
-                    : Value?.ToString() ?? Bound.Infinity;
+            var infinityValue = (Type == BoundType.Lower) ? LowestValue : UpmostValue;
+            var value = object.Equals(Value, infinityValue)
+                ? Bound.Infinity
+                : Value?.ToString() ?? Bound.Infinity;
 
             return string.Format(CultureInfo.InvariantCulture, format, value);
         }
@@ -304,11 +304,14 @@ namespace Arc4u
                 ? Comparer<T>.Default.Compare(other.Value, Value)
                 : Comparer<T>.Default.Compare(Value, other.Value);
 
-            return (vCompare != 0)
-                ? vCompare
-                : (object.Equals(Direction, BoundDirection.Closed) || object.Equals(other.Direction, BoundDirection.Closed))
-                    ? 0
-                    : -1;
+            if (vCompare != 0)
+            {
+                return vCompare;
+            }
+
+            return (object.Equals(Direction, BoundDirection.Closed) || object.Equals(other.Direction, BoundDirection.Closed))
+                ? 0
+                : -1;
         }
 
 #endregion
@@ -353,11 +356,7 @@ namespace Arc4u
                                 ? lowestField.GetValue(null)
                                 : default;
 
-            lowestValue = (rawValue == null)
-                            ? default!
-                            : isNullable
-                                ? (T)(object)rawValue
-                                : (T)Convert.ChangeType(rawValue, underlyingType, CultureInfo.InvariantCulture);
+            lowestValue = ConvertRawBoundValue(rawValue, isNullable, underlyingType);
 
             var upmostField = (from f in fields
                                where string.Equals(f.Name, "PositiveInfinity", StringComparison.Ordinal)
@@ -369,11 +368,19 @@ namespace Arc4u
                             ? upmostField.GetValue(null)
                             : default;
 
-            upmostValue = (rawValue == null)
-                            ? default!
-                            : isNullable
-                                ? (T)(object)rawValue
-                                : (T)Convert.ChangeType(rawValue, underlyingType, CultureInfo.InvariantCulture);
+            upmostValue = ConvertRawBoundValue(rawValue, isNullable, underlyingType);
+        }
+
+        private static T ConvertRawBoundValue(object? rawValue, bool isNullable, Type underlyingType)
+        {
+            if (rawValue is null)
+            {
+                return default!;
+            }
+
+            return isNullable
+                ? (T)rawValue
+                : (T)Convert.ChangeType(rawValue, underlyingType, CultureInfo.InvariantCulture);
         }
 
         private static void InitializeEnumBounds(out T lowestValue, out T upmostValue)
@@ -427,17 +434,16 @@ namespace Arc4u
 
         internal bool Contains(T value)
         {
-            return Type == BoundType.Lower
-                ? Direction == BoundDirection.Closed
-                    ? Comparer<T>.Default.Compare(Value, value) <= 0
-                    : Comparer<T>.Default.Compare(Value, value) < 0
-                : Direction == BoundDirection.Closed
-                    ? Bound.IsInfinity(Value)
-                        ? Comparer<T>.Default.Compare(value, Value) >= 0
-                        : Comparer<T>.Default.Compare(Value, value) >= 0
-                    : Bound.IsInfinity(Value)
-                        ? Comparer<T>.Default.Compare(value, Value) > 0
-                        : Comparer<T>.Default.Compare(Value, value) > 0;
+            if (Type == BoundType.Lower)
+            {
+                var lowerCompare = Comparer<T>.Default.Compare(Value, value);
+                return Direction == BoundDirection.Closed ? lowerCompare <= 0 : lowerCompare < 0;
+            }
+
+            var upperCompare = Bound.IsInfinity(Value)
+                ? Comparer<T>.Default.Compare(value, Value)
+                : Comparer<T>.Default.Compare(Value, value);
+            return Direction == BoundDirection.Closed ? upperCompare >= 0 : upperCompare > 0;
         }
 
         #endregion

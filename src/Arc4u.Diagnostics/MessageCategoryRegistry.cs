@@ -27,7 +27,7 @@ namespace Arc4u.Diagnostics;
 /// </example>
 public static class MessageCategoryRegistry
 {
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     private static Dictionary<string, MessageCategory> _byName = new(StringComparer.OrdinalIgnoreCase);
     private static Dictionary<MessageCategory, string> _byValue = [];
 

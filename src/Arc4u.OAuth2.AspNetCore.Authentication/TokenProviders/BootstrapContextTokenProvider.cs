@@ -26,7 +26,7 @@ namespace Arc4u.OAuth2.TokenProviders
 
             ArgumentNullException.ThrowIfNull(applicationContext.Principal);
 
-            if (applicationContext.Principal.Identity is ClaimsIdentity identity && !string.IsNullOrWhiteSpace(identity?.BootstrapContext?.ToString()))
+            if (applicationContext.Principal.Identity is ClaimsIdentity identity && !string.IsNullOrWhiteSpace(identity.BootstrapContext?.ToString()))
             {
                 var token = identity.BootstrapContext.ToString();
 

@@ -34,7 +34,7 @@ namespace Arc4u.OAuth2.Events
             context.Response.ContentType = "application/problem+json";
 
             // Add some extra context for expired tokens.
-            if (context.AuthenticateFailure is not null && context.AuthenticateFailure is SecurityTokenExpiredException authenticationException)
+            if (context.AuthenticateFailure is SecurityTokenExpiredException authenticationException)
             {
                 var expires = authenticationException.Expires.ToString("o");
                 context.Response.Headers.Append("x-token-expired", expires);

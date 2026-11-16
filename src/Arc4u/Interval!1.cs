@@ -212,11 +212,14 @@ public class Interval<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes
     /// </returns>
     public override string ToString()
     {
-        return IsEmpty
-            ? Bound.EmptySet
-            : IsSingleton
-                ? LowerBound?.Value?.ToString() ?? string.Empty
-                : string.Format(CultureInfo.InvariantCulture, "{0} ; {1}", LowerBound?.ToString() ?? string.Empty, UpperBound?.ToString() ?? string.Empty);
+        if (IsEmpty)
+        {
+            return Bound.EmptySet;
+        }
+
+        return IsSingleton
+            ? LowerBound?.Value?.ToString() ?? string.Empty
+            : string.Format(CultureInfo.InvariantCulture, "{0} ; {1}", LowerBound?.ToString() ?? string.Empty, UpperBound?.ToString() ?? string.Empty);
     }
 
     /// <summary>

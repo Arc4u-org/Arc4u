@@ -22,9 +22,9 @@ public static class RedisCacheExtension
         var validate = new RedisCacheOption();
         new Action<RedisCacheOption>(options).Invoke(validate);
 
-        ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-        ArgumentException.ThrowIfNullOrEmpty(validate.ConnectionString, nameof(validate.ConnectionString));
-        ArgumentException.ThrowIfNullOrEmpty(validate.InstanceName, nameof(validate.InstanceName));
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentException.ThrowIfNullOrEmpty(validate.ConnectionString);
+        ArgumentException.ThrowIfNullOrEmpty(validate.InstanceName);
 
         services.Configure<RedisCacheOption>(name, options);
 
@@ -40,7 +40,7 @@ public static class RedisCacheExtension
     /// <exception cref="ArgumentException"><paramref name="name"/> or the connection string is <see langword="null"/> or empty and the section exists.</exception>
     public static IServiceCollection AddRedisCache(this IServiceCollection services, [DisallowNull] string name, [DisallowNull] IConfiguration configuration, [DisallowNull] string sectionName)
     {
-        var section = configuration.GetSection(sectionName) as IConfigurationSection;
+        var section = configuration.GetSection(sectionName);
 
         if (section.Exists())
         {

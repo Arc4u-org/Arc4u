@@ -6,7 +6,7 @@ namespace Arc4u.Configuration.Store.Internals;
 sealed class SectionStoreService : ISectionStoreService
 {
     private readonly IConfiguration _configuration;
-    private readonly object _lock;
+    private readonly Lock _lock;
     private bool _startupCalled;
 
     public SectionStoreService(IConfiguration configuration)

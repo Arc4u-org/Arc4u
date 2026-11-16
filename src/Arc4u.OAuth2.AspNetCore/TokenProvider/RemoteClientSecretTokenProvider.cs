@@ -19,7 +19,7 @@ public class RemoteClientSecretTokenProvider : ITokenProvider
 
     /// <summary>Gets the token wrapping the remote secret.</summary>
     /// <param name="settings">The provider settings.</param>
-    /// <param name="_">Not used.</param>
+    /// <param name="platformParameters">Not used.</param>
     /// <returns>The token, or a failed result when the header name is not in the settings.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     /// <exception cref="ConfigurationException">The settings have no client secret.</exception>

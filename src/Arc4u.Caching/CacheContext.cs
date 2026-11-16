@@ -36,7 +36,7 @@ public class CacheContext : ICacheContext
     private Dictionary<string, string> _uninitializedCaches = [];
     private string _cacheConfigName = string.Empty;
 
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
     private readonly IServiceProvider _dependency;
     private readonly ILogger<CacheContext> _logger;
@@ -81,15 +81,7 @@ public class CacheContext : ICacheContext
     /// <returns>The key used to resolve the keyed <see cref="ICache"/> service.</returns>
     public static string NormalizeKind(string kind)
     {
-        foreach (var known in KnownKinds)
-        {
-            if (string.Equals(known, kind, StringComparison.OrdinalIgnoreCase))
-            {
-                return known;
-            }
-        }
-
-        return kind;
+        return KnownKinds.FirstOrDefault(known => string.Equals(known, kind, StringComparison.OrdinalIgnoreCase)) ?? kind;
     }
 
     private static readonly string[] KnownKinds = [Memory, Redis, RedisSentinel, Sql, Dapr];

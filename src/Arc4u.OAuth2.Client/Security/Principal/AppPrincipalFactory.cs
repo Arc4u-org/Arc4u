@@ -296,7 +296,7 @@ public class AppPrincipalFactory(IServiceProvider container, INetworkInformation
             settings = new SimpleKeyValueSettings();
         }
 
-        return SignOutUserAsync(settings!, cancellationToken);
+        return SignOutUserAsync(settings, cancellationToken);
     }
 
     /// <summary>

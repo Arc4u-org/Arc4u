@@ -30,7 +30,7 @@ public sealed class CacheTokens : ISecureCache
 
         _cacheFilePath = Path.Combine(path, string.Format(CultureInfo.CurrentCulture, "{0}_{1}_", config.Value.Environment.LoggingName, config.Value.Environment.Name));
 
-        if (Directory.Exists(path) == false)
+        if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
         }
@@ -59,7 +59,9 @@ public sealed class CacheTokens : ISecureCache
     static readonly object FileLock = new();
 #endif
     private readonly string _cacheFilePath;
+
     private readonly JsonSerializerOptions _jsonSerializerOptions;
+
     private bool _disposed;
 
     /// <inheritdoc/>
@@ -160,16 +162,6 @@ public sealed class CacheTokens : ISecureCache
         File.WriteAllText(path, json);
     }
 
-    /// <inheritdoc/>
-    public async Task PutAsync<T>(string key, T value, CancellationToken cancellation = default)
-    {
-        var path = ComputePath(key);
-
-        var json = JsonSerializer.Serialize(value, GetTypeInfo<T>());
-
-        await File.WriteAllTextAsync(path, json, cancellation).ConfigureAwait(true);
-    }
-
     /// <summary>Not supported.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
@@ -180,6 +172,16 @@ public sealed class CacheTokens : ISecureCache
     public void Put<T>(string key, TimeSpan timeout, T value, bool isSlided = false)
     {
         throw new NotImplementedException();
+    }
+
+    /// <inheritdoc/>
+    public async Task PutAsync<T>(string key, T value, CancellationToken cancellation = default)
+    {
+        var path = ComputePath(key);
+
+        var json = JsonSerializer.Serialize(value, GetTypeInfo<T>());
+
+        await File.WriteAllTextAsync(path, json, cancellation).ConfigureAwait(true);
     }
 
     /// <summary>Not supported.</summary>

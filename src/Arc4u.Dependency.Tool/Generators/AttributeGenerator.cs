@@ -94,7 +94,7 @@ public class DependencyToolGenerator : IIncrementalGenerator
                     reportDiagnostic(Diagnostic.Create(DependencyDiagnostics.ConflictingLifetimes, location, type.ToDisplayString()));
                 }
 
-                var action = isScoped ? "Scoped" : isShared ? "Singleton" : "Transient";
+                var action = (isScoped, isShared) switch { (true, _) => "Scoped", (_, true) => "Singleton", _ => "Transient" };
 
                 foreach (var exportAttribute in exportAttributes)
                 {
@@ -202,9 +202,10 @@ public class DependencyToolGenerator : IIncrementalGenerator
         }
     }
 
-    private string ExtractName(string assemblyName)
+    private static string ExtractName(string assemblyName)
     {
-        return ClassNameCleaner.CleanClassName(assemblyName.Split('.').Last().Trim());
+        var parts = assemblyName.Split('.');
+        return ClassNameCleaner.CleanClassName(parts[parts.Length - 1].Trim());
     }
     // Fetch the ContractName property value from the Export attribute.
     private static (string? contractName, ITypeSymbol? contractType) GetExportAttribute(AttributeData attribute)

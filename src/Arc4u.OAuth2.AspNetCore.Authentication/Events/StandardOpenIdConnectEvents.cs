@@ -56,7 +56,7 @@ namespace Arc4u.OAuth2.Events
             if (_hybridOptions.ValidateAudience && options.Values.TryGetValue(TokenKeys.Audiences, out var audiences) && !jwtToken.Audiences.Any(aud => audiences.Contains(aud)))
             {
                 _logger.Technical()
-                    .LogError("Audience(s) {audience} is not in the list of allowed audience(s): {audiences}.",
+                    .LogError("Audience(s) {Audience} is not in the list of allowed audience(s): {Audiences}.",
                         jwtToken.Audiences,
                         audiences);
 
@@ -79,7 +79,7 @@ namespace Arc4u.OAuth2.Events
             }
 
             _logger.Technical()
-                .LogError("Authority {authority} is not in the expected one: {authority_from_config}.",
+                .LogError("Authority {Authority} is not in the expected one: {AuthorityFromConfig}.",
                     jwtToken.Issuer,
                     expectedIssuer);
 

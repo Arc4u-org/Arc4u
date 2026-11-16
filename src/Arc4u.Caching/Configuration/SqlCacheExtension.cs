@@ -38,7 +38,7 @@ public static class SqlCacheExtension
     /// <exception cref="ArgumentException"><paramref name="name"/> is <see langword="null"/> or empty and the section exists.</exception>
     public static IServiceCollection AddSqlCache(this IServiceCollection services, [DisallowNull] string name, [DisallowNull] IConfiguration configuration, [DisallowNull] string sectionName)
     {
-        var section = configuration.GetSection(sectionName) as IConfigurationSection;
+        var section = configuration.GetSection(sectionName);
 
         if (section.Exists())
         {

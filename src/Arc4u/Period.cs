@@ -109,15 +109,22 @@ public sealed class Period
         formatProvider ??= DateTimeFormatInfo.CurrentInfo;
         format ??= "G";
 
-        return IsEmpty
-            ? Bound.EmptySet
-            : IsSingleton
-                ? LowerBound.Value!.Value.ToString(format, formatProvider)
-                : string.Format(formatProvider, "{0}{1} ; {2}{3}"
-                                , LowerBound.Direction == BoundDirection.Closed ? "[" : "]"
-                                , object.Equals(LowerBound.Value, default) ? Bound.Infinity : LowerBound.Value.Value.ToString(format, formatProvider)
-                                , object.Equals(UpperBound.Value, default) ? Bound.Infinity : UpperBound.Value.Value.ToString(format, formatProvider)
-                                , UpperBound.Direction == BoundDirection.Closed ? "]" : "[");
+        if (IsEmpty)
+        {
+            return Bound.EmptySet;
+        }
+
+        if (IsSingleton)
+        {
+            return LowerBound.Value!.Value.ToString(format, formatProvider);
+        }
+
+        var lowerDelimiter = LowerBound.Direction == BoundDirection.Closed ? "[" : "]";
+        var lowerValue = object.Equals(LowerBound.Value, default) ? Bound.Infinity : LowerBound.Value.Value.ToString(format, formatProvider);
+        var upperValue = object.Equals(UpperBound.Value, default) ? Bound.Infinity : UpperBound.Value.Value.ToString(format, formatProvider);
+        var upperDelimiter = UpperBound.Direction == BoundDirection.Closed ? "]" : "[";
+
+        return string.Format(formatProvider, "{0}{1} ; {2}{3}", lowerDelimiter, lowerValue, upperValue, upperDelimiter);
     }
 
     #endregion                           

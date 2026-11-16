@@ -11,7 +11,7 @@ public abstract class SerilogWriter : ILogWriter
 {
     private bool _isInitialized;
     private bool _disposed;
-    private static readonly object _locker = new();
+    private static readonly Lock _locker = new();
     private Logger? _logger;
 
     /// <summary>Configures the Serilog sinks, enrichers and filters of the logger.</summary>

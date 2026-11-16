@@ -38,7 +38,7 @@ public static class EnumExtentions
             throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "'{0}.{1}' doesn't have DisplayAttribute", type.Name, value));
         }
 
-        var attribute = (DisplayAttribute)attributes.First();
+        var attribute = (DisplayAttribute)attributes[0];
 
         if (null == attribute)
         {

@@ -40,7 +40,7 @@ public class BasicAuthorizationHeader : IBasicAuthorizationHeader
             throw new InvalidOperationException("The upn or password is not set in the cache!");
         }
 
-        return $"Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{upn!.Trim()}:{pwd!.Trim()}"))}";
+        return $"Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{upn.Trim()}:{pwd.Trim()}"))}";
     }
 
     private static void ExtractFromSettings(IKeyValueSettings settings, out string passwordStoreKey)

@@ -47,8 +47,8 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
     /// <exception cref="ArgumentNullException"><paramref name="predicate"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
     public Switch<TSource, TResult> Case(Func<TSource, bool> predicate, Func<TSource, TResult> selector)
     {
-        ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
-        ArgumentNullException.ThrowIfNull(selector, nameof(selector));
+        ArgumentNullException.ThrowIfNull(predicate);
+        ArgumentNullException.ThrowIfNull(selector);
 
         casePredicates.Add(new CaseSelector<TSource, TResult>(predicate, selector));
 
@@ -64,8 +64,8 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
     /// <exception cref="ArgumentNullException"><paramref name="type"/> or <paramref name="selector"/> is <see langword="null"/>.</exception>
     public Switch<TSource, TResult> Case(Type type, Func<TSource, TResult> selector)
     {
-        ArgumentNullException.ThrowIfNull(type, nameof(type));
-        ArgumentNullException.ThrowIfNull(selector, nameof(selector));
+        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(selector);
 
         casePredicates.Add(new CaseSelector<TSource, TResult>(
             x => type?.GetTypeInfo().IsAssignableFrom(x?.GetType().GetTypeInfo()) ?? false,
@@ -83,7 +83,7 @@ public class Switch<TSource, TResult>(IEnumerable<TSource> source) : IEnumerable
     /// <exception cref="ArgumentNullException"><paramref name="selector"/> is <see langword="null"/>.</exception>
     public Switch<TSource, TResult> Case<TCase>(Func<TCase, TResult> selector)
     {
-        ArgumentNullException.ThrowIfNull(selector, nameof(selector));
+        ArgumentNullException.ThrowIfNull(selector);
 
         casePredicates.Add(new CaseSelector<TSource, TCase, TResult>(selector));
 
@@ -136,9 +136,9 @@ public static class SwitchExtensions
         Func<TSource, bool> predicate,
         Func<TSource, TResult> selector)
     {
-        ArgumentNullException.ThrowIfNull(source, nameof(source));
-        ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
-        ArgumentNullException.ThrowIfNull(selector, nameof(selector));
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(predicate);
+        ArgumentNullException.ThrowIfNull(selector);
 
         return new Switch<TSource, TResult>(source).Case(predicate, selector);
     }
@@ -157,9 +157,9 @@ public static class SwitchExtensions
         Type type,
         Func<TSource, TResult> selector)
     {
-        ArgumentNullException.ThrowIfNull(source, nameof(source));
-        ArgumentNullException.ThrowIfNull(type, nameof(type));
-        ArgumentNullException.ThrowIfNull(selector, nameof(selector));
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(selector);
 
         return new Switch<TSource, TResult>(source).Case(type, selector);
     }
@@ -211,12 +211,9 @@ public static class LinqExtensions
             var innerSource = selector(item);
             if (innerSource != null)
             {
-                foreach (var innerItem in Where(innerSource, predicate, selector))
+                foreach (var innerItem in Where(innerSource, predicate, selector).Where(predicate))
                 {
-                    if (predicate(innerItem))
-                    {
-                        yield return innerItem;
-                    }
+                    yield return innerItem;
                 }
             }
         }

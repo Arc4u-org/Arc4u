@@ -28,7 +28,7 @@ public class DefaultMongoClientFactory<TContext> : IMongoClientFactory<TContext>
 
     IMongoDatabase? _database;
     IMongoClient? _client;
-    private static readonly object _locker = new object();
+    private static readonly Lock _locker = new();
     readonly IOptionsMonitor<MongoClientSettings> _clientSettings;
     readonly TContext _mongoContext;
     readonly IEnumerable<IConfigureOptions<MongoClientSettings>> _settingsConfigurations;

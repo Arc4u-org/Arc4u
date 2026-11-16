@@ -7,7 +7,7 @@ namespace Arc4u.Diagnostics.Serilog.Sinks.Memory;
 public class MemoryLogMessages : IReadOnlyCollection<LogMessage>
 {
     private readonly List<LogMessage> _messages = [];
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>Gets the number of messages.</summary>
     public int Count

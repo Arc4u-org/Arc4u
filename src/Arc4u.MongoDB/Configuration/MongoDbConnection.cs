@@ -60,33 +60,6 @@ public static class MongoDbConnection
         AddFromConnectionString<TContext>(services, configuration, connectionStringKey, options);
     }
 
-    private static void AddFromConnectionString<TContext>(IServiceCollection services, IConfiguration configuration, string connectionStringKey, Action<MongoClientSettings>? options) where TContext : DbContext, new()
-    {
-        var connectionString = configuration.GetConnectionString(connectionStringKey);
-
-        var mongoUrl = new MongoUrl(connectionString);
-        var name = mongoUrl.DatabaseName.ToLowerInvariant();
-
-        // The settings are created from the connection string by MongoClientSettingsFactory, so every option the driver parses is kept.
-        GetConnectionStrings(services)[name] = connectionString!;
-        services.AddOptions();
-        services.TryAddSingleton<IOptionsFactory<MongoClientSettings>, MongoClientSettingsFactory>();
-
-        if (options is not null)
-        {
-            services.Configure(name, options);
-        }
-
-        var contextBuilder = new DbContextBuilder(services, mongoUrl.DatabaseName);
-
-        var dbContext = new TContext();
-
-        services.TryAddSingleton(typeof(TContext), (provider) => dbContext);
-        services.TryAddSingleton<IMongoClientFactory<TContext>, DefaultMongoClientFactory<TContext>>();
-
-        dbContext.Configure(contextBuilder);
-    }
-
     /// <summary>
     /// Registers the database context and its <see cref="IMongoClientFactory{TContext}"/>, with the client settings given by a delegate.
     /// </summary>
@@ -105,6 +78,33 @@ public static class MongoDbConnection
         services.Configure<MongoClientSettings>(databaseName.ToLowerInvariant(), options);
 
         var contextBuilder = new DbContextBuilder(services, databaseName);
+
+        var dbContext = new TContext();
+
+        services.TryAddSingleton(typeof(TContext), (provider) => dbContext);
+        services.TryAddSingleton<IMongoClientFactory<TContext>, DefaultMongoClientFactory<TContext>>();
+
+        dbContext.Configure(contextBuilder);
+    }
+
+    private static void AddFromConnectionString<TContext>(IServiceCollection services, IConfiguration configuration, string connectionStringKey, Action<MongoClientSettings>? options) where TContext : DbContext, new()
+    {
+        var connectionString = configuration.GetConnectionString(connectionStringKey);
+
+        var mongoUrl = new MongoUrl(connectionString);
+        var name = mongoUrl.DatabaseName.ToLowerInvariant();
+
+        // The settings are created from the connection string by MongoClientSettingsFactory, so every option the driver parses is kept.
+        GetConnectionStrings(services)[name] = connectionString!;
+        services.AddOptions();
+        services.TryAddSingleton<IOptionsFactory<MongoClientSettings>, MongoClientSettingsFactory>();
+
+        if (options is not null)
+        {
+            services.Configure(name, options);
+        }
+
+        var contextBuilder = new DbContextBuilder(services, mongoUrl.DatabaseName);
 
         var dbContext = new TContext();
 

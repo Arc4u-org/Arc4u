@@ -28,11 +28,8 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
     public const string ProviderName = "usernamePassword";
 
     private readonly ICache _secureCache = secureCache;
-    private string userkey = default!;
-    private string pwdkey = default!;
     private string serviceId = default!;
     private string authority = default!;
-    private string passwordStoreKey = default!;
     private IKeyValueSettings Settings = default!;
 
     /// <summary>Gets the token of the user, asking for the credentials when they are not yet known.</summary>
@@ -47,7 +44,7 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
         ArgumentNullException.ThrowIfNull(settings);
 
         // Take settings info.
-        GetSettings(settings, out serviceId, out authority, out passwordStoreKey);
+        GetSettings(settings, out serviceId, out authority, out var passwordStoreKey);
 
         Settings = settings;
 
@@ -63,8 +60,8 @@ public class UsernamePasswordTokenProvider(ISecureCache secureCache, INetworkInf
         // The username and password is stored also in the secureCache. 
         // If more than one password must be stored, the key used to identify the good user/password 
         // must be specified in the settings. Otherwhise the default 'secret' key is used.
-        userkey = passwordStoreKey + "_upn";
-        pwdkey = passwordStoreKey + "_pwd";
+        var userkey = passwordStoreKey + "_upn";
+        var pwdkey = passwordStoreKey + "_pwd";
 
         _secureCache.TryGetValue<string>(userkey, out var upn);
         _secureCache.TryGetValue<string>(pwdkey, out var pwd);

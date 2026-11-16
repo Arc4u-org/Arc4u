@@ -219,9 +219,9 @@ namespace Arc4u.OAuth2.TokenProviders
             {
                 payload = JsonDocument.Parse(body);
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                logger.Technical().LogError("The response of the on-behalf-of request is not Json.");
+                logger.Technical().LogError(ex, "The response of the on-behalf-of request is not Json.");
                 return new Error("The response of the on-behalf-of request is not Json.");
             }
 

@@ -1,3 +1,4 @@
+using System.Text;
 using Arc4u.Configuration;
 using Arc4u.OAuth2.Options;
 using Microsoft.AspNetCore.Builder;
@@ -23,7 +24,7 @@ public static class ValidateResourcesRightMiddlewareExtension
         var validate = new ValidateResourcesRightMiddlewareOptions();
         options(validate);
 
-        string? configErrors = null;
+        var configErrors = new StringBuilder();
 
         if (validate.ResourcesPolicies is null || validate.ResourcesPolicies.Count == 0)
         {
@@ -35,17 +36,17 @@ public static class ValidateResourcesRightMiddlewareExtension
             {
                 if (string.IsNullOrWhiteSpace(option.Key))
                 {
-                    configErrors += "Key must be filled!" + System.Environment.NewLine;
+                    configErrors.AppendLine("Key must be filled!");
                 }
 
                 if (string.IsNullOrWhiteSpace(option.Value.Path))
                 {
-                    configErrors += "Path must be filled!" + System.Environment.NewLine;
+                    configErrors.AppendLine("Path must be filled!");
                 }
 
                 if (string.IsNullOrWhiteSpace(option.Value.AuthorizationPolicy))
                 {
-                    configErrors += "AuthorizationPolicy must be filled!" + System.Environment.NewLine;
+                    configErrors.AppendLine("AuthorizationPolicy must be filled!");
                 }
 
                 if (string.IsNullOrWhiteSpace(option.Value.ContentToDisplay))
@@ -57,12 +58,12 @@ public static class ValidateResourcesRightMiddlewareExtension
 
         if (string.IsNullOrWhiteSpace(validate.DefaultContent))
         {
-            configErrors = "Default message content must be defined!" + System.Environment.NewLine;
+            configErrors.AppendLine("Default message content must be defined!");
         }
 
-        if (configErrors is not null)
+        if (configErrors.Length > 0)
         {
-            throw new ConfigurationException(configErrors);
+            throw new ConfigurationException(configErrors.ToString());
         }
 
         return app.UseMiddleware<ValidateResourcesRightMiddleware>(validate);

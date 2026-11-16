@@ -620,13 +620,16 @@ public static class Interval
     {
         ArgumentNullException.ThrowIfNull(args);
 
-        return (args.Length == 2)
-            ? (denominator == UnionDenominator.Lowest)
+        if (args.Length == 2)
+        {
+            return (denominator == UnionDenominator.Lowest)
                 ? LowUnionOf(args[0], args[1])
-                : HighUnionOf(args[0], args[1])
-            : (denominator == UnionDenominator.Lowest)
-                ? LowUnionOf(new IntervalCollection<T>(args))
-                : HighUnionOf(new IntervalCollection<T>(args));
+                : HighUnionOf(args[0], args[1]);
+        }
+
+        return (denominator == UnionDenominator.Lowest)
+            ? LowUnionOf(new IntervalCollection<T>(args))
+            : HighUnionOf(new IntervalCollection<T>(args));
     }
 
     private static IntervalCollection<T> LowUnionOf<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(Interval<T> a, Interval<T> b)

@@ -72,7 +72,7 @@ public interface IAuthorization
     /// <returns>
     /// 	<c>true</c> if the specified operation is authorized; otherwise, <c>false</c>.
     /// </returns>
-    bool IsAuthorized(string operation) => IsAuthorized(string.Empty, new[] { operation });
+    bool IsAuthorized(string operation) => IsAuthorized(string.Empty, operation);
 
     /// <summary>
     /// Determines whether the specified operations are authorized in the specified scope.

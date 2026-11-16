@@ -36,7 +36,7 @@ public class AnonymizerSink : ILogEventSink, IDisposable
     /// <param name="logEvent">The event to emit.</param>
     public void Emit(LogEvent logEvent)
     {
-        if (logEvent.Properties.TryGetValue(LoggingConstants.Identity, out var propertyValue))
+        if (logEvent.Properties.ContainsKey(LoggingConstants.Identity))
         {
             var _event = new LogEvent(logEvent.Timestamp, logEvent.Level, logEvent.Exception, logEvent.MessageTemplate, logEvent.Properties.Where(p => !p.Key.Equals(LoggingConstants.Identity)).Select(p => new LogEventProperty(p.Key, p.Value)).ToList());
             Sink?.Emit(_event);

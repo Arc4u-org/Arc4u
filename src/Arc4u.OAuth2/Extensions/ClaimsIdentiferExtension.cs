@@ -38,7 +38,7 @@ public static class ClaimsidentifierExtension
             throw new ArgumentNullException(sectionName);
         }
 
-        var section = configuration.GetSection(sectionName) as IConfigurationSection;
+        var section = configuration.GetSection(sectionName);
 
         // Standard values used to identify a user.
         var values = new ClaimsIdentifierOption();

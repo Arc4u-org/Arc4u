@@ -103,7 +103,7 @@ public class BasicAuthenticationMiddleware
             }
             else
             {
-                _logger.Technical().LogError($"No token has been created for the user {credential.Upn}.");
+                _logger.Technical().LogError("No token has been created for the user {Upn}.", credential.Upn);
             }
         }
         catch (Exception ex)
@@ -122,7 +122,7 @@ public class BasicAuthenticationMiddleware
 
             if (null == provider)
             {
-                _logger.Technical().LogError($"No token provider has been resolved with the ProviderId {_options.BasicSettings.Values[TokenKeys.ProviderIdKey]}.");
+                _logger.Technical().LogError("No token provider has been resolved with the ProviderId {ProviderId}.", _options.BasicSettings.Values[TokenKeys.ProviderIdKey]);
                 return null;
             }
 
@@ -132,7 +132,7 @@ public class BasicAuthenticationMiddleware
 
             if (result.IsFailed)
             {
-                _logger.Technical().LogError($"No token has been created for the user {credential.Upn}.");
+                _logger.Technical().LogError("No token has been created for the user {Upn}.", credential.Upn);
                 result.Log();
                 return null;
             }

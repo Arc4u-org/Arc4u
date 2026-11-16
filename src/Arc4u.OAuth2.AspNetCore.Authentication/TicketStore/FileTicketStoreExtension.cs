@@ -36,7 +36,7 @@ namespace Arc4u.OAuth2.TicketStore
         /// <param name="sectionName">The section holding the <see cref="FileTicketStoreOptions"/>. The default is <c>AuthenticationFileTicketStore</c>.</param>
         public static void AddFileTicketStore(this IServiceCollection services, IConfiguration configuration, string sectionName = "AuthenticationFileTicketStore")
         {
-            var section = configuration.GetSection(sectionName) as IConfigurationSection;
+            var section = configuration.GetSection(sectionName);
 
             if (section.Exists())
             {

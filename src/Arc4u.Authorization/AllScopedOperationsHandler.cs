@@ -30,15 +30,14 @@ public sealed class AllScopedOperationsHandler(IApplicationContext applicationCo
             return Task.CompletedTask;
         }
 
-        foreach (var scopedOperation in requirement.Operations)
+        if (requirement.Operations.All(scopedOperation => applicationContext.Principal.IsAuthorized(scopedOperation.scope, scopedOperation.operation)))
         {
-            if (!applicationContext.Principal.IsAuthorized(scopedOperation.scope, scopedOperation.operation))
-            {
-                context.Fail();
-                return Task.CompletedTask;
-            }
+            context.Succeed(requirement);
         }
-        context.Succeed(requirement);
+        else
+        {
+            context.Fail();
+        }
 
         return Task.CompletedTask;
     }

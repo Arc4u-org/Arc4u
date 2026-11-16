@@ -122,50 +122,23 @@ public class AppAuthorization : IAuthorization
     /// <inheritdoc/>
     public bool IsAuthorized(string operation)
     {
-        return IsAuthorized(string.Empty, new[] { operation });
+        return IsAuthorized(string.Empty, operation);
     }
 
     /// <inheritdoc/>
     public bool IsAuthorized(string scope, params int[] operations)
     {
-        if (_operations.ContainsKey(scope))
-        {
-            foreach (var i in operations)
-            {
-                if (!_operations[scope].ContainsKey(i))
-                {
-                    return false;
-                }
-            }
-        }
-        else // No Scope no Operations.
-        {
-            return false;
-        }
-
-        return true;
+        // No Scope no Operations.
+        return _operations.TryGetValue(scope, out var scopeOperations)
+               && operations.All(scopeOperations.ContainsKey);
     }
 
     /// <inheritdoc/>
     public bool IsAuthorized(string scope, params string[] operations)
     {
-        if (_operationsName.ContainsKey(scope))
-        {
-            foreach (var o in operations)
-            {
-                if (!_operationsName[scope].ContainsKey(o))
-                {
-                    return false;
-                }
-            }
-
-        }
-        else // No Scope no Operations.
-        {
-            return false;
-        }
-
-        return true;
+        // No Scope no Operations.
+        return _operationsName.TryGetValue(scope, out var scopeOperations)
+               && operations.All(scopeOperations.ContainsKey);
     }
     /// <summary>
     /// Determines whether all the specified operations, expressed with an enumeration, are authorized in the empty scope.

@@ -98,50 +98,6 @@ namespace Arc4u.OAuth2.Extensions
             return authenticationBuilder;
         }
 
-        private static OpenIdSettingsOption ConfigureOidcServices(IServiceCollection services,
-            OidcAuthenticationOptions oidcOptions, out SecurityKey? securityKey)
-        {
-            if (oidcOptions.AuthenticationCacheTicketStoreOption is not null)
-            {
-                services.AddCacheTicketStore(oidcOptions.AuthenticationCacheTicketStoreOption);
-                services.TryAddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, ConfigureCookieWithTicketStoreAuthenticationOptions>();
-            }
-            else
-            {
-                services.TryAddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, ConfigureStandardCookieAuthenticationOptions>();
-            }
-
-            services.AddDataProtection()
-                .PersistKeysToCache(oidcOptions.DataProtectionCacheStoreOption)
-                .ProtectKeysWithCertificate(oidcOptions.DataProtectionCertificate)
-                .SetApplicationName(oidcOptions.ApplicationName)
-                .SetDefaultKeyLifetime(oidcOptions.DefaultKeyLifetime);
-
-            services.AddClaimsIdentifier(oidcOptions.ClaimsIdentifierOptions);
-            services.AddScoped<TokenRefreshInfo>();
-            services.AddAuthorizationCore();
-            services.AddHttpContextAccessor();
-            services.TryAddTransient<CookieAuthenticationEvents, StandardCookieEvents>();
-            services.TryAddTransient<OpenIdConnectEvents, StandardOpenIdConnectEvents>();
-
-            services.AddDefaultAuthority(options =>
-            {
-                options.SetData(oidcOptions.DefaultAuthority.Url, oidcOptions.DefaultAuthority.TokenEndpoint,
-                    oidcOptions.DefaultAuthority.Issuer, oidcOptions.DefaultAuthority.MetaDataAddress);
-            });
-
-            services.ConfigureOpenIdSettings(oidcOptions.OpenIdSettingsOptions);
-
-            var openIdOptions = new OpenIdSettingsOption();
-            oidcOptions.OpenIdSettingsOptions(openIdOptions);
-
-            securityKey = oidcOptions.CertSecurityKey is not null
-                ? new X509SecurityKey(oidcOptions.CertSecurityKey)
-                : null;
-
-            return openIdOptions;
-        }
-
         /// <summary>
         /// Registers the OpenID Connect authentication with cookies from the configuration.
         /// </summary>
@@ -224,6 +180,50 @@ namespace Arc4u.OAuth2.Extensions
             services.AddAuthenticationApiContext(configuration);
 
             return services.AddOidcAuthentication(OidcAuthenticationFiller);
+        }
+
+        private static OpenIdSettingsOption ConfigureOidcServices(IServiceCollection services,
+            OidcAuthenticationOptions oidcOptions, out SecurityKey? securityKey)
+        {
+            if (oidcOptions.AuthenticationCacheTicketStoreOption is not null)
+            {
+                services.AddCacheTicketStore(oidcOptions.AuthenticationCacheTicketStoreOption);
+                services.TryAddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, ConfigureCookieWithTicketStoreAuthenticationOptions>();
+            }
+            else
+            {
+                services.TryAddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, ConfigureStandardCookieAuthenticationOptions>();
+            }
+
+            services.AddDataProtection()
+                .PersistKeysToCache(oidcOptions.DataProtectionCacheStoreOption)
+                .ProtectKeysWithCertificate(oidcOptions.DataProtectionCertificate)
+                .SetApplicationName(oidcOptions.ApplicationName)
+                .SetDefaultKeyLifetime(oidcOptions.DefaultKeyLifetime);
+
+            services.AddClaimsIdentifier(oidcOptions.ClaimsIdentifierOptions);
+            services.AddScoped<TokenRefreshInfo>();
+            services.AddAuthorizationCore();
+            services.AddHttpContextAccessor();
+            services.TryAddTransient<CookieAuthenticationEvents, StandardCookieEvents>();
+            services.TryAddTransient<OpenIdConnectEvents, StandardOpenIdConnectEvents>();
+
+            services.AddDefaultAuthority(options =>
+            {
+                options.SetData(oidcOptions.DefaultAuthority.Url, oidcOptions.DefaultAuthority.TokenEndpoint,
+                    oidcOptions.DefaultAuthority.Issuer, oidcOptions.DefaultAuthority.MetaDataAddress);
+            });
+
+            services.ConfigureOpenIdSettings(oidcOptions.OpenIdSettingsOptions);
+
+            var openIdOptions = new OpenIdSettingsOption();
+            oidcOptions.OpenIdSettingsOptions(openIdOptions);
+
+            securityKey = oidcOptions.CertSecurityKey is not null
+                ? new X509SecurityKey(oidcOptions.CertSecurityKey)
+                : null;
+
+            return openIdOptions;
         }
 
         private static (X509Certificate2? dataProtectionCertificate, X509Certificate2? certSecurityKey, Action<CacheTicketStoreOptions>? ticketStoreAction) PrepareOidcAuthenticationDependencies(IServiceCollection services, IConfiguration configuration,

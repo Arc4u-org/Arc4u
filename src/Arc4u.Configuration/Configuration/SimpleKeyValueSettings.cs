@@ -80,7 +80,7 @@ public class SimpleKeyValueSettings : IKeyValueSettings, IEquatable<SimpleKeyVal
     {
         if (!string.IsNullOrWhiteSpace(value))
         {
-            _keyValues.Add(key, value!);
+            _keyValues.Add(key, value);
         }
     }
     private readonly Dictionary<string, string> _keyValues;

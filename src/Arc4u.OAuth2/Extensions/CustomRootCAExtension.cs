@@ -97,12 +97,12 @@ public static class CustomRootCaExtension
                             chain.ChainPolicy.CustomTrustStore.Add(certificate);
                         }
 
-                        var isValid = chain.Build(cert!);
+                        var isValid = chain.Build(cert);
 
                         if (!isValid)
                         {
                             logger.Technical().LogCertificateValidationFailed(
-                                cert?.Subject,
+                                cert.Subject,
                                 string.Join(", ", chain.ChainStatus.Select(s => s.StatusInformation)));
                         }
 

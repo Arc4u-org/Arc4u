@@ -31,7 +31,7 @@ public class DefaultActivitySourceFactory : IActivitySourceFactory
             throw new ArgumentNullException(name);
         }
 
-        var key = string.IsNullOrWhiteSpace(version) ? name.Trim() : $"{name.Trim()}_{version!.Trim()}";
+        var key = string.IsNullOrWhiteSpace(version) ? name.Trim() : $"{name.Trim()}_{version.Trim()}";
 
         return _activitySources.GetOrAdd(key, _ => new ActivitySource(name, version));
     }

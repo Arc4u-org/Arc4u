@@ -40,5 +40,5 @@ public class ServiceAspectAttribute : Attribute
     /// Creates an attribute with an empty scope and no operation.
     /// </summary>
     /// <returns>The empty attribute.</returns>
-    public static ServiceAspectAttribute Empty() => new([]);
+    public static ServiceAspectAttribute Empty() => new();
 }

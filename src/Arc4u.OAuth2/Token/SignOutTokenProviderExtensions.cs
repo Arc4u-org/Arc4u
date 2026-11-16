@@ -29,9 +29,9 @@ public sealed class SignOutTokenProviderKeys(IServiceCollection services)
            && descriptor.ServiceType == typeof(ITokenProvider)
            && descriptor.ServiceKey is not null
            && !ReferenceEquals(descriptor.ServiceKey, KeyedService.AnyKey)
-           && (descriptor.KeyedImplementationType is not null ? typeof(ISignOutTokenProvider).IsAssignableFrom(descriptor.KeyedImplementationType)
-               : descriptor.KeyedImplementationInstance is not null ? descriptor.KeyedImplementationInstance is ISignOutTokenProvider
-               : true);
+           && (descriptor.KeyedImplementationType is not null
+               ? typeof(ISignOutTokenProvider).IsAssignableFrom(descriptor.KeyedImplementationType)
+               : descriptor.KeyedImplementationInstance is null or ISignOutTokenProvider);
 }
 
 /// <summary>Signs the user out of the token providers that hold a user session.</summary>

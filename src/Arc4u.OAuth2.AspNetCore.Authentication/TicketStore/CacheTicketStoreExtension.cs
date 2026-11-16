@@ -58,7 +58,7 @@ namespace Arc4u.OAuth2.TicketStore
                 return null;
             }
 
-            var section = configuration.GetSection(sectionName) as IConfigurationSection;
+            var section = configuration.GetSection(sectionName);
             var option = new CacheTicketStoreOptions();
 
             if (section.Exists())

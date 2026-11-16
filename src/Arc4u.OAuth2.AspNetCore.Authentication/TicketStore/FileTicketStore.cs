@@ -50,8 +50,6 @@ namespace Arc4u.OAuth2.TicketStore
                 File.WriteAllBytes(fullPath, TicketSerializer.Default.Serialize(ticket));
                 _logger.Technical().LogRenewAuthenticationTicket(key,fullPath);
             }
-
-            return;
         }
 
         /// <inheritdoc/>

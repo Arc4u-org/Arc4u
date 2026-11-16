@@ -70,25 +70,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the asynchronous callback only when the result is successful.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result> OnSuccessAsync(this Result result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsSuccess: true })
-        {
-            await func().ConfigureAwait(false);
-        }
-        return result;
-    }
-
-    /// <summary>
     /// Awaits the task, then invokes the callback only when the result is successful.
     /// </summary>
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
@@ -105,27 +86,6 @@ public static partial class ResultExtension
         if (r is { IsSuccess: true })
         {
             action();
-        }
-        return r;
-    }
-
-    /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback only when the result is successful.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result> OnSuccessAsync(this Task<Result> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsSuccess: true })
-        {
-            await func().ConfigureAwait(false);
         }
         return r;
     }
@@ -152,27 +112,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the value task, then awaits the asynchronous callback only when the result is successful.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A value task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async ValueTask<Result> OnSuccessAsync(this ValueTask<Result> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsSuccess: true })
-        {
-            await func().ConfigureAwait(false);
-        }
-        return r;
-    }
-
-    /// <summary>
     /// Invokes the callback only when the result is successful.
     /// </summary>
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
@@ -188,26 +127,6 @@ public static partial class ResultExtension
         if (result is { IsSuccess: true })
         {
             action();
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Awaits the asynchronous callback only when the result is successful.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Result<TValue> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsSuccess: true })
-        {
-            await func().ConfigureAwait(false);
         }
         return result;
     }
@@ -231,26 +150,6 @@ public static partial class ResultExtension
         if (result is { IsSuccess: true })
         {
             action(result.Value);
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Awaits the asynchronous callback, passing it the value of the result only when the result is successful.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Result<TValue> result, Func<TValue, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsSuccess: true })
-        {
-            await func(result.Value).ConfigureAwait(false);
         }
         return result;
     }
@@ -300,50 +199,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback only when the result is successful.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Task<Result<TValue>> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsSuccess: true })
-        {
-            await func().ConfigureAwait(false);
-        }
-        return r;
-    }
-
-    /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback, passing it the value of the result only when the result is successful.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Task<Result<TValue>> result, Func<TValue, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsSuccess: true })
-        {
-            await func(r.Value).ConfigureAwait(false);
-        }
-        return r;
-    }
-
-    /// <summary>
     /// Awaits the value task, then invokes the callback only when the result is successful.
     /// </summary>
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
@@ -383,6 +238,151 @@ public static partial class ResultExtension
         if (r is { IsSuccess: true })
         {
             action(r.Value);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback only when the result is successful.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result> OnSuccessAsync(this Result result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsSuccess: true })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback only when the result is successful.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result> OnSuccessAsync(this Task<Result> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsSuccess: true })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the value task, then awaits the asynchronous callback only when the result is successful.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async ValueTask<Result> OnSuccessAsync(this ValueTask<Result> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsSuccess: true })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback only when the result is successful.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Result<TValue> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsSuccess: true })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback, passing it the value of the result only when the result is successful.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback receiving the value of the result.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Result<TValue> result, Func<TValue, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsSuccess: true })
+        {
+            await func(result.Value).ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback only when the result is successful.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Task<Result<TValue>> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsSuccess: true })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback, passing it the value of the result only when the result is successful.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback receiving the value of the result.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessAsync<TValue>(this Task<Result<TValue>> result, Func<TValue, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsSuccess: true })
+        {
+            await func(r.Value).ConfigureAwait(false);
         }
         return r;
     }
@@ -456,26 +456,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the asynchronous callback only when the result is successful and its value is <see langword="null"/>.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessNullAsync<TValue>(this Result<TValue> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsSuccess: true, ValueOrDefault: null })
-        {
-            await func().ConfigureAwait(false);
-        }
-        return result;
-    }
-
-    /// <summary>
     /// Awaits the task, then invokes the callback only when the result is successful and its value is <see langword="null"/>.
     /// </summary>
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
@@ -498,28 +478,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback only when the result is successful and its value is <see langword="null"/>.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessNullAsync<TValue>(this Task<Result<TValue>> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsSuccess: true, ValueOrDefault: null })
-        {
-            await func().ConfigureAwait(false);
-        }
-        return r;
-    }
-
-    /// <summary>
     /// Awaits the value task, then invokes the callback only when the result is successful and its value is <see langword="null"/>.
     /// </summary>
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
@@ -537,6 +495,48 @@ public static partial class ResultExtension
         if (r is { IsSuccess: true, ValueOrDefault: null })
         {
             action();
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback only when the result is successful and its value is <see langword="null"/>.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessNullAsync<TValue>(this Result<TValue> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsSuccess: true, ValueOrDefault: null })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback only when the result is successful and its value is <see langword="null"/>.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessNullAsync<TValue>(this Task<Result<TValue>> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsSuccess: true, ValueOrDefault: null })
+        {
+            await func().ConfigureAwait(false);
         }
         return r;
     }
@@ -588,26 +588,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the asynchronous callback only when the result is successful and its value is not <see langword="null"/>.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Result<TValue> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsSuccess: true, ValueOrDefault: not null })
-        {
-            await func().ConfigureAwait(false);
-        }
-        return result;
-    }
-
-    /// <summary>
     /// Invokes the callback with the value of the result only when the result is successful and its value is not <see langword="null"/>.
     /// </summary>
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
@@ -623,26 +603,6 @@ public static partial class ResultExtension
         if (result is { IsSuccess: true, ValueOrDefault: not null })
         {
             action(result.Value);
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Awaits the asynchronous callback, passing it the value of the result only when the result is successful and its value is not <see langword="null"/>.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Result<TValue> result, Func<TValue, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsSuccess: true, ValueOrDefault: not null })
-        {
-            await func(result.Value).ConfigureAwait(false);
         }
         return result;
     }
@@ -692,50 +652,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback only when the result is successful and its value is not <see langword="null"/>.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback to run.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Task<Result<TValue>> result, Func<Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsSuccess: true, ValueOrDefault: not null })
-        {
-            await func().ConfigureAwait(false);
-        }
-        return r;
-    }
-
-    /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback, passing it the value of the result only when the result is successful and its value is not <see langword="null"/>.
-    /// </summary>
-    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback receiving the value of the result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Task<Result<TValue>> result, Func<TValue, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsSuccess: true, ValueOrDefault: not null })
-        {
-            await func(r.Value).ConfigureAwait(false);
-        }
-        return r;
-    }
-
-    /// <summary>
     /// Awaits the value task, then invokes the callback only when the result is successful and its value is not <see langword="null"/>.
     /// </summary>
     /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
@@ -775,6 +691,90 @@ public static partial class ResultExtension
         if (r is { IsSuccess: true, ValueOrDefault: not null })
         {
             action(r.Value);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback only when the result is successful and its value is not <see langword="null"/>.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Result<TValue> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsSuccess: true, ValueOrDefault: not null })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback, passing it the value of the result only when the result is successful and its value is not <see langword="null"/>.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback receiving the value of the result.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Result<TValue> result, Func<TValue, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsSuccess: true, ValueOrDefault: not null })
+        {
+            await func(result.Value).ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback only when the result is successful and its value is not <see langword="null"/>.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback to run.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Task<Result<TValue>> result, Func<Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsSuccess: true, ValueOrDefault: not null })
+        {
+            await func().ConfigureAwait(false);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback, passing it the value of the result only when the result is successful and its value is not <see langword="null"/>.
+    /// </summary>
+    /// <remarks>The callback is skipped otherwise. The original result is always returned unchanged, so calls can be chained. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback receiving the value of the result.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnSuccessNotNullAsync<TValue>(this Task<Result<TValue>> result, Func<TValue, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsSuccess: true, ValueOrDefault: not null })
+        {
+            await func(r.Value).ConfigureAwait(false);
         }
         return r;
     }
@@ -842,25 +842,6 @@ public static partial class ResultExtension
         if (result is { IsFailed: true })
         {
             action(result.Errors);
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Awaits the asynchronous callback with the errors of the result when the result is failed.
-    /// </summary>
-    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result> OnFailedAsync(this Result result, Func<IReadOnlyCollection<IError>, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsFailed: true })
-        {
-            await func(result.Errors).ConfigureAwait(false);
         }
         return result;
     }
@@ -966,26 +947,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the asynchronous callback with the errors of the result when the result is failed.
-    /// </summary>
-    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnFailedAsync<TValue>(this Result<TValue> result, Func<IReadOnlyCollection<IError>, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        if (result is { IsFailed: true })
-        {
-            await func(result.Errors).ConfigureAwait(false);
-        }
-        return result;
-    }
-
-    /// <summary>
     /// Awaits the task, then copies the errors of the result into <paramref name="globalResult"/> when the result is failed.
     /// </summary>
     /// <remarks>Use it to aggregate the errors of several steps into a single result. The original result is returned unchanged.</remarks>
@@ -1045,27 +1006,6 @@ public static partial class ResultExtension
         if (r is { IsFailed: true })
         {
             action(r.Errors);
-        }
-        return r;
-    }
-
-    /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback with the errors of the result when the result is failed.
-    /// </summary>
-    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result> OnFailedAsync(this Task<Result> result, Func<IReadOnlyCollection<IError>, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsFailed: true })
-        {
-            await func(r.Errors).ConfigureAwait(false);
         }
         return r;
     }
@@ -1138,28 +1078,6 @@ public static partial class ResultExtension
     }
 
     /// <summary>
-    /// Awaits the task, then awaits the asynchronous callback with the errors of the result when the result is failed.
-    /// </summary>
-    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback receiving the errors of the failed result.</param>
-    /// <returns>A task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async Task<Result<TValue>> OnFailedAsync<TValue>(this Task<Result<TValue>> result, Func<IReadOnlyCollection<IError>, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsFailed: true })
-        {
-            await func(r.Errors).ConfigureAwait(false);
-        }
-        return r;
-    }
-
-    /// <summary>
     /// Awaits the value task, then copies the errors of the result into <paramref name="globalResult"/> when the result is failed.
     /// </summary>
     /// <remarks>Use it to aggregate the errors of several steps into a single result. The original result is returned unchanged.</remarks>
@@ -1219,27 +1137,6 @@ public static partial class ResultExtension
         if (r is { IsFailed: true })
         {
             action(r.Errors);
-        }
-        return r;
-    }
-
-    /// <summary>
-    /// Awaits the value task, then awaits the asynchronous callback with the errors of the result when the result is failed.
-    /// </summary>
-    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
-    /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="func">The callback receiving the errors of the failed result.</param>
-    /// <returns>A value task completing with the awaited result, unchanged.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
-    public static async ValueTask<Result> OnFailedAsync(this ValueTask<Result> result, Func<IReadOnlyCollection<IError>, Task> func)
-    {
-        ArgumentNullException.ThrowIfNull(func);
-
-        var r = await result.ConfigureAwait(false);
-
-        if (r is { IsFailed: true })
-        {
-            await func(r.Errors).ConfigureAwait(false);
         }
         return r;
     }
@@ -1307,6 +1204,109 @@ public static partial class ResultExtension
         if (r is { IsFailed: true })
         {
             action(r.Errors);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback with the errors of the result when the result is failed.
+    /// </summary>
+    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback receiving the errors of the failed result.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result> OnFailedAsync(this Result result, Func<IReadOnlyCollection<IError>, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsFailed: true })
+        {
+            await func(result.Errors).ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the asynchronous callback with the errors of the result when the result is failed.
+    /// </summary>
+    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback receiving the errors of the failed result.</param>
+    /// <returns>A task completing with the <paramref name="result"/> received, unchanged, once the callback has run.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnFailedAsync<TValue>(this Result<TValue> result, Func<IReadOnlyCollection<IError>, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        if (result is { IsFailed: true })
+        {
+            await func(result.Errors).ConfigureAwait(false);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback with the errors of the result when the result is failed.
+    /// </summary>
+    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback receiving the errors of the failed result.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result> OnFailedAsync(this Task<Result> result, Func<IReadOnlyCollection<IError>, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsFailed: true })
+        {
+            await func(r.Errors).ConfigureAwait(false);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the task, then awaits the asynchronous callback with the errors of the result when the result is failed.
+    /// </summary>
+    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback receiving the errors of the failed result.</param>
+    /// <returns>A task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async Task<Result<TValue>> OnFailedAsync<TValue>(this Task<Result<TValue>> result, Func<IReadOnlyCollection<IError>, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsFailed: true })
+        {
+            await func(r.Errors).ConfigureAwait(false);
+        }
+        return r;
+    }
+
+    /// <summary>
+    /// Awaits the value task, then awaits the asynchronous callback with the errors of the result when the result is failed.
+    /// </summary>
+    /// <remarks>The callback is skipped when the result is successful. The original result is always returned unchanged. An exception thrown by the callback propagates to the caller.</remarks>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="func">The callback receiving the errors of the failed result.</param>
+    /// <returns>A value task completing with the awaited result, unchanged.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    public static async ValueTask<Result> OnFailedAsync(this ValueTask<Result> result, Func<IReadOnlyCollection<IError>, Task> func)
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var r = await result.ConfigureAwait(false);
+
+        if (r is { IsFailed: true })
+        {
+            await func(r.Errors).ConfigureAwait(false);
         }
         return r;
     }
@@ -1540,213 +1540,6 @@ public static partial class ResultExtension
 
     /// <summary>
     /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNull</c> and fails the build with an error pointing to <c>OnSuccessNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Result<TValue> OnSuccessNull<TValue>(this Result<TValue> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNull</c> and fails the build with an error pointing to <c>OnSuccessNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Task<Result<TValue>> OnSuccessNull<TValue>(this Task<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNull</c> and fails the build with an error pointing to <c>OnSuccessNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static ValueTask<Result<TValue>> OnSuccessNull<TValue>(this ValueTask<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Result<TValue> OnSuccessNotNull<TValue>(this Result<TValue> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Result<TValue> OnSuccessNotNull<TValue>(this Result<TValue> result, Func<TValue, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Task<Result<TValue>> OnSuccessNotNull<TValue>(this Task<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Task<Result<TValue>> OnSuccessNotNull<TValue>(this Task<Result<TValue>> result, Func<TValue, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static ValueTask<Result<TValue>> OnSuccessNotNull<TValue>(this ValueTask<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static ValueTask<Result<TValue>> OnSuccessNotNull<TValue>(this ValueTask<Result<TValue>> result, Func<TValue, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Result OnFailed(this Result result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Result<TValue> OnFailed<TValue>(this Result<TValue> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Task<Result> OnFailed(this Task<Result> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static Task<Result<TValue>> OnFailed<TValue>(this Task<Result<TValue>> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static ValueTask<Result> OnFailed(this ValueTask<Result> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
-    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
-    /// </summary>
-    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
-    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
-    /// <param name="result">The value task producing the result to inspect.</param>
-    /// <param name="func">The callback; never executed.</param>
-    /// <returns>Never returns.</returns>
-    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
-    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static ValueTask<Result<TValue>> OnFailed<TValue>(this ValueTask<Result<TValue>> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
-
-    /// <summary>
-    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
     /// passed to the synchronous <c>OnSuccess</c> and fails the build with an error pointing to <c>OnSuccessAsync</c>.
     /// </summary>
     /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
@@ -1883,6 +1676,48 @@ public static partial class ResultExtension
     /// </summary>
     /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
     /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Result<TValue> OnSuccessNull<TValue>(this Result<TValue> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNull</c> and fails the build with an error pointing to <c>OnSuccessNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Task<Result<TValue>> OnSuccessNull<TValue>(this Task<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNull</c> and fails the build with an error pointing to <c>OnSuccessNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static ValueTask<Result<TValue>> OnSuccessNull<TValue>(this ValueTask<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNull</c> and fails the build with an error pointing to <c>OnSuccessNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
     /// <typeparam name="TValueTask">The <see cref="ValueTask"/> type returned by the callback.</typeparam>
     /// <param name="result">The result to inspect.</param>
     /// <param name="func">The callback; never executed.</param>
@@ -1921,6 +1756,90 @@ public static partial class ResultExtension
     [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static ValueTask<Result<TValue>> OnSuccessNull<TValue, TValueTask>(this ValueTask<Result<TValue>> result, Func<TValueTask> func) where TValueTask : struct, IEquatable<ValueTask> => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Result<TValue> OnSuccessNotNull<TValue>(this Result<TValue> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Result<TValue> OnSuccessNotNull<TValue>(this Result<TValue> result, Func<TValue, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Task<Result<TValue>> OnSuccessNotNull<TValue>(this Task<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Task<Result<TValue>> OnSuccessNotNull<TValue>(this Task<Result<TValue>> result, Func<TValue, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static ValueTask<Result<TValue>> OnSuccessNotNull<TValue>(this ValueTask<Result<TValue>> result, Func<Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnSuccessNotNull</c> and fails the build with an error pointing to <c>OnSuccessNotNullAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static ValueTask<Result<TValue>> OnSuccessNotNull<TValue>(this ValueTask<Result<TValue>> result, Func<TValue, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
 
     /// <summary>
     /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
@@ -2011,6 +1930,87 @@ public static partial class ResultExtension
     [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static ValueTask<Result<TValue>> OnSuccessNotNull<TValue, TValueTask>(this ValueTask<Result<TValue>> result, Func<TValue, TValueTask> func) where TValueTask : struct, IEquatable<ValueTask> => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Result OnFailed(this Result result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Result<TValue> OnFailed<TValue>(this Result<TValue> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Task<Result> OnFailed(this Task<Result> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static Task<Result<TValue>> OnFailed<TValue>(this Task<Result<TValue>> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static ValueTask<Result> OnFailed(this ValueTask<Result> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
+
+    /// <summary>
+    /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is
+    /// passed to the synchronous <c>OnFailed</c> and fails the build with an error pointing to <c>OnFailedAsync</c>.
+    /// </summary>
+    /// <remarks>Marked <c>[Obsolete(error: true)]</c> and hidden from IntelliSense.</remarks>
+    /// <typeparam name="TValue">The type of the value carried by the result.</typeparam>
+    /// <param name="result">The value task producing the result to inspect.</param>
+    /// <param name="func">The callback; never executed.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="NotSupportedException">Always thrown if the guard were ever executed.</exception>
+    [Obsolete(AsyncCallbackOnSyncMethod, error: true)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static ValueTask<Result<TValue>> OnFailed<TValue>(this ValueTask<Result<TValue>> result, Func<IReadOnlyCollection<IError>, Task> func) => throw new NotSupportedException(AsyncCallbackOnSyncMethod);
 
     /// <summary>
     /// Compile-time guard, not a usable API: it is selected by overload resolution when an asynchronous callback is

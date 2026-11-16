@@ -16,11 +16,15 @@ namespace Arc4u.Caching;
 /// <typeparam name="T">The type of the derived cache, used as the category of the logger.</typeparam>
 public abstract class BaseDistributeCache<T> : ICache
 {
+    private const string CacheKeyTag = "cacheKey";
+
     private bool disposed;
 
     /// <summary>The entry options used by the <c>Put</c> overloads that have no timeout. By default no expiration is defined.</summary>
     protected DistributedCacheEntryOptions DefaultOption = new();
+
     private IObjectSerialization? _serializerFactory;
+
     private readonly ILogger<T> _logger;
 
     /// <summary>Gets or sets the underlying distributed cache.</summary>
@@ -28,6 +32,7 @@ public abstract class BaseDistributeCache<T> : ICache
 
     /// <summary>The lock used by derived classes to make <see cref="Initialize(string)"/> thread safe.</summary>
     protected readonly object _lock = new();
+
     /// <summary>Gets or sets a value indicating whether the cache is initialized and can be used.</summary>
     protected bool IsInitialized { get; set; }
 
@@ -40,6 +45,7 @@ public abstract class BaseDistributeCache<T> : ICache
 
     /// <summary>Gets the service provider used to resolve the serializer.</summary>
     protected IServiceProvider Container => _container;
+
     private readonly ActivitySource? _activitySource;
 
     /// <summary>Initializes a new instance of the <see cref="BaseDistributeCache{T}"/> class.</summary>
@@ -114,7 +120,7 @@ public abstract class BaseDistributeCache<T> : ICache
         try
         {
             using var activity = _activitySource?.StartActivity("Get from cache.", ActivityKind.Producer);
-            activity?.SetTag("cacheKey", key);
+            activity?.SetTag(CacheKeyTag, key);
 
             var blob = DistributeCache is null ? null : await DistributeCache.GetAsync(key, cancellation).ConfigureAwait(false);
             if (null == blob)
@@ -137,7 +143,7 @@ public abstract class BaseDistributeCache<T> : ICache
         try
         {
             using var activity = _activitySource?.StartActivity("Get from cache.", ActivityKind.Producer);
-            activity?.SetTag("cacheKey", key);
+            activity?.SetTag(CacheKeyTag, key);
 
             var blob = DistributeCache?.Get(key);
             if (null == blob)
@@ -184,17 +190,6 @@ public abstract class BaseDistributeCache<T> : ICache
     /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
     public void Put<TValue>(string key, TValue value) => PutCore(key, value, DefaultOption);
 
-    /// <summary>Asynchronously serializes the value and stores it with the <see cref="DefaultOption"/> (no expiration by default).</summary>
-    /// <typeparam name="TValue">The type of the value.</typeparam>
-    /// <param name="key">The key of the value.</param>
-    /// <param name="value">The value to store; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is stored.</param>
-    /// <param name="cancellation">A token to cancel the operation.</param>
-    /// <returns>A task that completes when the value is stored.</returns>
-    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
-    /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
-    public Task PutAsync<TValue>(string key, TValue value, CancellationToken cancellation = default) => PutCoreAsync(key, value, DefaultOption, cancellation);
-
     /// <summary>Serializes the value and stores it with an absolute or a sliding expiration.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
     /// <param name="key">The key of the value.</param>
@@ -205,6 +200,17 @@ public abstract class BaseDistributeCache<T> : ICache
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
     public void Put<TValue>(string key, TimeSpan timeout, TValue value, bool isSlided = false) => PutCore(key, value, CreateEntryOptions(timeout, isSlided));
+
+    /// <summary>Asynchronously serializes the value and stores it with the <see cref="DefaultOption"/> (no expiration by default).</summary>
+    /// <typeparam name="TValue">The type of the value.</typeparam>
+    /// <param name="key">The key of the value.</param>
+    /// <param name="value">The value to store; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is stored.</param>
+    /// <param name="cancellation">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the value is stored.</returns>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="DataCacheException">The cache or the serialization failed; the original exception is the inner exception.</exception>
+    public Task PutAsync<TValue>(string key, TValue value, CancellationToken cancellation = default) => PutCoreAsync(key, value, DefaultOption, cancellation);
 
     /// <summary>Asynchronously serializes the value and stores it with an absolute or a sliding expiration.</summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
@@ -240,7 +246,7 @@ public abstract class BaseDistributeCache<T> : ICache
         ArgumentNullException.ThrowIfNull(value);
 
         using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
-        activity?.SetTag("cacheKey", key);
+        activity?.SetTag(CacheKeyTag, key);
 
         try
         {
@@ -258,7 +264,7 @@ public abstract class BaseDistributeCache<T> : ICache
         ArgumentNullException.ThrowIfNull(value);
 
         using var activity = _activitySource?.StartActivity("Put to cache.", ActivityKind.Producer);
-        activity?.SetTag("cacheKey", key);
+        activity?.SetTag(CacheKeyTag, key);
 
         try
         {
@@ -288,7 +294,7 @@ public abstract class BaseDistributeCache<T> : ICache
     {
         using var activity = _activitySource?.StartActivity("Remove from cache.", ActivityKind.Producer);
 
-        activity?.SetTag("cacheKey", key);
+        activity?.SetTag(CacheKeyTag, key);
 
         CheckIfInitialized();
 
@@ -303,6 +309,7 @@ public abstract class BaseDistributeCache<T> : ICache
         }
 
     }
+
     /// <summary>Asynchronously removes the value stored for the key.</summary>
     /// <param name="key">The key of the value.</param>
     /// <param name="cancellation">A token to cancel the operation.</param>
@@ -312,7 +319,7 @@ public abstract class BaseDistributeCache<T> : ICache
     {
         using var activity = _activitySource?.StartActivity("Remove from cache.", ActivityKind.Producer);
 
-        activity?.SetTag("cacheKey", key);
+        activity?.SetTag(CacheKeyTag, key);
         CheckIfInitialized();
 
         try

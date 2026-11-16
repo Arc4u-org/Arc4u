@@ -53,14 +53,11 @@ public class SecretConfigurationCertificateProvider : ConfigurationProvider
         }
 
         // Parse the temp root Data collection of each provider
-        foreach (var item in tempRoot.AsEnumerable())
+        foreach (var item in tempRoot.AsEnumerable().Where(item => item.Value is not null && item.Value.StartsWith(_options.Prefix)))
         {
-            if (item.Value is not null && item.Value.StartsWith(_options.Prefix))
-            {
-                var cypher = item.Value.Substring(_options.Prefix.Length);
+            var cypher = item.Value![_options.Prefix.Length..];
 
-                data.Add(item.Key, _options.Certificate.Decrypt(cypher));
-            }
+            data.Add(item.Key, _options.Certificate.Decrypt(cypher));
         }
 
         Data = data;

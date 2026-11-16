@@ -104,7 +104,7 @@ public class ServerPrincipalCache : ISecureCache
     /// <inheritdoc/>
     public async Task<bool> RemoveAsync(string key, CancellationToken cancellation = default)
     {
-        return _cache is null ? false : await _cache.RemoveAsync(key, cancellation).ConfigureAwait(false);
+        return _cache is not null && await _cache.RemoveAsync(key, cancellation).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>

@@ -40,11 +40,11 @@ namespace Arc4u.OAuth2.Extensions
 
             services.Configure<OidcAuthenticationOptions>(options =>
             {
-                options.DefaultAuthority = oidcOptions.DefaultAuthority!;
+                options.DefaultAuthority = oidcOptions.DefaultAuthority;
                 options.CookieName = oidcOptions.CookieName;
                 options.AuthenticationMethod = oidcOptions.AuthenticationMethod;
-                options.AuthenticationCacheTicketStoreOption = oidcOptions.AuthenticationCacheTicketStoreOption!;
-                options.OpenIdSettingsOptions = oidcOptions.OpenIdSettingsOptions!;
+                options.AuthenticationCacheTicketStoreOption = oidcOptions.AuthenticationCacheTicketStoreOption;
+                options.OpenIdSettingsOptions = oidcOptions.OpenIdSettingsOptions;
                 options.DataProtectionCertificate = oidcOptions.DataProtectionCertificate;
                 options.CallbackPath = oidcOptions.CallbackPath;
                 options.DefaultKeyLifetime = oidcOptions.DefaultKeyLifetime;
@@ -54,8 +54,8 @@ namespace Arc4u.OAuth2.Extensions
                 options.CertSecurityKey = oidcOptions.CertSecurityKey;
                 options.ResponseType = oidcOptions.ResponseType;
                 options.AuthenticationTicketTtl = oidcOptions.AuthenticationTicketTtl;
-                options.DataProtectionCacheStoreOption = oidcOptions.DataProtectionCacheStoreOption!;
-                options.ClaimsIdentifierOptions = oidcOptions.ClaimsIdentifierOptions!;
+                options.DataProtectionCacheStoreOption = oidcOptions.DataProtectionCacheStoreOption;
+                options.ClaimsIdentifierOptions = oidcOptions.ClaimsIdentifierOptions;
                 options.NameClaimType = oidcOptions.NameClaimType;
                 options.RoleClaimType = oidcOptions.RoleClaimType;
                 options.ValidateAudience = oidcOptions.ValidateAudience;

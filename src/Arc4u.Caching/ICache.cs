@@ -18,17 +18,6 @@ public interface ICache : IDisposable
     /// <exception cref="DataCacheException">The cache engine or the serialization failed (the original exception is the inner exception), or the memory cache is full.</exception>
     void Put<T>(string key, T value);
 
-    /// <summary>Asynchronously adds or replaces a value in the cache, without a specific expiration.</summary>
-    /// <typeparam name="T">The type of the value.</typeparam>
-    /// <param name="key">The key used to identify the value in the cache.</param>
-    /// <param name="value">The value to save; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is saved.</param>
-    /// <param name="cancellation">A <see cref="CancellationToken"/> to cancel the operation.</param>
-    /// <returns>A task that completes when the value is saved.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
-    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
-    /// <exception cref="DataCacheException">The cache engine or the serialization failed (the original exception is the inner exception), or the memory cache is full.</exception>
-    Task PutAsync<T>(string key, T value, CancellationToken cancellation = default);
-
     /// <summary>Adds or replaces a value in the cache with an expiration.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>
     /// <param name="key">The key used to identify the value in the cache.</param>
@@ -39,6 +28,17 @@ public interface ICache : IDisposable
     /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
     /// <exception cref="NotSupportedException"><paramref name="isSlided"/> is <see langword="true"/> and the cache does not support it.</exception>
     void Put<T>(string key, TimeSpan timeout, T value, bool isSlided = false);
+
+    /// <summary>Asynchronously adds or replaces a value in the cache, without a specific expiration.</summary>
+    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <param name="key">The key used to identify the value in the cache.</param>
+    /// <param name="value">The value to save; it cannot be <see langword="null"/>. The default of a value type (<c>0</c>, <see langword="false"/>) is saved.</param>
+    /// <param name="cancellation">A <see cref="CancellationToken"/> to cancel the operation.</param>
+    /// <returns>A task that completes when the value is saved.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="CacheNotInitializedException">The cache is not initialized.</exception>
+    /// <exception cref="DataCacheException">The cache engine or the serialization failed (the original exception is the inner exception), or the memory cache is full.</exception>
+    Task PutAsync<T>(string key, T value, CancellationToken cancellation = default);
 
     /// <summary>Asynchronously adds or replaces a value in the cache with an expiration.</summary>
     /// <typeparam name="T">The type of the value.</typeparam>

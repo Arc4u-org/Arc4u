@@ -21,7 +21,6 @@ static class TypeExportAttributeScanner
         using var reader = new PEReader(stream);
 
         var metadata = reader.GetMetadataReader();
-        var assembly = metadata.GetAssemblyDefinition();
 
         foreach (var type in metadata.TypeDefinitions.Select(metadata.GetTypeDefinition))
         {
@@ -51,13 +50,13 @@ static class TypeExportAttributeScanner
                         var serviceTypeInfo = typeInfo;
                         string? contractName = null;
                         var arguments = attribute.DecodeValue(DummyCustomAttributeProvider.Instance);
-                        foreach (var argument in arguments.FixedArguments)
+                        foreach (var argumentValue in arguments.FixedArguments.Select(argument => argument.Value))
                         {
-                            if (argument.Value is TypeInfo typeInfoArgument)
+                            if (argumentValue is TypeInfo typeInfoArgument)
                             {
                                 serviceTypeInfo = typeInfoArgument;
                             }
-                            else if (argument.Value is string contractNameArgument)
+                            else if (argumentValue is string contractNameArgument)
                             {
                                 contractName = contractNameArgument;
                             }
@@ -98,7 +97,7 @@ static class TypeExportAttributeScanner
                 {
                     var type = metadata.GetTypeSpecification((TypeSpecificationHandle)ctor.Parent);
                     var blobReader = metadata.GetBlobReader(type.Signature);
-                    var typeCode = blobReader.ReadSignatureTypeCode();
+                    blobReader.ReadSignatureTypeCode();
                     var typeHandle = blobReader.ReadTypeHandle();
                     var typeRef = metadata.GetTypeReference((TypeReferenceHandle)typeHandle);
 

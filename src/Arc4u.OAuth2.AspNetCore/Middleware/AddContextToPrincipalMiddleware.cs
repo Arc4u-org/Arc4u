@@ -35,7 +35,7 @@ public class AddContextToPrincipalMiddleware
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (context.User is not null && context.User is AppPrincipal principal && principal.Identity is not null && principal.Identity.IsAuthenticated)
+        if (context.User is AppPrincipal principal && principal.Identity is not null && principal.Identity.IsAuthenticated)
         {
             using var activity = _activitySource?.StartActivity("Add context to Arc4u Principal", ActivityKind.Producer);
 

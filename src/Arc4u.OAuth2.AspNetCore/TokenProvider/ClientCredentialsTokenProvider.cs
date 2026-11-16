@@ -46,7 +46,7 @@ public class ClientCredentialsTokenProvider(
     /// the <c>Authority</c> setting (or the <c>Default</c> authority). A cached token is returned until it expires in less than one minute.
     /// </summary>
     /// <param name="settings">The provider settings (see <see cref="TokenKeys"/>).</param>
-    /// <param name="_">Not used.</param>
+    /// <param name="platformParameters">Not used.</param>
     /// <returns>The token, or a failed result when a required setting is missing or the token cannot be obtained.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
     public async ValueTask<Result<TokenInfo>> GetTokenAsync(IKeyValueSettings? settings, object? platformParameters)

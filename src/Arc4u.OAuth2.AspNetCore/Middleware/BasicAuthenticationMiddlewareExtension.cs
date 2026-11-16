@@ -87,7 +87,7 @@ public static class BasicAuthenticationMiddlewareExtension
 
         AddBasicAuthenticationSettings(services, options =>
         {
-            options.DefaultUpn = settings!.DefaultUpn;
+            options.DefaultUpn = settings.DefaultUpn;
             options.BasicOptions = PrepareBasicAction(configuration, settings.BasicSettingsPath);
             options.CertificateHeaderOptions = PrepareCertificatesAction(configuration, settings.CertificateHeaderPath, certificateLoader);
         });
@@ -208,13 +208,13 @@ public static class BasicAuthenticationMiddlewareExtension
 
         var settings = new SimpleKeyValueSettings();
 
-        settings.Add(TokenKeys.ProviderIdKey, validate!.ProviderId);
+        settings.Add(TokenKeys.ProviderIdKey, validate.ProviderId);
         settings.Add(TokenKeys.AuthenticationTypeKey, validate.AuthenticationType);
         settings.Add(TokenKeys.ClientIdKey, validate.ClientId);
         settings.Add(TokenKeys.Scope, string.Join(' ', validate.Scopes));
         if (!string.IsNullOrWhiteSpace(validate.ClientSecret))
         {
-            settings.Add(TokenKeys.ClientSecret, validate.ClientSecret!);
+            settings.Add(TokenKeys.ClientSecret, validate.ClientSecret);
         }
 
         return settings;
