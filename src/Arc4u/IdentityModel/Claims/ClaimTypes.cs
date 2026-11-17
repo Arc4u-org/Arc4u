@@ -74,4 +74,11 @@ public class ClaimTypes
     /// Gets the short claim type (<c>oid</c>) that holds the object identifier of the user.
     /// </summary>
     public static string OID { get { return "oid"; } }
+
+    /// <summary>
+    /// Gets the claim type that holds the key, in the cookie's session store, of the authentication ticket the principal was read from.
+    /// It lets code that only sees the principal (such as a Blazor circuit) check that the sign-in still exists. It never leaves the server:
+    /// do not send it to a browser.
+    /// </summary>
+    public static string SessionKey { get { return "arc4u_session_key"; } }
 }

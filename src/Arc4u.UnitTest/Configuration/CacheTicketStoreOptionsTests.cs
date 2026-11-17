@@ -22,6 +22,7 @@ public class CacheTicketStoreOptionsTests
 
         Assert.Equal("Default", options.CacheName);
         Assert.Equal("AuthSessionStore-", options.KeyPrefix);
+        Assert.Equal("Arc4u.TicketStore.v1", options.DataProtectionPurpose);
     }
 
     [Fact]
@@ -72,7 +73,8 @@ public class CacheTicketStoreOptionsTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 { "AuthenticationCacheTicketStore:CacheName", "CustomCache" },
-                { "AuthenticationCacheTicketStore:KeyPrefix", "CustomPrefix-" }
+                { "AuthenticationCacheTicketStore:KeyPrefix", "CustomPrefix-" },
+                { "AuthenticationCacheTicketStore:DataProtectionPurpose", "Portal.TicketStore.v1" }
             })
             .Build();
 
@@ -83,5 +85,104 @@ public class CacheTicketStoreOptionsTests
 
         Assert.Equal("CustomCache", options.CacheName);
         Assert.Equal("CustomPrefix-", options.KeyPrefix);
+        Assert.Equal("Portal.TicketStore.v1", options.DataProtectionPurpose);
+    }
+
+    [Fact]
+    public void GetOptionsWithSpecificDataProtectionPurpose()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "AuthenticationCacheTicketStore:DataProtectionPurpose", "Portal.TicketStore.v1" }
+            })
+            .Build();
+
+        services.AddCacheTicketStore(configuration);
+
+        var serviceProvider = services.BuildServiceProvider();
+        var options = serviceProvider.GetRequiredService<IOptions<CacheTicketStoreOptions>>().Value;
+
+        Assert.Equal("Default", options.CacheName);
+        Assert.Equal("AuthSessionStore-", options.KeyPrefix);
+        Assert.Equal("Portal.TicketStore.v1", options.DataProtectionPurpose);
+    }
+
+    [Fact]
+    public void GetFileOptionsFromConfiguration()
+    {
+        // The StorePath is read from the configuration: binding the section could never build its DirectoryInfo.
+        var services = new ServiceCollection();
+        var directory = Directory.CreateTempSubdirectory("arc4u-tickets-");
+        try
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "AuthenticationFileTicketStore:StorePath", directory.FullName },
+                    { "AuthenticationFileTicketStore:DataProtectionPurpose", "Portal.TicketStore.v1" }
+                })
+                .Build();
+
+            services.AddFileTicketStore(configuration);
+
+            var serviceProvider = services.BuildServiceProvider();
+            var options = serviceProvider.GetRequiredService<IOptions<FileTicketStoreOptions>>().Value;
+
+            Assert.Equal(directory.FullName, options.StorePath!.FullName);
+            Assert.Equal("Portal.TicketStore.v1", options.DataProtectionPurpose);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void GetFileOptionsFromConfigurationWithTheDefaultPurpose()
+    {
+        var services = new ServiceCollection();
+        var directory = Directory.CreateTempSubdirectory("arc4u-tickets-");
+        try
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "AuthenticationFileTicketStore:StorePath", directory.FullName }
+                })
+                .Build();
+
+            services.AddFileTicketStore(configuration);
+
+            var serviceProvider = services.BuildServiceProvider();
+            var options = serviceProvider.GetRequiredService<IOptions<FileTicketStoreOptions>>().Value;
+
+            Assert.Equal("Arc4u.TicketStore.v1", options.DataProtectionPurpose);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void GetFileOptionsFromConfigurationWithoutStorePathIsRefused()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "AuthenticationFileTicketStore:DataProtectionPurpose", "Portal.TicketStore.v1" }
+            })
+            .Build();
+
+        Assert.Throws<ArgumentNullException>(() => services.AddFileTicketStore(configuration));
+    }
+
+    [Fact]
+    public void GetFileOptionsWithNothingSet()
+    {
+        Assert.Equal("Arc4u.TicketStore.v1", new FileTicketStoreOptions().DataProtectionPurpose);
     }
 }

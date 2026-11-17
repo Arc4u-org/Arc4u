@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Arc4u.Dependency.Attribute;
 using Arc4u.Security.Principal;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -24,7 +24,9 @@ namespace Arc4u.Blazor;
 /// It also follows the changes of the circuit's authentication state: when the circuit reconnects,
 /// Blazor sets the user of the new connection after the <see cref="OnConnectionUpAsync"/> handlers ran,
 /// and a revalidating provider can turn the state anonymous. Nothing reads the state again after such
-/// a change, so the handler rebuilds the principal from the new state, or clears it for an anonymous user.
+/// a change, so the handler rebuilds the principal from the new state, or clears it for an anonymous user. Clearing also removes the
+/// user's principal and tokens from the request scope of the SignalR connection, which <c>IScopedServiceProviderAccessor</c> resolves in
+/// the circuit and the <c>JwtHttpHandler</c> and gRPC interceptor read.
 /// </summary>
 [Export(typeof(CircuitHandler)), Scoped]
 public sealed class ApplicationContextCircuitHandler : CircuitHandler, IDisposable
@@ -33,6 +35,7 @@ public sealed class ApplicationContextCircuitHandler : CircuitHandler, IDisposab
     private readonly IClaimAuthorizationFiller _authorizationFiller;
     private readonly IClaimProfileFiller _profileFiller;
     private readonly IApplicationContext _applicationContext;
+    private readonly IServiceProvider? _circuitServices;
 
     /// <summary>Initializes a new instance of the <see cref="ApplicationContextCircuitHandler"/> class.</summary>
     /// <param name="authenticationStateProvider">The circuit-scoped authentication state provider.</param>
@@ -44,7 +47,24 @@ public sealed class ApplicationContextCircuitHandler : CircuitHandler, IDisposab
         IClaimAuthorizationFiller authorizationFiller,
         IClaimProfileFiller profileFiller,
         IApplicationContext applicationContext)
+        : this(authenticationStateProvider, authorizationFiller, profileFiller, applicationContext, null)
     {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="ApplicationContextCircuitHandler"/> class.</summary>
+    /// <param name="authenticationStateProvider">The circuit-scoped authentication state provider.</param>
+    /// <param name="authorizationFiller">The filler that builds the authorization from the claims.</param>
+    /// <param name="profileFiller">The filler that builds the user profile from the claims.</param>
+    /// <param name="applicationContext">The circuit-scoped application context that receives the principal.</param>
+    /// <param name="circuitServices">The services of the circuit's scope, used to remove the user's tokens, and the user of the connection's request scope, when the state turns anonymous.</param>
+    public ApplicationContextCircuitHandler(
+        AuthenticationStateProvider authenticationStateProvider,
+        IClaimAuthorizationFiller authorizationFiller,
+        IClaimProfileFiller profileFiller,
+        IApplicationContext applicationContext,
+        IServiceProvider? circuitServices)
+    {
+        _circuitServices = circuitServices;
         _authenticationStateProvider = authenticationStateProvider;
         _authorizationFiller = authorizationFiller;
         _profileFiller = profileFiller;
@@ -68,7 +88,8 @@ public sealed class ApplicationContextCircuitHandler : CircuitHandler, IDisposab
             state.User.Identity as ClaimsIdentity,
             _authorizationFiller,
             _profileFiller,
-            _applicationContext);
+            _applicationContext,
+            _circuitServices);
     }
 
     /// <summary>Stops following the authentication state of the circuit.</summary>
@@ -78,5 +99,5 @@ public sealed class ApplicationContextCircuitHandler : CircuitHandler, IDisposab
     }
 
     private void OnAuthenticationStateChanged(Task<AuthenticationState> task)
-        => _ = ApplicationContextInitializer.SetPrincipalAsync(task, _authorizationFiller, _profileFiller, _applicationContext);
+        => _ = ApplicationContextInitializer.SetPrincipalAsync(task, _authorizationFiller, _profileFiller, _applicationContext, _circuitServices);
 }

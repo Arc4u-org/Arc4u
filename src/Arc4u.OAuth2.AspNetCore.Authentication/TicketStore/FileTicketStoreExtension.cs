@@ -19,6 +19,7 @@ namespace Arc4u.OAuth2.TicketStore
             new Action<FileTicketStoreOptions>(action).Invoke(validate);
 
             ArgumentNullException.ThrowIfNull(validate.StorePath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(validate.DataProtectionPurpose, nameof(FileTicketStoreOptions.DataProtectionPurpose));
 
             if (!validate.StorePath.Exists)
             {
@@ -27,6 +28,9 @@ namespace Arc4u.OAuth2.TicketStore
             }
 
             services.Configure<FileTicketStoreOptions>(action);
+            // The store encrypts the tickets. AddDataProtection only adds what is missing, so the key ring configured by AddOidcAuthentication
+            // (or by the application) is kept; without one, the tickets cannot be read by another instance or after a restart.
+            services.AddDataProtection();
             services.TryAddTransient<ITicketStore, FileTicketStore>();
         }
 
@@ -40,16 +44,17 @@ namespace Arc4u.OAuth2.TicketStore
 
             if (section.Exists())
             {
-                var option = configuration.GetSection(sectionName).Get<FileTicketStoreOptions>();
-
-                if (option is null)
-                {
-                    throw new NullReferenceException(nameof(option));
-                }
+                // Read as strings: the configuration binder cannot build a DirectoryInfo, so binding the section always left StorePath null.
+                var storePath = section[nameof(FileTicketStoreOptions.StorePath)];
+                var purpose = section[nameof(FileTicketStoreOptions.DataProtectionPurpose)];
 
                 void options(FileTicketStoreOptions o)
                 {
-                    o.StorePath = option.StorePath;
+                    o.StorePath = string.IsNullOrWhiteSpace(storePath) ? null : new DirectoryInfo(storePath);
+                    if (purpose is not null)
+                    {
+                        o.DataProtectionPurpose = purpose;
+                    }
                 }
 
                 AddFileTicketStore(services, options);

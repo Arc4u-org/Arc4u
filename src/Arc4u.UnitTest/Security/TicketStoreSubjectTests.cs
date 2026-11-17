@@ -4,6 +4,7 @@ using Arc4u.OAuth2.TicketStore;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,12 +15,14 @@ namespace Arc4u.UnitTest.Security;
 
 /// <summary>
 /// The ticket stores never overwrite the session of one user with the ticket of another, which would hand that session to whoever
-/// holds the cookie (session fixation, Arc4u.Portal #703). A renewal for the same user still replaces the ticket.
+/// holds the cookie (session fixation, Arc4u.Portal #703). A renewal for the same user still replaces the ticket. The tickets are encrypted,
+/// so the guard reads them through Data Protection.
 /// </summary>
 [Trait("Category", "CI")]
 public sealed class TicketStoreSubjectTests : IDisposable
 {
     private readonly ServiceProvider _container = SignOutTestSupport.BuildContainer(_ => { });
+    private readonly EphemeralDataProtectionProvider _dataProtection = new();
     private readonly DirectoryInfo _directory = Directory.CreateTempSubdirectory("arc4u-tickets-");
 
     public void Dispose()
@@ -110,23 +113,27 @@ public sealed class TicketStoreSubjectTests : IDisposable
         "cache" => new CacheTicketStore(
             _container.GetRequiredService<ILogger<CacheTicketStore>>(),
             CreateCacheContext(),
-            Mock.Of<IOptionsMonitor<CacheTicketStoreOptions>>(m => m.CurrentValue == new CacheTicketStoreOptions())),
+            Mock.Of<IOptionsMonitor<CacheTicketStoreOptions>>(m => m.CurrentValue == new CacheTicketStoreOptions()),
+            _dataProtection),
         "file" => new FileTicketStore(
             _container.GetRequiredService<ILogger<FileTicketStore>>(),
-            Mock.Of<IOptionsMonitor<FileTicketStoreOptions>>(m => m.CurrentValue == new FileTicketStoreOptions { StorePath = _directory })),
+            Mock.Of<IOptionsMonitor<FileTicketStoreOptions>>(m => m.CurrentValue == new FileTicketStoreOptions { StorePath = _directory }),
+            _dataProtection),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
     // A cache backed by a dictionary.
-    private static ICacheContext CreateCacheContext()
+    internal static ICacheContext CreateCacheContext(Dictionary<string, byte[]>? entries = null)
     {
-        var entries = new Dictionary<string, byte[]>();
+        entries ??= [];
         var cache = new Mock<ICache>();
         cache.Setup(c => c.GetAsync<byte[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync((string key, CancellationToken _) => entries.GetValueOrDefault(key));
         cache.Setup(c => c.PutAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<byte[]>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
              .Callback((string key, TimeSpan _, byte[] value, bool _, CancellationToken _) => entries[key] = value)
              .Returns(Task.CompletedTask);
+        cache.Setup(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync((string key, CancellationToken _) => entries.Remove(key));
 
         var context = new Mock<ICacheContext>();
         context.Setup(c => c.Exist(It.IsAny<string>())).Returns(false);

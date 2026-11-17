@@ -40,6 +40,24 @@ no release notes.
   configuration section, `AddSharedTokenCache` registers the options shared by the entries of a section, and `TokenCacheResolver`, a singleton
   registered by `AddTokenCache` and the other registration methods of the token cache users (or by `AddTokenCacheResolver`), gives the cache and the `MaxTime` of default or named options to the code that uses the `ICache` directly.
 
+- `Arc4u.OAuth2.AspNetCore.Blazor`: `AddAppPrincipalCircuitRevalidation` ends a Blazor circuit whose sign-in
+  has ended. It wraps the session store of the cookie in `SessionKeyTicketStore`, registers
+  `AppPrincipalServerAuthenticationStateProvider`, `SessionStoreSignInValidator` and
+  `ApplicationContextCircuitHandler`, and validates the `CircuitRevalidationOptions`
+  (`Authentication:CircuitRevalidation`: `Enabled`, `Interval`, `CookieScheme`) at startup. It can be called
+  before or after `AddOidcAuthentication`. `ISignInValidator` tells whether a sign-in still exists; the
+  default `SessionStoreSignInValidator` asks the cookie's session store whether it still holds the ticket of
+  the sign-in, and reports it ended when the ticket is gone, has expired or belongs to another user.
+- `Arc4u.OAuth2.AspNetCore.Blazor`: `SessionKeyTicketStore` wraps a ticket store so each principal read from
+  it carries the key of its ticket as the `arc4u_session_key` claim (`Arc4u.IdentityModel.Claims.ClaimTypes.SessionKey`),
+  and removes that claim from the tickets it stores. Only the applications that call
+  `AddAppPrincipalCircuitRevalidation` get it.
+- `Arc4u.OAuth2.AspNetCore.Blazor`: `AuthenticationStateClaimsSerializer` writes into the page for the
+  WebAssembly client only the name and role claims plus the claim types the application lists, as a
+  replacement for `SerializeAllClaims = true`. It never sends `arc4u_session_key`.
+- `Arc4u.OAuth2`: `ClaimsPrincipalSubject.IsSameSubject` tells whether two principals belong to the
+  same user (`sub`, `oid` or name identifier), the check the ticket stores already used.
+
 ### Changed
 
 - `Arc4u.OAuth2`: `ITokenCache` is asynchronous, so a call to a distributed cache no longer blocks a
@@ -82,6 +100,35 @@ no release notes.
   until it expires, and no longer caches a token valid for one minute or less, as it serves a cached
   token only when it is valid for more than one minute. It takes a new optional `TokenCacheResolver` constructor parameter, resolved by the dependency injection.
 
+- `Arc4u.OAuth2.AspNetCore.Authentication`: a ticket missing from the store is logged at the `Debug`
+  level instead of `Error`, by `CacheTicketStore` and by `FileTicketStore` (event 9146). It is expected after
+  a sign-out or an expiry, and the circuit revalidation reads it once per open circuit after each sign-out.
+  A cache that cannot be read (event 9142) or a ticket that cannot be deserialized (event 9141) is still
+  logged as an error.
+
+- `Arc4u.OAuth2.AspNetCore.Blazor`: `AppPrincipalServerAuthenticationStateProvider` derives from
+  `RevalidatingServerAuthenticationStateProvider`. Registered by `AddAppPrincipalCircuitRevalidation`, it asks
+  the `ISignInValidator` every `Authentication:CircuitRevalidation:Interval` (two minutes by default, at most
+  one day) whether the sign-in of an authenticated circuit still exists, and turns the circuit anonymous when
+  it does not or when the check throws. Registered without that call, the principals carry no session key:
+  the circuits keep their user as before, and warning 9303 is logged once. An anonymous visitor is never
+  checked. The constructor used by the dependency injection takes an `ILoggerFactory` and the scope's
+  `IServiceProvider`; the three-parameter constructor builds a provider without revalidation.
+
+- `Arc4u.OAuth2.AspNetCore.Authentication`: `CacheTicketStore` and `FileTicketStore` encrypt the authentication
+  tickets with Data Protection before writing them to the cache or to disk. A ticket carries the user's access, ID and
+  refresh tokens (`SaveTokens = true`), which were readable by anyone who could read the cache or the store directory.
+  The Data Protection purpose is the new `DataProtectionPurpose` option of `CacheTicketStoreOptions`
+  (`Authentication:AuthenticationCacheTicketStore:DataProtectionPurpose`) and `FileTicketStoreOptions`, by default
+  `Arc4u.TicketStore.v1` (`TicketStoreDataProtection.DefaultPurpose`); an empty value is refused. An application whose
+  tickets were already encrypted under another purpose sets it to keep its sessions (Arc4u.Portal: `Portal.TicketStore.v1`). A ticket that cannot be decrypted
+  (written in clear by a previous version, or under a key ring that no longer exists) counts as no session: the
+  entry is removed and warning 9154 is logged (9155 when the removal fails). **Upgrading signs every existing
+  session out once.** Both stores take a new `IDataProtectionProvider` constructor parameter, and
+  `AddCacheTicketStore` and `AddFileTicketStore` call `AddDataProtection`, which keeps the key ring configured by
+  `AddOidcAuthentication` or the application. The session-fixation check of `RenewAsync` reads the encrypted ticket;
+  an entry it cannot decrypt holds no ticket to compare with, like a missing one.
+
 ### Fixed
 
 - `Arc4u.OAuth2.AspNetCore.Authentication`: `AzureADOboTokenProvider`
@@ -100,6 +147,11 @@ no release notes.
 - `Arc4u.OAuth2.AspNetCore`: `CredentialTokenCacheTokenProvider` returns a failed `Result` instead of
   throwing a `KeyNotFoundException` when the settings have no `Scope`.
 
+- `Arc4u.OAuth2.AspNetCore.Authentication`: `AddFileTicketStore(configuration)` reads `StorePath` from the
+  configuration. It bound the section to `FileTicketStoreOptions`, but the configuration binder cannot build a
+  `DirectoryInfo`, so `StorePath` was always `null` and the method always threw `ArgumentNullException` when the
+  section existed.
+
 ### Security
 
 - `Arc4u.OAuth2.AspNetCore.Authentication`: a sign-in no longer reuses the session of a cookie the
@@ -115,6 +167,17 @@ no release notes.
   so a sibling subdomain cannot plant it, or set the new opt-in `AddHostPrefixToCookieName` option
   (`Authentication:AddHostPrefixToCookieName`, default `false`) to have Arc4u add the prefix. Either
   way, renaming the cookie signs every user out once.
+
+- `Arc4u.OAuth2.AspNetCore.Blazor`: when the authentication state of a circuit turns anonymous
+  (reconnection without the cookie, failed revalidation), `AppPrincipalServerAuthenticationStateProvider`
+  and `ApplicationContextCircuitHandler` also remove the user from the request scope of the circuit's
+  SignalR connection: its `IApplicationContext` principal and its `TokenRefreshInfo`. In a circuit,
+  `IScopedServiceProviderAccessor` resolves that scope, so the `JwtHttpHandler` and the gRPC interceptor
+  kept calling APIs with the user's access token, and kept refreshing it with the refresh token, after
+  the circuit had lost its user. The circuit's own `TokenRefreshInfo` is cleared too. Both types have a
+  new constructor taking the scope's `IServiceProvider`, which the dependency injection uses.
+- Documentation: the Blazor guide no longer recommends `SerializeAllClaims = true`, which writes every
+  claim of the user into the HTML of every page.
 
 ## [9.0.0] - 2026-11-10
 

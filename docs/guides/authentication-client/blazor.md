@@ -24,7 +24,7 @@ WebAssembly app, which signs the user in from the browser (`AddMsalAuthenticatio
 | Package | Use it for |
 |---|---|
 | `Arc4u.OAuth2.Blazor` | The WebAssembly project: token providers, the `JwtHttpHandler` for `HttpClient`, `AddAuthenticationCookie`, and the principal built from the authentication state. |
-| `Arc4u.OAuth2.AspNetCore.Blazor` | The server project: the principal of Interactive Server components (`AppPrincipalServerAuthenticationStateProvider`, `ApplicationContextCircuitHandler`). |
+| `Arc4u.OAuth2.AspNetCore.Blazor` | The server project: the principal of Interactive Server components (`AppPrincipalServerAuthenticationStateProvider`, `ApplicationContextCircuitHandler`), the end of a circuit whose sign-in has ended (`AddAppPrincipalCircuitRevalidation`), and the claims sent to WebAssembly (`AuthenticationStateClaimsSerializer`). |
 
 ```bash
 dotnet add package Arc4u.OAuth2.Blazor
@@ -181,9 +181,30 @@ builder.Services.AddSingleton<IConfigureOptions<AuthenticationStateDeserializati
 await builder.Build().RunAsync();
 ```
 
-The authorization is built from the claims, so the server must send them all:
-`builder.Services.AddRazorComponents().AddInteractiveWebAssemblyComponents().AddAuthenticationStateSerialization(options => options.SerializeAllClaims = true);`.
-By default, Blazor only sends the name and role claims.
+By default, Blazor only sends the name and role claims. Send the other claims the WebAssembly
+components read with <xref:Arc4u.Blazor.AuthenticationStateClaimsSerializer>, which takes the list
+of claim types to send:
+
+```csharp
+// Program.cs (server project)
+using System.Security.Claims;
+using Arc4u.Blazor;
+
+builder.Services.AddRazorComponents()
+    .AddInteractiveWebAssemblyComponents()
+    .AddAuthenticationStateSerialization(options =>
+        options.SerializationCallback = AuthenticationStateClaimsSerializer.Create(ClaimTypes.Email, "company"));
+```
+
+> [!WARNING]
+> Do not set `SerializeAllClaims = true`. The authentication state is written into the HTML of
+> every page, so it would send every claim of the user to the browser: the identifiers of the
+> identity provider, the authorization claim, and the key of the user's session in the cookie's
+> session store (`arc4u_session_key`). The serializer never sends that key, even when it is listed.
+
+The authorization of the `AppPrincipal` built in the browser comes from the claims sent. List
+`Arc4u.IdentityModel.Claims.ClaimTypes.Authorization` only if the WebAssembly components check
+operations themselves; the server, where the APIs check them, does not need it.
 
 ## Interactive Server: get the principal in the circuit
 
@@ -232,6 +253,74 @@ claims fillers (`IClaimAuthorizationFiller`, `IClaimProfileFiller`) are the ones
 authentication. Only the principal is set in the circuit: the tokens kept for the HTTP request
 (`TokenRefreshInfo`) are not.
 
+When the circuit's state turns anonymous, the provider and the handler remove the user from the
+circuit and also from the request scope of the circuit's SignalR connection. In a circuit,
+`IScopedServiceProviderAccessor` resolves that request scope, so the `JwtHttpHandler` and the gRPC
+interceptor read its principal and its `TokenRefreshInfo`. Clearing only the circuit's principal
+would let them keep calling APIs with the user's access token, and refresh it.
+
+### End the circuit when the sign-in ends
+
+A circuit keeps the user it connected with until it reconnects. Without a check, a tab left open
+would keep acting as the user after they sign out in another tab, or after their session expires.
+`AddAppPrincipalCircuitRevalidation` turns the check on: `AppPrincipalServerAuthenticationStateProvider`
+then checks every `Interval` (two minutes by default) that the sign-in of an authenticated circuit
+still exists. When the sign-in has ended, or the check throws, the circuit becomes anonymous and the
+user is removed as described above. `AuthorizeView` and the interactive `[Authorize]` pages then
+render their anonymous content. An anonymous visitor is never checked, and pages rendered without
+interactivity (static SSR) have no circuit: each request reads the cookie.
+
+Register the provider with it instead of the two `AddScoped` lines above:
+
+```csharp
+// Program.cs (server project)
+using Arc4u.Blazor;
+
+builder.Services.AddOidcAuthentication(builder.Configuration);
+builder.Services.AddAppPrincipalCircuitRevalidation(builder.Configuration);
+```
+
+```json
+{
+  "Authentication": {
+    "CircuitRevalidation": {
+      "Interval": "00:02:00"
+    }
+  }
+}
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `Authentication:CircuitRevalidation:Enabled` | `bool` | `true` | Whether the sign-in of an open circuit is checked. Turned off, a circuit keeps its user until it reconnects. |
+| `Authentication:CircuitRevalidation:Interval` | `TimeSpan` | `00:02:00` | How long a circuit may act as a user whose sign-in has ended. More than zero, at most one day. |
+| `Authentication:CircuitRevalidation:CookieScheme` | `string` | `Cookies` | The cookie scheme whose session store holds the sign-ins. |
+
+> [!IMPORTANT]
+> The call is required. It wraps the cookie's session store in
+> <xref:Arc4u.Blazor.SessionKeyTicketStore>, which stamps each principal read from it with the key
+> of its ticket (`arc4u_session_key`). Without it the principals carry no key, nothing can be
+> checked, and the circuits keep their user until they reconnect; the validator then logs warning
+> 9303 once. Only applications that call it get the claim: an MVC or Razor Pages application has
+> no use for it.
+
+The call can come before or after `AddOidcAuthentication`: the session store is wrapped once all
+the cookie options are configured. Call it after any other registration of
+`AuthenticationStateProvider`, including Arc4u's generated `RegisterTypes`, as it removes them. It
+also adds `ApplicationContextCircuitHandler`, and validates the options at startup. When the cookie
+has no session store, the whole ticket is in the cookie and the server has nothing to check: Arc4u
+logs warning 9302 and the circuits keep their user.
+
+The default check, <xref:Arc4u.Blazor.SessionStoreSignInValidator>, asks the cookie's session
+store whether it still holds the ticket of the sign-in. Sign-out removes the ticket, and so does
+its expiry, so the circuits of that browser session end; the user's other sessions do not. The
+sign-in is ended when the ticket is gone, has expired, or belongs to another user. To check
+elsewhere (for example at the identity provider), register your own
+<xref:Arc4u.Blazor.ISignInValidator>; the provider uses it instead.
+
+Each check is one read of the session store per open circuit. The first check after a sign-out
+finds no ticket, which `CacheTicketStore` and `FileTicketStore` log at the `Debug` level.
+
 ## Hybrid rendering
 
 With the Interactive Auto render mode, a component first runs on the server and then in the
@@ -240,6 +329,11 @@ browser, so the application needs both setups above: on the server, the circuit'
 [Interactive Server](#interactive-server-get-the-principal-in-the-circuit); in the browser, the
 principal is rebuilt from the serialized authentication state. Only the claims that the server
 serializes reach the browser, so the authorization built there is only as complete as those claims.
+
+The revalidation of [End the circuit when the sign-in ends](#end-the-circuit-when-the-sign-in-ends)
+only covers the server part. In the browser, the WebAssembly app keeps the state written into the
+page; its calls to APIs fail once the sign-in has ended, because the token endpoint answers them
+with the cookie, which no longer works.
 
 ## Troubleshooting
 

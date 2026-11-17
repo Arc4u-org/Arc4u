@@ -18,6 +18,20 @@ builder.Services.AddScoped<CircuitHandler, ApplicationContextCircuitHandler>();
 
 The principal is built from the claims of the authenticated user with the registered `IClaimAuthorizationFiller` and `IClaimProfileFiller`.
 
+To end a circuit whose sign-in has ended (sign-out in another tab, expired session), register the provider this way instead. The call is required: it also wraps the cookie's session store so each principal carries its session key, which the check reads. It can come before or after `AddOidcAuthentication`.
+
+```csharp
+builder.Services.AddAppPrincipalCircuitRevalidation(builder.Configuration); // Authentication:CircuitRevalidation:Enabled, :Interval (2 minutes)
+```
+
+To send the WebAssembly client only the claims it reads, instead of `SerializeAllClaims = true`:
+
+```csharp
+builder.Services.AddRazorComponents()
+    .AddInteractiveWebAssemblyComponents()
+    .AddAuthenticationStateSerialization(o => o.SerializationCallback = AuthenticationStateClaimsSerializer.Create(ClaimTypes.Email));
+```
+
 ## Documentation
 
 - Guide: [Blazor](https://arc4u-org.github.io/Arc4u/guides/authentication-client/blazor.html)

@@ -166,6 +166,22 @@ The `Authentication:AuthenticationCacheTicketStore` section is optional:
 |---|---|---|---|
 | `CacheName` | string | `Default` | Cache that stores the tickets. When no cache has this name, the default cache is used. |
 | `KeyPrefix` | string | `AuthSessionStore-` | Prefix of the cache keys. |
+| `DataProtectionPurpose` | string | `Arc4u.TicketStore.v1` | Data Protection purpose under which the tickets are encrypted. Changing it signs every user out once. |
+
+The ticket of a session carries the user's access, ID and refresh tokens. The ticket store
+(`CacheTicketStore`, or `FileTicketStore` with `AddFileTicketStore`) encrypts each ticket with Data
+Protection, under the purpose `DataProtectionPurpose` (`Arc4u.TicketStore.v1` by default), and with
+the key ring configured in the `DataProtection` section above. The purpose is not a secret: it
+separates the tickets from the other uses of the key ring. An application whose tickets were already
+encrypted under another purpose sets it to keep its sessions; Arc4u.Portal, for example, sets
+`Portal.TicketStore.v1`. Whoever can read the cache or the
+store directory cannot read the tokens without that key ring. Every instance of the application must
+share the key ring, as for the cookie itself.
+
+A ticket the store cannot decrypt (written in clear by Arc4u 9.0 or earlier, or under a key ring that
+no longer exists) counts as no session: the user signs in again, the entry is removed, and warning
+9154 is logged. Upgrading from a version that stored the tickets in clear therefore signs every user
+out once.
 
 ### Code
 

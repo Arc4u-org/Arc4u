@@ -28,8 +28,12 @@ namespace Arc4u.OAuth2.TicketStore
 
             ArgumentNullException.ThrowIfNull(validate.CacheName);
             ArgumentNullException.ThrowIfNull(validate.KeyPrefix);
+            ArgumentException.ThrowIfNullOrWhiteSpace(validate.DataProtectionPurpose, nameof(CacheTicketStoreOptions.DataProtectionPurpose));
 
             services.Configure<CacheTicketStoreOptions>(action);
+            // The store encrypts the tickets. AddDataProtection only adds what is missing, so the key ring configured by AddOidcAuthentication
+            // (or by the application) is kept; without one, the tickets cannot be read by another instance or after a restart.
+            services.AddDataProtection();
             // if another implementation isalready registered, it will not be replaced.
             // so a custom implementation can be used.
             services.TryAddTransient<ITicketStore, CacheTicketStore>();
@@ -70,6 +74,7 @@ namespace Arc4u.OAuth2.TicketStore
             {
                 o.CacheName = option.CacheName;
                 o.KeyPrefix = option.KeyPrefix;
+                o.DataProtectionPurpose = option.DataProtectionPurpose;
             }
 
             return options;

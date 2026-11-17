@@ -247,11 +247,11 @@ namespace Arc4u.OAuth2
         public static partial void LogGetAuthenticationTicket(this ILogger logger, string key, string fullPath);
 
         /// <summary>
-        /// Logs an Error message (event id 9146): <c>{FullPath} doesn't exist, can't retrieve an authentication ticket.</c>
+        /// Logs a Debug message (event id 9146): <c>{FullPath} doesn't exist, can't retrieve an authentication ticket.</c>
         /// </summary>
         /// <param name="logger">The logger to write to.</param>
         /// <param name="fullPath">The value substituted in the message.</param>
-        [LoggerMessage(EventId = 9146, Level = LogLevel.Error,
+        [LoggerMessage(EventId = 9146, Level = LogLevel.Debug,
             Message = "{FullPath} doesn't exist, can't retrieve an authentication ticket.")]
         public static partial void LogNoFileExistForAuthenticationTicket(this ILogger logger, string fullPath);
 
@@ -319,5 +319,24 @@ namespace Arc4u.OAuth2
         [LoggerMessage(EventId = 9153, Level = LogLevel.Error,
             Message = "The session {Key} belongs to another user: the authentication ticket is not overwritten (possible session fixation).")]
         public static partial void LogSessionSubjectMismatch(this ILogger logger, string key);
+
+        /// <summary>
+        /// Logs a Warning message (event id 9154): <c>The authentication ticket {Key} could not be unprotected and was discarded; the user signs in again.</c>
+        /// </summary>
+        /// <param name="logger">The logger to write to.</param>
+        /// <param name="key">The session key of the ticket.</param>
+        [LoggerMessage(EventId = 9154, Level = LogLevel.Warning,
+            Message = "The authentication ticket {Key} could not be unprotected and was discarded; the user signs in again.")]
+        public static partial void LogTicketCannotBeUnprotected(this ILogger logger, string key);
+
+        /// <summary>
+        /// Logs a Warning message (event id 9155): <c>The unreadable authentication ticket {Key} could not be removed from the store; it expires on its own.</c>
+        /// </summary>
+        /// <param name="logger">The logger to write to.</param>
+        /// <param name="exception">The exception raised by the store.</param>
+        /// <param name="key">The session key of the ticket.</param>
+        [LoggerMessage(EventId = 9155, Level = LogLevel.Warning,
+            Message = "The unreadable authentication ticket {Key} could not be removed from the store; it expires on its own.")]
+        public static partial void LogUnreadableTicketNotRemoved(this ILogger logger, Exception exception, string key);
     }
 }

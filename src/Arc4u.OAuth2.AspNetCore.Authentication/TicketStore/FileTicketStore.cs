@@ -1,21 +1,36 @@
 using Arc4u.Diagnostics;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Arc4u.OAuth2.TicketStore
 {
-    /// <summary>An <see cref="ITicketStore"/> that keeps each authentication ticket in a file (<c>{guid}.bin</c>) of the directory configured in <see cref="FileTicketStoreOptions.StorePath"/>. It is meant for a single instance application.</summary>
+    /// <summary>
+    /// An <see cref="ITicketStore"/> that keeps each authentication ticket in a file (<c>{guid}.bin</c>) of the directory configured in
+    /// <see cref="FileTicketStoreOptions.StorePath"/>, encrypted with Data Protection (purpose <see cref="FileTicketStoreOptions.DataProtectionPurpose"/>):
+    /// a ticket carries the user's access, id and refresh tokens, which must not be readable by whoever can read the directory. It is meant
+    /// for a single instance application.
+    /// </summary>
+    /// <remarks>
+    /// A file that cannot be unprotected (written in clear by a previous version, or under a key ring that no longer exists) reads as no
+    /// ticket: the user signs in again, and the file is deleted.
+    /// </remarks>
     public class FileTicketStore : ITicketStore
     {
         /// <summary>Initializes a new instance of the <see cref="FileTicketStore"/> class.</summary>
         /// <param name="logger">The logger.</param>
         /// <param name="options">The options giving the directory of the tickets.</param>
-        /// <exception cref="ArgumentNullException">The store path is <see langword="null"/>.</exception>
-        public FileTicketStore(ILogger<FileTicketStore> logger, IOptionsMonitor<FileTicketStoreOptions> options)
+        /// <param name="dataProtectionProvider">The Data Protection provider that encrypts the tickets.</param>
+        /// <exception cref="ArgumentNullException">The store path or <paramref name="dataProtectionProvider"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">The Data Protection purpose is empty.</exception>
+        public FileTicketStore(ILogger<FileTicketStore> logger, IOptionsMonitor<FileTicketStoreOptions> options, IDataProtectionProvider dataProtectionProvider)
         {
+            ArgumentNullException.ThrowIfNull(dataProtectionProvider);
+            ArgumentException.ThrowIfNullOrWhiteSpace(options.CurrentValue.DataProtectionPurpose, "options.DataProtectionPurpose");
             _logger = logger;
+            _protector = dataProtectionProvider.CreateProtector(options.CurrentValue.DataProtectionPurpose);
 
             ArgumentNullException.ThrowIfNull(options.CurrentValue.StorePath);
 
@@ -25,6 +40,7 @@ namespace Arc4u.OAuth2.TicketStore
         private readonly DirectoryInfo _directoryStore;
         private readonly object _lock = new();
         private readonly ILogger<FileTicketStore> _logger;
+        private readonly IDataProtector _protector;
         /// <inheritdoc/>
         public Task RemoveAsync(string key)
         {
@@ -58,7 +74,7 @@ namespace Arc4u.OAuth2.TicketStore
 
             lock (_lock)
             {
-                File.WriteAllBytes(fullPath, TicketSerializer.Default.Serialize(ticket));
+                File.WriteAllBytes(fullPath, TicketStoreDataProtection.Protect(_protector, ticket));
                 _logger.Technical().LogRenewAuthenticationTicket(key,fullPath);
             }
         }
@@ -74,7 +90,17 @@ namespace Arc4u.OAuth2.TicketStore
             {
                 var content = File.ReadAllBytes(fullPath);
 
-                ticket = TicketSerializer.Default.Deserialize(content);
+                if (!TicketStoreDataProtection.TryUnprotect(_protector, content, out ticket))
+                {
+                    _logger.Technical().LogTicketCannotBeUnprotected(key);
+                    lock (_lock)
+                    {
+                        File.Delete(fullPath);
+                    }
+
+                    return Task.FromResult<AuthenticationTicket?>(null);
+                }
+
                 _logger.Technical().LogGetAuthenticationTicket(key, fullPath);
             }
             else
@@ -95,7 +121,7 @@ namespace Arc4u.OAuth2.TicketStore
 
             lock (_lock)
             {
-                File.WriteAllBytes(fullPath, TicketSerializer.Default.Serialize(ticket));
+                File.WriteAllBytes(fullPath, TicketStoreDataProtection.Protect(_protector, ticket));
                 _logger.Technical().LogCreateAuthenticationTicketOnFile(key, fullPath);
             }
 
