@@ -43,6 +43,14 @@ namespace Arc4u.OAuth2.Options;
         /// <summary>Gets or sets the path of the section holding the <see cref="TokenCacheOptions"/>. The default is <c>Authentication:TokenCache</c>.</summary>
         public string TokenCacheSectionPath { get; set; } = "Authentication:TokenCache";
 
+        /// <summary>Gets or sets the path of the section holding the client tokens (see <c>ClientTokenSettingsOptions</c>). The default is <c>Authentication:ClientTokens</c>.
+        /// The section is optional: when it does not exist, no client token is registered.</summary>
+        public string ClientTokensSectionPath { get; set; } = "Authentication:ClientTokens";
+
+        /// <summary>Gets or sets the path of the optional section holding the <see cref="TokenCacheOptions"/> shared by every client token entry.
+        /// The default is <c>Authentication:ClientTokensCache</c>; an empty path turns it off.</summary>
+        public string ClientTokensCacheSectionPath { get; set; } = "Authentication:ClientTokensCache";
+
         /// <summary>Gets or sets the path of the section holding the domain mappings. The default is <c>Authentication:DomainsMapping</c>.</summary>
         public string DomainMappingsSectionPath { get; set; } = "Authentication:DomainsMapping";
 
