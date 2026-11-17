@@ -52,7 +52,37 @@ namespace Arc4u.OAuth2.TicketStore
         }
 
         /// <inheritdoc/>
+        /// <exception cref="InvalidOperationException">The session <paramref name="key"/> holds the ticket of another user; the stored ticket is left unchanged.</exception>
+        /// <remarks>The ticket of another user is never overwritten: that would hand that session to whoever holds the cookie (session fixation).</remarks>
         public async Task RenewAsync(string key, AuthenticationTicket ticket)
+        {
+            ArgumentNullException.ThrowIfNull(ticket);
+
+            var stored = await TryGetStoredTicketAsync(key).ConfigureAwait(false);
+            if (stored is not null && !AuthenticationTicketSubject.IsSameSubject(stored, ticket))
+            {
+                _logger.Technical().LogSessionSubjectMismatch(key);
+                throw new InvalidOperationException("The session belongs to another user: its authentication ticket is not overwritten.");
+            }
+
+            await WriteAsync(key, ticket).ConfigureAwait(false);
+        }
+
+        // Reads the stored ticket without logging a missing one as an error: an expired session is expected here.
+        private async Task<AuthenticationTicket?> TryGetStoredTicketAsync(string key)
+        {
+            try
+            {
+                var content = await _cache.GetAsync<byte[]>(key).ConfigureAwait(false);
+                return content is null ? null : TicketSerializer.Default.Deserialize(content);
+            }
+            catch (DataCacheException)
+            {
+                return null;
+            }
+        }
+
+        private async Task WriteAsync(string key, AuthenticationTicket ticket)
         {
             var expiresUtc = ticket.Properties.ExpiresUtc;
             if (expiresUtc.HasValue)
@@ -100,7 +130,8 @@ namespace Arc4u.OAuth2.TicketStore
         public async Task<string> StoreAsync(AuthenticationTicket ticket)
         {
             var key = _keyPrefix + Guid.NewGuid().ToString();
-            await RenewAsync(key, ticket).ConfigureAwait(false);
+            // A new key holds no ticket yet: nothing to compare with.
+            await WriteAsync(key, ticket).ConfigureAwait(false);
 
             return key;
         }

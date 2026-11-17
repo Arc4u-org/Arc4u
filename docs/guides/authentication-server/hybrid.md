@@ -54,7 +54,7 @@ the [forced OpenID Connect middleware](#send-browser-users-to-the-sign-in-page).
   },
   "Authentication": {
     "DefaultAuthority": { "Url": "https://login.example.com/my-tenant/v2.0" },
-    "CookieName": ".MyApp.Cookies",
+    "CookieName": "__Host-MyApp",
     "OpenId.Settings": {
       "ClientId": "my-client-id",
       "ClientSecret": "<client-secret>",

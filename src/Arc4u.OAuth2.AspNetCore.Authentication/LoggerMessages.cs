@@ -301,5 +301,23 @@ namespace Arc4u.OAuth2
         [LoggerMessage(EventId = 9151, Level = LogLevel.Warning,
             Message = "The audience '{InvalidAudience}' of the bearer token is not one of the expected audiences ({ExpectedAudiences}) defined in the OAuth2 settings.")]
         public static partial void LogInvalidAudience(this ILogger logger, string invalidAudience, string expectedAudiences);
+
+        /// <summary>
+        /// Logs a Warning message (event id 9152): <c>The authentication cookie '{CookieName}' does not start with '__Host-': a sibling subdomain can plant a cookie with the same name in the browser. Use a name like '__Host-MyApp'.</c>
+        /// </summary>
+        /// <param name="logger">The logger to write to.</param>
+        /// <param name="cookieName">The configured name of the authentication cookie.</param>
+        [LoggerMessage(EventId = 9152, Level = LogLevel.Warning,
+            Message = "The authentication cookie '{CookieName}' does not start with '__Host-': a sibling subdomain can plant a cookie with the same name in the browser. Use a name like '__Host-MyApp'.")]
+        public static partial void LogCookieWithoutHostPrefix(this ILogger logger, string cookieName);
+
+        /// <summary>
+        /// Logs an Error message (event id 9153): <c>The session {Key} belongs to another user: the authentication ticket is not overwritten (possible session fixation).</c>
+        /// </summary>
+        /// <param name="logger">The logger to write to.</param>
+        /// <param name="key">The session key whose ticket was not replaced.</param>
+        [LoggerMessage(EventId = 9153, Level = LogLevel.Error,
+            Message = "The session {Key} belongs to another user: the authentication ticket is not overwritten (possible session fixation).")]
+        public static partial void LogSessionSubjectMismatch(this ILogger logger, string key);
     }
 }

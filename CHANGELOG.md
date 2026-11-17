@@ -100,6 +100,20 @@ no release notes.
 - `Arc4u.OAuth2.AspNetCore`: `CredentialTokenCacheTokenProvider` returns a failed `Result` instead of
   throwing a `KeyNotFoundException` when the settings have no `Scope`.
 
+### Security
+
+- `Arc4u.OAuth2.AspNetCore.Authentication`: a sign-in no longer reuses the session of a cookie the
+  browser already holds (session fixation). With a ticket store, ASP.NET Core renews the session key of a
+  still-valid incoming cookie on sign-in, so a cookie planted in the victim's browser received the
+  victim's session. The cookie options now use `FreshSessionCookieManager`, which hides the
+  authentication cookie on the OpenID Connect callback, so every sign-in stores a new session key.
+  `CacheTicketStore` and `FileTicketStore` also refuse to renew a session with the ticket of another
+  user (`sub`, `oid` or name identifier): they log event 9153 and throw `InvalidOperationException`.
+- `Arc4u.OAuth2.AspNetCore.Authentication`: the authentication cookie is always issued with `Path=/`
+  and no `Domain`, as a `__Host-` cookie requires; the path no longer follows the request path base.
+  A `CookieName` that does not start with `__Host-` logs warning 9152: name the cookie `__Host-MyApp`
+  so a sibling subdomain cannot plant it. Renaming the cookie signs every user out once.
+
 ## [9.0.0] - 2026-11-10
 
 Arc4u 9.0.0 contains breaking changes: follow the

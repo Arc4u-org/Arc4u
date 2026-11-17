@@ -60,7 +60,7 @@ section (parameter `authenticationSectionName`) into
   },
   "Authentication": {
     "DefaultAuthority": { "Url": "https://login.example.com/my-tenant/v2.0" },
-    "CookieName": ".MyApp.Cookies",
+    "CookieName": "__Host-MyApp",
     "OpenId.Settings": {
       "ClientId": "my-client-id",
       "ClientSecret": "<client-secret>",
@@ -106,7 +106,7 @@ The other keys of the `Authentication` section:
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `DefaultAuthority` | object | none (required) | The identity provider, see [Configuration](index.md#configuration). |
-| `CookieName` | string | none (required) | Name of the session cookie. Use a name specific to the application. |
+| `CookieName` | string | none (required) | Name of the session cookie. Use a name specific to the application, starting with `__Host-` (for example `__Host-MyApp`): browsers then refuse a cookie of that name set by another subdomain. Arc4u issues it secure, host-only and with `Path=/`, and logs a warning when the prefix is missing. |
 | `CallbackPath` | string | `/signin-oidc` | Path the identity provider posts the code to. Register `https://<host><CallbackPath>` as redirect URI. |
 | `ResponseType` | string | `code` | OpenID Connect response type. |
 | `AuthenticationMethod` | string | `RedirectGet` | How the browser is sent to the identity provider: `RedirectGet` (302) or `FormPost` (an HTML page that posts the request). |
@@ -360,7 +360,7 @@ builder.Services.AddTokenCache(options => options.CacheName = "Volatile");
 builder.Services.AddOidcAuthentication(options =>
 {
     options.DefaultAuthority = new AuthorityOptions(new Uri("https://login.example.com/my-tenant/v2.0"), null, null, null);
-    options.CookieName = ".MyApp.Cookies";
+    options.CookieName = "__Host-MyApp";
     options.ApplicationName = "MyApp";
     options.DataProtectionCertificate = certificate;
     options.DataProtectionCacheStoreOption = store => { store.CacheKey = "DataProtection"; store.CacheName = "Volatile"; };

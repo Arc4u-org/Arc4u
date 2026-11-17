@@ -43,7 +43,7 @@ namespace Arc4u.OAuth2.Extensions
         /// builder.Services.AddOidcAuthentication(options =>
         /// {
         ///     options.DefaultAuthority = new AuthorityOptions(new Uri("https://login.example.com/tenant/v2.0"), null, null, null);
-        ///     options.CookieName = ".MyApp.Cookies";
+        ///     options.CookieName = "__Host-MyApp";
         ///     options.ApplicationName = "MyApp";
         ///     options.DataProtectionCertificate = certificate;
         ///     options.DataProtectionCacheStoreOption = o => { o.CacheKey = "DataProtection"; o.CacheName = "Default"; };
@@ -118,7 +118,7 @@ namespace Arc4u.OAuth2.Extensions
         ///   "Application.configuration": { "ApplicationName": "MyApp" },
         ///   "Authentication": {
         ///     "DefaultAuthority": { "Url": "https://login.example.com/tenant/v2.0" },
-        ///     "CookieName": ".MyApp.Cookies",
+        ///     "CookieName": "__Host-MyApp",
         ///     "OpenId.Settings": {
         ///       "ClientId": "my-client-id",
         ///       "ClientSecret": "my-client-secret",

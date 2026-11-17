@@ -40,8 +40,19 @@ namespace Arc4u.OAuth2.TicketStore
         }
 
         /// <inheritdoc/>
+        /// <exception cref="InvalidOperationException">The session <paramref name="key"/> holds the ticket of another user; the stored ticket is left unchanged.</exception>
+        /// <remarks>The ticket of another user is never overwritten: that would hand that session to whoever holds the cookie (session fixation).</remarks>
         public async Task RenewAsync(string key, AuthenticationTicket ticket)
         {
+            ArgumentNullException.ThrowIfNull(ticket);
+
+            var stored = await RetrieveAsync(key).ConfigureAwait(false);
+            if (stored is not null && !AuthenticationTicketSubject.IsSameSubject(stored, ticket))
+            {
+                _logger.Technical().LogSessionSubjectMismatch(key);
+                throw new InvalidOperationException("The session belongs to another user: its authentication ticket is not overwritten.");
+            }
+
             await RemoveAsync(key).ConfigureAwait(false);
             var fullPath = GetPath(key);
 

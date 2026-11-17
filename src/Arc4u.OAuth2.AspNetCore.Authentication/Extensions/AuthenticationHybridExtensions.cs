@@ -122,7 +122,7 @@ namespace Arc4u.OAuth2.Extensions
         ///   "Application.configuration": { "ApplicationName": "MyApp" },
         ///   "Authentication": {
         ///     "DefaultAuthority": { "Url": "https://login.example.com/tenant/v2.0" },
-        ///     "CookieName": ".MyApp.Cookies",
+        ///     "CookieName": "__Host-MyApp",
         ///     "OpenId.Settings": {
         ///       "ClientId": "my-client-id",
         ///       "ClientSecret": "my-client-secret",
