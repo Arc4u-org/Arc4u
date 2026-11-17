@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
 using Arc4u.Configuration;
-using Arc4u.OAuth2.AspNetCore.Diagnostics;
 using Arc4u.OAuth2.DataProtection;
 using Arc4u.OAuth2.Events;
 using Arc4u.OAuth2.Middleware;
@@ -11,7 +10,6 @@ using Arc4u.OAuth2.Token;
 using Arc4u.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
@@ -21,7 +19,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using X509CertificateLoader = Arc4u.Security.Cryptography.X509CertificateLoader;
-using System.Linq;
 
 namespace Arc4u.OAuth2.Extensions
 {
@@ -245,11 +242,26 @@ namespace Arc4u.OAuth2.Extensions
 
             services.AddDomainMapping(configuration, settings.DomainMappingsSectionPath);
             services.AddOnBehalfOf(configuration);
-            services.AddTokenCache(configuration, settings.TokenCacheSectionPath);
+            services.AddOptionalTokenCache(configuration, settings.TokenCacheSectionPath);
             services.AddClaimsFiller(configuration, settings.ClaimsFillerSectionPath);
             services.AddOpenIdBearerInjector();
 
             return (cert, certSecurityKey, ticketStoreAction);
+        }
+
+        /// <summary>
+        /// Registers the token cache when its section exists. The resolver is always registered: without the section,
+        /// the ApplicationCache (Basic authentication, client tokens) uses the default cache and still needs it.
+        /// Shared by the JWT, OIDC and Hybrid configuration overloads; <c>AddTokenCacheResolver</c> uses <c>TryAdd</c>, so it is idempotent.
+        /// </summary>
+        private static void AddOptionalTokenCache(this IServiceCollection services, IConfiguration configuration, string tokenCacheSectionPath)
+        {
+            if (configuration.GetSection(tokenCacheSectionPath).Exists())
+            {
+                services.AddTokenCache(configuration, tokenCacheSectionPath);
+            }
+
+            services.AddTokenCacheResolver();
         }
 
         private static void PopulateFromSection(

@@ -241,12 +241,7 @@ namespace Arc4u.OAuth2.Extensions
 
             services.AddDomainMapping(configuration, settings.DomainMappingsSectionPath);
             // An API that only validates inbound tokens does not need a token cache: the section is optional.
-            if (configuration.GetSection(settings.TokenCacheSectionPath).Exists())
-            {
-                services.AddTokenCache(configuration, settings.TokenCacheSectionPath);
-            }
-            // Without the section, the ApplicationCache (Basic authentication, client tokens) uses the default cache: it still needs the resolver.
-            services.AddTokenCacheResolver();
+            services.AddOptionalTokenCache(configuration, settings.TokenCacheSectionPath);
             services.AddClaimsFiller(configuration, settings.ClaimsFillerSectionPath);
             services.AddClientTokens(configuration, settings.ClientTokensSectionPath, settings.ClientTokensCacheSectionPath);
             services.AddRemoteSecretsAuthentication(configuration, settings.RemoteSecretSectionPath);
