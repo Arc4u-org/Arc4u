@@ -19,6 +19,11 @@ namespace Arc4u.OAuth2.Options;
         /// <summary>Gets or sets the name of the authentication cookie. Use a name specific to the application.</summary>
         public string CookieName { get; set; } = default!;
 
+        /// <summary>Gets or sets a value indicating whether <c>__Host-</c> is put in front of <see cref="CookieName"/> when it does not start with it. The default is <see langword="false"/>.
+        /// A <c>__Host-</c> cookie cannot be set by another subdomain. Turning this on renames the cookie of an existing application, which signs every user out once.
+        /// With the configuration based registrations, it is read from <see cref="OidcAuthenticationSectionOptions.AddHostPrefixToCookieName"/>.</summary>
+        public bool AddHostPrefixToCookieName { get; set; }
+
         /// <summary>Gets or sets a value indicating whether the issuer of the access token received from the token endpoint is validated. The default is <see langword="true"/>.
         /// The issuer must be <see cref="AuthorityOptions.Issuer"/> of the <see cref="DefaultAuthority"/> when it is set, or the issuer of its metadata otherwise.
         /// With <c>AddHybridAuthentication</c>, the same rule applies to the bearer tokens.

@@ -78,6 +78,7 @@ public class HybridAuthenticationOptionsTests
             { "Authentication:TokenCache:CacheName", tokenCacheSettings.CacheName },
             { "Authentication:ValidateAudience", false.ToString() },
             { "Authentication:ValidateAuthority", false.ToString() },
+            { "Authentication:AddHostPrefixToCookieName", true.ToString() },
             { "Authentication:DataProtection:CacheStore:CacheKey", "TokenCacheKey" },
             { "Authentication:DataProtection:CacheStore:CacheName", "TokenCacheName" },
 
@@ -122,6 +123,7 @@ public class HybridAuthenticationOptionsTests
         sut.AuthenticationMethod.Should().Be(OpenIdConnectRedirectBehavior.FormPost);
         sut.ValidateAudience.Should().BeFalse();
         sut.ValidateAuthority.Should().BeFalse();
+        sut.AddHostPrefixToCookieName.Should().BeTrue();
     }
 
     [Fact]
@@ -146,6 +148,7 @@ public class HybridAuthenticationOptionsTests
             { "Authentication:TokenCache:CacheName", tokenCacheSettings.CacheName },
             { "Authentication:ValidateAudience", false.ToString() },
             { "Authentication:ValidateAuthority", false.ToString() },
+            { "Authentication:AddHostPrefixToCookieName", true.ToString() },
             { "Authentication:DataProtection:CacheStore:CacheKey", "TokenCacheKey" },
             { "Authentication:DataProtection:CacheStore:CacheName", "TokenCacheName" },
 
@@ -199,6 +202,7 @@ public class HybridAuthenticationOptionsTests
         sut.AuthenticationMethod.Should().Be(OpenIdConnectRedirectBehavior.FormPost);
         sut.ValidateAudience.Should().BeFalse();
         sut.ValidateAuthority.Should().BeFalse();
+        sut.AddHostPrefixToCookieName.Should().BeTrue();
 
         app.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme)
             .TokenValidationParameters.ValidateIssuer.Should().BeFalse();
@@ -229,6 +233,7 @@ public class HybridAuthenticationOptionsTests
             options.OAuth2SettingsOptions = o => o.Audiences = ["api"];
             options.ValidateAudience = false;
             options.ValidateAuthority = false;
+            options.AddHostPrefixToCookieName = true;
         });
 
         // The token providers are resolved one by one at the sign-out.
@@ -239,6 +244,7 @@ public class HybridAuthenticationOptionsTests
 
         sut.ValidateAudience.Should().BeFalse();
         sut.ValidateAuthority.Should().BeFalse();
+        sut.AddHostPrefixToCookieName.Should().BeTrue();
 
         provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme)
             .TokenValidationParameters.ValidateIssuer.Should().BeFalse();

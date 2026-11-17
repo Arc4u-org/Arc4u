@@ -12,7 +12,8 @@ internal static class AuthenticationCookieDefaults
 
     internal static void Apply(CookieAuthenticationOptions options, OidcAuthenticationOptions oidcOptions, ILogger logger)
     {
-        options.Cookie.Name = oidcOptions.CookieName;
+        var cookieName = GetCookieName(oidcOptions);
+        options.Cookie.Name = cookieName;
         options.SlidingExpiration = true;
         // Set the expiration time span to the minimum of AuthenticationTicketTTL and RefreshTokenLifetime
         // to avoid having a ticket that is expired but still valid.
@@ -31,9 +32,18 @@ internal static class AuthenticationCookieDefaults
         options.Cookie.Path = "/";
         options.Cookie.Domain = null;
 
-        if (string.IsNullOrEmpty(oidcOptions.CookieName) || !oidcOptions.CookieName.StartsWith(HostPrefix, StringComparison.Ordinal))
+        if (string.IsNullOrEmpty(cookieName) || !cookieName.StartsWith(HostPrefix, StringComparison.Ordinal))
         {
-            logger.LogCookieWithoutHostPrefix(oidcOptions.CookieName ?? string.Empty);
+            logger.LogCookieWithoutHostPrefix(cookieName ?? string.Empty);
         }
+    }
+
+    /// <summary>Returns <see cref="OidcAuthenticationOptions.CookieName"/>, prefixed with <c>__Host-</c> when <see cref="OidcAuthenticationOptions.AddHostPrefixToCookieName"/> is set and the prefix is missing.</summary>
+    internal static string GetCookieName(OidcAuthenticationOptions oidcOptions)
+    {
+        var cookieName = oidcOptions.CookieName;
+        return oidcOptions.AddHostPrefixToCookieName && !string.IsNullOrEmpty(cookieName) && !cookieName.StartsWith(HostPrefix, StringComparison.Ordinal)
+            ? HostPrefix + cookieName
+            : cookieName;
     }
 }

@@ -13,8 +13,12 @@ namespace Arc4u.OAuth2.Options;
         /// <summary>Gets or sets the default authority (identity provider). Required.</summary>
         public AuthorityOptions DefaultAuthority { get; set; } = default!;
 
-        /// <summary>Gets or sets the name of the authentication cookie. Required: use a name specific to the application, for example <c>.MyApp.Cookies</c>.</summary>
+        /// <summary>Gets or sets the name of the authentication cookie. Required: use a name specific to the application, starting with <c>__Host-</c>, for example <c>__Host-MyApp</c>.</summary>
         public string CookieName { get; set; } = default!;
+
+        /// <summary>Gets or sets a value indicating whether <c>__Host-</c> is put in front of <see cref="CookieName"/> when it does not start with it. The default is <see langword="false"/>.
+        /// It is copied to <see cref="OidcAuthenticationOptions.AddHostPrefixToCookieName"/>.</summary>
+        public bool AddHostPrefixToCookieName { get; set; }
 
         /// <summary>Gets or sets a value indicating whether the issuer of the access token must be the default authority. The default is <see langword="true"/>. It is copied to <see cref="OidcAuthenticationOptions.ValidateAuthority"/>.</summary>
         public bool ValidateAuthority { get; set; } = true;

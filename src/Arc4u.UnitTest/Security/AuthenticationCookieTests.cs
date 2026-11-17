@@ -79,6 +79,25 @@ public class AuthenticationCookieTests
         logger.EventIds.Contains(9152).Should().Be(warned);
     }
 
+    [Theory]
+    [InlineData(CookieName, false, CookieName)]
+    [InlineData(CookieName, true, "__Host-" + CookieName)]
+    [InlineData("__Host-Arc4u", true, "__Host-Arc4u")]
+    public void The_Host_Prefix_Should_Be_Added_To_The_Cookie_Name_Only_On_Request(string cookieName, bool addHostPrefix, string expected)
+    {
+        var logger = new CollectingLogger<ConfigureCookieWithTicketStoreAuthenticationOptions>();
+        var provider = CreateProvider(useTicketStore: true, services =>
+        {
+            services.AddSingleton(Mock.Of<ITicketStore>());
+            services.AddSingleton<ILogger<ConfigureCookieWithTicketStoreAuthenticationOptions>>(logger);
+        }, cookieName, addHostPrefix);
+
+        var sut = provider.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        sut.Cookie.Name.Should().Be(expected);
+        logger.EventIds.Contains(9152).Should().Be(!expected.StartsWith("__Host-", StringComparison.Ordinal));
+    }
+
     /// <summary>The issued cookie carries <c>path=/</c> even under a path base, or browsers would drop the <c>__Host-</c> cookie (Arc4u.Portal #714).</summary>
     [Fact]
     public async Task Authentication_Cookie_Should_Be_Issued_For_The_Root_Path_Under_A_Path_Base()
@@ -142,7 +161,7 @@ public class AuthenticationCookieTests
         cookie.Domain.Should().BeNull();
     }
 
-    private static ServiceProvider CreateProvider(bool useTicketStore, Action<IServiceCollection>? replaceServices = null, string cookieName = CookieName)
+    private static ServiceProvider CreateProvider(bool useTicketStore, Action<IServiceCollection>? replaceServices = null, string cookieName = CookieName, bool addHostPrefix = false)
     {
         var ecdsa = ECDsa.Create();
         var certificate = new CertificateRequest("cn=TestCertificate", ecdsa, HashAlgorithmName.SHA256)
@@ -154,6 +173,7 @@ public class AuthenticationCookieTests
         {
             options.DefaultAuthority = new AuthorityOptions(new Uri("https://login.example.com/tenant/v2.0"), null, null, null);
             options.CookieName = cookieName;
+            options.AddHostPrefixToCookieName = addHostPrefix;
             options.ApplicationName = "TestName";
             options.DataProtectionCertificate = certificate;
             options.DataProtectionCacheStoreOption = o => { o.CacheKey = "Key"; o.CacheName = "Name"; };

@@ -303,12 +303,12 @@ namespace Arc4u.OAuth2
         public static partial void LogInvalidAudience(this ILogger logger, string invalidAudience, string expectedAudiences);
 
         /// <summary>
-        /// Logs a Warning message (event id 9152): <c>The authentication cookie '{CookieName}' does not start with '__Host-': a sibling subdomain can plant a cookie with the same name in the browser. Use a name like '__Host-MyApp'.</c>
+        /// Logs a Warning message (event id 9152): <c>The authentication cookie '{CookieName}' does not start with '__Host-': a sibling subdomain can plant a cookie with the same name in the browser. Use a name like '__Host-MyApp', or set AddHostPrefixToCookieName.</c>
         /// </summary>
         /// <param name="logger">The logger to write to.</param>
         /// <param name="cookieName">The configured name of the authentication cookie.</param>
         [LoggerMessage(EventId = 9152, Level = LogLevel.Warning,
-            Message = "The authentication cookie '{CookieName}' does not start with '__Host-': a sibling subdomain can plant a cookie with the same name in the browser. Use a name like '__Host-MyApp'.")]
+            Message = "The authentication cookie '{CookieName}' does not start with '__Host-': a sibling subdomain can plant a cookie with the same name in the browser. Use a name like '__Host-MyApp', or set AddHostPrefixToCookieName.")]
         public static partial void LogCookieWithoutHostPrefix(this ILogger logger, string cookieName);
 
         /// <summary>

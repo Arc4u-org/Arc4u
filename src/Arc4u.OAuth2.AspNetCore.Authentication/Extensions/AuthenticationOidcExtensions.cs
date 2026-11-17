@@ -276,6 +276,7 @@ namespace Arc4u.OAuth2.Extensions
         {
             options.DefaultAuthority = settings.DefaultAuthority!;
             options.CookieName = settings.CookieName;
+            options.AddHostPrefixToCookieName = settings.AddHostPrefixToCookieName;
             options.AuthenticationMethod = Enum.Parse<OpenIdConnectRedirectBehavior>(settings.AuthenticationMethod);
             options.AuthenticationCacheTicketStoreOption = ticketStoreAction!;
             options.OpenIdSettingsOptions =

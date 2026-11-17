@@ -112,7 +112,9 @@ no release notes.
 - `Arc4u.OAuth2.AspNetCore.Authentication`: the authentication cookie is always issued with `Path=/`
   and no `Domain`, as a `__Host-` cookie requires; the path no longer follows the request path base.
   A `CookieName` that does not start with `__Host-` logs warning 9152: name the cookie `__Host-MyApp`
-  so a sibling subdomain cannot plant it. Renaming the cookie signs every user out once.
+  so a sibling subdomain cannot plant it, or set the new opt-in `AddHostPrefixToCookieName` option
+  (`Authentication:AddHostPrefixToCookieName`, default `false`) to have Arc4u add the prefix. Either
+  way, renaming the cookie signs every user out once.
 
 ## [9.0.0] - 2026-11-10
 
