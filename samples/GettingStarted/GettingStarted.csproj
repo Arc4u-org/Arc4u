@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!--
+    The sample references the Arc4u projects in ../../src so that it always builds against the
+    current code. In your own application, reference the Arc4u NuGet packages instead
+    (see https://arc4u-org.github.io/Arc4u/getting-started/).
+  -->
+  <!-- <references> -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Arc4u.Configuration\Arc4u.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\Arc4u.Dependency\Arc4u.Dependency.csproj" />
+    <ProjectReference Include="..\..\src\Arc4u.Diagnostics\Arc4u.Diagnostics.csproj" />
+    <ProjectReference Include="..\..\src\Arc4u.OAuth2.AspNetCore.Authentication\Arc4u.OAuth2.AspNetCore.Authentication.csproj" />
+    <!-- Source generator: runs at compile time and is not copied to the output. -->
+    <ProjectReference Include="..\..\src\Arc4u.Dependency.Tool\Arc4u.Dependency.Tool.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+  <!-- </references> -->
+
+</Project>
