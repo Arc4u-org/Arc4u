@@ -13,7 +13,7 @@ namespace Arc4u.OAuth2.Options;
         /// <summary>Gets or sets the default authority (identity provider). Required.</summary>
         public AuthorityOptions DefaultAuthority { get; set; } = default!;
 
-        /// <summary>Gets or sets the name of the authentication cookie. Required: use a name specific to the application, starting with <c>__Host-</c>, for example <c>__Host-MyApp</c>.</summary>
+        /// <summary>Gets or sets the name of the authentication cookie. Required: use a name specific to the application. The <c>__Host-</c> prefix is optional but recommended, for example <c>__Host-MyApp</c>: without it, a warning is logged at startup.</summary>
         public string CookieName { get; set; } = default!;
 
         /// <summary>Gets or sets a value indicating whether <c>__Host-</c> is put in front of <see cref="CookieName"/> when it does not start with it. The default is <see langword="false"/>.

@@ -106,7 +106,7 @@ The other keys of the `Authentication` section:
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `DefaultAuthority` | object | none (required) | The identity provider, see [Configuration](index.md#configuration). |
-| `CookieName` | string | none (required) | Name of the session cookie. Use a name specific to the application, starting with `__Host-` (for example `__Host-MyApp`): browsers then refuse a cookie of that name set by another subdomain. Arc4u issues it secure, host-only and with `Path=/`, and logs a warning when the prefix is missing. |
+| `CookieName` | string | none (required) | Name of the session cookie. Use a name specific to the application. The `__Host-` prefix is optional but recommended (for example `__Host-MyApp`): browsers then refuse a cookie of that name set by another subdomain. Arc4u issues the cookie secure, host-only and with `Path=/` whatever its name, and logs warning 9152 at startup when the prefix is missing; the application works either way. |
 | `AddHostPrefixToCookieName` | bool | `false` | Puts `__Host-` in front of `CookieName` when it does not start with it, so `MyApp` becomes `__Host-MyApp`. Turning it on renames the cookie of an existing application, which signs every user out once. |
 | `CallbackPath` | string | `/signin-oidc` | Path the identity provider posts the code to. Register `https://<host><CallbackPath>` as redirect URI. |
 | `ResponseType` | string | `code` | OpenID Connect response type. |

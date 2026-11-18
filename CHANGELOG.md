@@ -163,8 +163,9 @@ no release notes.
   user (`sub`, `oid` or name identifier): they log event 9153 and throw `InvalidOperationException`.
 - `Arc4u.OAuth2.AspNetCore.Authentication`: the authentication cookie is always issued with `Path=/`
   and no `Domain`, as a `__Host-` cookie requires; the path no longer follows the request path base.
-  A `CookieName` that does not start with `__Host-` logs warning 9152: name the cookie `__Host-MyApp`
-  so a sibling subdomain cannot plant it, or set the new opt-in `AddHostPrefixToCookieName` option
+  The `__Host-` prefix stays optional: a `CookieName` without it keeps working and only logs warning
+  9152. To silence the warning and keep a sibling subdomain from planting the cookie, name it
+  `__Host-MyApp`, or set the new opt-in `AddHostPrefixToCookieName` option
   (`Authentication:AddHostPrefixToCookieName`, default `false`) to have Arc4u add the prefix. Either
   way, renaming the cookie signs every user out once.
 
