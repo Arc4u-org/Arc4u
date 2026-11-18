@@ -31,13 +31,14 @@ namespace Arc4u.OAuth2.TicketStore
             ArgumentNullException.ThrowIfNull(dataProtectionProvider);
             ArgumentNullException.ThrowIfNull(options.CurrentValue.KeyPrefix);
             ArgumentNullException.ThrowIfNull(options.CurrentValue.CacheName);
-            ArgumentException.ThrowIfNullOrWhiteSpace(options.CurrentValue.DataProtectionPurpose, "options.DataProtectionPurpose");
+            var dataProtectionPurpose = options.CurrentValue.DataProtectionPurpose;
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataProtectionPurpose);
 
             _logger = logger;
             _cacheContext = cacheContext;
             _cache = GetCache(options.CurrentValue.CacheName);
             _keyPrefix = options.CurrentValue.KeyPrefix;
-            _protector = dataProtectionProvider.CreateProtector(options.CurrentValue.DataProtectionPurpose);
+            _protector = dataProtectionProvider.CreateProtector(dataProtectionPurpose);
         }
 
         private readonly ILogger<CacheTicketStore> _logger;
@@ -123,7 +124,7 @@ namespace Arc4u.OAuth2.TicketStore
                 if (content is null)
                 {
                     // Expected after a sign-out or an expiry (for example on each circuit revalidation): not an error.
-                    _logger.Technical().LogDebug("No Authentication ticket from the cache with key {Key}.", key);
+                    _logger.Technical().LogNoAuthenticationTicketForKey(key);
                     return null;
                 }
 

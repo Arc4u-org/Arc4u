@@ -106,10 +106,10 @@ public sealed class CircuitRevalidationTests : IDisposable
         sut.SetAuthenticationState(Task.FromResult(new AuthenticationState(user)));
 
         // Act
-        var completed = await Task.WhenAny(signedOut, Task.Delay(300));
+        var wait = () => signedOut.WaitAsync(TimeSpan.FromMilliseconds(300));
 
         // Assert
-        completed.Should().NotBeSameAs(signedOut);
+        await wait.Should().ThrowAsync<TimeoutException>();
         (await sut.GetAuthenticationStateAsync()).User.Should().BeOfType<AppPrincipal>();
     }
 
@@ -165,10 +165,10 @@ public sealed class CircuitRevalidationTests : IDisposable
         await _tickets.RemoveAsync(key);
 
         // Act
-        var completed = await Task.WhenAny(signedOut, Task.Delay(300));
+        var wait = () => signedOut.WaitAsync(TimeSpan.FromMilliseconds(300));
 
         // Assert
-        completed.Should().NotBeSameAs(signedOut);
+        await wait.Should().ThrowAsync<TimeoutException>();
     }
 
     [Fact]
@@ -207,10 +207,10 @@ public sealed class CircuitRevalidationTests : IDisposable
         await _sessionStore.RemoveAsync(user.FindFirst(Arc4uClaimTypes.SessionKey)!.Value);
 
         // Act
-        var completed = await Task.WhenAny(signedOut, Task.Delay(300));
+        var wait = () => signedOut.WaitAsync(TimeSpan.FromMilliseconds(300));
 
         // Assert
-        completed.Should().NotBeSameAs(signedOut);
+        await wait.Should().ThrowAsync<TimeoutException>();
     }
 
     [Fact]

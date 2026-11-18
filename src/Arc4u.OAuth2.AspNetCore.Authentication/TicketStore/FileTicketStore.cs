@@ -28,9 +28,10 @@ namespace Arc4u.OAuth2.TicketStore
         public FileTicketStore(ILogger<FileTicketStore> logger, IOptionsMonitor<FileTicketStoreOptions> options, IDataProtectionProvider dataProtectionProvider)
         {
             ArgumentNullException.ThrowIfNull(dataProtectionProvider);
-            ArgumentException.ThrowIfNullOrWhiteSpace(options.CurrentValue.DataProtectionPurpose, "options.DataProtectionPurpose");
+            var dataProtectionPurpose = options.CurrentValue.DataProtectionPurpose;
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataProtectionPurpose);
             _logger = logger;
-            _protector = dataProtectionProvider.CreateProtector(options.CurrentValue.DataProtectionPurpose);
+            _protector = dataProtectionProvider.CreateProtector(dataProtectionPurpose);
 
             ArgumentNullException.ThrowIfNull(options.CurrentValue.StorePath);
 

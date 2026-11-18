@@ -338,5 +338,15 @@ namespace Arc4u.OAuth2
         [LoggerMessage(EventId = 9155, Level = LogLevel.Warning,
             Message = "The unreadable authentication ticket {Key} could not be removed from the store; it expires on its own.")]
         public static partial void LogUnreadableTicketNotRemoved(this ILogger logger, Exception exception, string key);
+
+        /// <summary>
+        /// Logs a Debug message (event id 9156): <c>No authentication ticket in the cache with key {Key}.</c>
+        /// Expected after a sign-out or an expiry, for example on each circuit revalidation.
+        /// </summary>
+        /// <param name="logger">The logger to write to.</param>
+        /// <param name="key">The session key of the ticket.</param>
+        [LoggerMessage(EventId = 9156, Level = LogLevel.Debug,
+            Message = "No authentication ticket in the cache with key {Key}.")]
+        public static partial void LogNoAuthenticationTicketForKey(this ILogger logger, string key);
     }
 }

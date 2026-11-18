@@ -28,7 +28,8 @@ namespace Arc4u.OAuth2.TicketStore
 
             ArgumentNullException.ThrowIfNull(validate.CacheName);
             ArgumentNullException.ThrowIfNull(validate.KeyPrefix);
-            ArgumentException.ThrowIfNullOrWhiteSpace(validate.DataProtectionPurpose, nameof(CacheTicketStoreOptions.DataProtectionPurpose));
+            var dataProtectionPurpose = validate.DataProtectionPurpose;
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataProtectionPurpose);
 
             services.Configure<CacheTicketStoreOptions>(action);
             // The store encrypts the tickets. AddDataProtection only adds what is missing, so the key ring configured by AddOidcAuthentication

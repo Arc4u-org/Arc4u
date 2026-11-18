@@ -19,7 +19,8 @@ namespace Arc4u.OAuth2.TicketStore
             new Action<FileTicketStoreOptions>(action).Invoke(validate);
 
             ArgumentNullException.ThrowIfNull(validate.StorePath);
-            ArgumentException.ThrowIfNullOrWhiteSpace(validate.DataProtectionPurpose, nameof(FileTicketStoreOptions.DataProtectionPurpose));
+            var dataProtectionPurpose = validate.DataProtectionPurpose;
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataProtectionPurpose);
 
             if (!validate.StorePath.Exists)
             {
