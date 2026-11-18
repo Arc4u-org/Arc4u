@@ -77,7 +77,7 @@ your stub, replace every `<...>` placeholder and delete the comment.
   (the foundation packages) go in their own table and link to Concepts.
 - `Status` is one of **Supported**, **Deprecated** (built only for 8.x, no 9.x build; all
   versions deprecated on NuGet.org with reason *Legacy*) or **Removed**. Target frameworks
-  come from the package's `.csproj` on `develop/9.0.0`.
+  come from the package's `.csproj` on `develop/9.1.0`.
 - A final section lists deprecated and removed packages with their last listed
   NuGet version, their replacement and a link to the migration guide.
 
@@ -127,7 +127,7 @@ description: "Configure named caches backed by memory, Redis, SQL Server or Dapr
   and do not use emoji.
 - One idea per sentence, one topic per paragraph. Prefer a list or a table to a long paragraph.
 - Explain why before how when a choice is not obvious.
-- Document what the code on `develop/9.0.0` does. Never describe an API, option, configuration
+- Document what the code on `develop/9.1.0` does. Never describe an API, option, configuration
   key or default value you have not checked in the source. Describe planned work only as
   "not supported yet" with a link to the issue.
 - Write product names correctly: Arc4u, .NET, ASP.NET Core, Blazor, Microsoft Entra ID,
@@ -153,7 +153,7 @@ description: "Configure named caches backed by memory, Redis, SQL Server or Dapr
 
 ### General rules
 
-- Every C# sample must compile against `develop/9.0.0`, for `net10.0` and `net11.0`. If a
+- Every C# sample must compile against `develop/9.1.0`, for `net10.0` and `net11.0`. If a
   sample only works on one of them, say so in a `> [!NOTE]`.
 - Use the minimal hosting model: top-level statements, `WebApplication.CreateBuilder(args)`,
   `builder.Services`, `builder.Configuration`. No `Startup` class, no `IWebHostBuilder`.
@@ -291,7 +291,7 @@ projects are not your concern. In the pull request, list which samples you compi
 | An Arc4u type, custom text | Link with an `xref:` target | `[the cache interface](xref:Arc4u.Caching.ICache)` |
 | All overloads of a method | `xref` with `*` | `<xref:Arc4u.Caching.ICache.Get*>` |
 | A .NET type | `xref`, resolved to learn.microsoft.com | `<xref:System.Text.Json.JsonSerializer>` |
-| Source code without an API page | Absolute GitHub URL on `develop/9.0.0` | `https://github.com/Arc4u-org/Arc4u/blob/develop/9.0.0/src/...` |
+| Source code without an API page | Absolute GitHub URL on `develop/9.1.0` | `https://github.com/Arc4u-org/Arc4u/blob/develop/9.1.0/src/...` |
 | An issue or pull request | Absolute GitHub URL | `[#140](https://github.com/Arc4u-org/Arc4u/issues/140)` |
 
 - Never link to a `.html` file, to an absolute URL of this site, or to the `master` branch
@@ -378,7 +378,7 @@ absolute `https://` links only. The template lists the guide URL of each package
 ## Before you open a pull request
 
 - [ ] The page follows its template or outline, and the template comment is deleted.
-- [ ] Every statement was checked against the code on `develop/9.0.0`.
+- [ ] Every statement was checked against the code on `develop/9.1.0`.
 - [ ] Every C# sample compiles (listed in the PR description).
 - [ ] `dotnet docfx docfx.json` in `docs/` reports no warning from your files.
 - [ ] You checked the page, its diagrams and its links in the local preview.

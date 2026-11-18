@@ -8,7 +8,7 @@ number of technologies from the .NET ecosystem and packages them so that you can
 common enterprise concerns, such as authentication, logging or caching, without
 reinventing them. The framework has been in use for many years and is open source.
 
-This site documents Arc4u 9.0.0. It targets `net10.0` and
+This site documents Arc4u 9.1.0. It targets `net10.0` and
 `net11.0` and ships as a set of NuGet packages named `Arc4u.*`, grouped by feature area.
 
 ## Where to start
@@ -19,7 +19,7 @@ This site documents Arc4u 9.0.0. It targets `net10.0` and
 | [Concepts](concepts/index.md) | Understand the architecture and design principles behind Arc4u. |
 | [Guides](guides/index.md) | Set up and use one feature area: dependency injection, configuration, logging, authentication, caching, results, gRPC, data access. |
 | [API reference](api/index.md) | Look up a type or member, generated from the source code. |
-| [Migration](migration/8x-to-9.md) | Upgrade an application from Arc4u 8.x to 9. |
+| [Migration](migration/9.0-to-9.1.md) | Upgrade an application from Arc4u 9.0 to 9.1, or from 8.x to 9. |
 | [Releases](releases/index.md) | See what changed in each release. |
 
 ## Feature areas
@@ -41,4 +41,4 @@ The [package support](guides/package-support.md) page lists every package and it
 
 Arc4u is developed on [GitHub](https://github.com/Arc4u-org/Arc4u). To report a problem
 or contribute code or documentation, read
-[CONTRIBUTING.md](https://github.com/Arc4u-org/Arc4u/blob/develop/9.0.0/CONTRIBUTING.md).
+[CONTRIBUTING.md](https://github.com/Arc4u-org/Arc4u/blob/develop/9.1.0/CONTRIBUTING.md).

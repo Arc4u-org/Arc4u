@@ -288,7 +288,7 @@ or `Unable to find the required services... 'IServiceCollection.AddAuthorization
 ### Every request returns 401 or 500
 
 See [Troubleshooting](troubleshooting.md), which lists the symptoms reported in past issues with their
-causes, and the known issues of 9.0.0.
+causes, and the known issues of 9.0.0 and 9.1.0.
 
 ## See also
 

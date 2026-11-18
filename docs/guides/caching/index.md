@@ -33,7 +33,7 @@ flowchart LR
 > [!NOTE]
 > `HybridCache` (the .NET hybrid cache) is not implemented. The
 > [Arc4u 9.0 roadmap](https://github.com/Arc4u-org/Arc4u/issues/129) (an open issue) lists "Upgrade Caching to use
-> HybridCache". The 9.0 code does not reference
+> HybridCache". The 9.1 code does not reference
 > `HybridCache`: caches are `ICache` instances as described on this page.
 
 ## Packages involved

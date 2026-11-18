@@ -8,7 +8,7 @@ Rules (full details in docs/contributing/style-guide.md):
 - Keep every H2 below, in this order, with exactly these titles. If a section has nothing
   to say, write one sentence saying so (for example "This package has no configuration.").
 - The intro must link to the Concepts section (at least ../../concepts/index.md or a specific concept page).
-- Every code sample must compile against develop/9.0.0 (net10.0 and net11.0); see the style guide.
+- Every code sample must compile against develop/9.1.0 (net10.0 and net11.0); see the style guide.
 - Link to API types with <xref:Namespace.Type>, to other pages with relative .md paths.
 - Delete this comment before you open the PR.
 

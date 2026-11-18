@@ -20,7 +20,7 @@ Since 8.0.0, a version is `MAJOR.MINOR.PATCH`:
 | `MINOR` | A release adds features, with bug fixes. |
 | `PATCH` | A release contains bug fixes only. |
 
-The current release is 9.0.0. Install commands in this documentation do not pin a version, so
+The current release is 9.1.0. Install commands in this documentation do not pin a version, so
 they install the latest stable release:
 
 ```bash
@@ -38,14 +38,14 @@ The versions published on NuGet.org so far fall into these lines:
 | 5.0.x.y (2021 to 2022) | `Arc4u.Standard.*` | Four parts, tied to .NET | `netstandard2.0`, `netstandard2.1` |
 | 6.0.x.y and 6.1.x.y (2022 to 2023) | `Arc4u.Standard.*` | Four parts, tied to .NET | `netstandard2.0`, `net6.0`, `net7.0` |
 | 8.0.0 to 8.3.2 (2023 to 2025) | `Arc4u.Standard.*` | Semantic versioning | `netstandard2.0`, `net8.0`, `net9.0` |
-| 9.0.0 (2026) | `Arc4u.*` | Semantic versioning | `net10.0`, `net11.0` |
+| 9.0.0 and 9.1.0 (2026) | `Arc4u.*` | Semantic versioning | `net10.0`, `net11.0` |
 
-This site documents 9.0.0 (see [Target frameworks](../migration/8x-to-9.md#target-frameworks)).
+This site documents 9.1.0 (see [Target frameworks](../migration/8x-to-9.md#target-frameworks)).
 
 > [!NOTE]
 > A few packages also have a stable `1.0.0` version outside these lines, for example
 > `Arc4u.Standard.Core`, `Arc4u.AspNetCore.Results` and `Arc4u.Dependency.Tool`. Ignore it:
-> `dotnet add package` installs 9.0.0, the highest stable version.
+> `dotnet add package` installs 9.1.0, the highest stable version.
 
 Before 8.0.0, a version followed the .NET version it was built with. For example, `6.0.9.1`
 was built with .NET 6.0.9:
@@ -123,7 +123,7 @@ and define the version once:
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <Arc4uVersion>9.0.0</Arc4uVersion>
+    <Arc4uVersion>9.1.0</Arc4uVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Arc4u.Caching" Version="$(Arc4uVersion)" />

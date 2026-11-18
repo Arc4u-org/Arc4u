@@ -15,15 +15,15 @@ about five minutes.
   dotnet --version
   ```
 
-  The Arc4u 9.0.0 packages target `net10.0` and `net11.0`. Use the .NET 11 SDK to target
+  The Arc4u 9.1.0 packages target `net10.0` and `net11.0`. Use the .NET 11 SDK to target
   `net11.0`.
 - A .NET project to add Arc4u to. [Build your first Arc4u app](first-app.md) starts from
   `dotnet new web`.
 
 > [!NOTE]
 > To build Arc4u itself from source, you need the exact SDK pinned in
-> [`src/global.json`](https://github.com/Arc4u-org/Arc4u/blob/develop/9.0.0/src/global.json).
-> [CONTRIBUTING.md](https://github.com/Arc4u-org/Arc4u/blob/develop/9.0.0/CONTRIBUTING.md) explains
+> [`src/global.json`](https://github.com/Arc4u-org/Arc4u/blob/develop/9.1.0/src/global.json).
+> [CONTRIBUTING.md](https://github.com/Arc4u-org/Arc4u/blob/develop/9.1.0/CONTRIBUTING.md) explains
 > how to install it.
 
 ## Step 1: Choose your packages
@@ -53,7 +53,7 @@ For the [first app](first-app.md), you need `Arc4u.Dependency`, `Arc4u.Dependenc
 ## Step 2: Add the packages
 
 From the folder that contains your `.csproj`, add each package. `dotnet add package` installs the
-latest stable version, 9.0.0.
+latest stable version, 9.1.0.
 
 ```bash
 dotnet add package Arc4u.Dependency
@@ -70,7 +70,7 @@ your application. `dotnet add package` marks it as a development dependency, so 
 contains:
 
 ```xml
-<PackageReference Include="Arc4u.Dependency.Tool" Version="9.0.0">
+<PackageReference Include="Arc4u.Dependency.Tool" Version="9.1.0">
   <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   <PrivateAssets>all</PrivateAssets>
 </PackageReference>
@@ -90,11 +90,11 @@ The output shows the Arc4u packages with the version NuGet resolved:
 Project 'GettingStarted' has the following package references
    [net10.0]:
    Top-level Package                             Requested   Resolved
-   > Arc4u.Configuration                         9.0.0       9.0.0
-   > Arc4u.Dependency                            9.0.0       9.0.0
-   > Arc4u.Dependency.Tool                       9.0.0       9.0.0
-   > Arc4u.Diagnostics                           9.0.0       9.0.0
-   > Arc4u.OAuth2.AspNetCore.Authentication      9.0.0       9.0.0
+   > Arc4u.Configuration                         9.1.0       9.1.0
+   > Arc4u.Dependency                            9.1.0       9.1.0
+   > Arc4u.Dependency.Tool                       9.1.0       9.1.0
+   > Arc4u.Diagnostics                           9.1.0       9.1.0
+   > Arc4u.OAuth2.AspNetCore.Authentication      9.1.0       9.1.0
 ```
 
 Then build the project with `dotnet build`. It ends with `Build succeeded`.
