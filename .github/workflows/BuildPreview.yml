@@ -11,7 +11,7 @@ on:
         description: 'nuget version number x.y.z'     
         required: false
         type: string
-        default: '9.0.0'
+        default: '9.1.0'
       nugetPreviewName:
         description: 'nuget preview ?'     
         required: true

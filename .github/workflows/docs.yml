@@ -3,12 +3,12 @@ name: Docs
 # Builds the DocFX site (docs/docfx.json) and publishes it to GitHub Pages.
 # Manual only (Actions -> Docs -> Run workflow): nothing triggers it automatically.
 # Any DocFX warning (bad crefs, broken xrefs, broken internal links, ...) fails
-# the build. It builds on any branch but deploys only from develop/9.0.0.
+# the build. It builds on any branch but deploys only from develop/9.1.0.
 #
 # One-time repository settings (manual):
 #  - Settings -> Pages -> Source: GitHub Actions.
 #  - Settings -> Environments -> github-pages -> Deployment branches must allow
-#    develop/9.0.0 (the default protection rule only allows the default branch).
+#    develop/9.1.0 (the default protection rule only allows the default branch).
 
 on:
   workflow_dispatch:
@@ -68,7 +68,7 @@ jobs:
           path: docs/_site
 
   deploy:
-    if: github.ref == 'refs/heads/develop/9.0.0'
+    if: github.ref == 'refs/heads/develop/9.1.0'
     needs: build
     runs-on: ubuntu-latest
     permissions:

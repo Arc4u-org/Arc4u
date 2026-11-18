@@ -1,7 +1,7 @@
 name: SonarBuild
 
-# Analyzes develop/9.0.0 on SonarCloud on every push, and on demand for any branch.
-# In SonarCloud, develop/9.0.0 must match the long-lived branch pattern (or be the main
+# Analyzes develop/9.1.0 on SonarCloud on every push, and on demand for any branch.
+# In SonarCloud, develop/9.1.0 must match the long-lived branch pattern (or be the main
 # branch), otherwise it is purged as a short-lived branch after 30 days without analysis.
 # Automatic Analysis must be disabled in SonarCloud: it conflicts with this CI analysis.
 
